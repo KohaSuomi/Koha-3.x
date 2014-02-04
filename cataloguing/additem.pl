@@ -104,9 +104,9 @@ sub _increment_barcode {
 
 
 sub generate_subfield_form {
-        my ($tag, $subfieldtag, $value, $tagslib,$subfieldlib, $branches, $today_iso, $biblionumber, $temp, $loop_data, $i) = @_;
-  
-  my $frameworkcode = &GetFrameworkCode($biblionumber);
+        my ($tag, $subfieldtag, $value, $tagslib,$subfieldlib, $branches, $today_iso, $biblionumber, $temp, $loop_data, $i, $itemrecord) = @_;
+
+    my $frameworkcode = &GetFrameworkCode($biblionumber);
         my %subfield_data;
         my $dbh = C4::Context->dbh;
         
@@ -204,12 +204,24 @@ sub generate_subfield_form {
                   #---- "true" authorised value
             }
             else {
-                  push @authorised_values, qq{} unless ( $subfieldlib->{mandatory} );
-                  my $av = GetAuthorisedValues( $subfieldlib->{authorised_value} );
-                  for my $r ( @$av ) {
-                      push @authorised_values, $r->{authorised_value};
-                      $authorised_lib{$r->{authorised_value}} = $r->{lib};
-                  }
+                push @authorised_values, qq{} unless ( $subfieldlib->{mandatory} );
+                my $av;
+                #Bug 11676 #Limit the available shelving locations based on the item's homebranch instead of the user's logged in branch
+                if ($subfieldlib->{authorised_value} eq 'LOC' && $itemrecord) {
+                    #Get the homebranch of the item
+                    my ( $homebranch_field, $homebranch_subfield ) = C4::Biblio::GetMarcFromKohaField( "items.homebranch", $frameworkcode );
+                    my $homebranch = $itemrecord->subfield(  $homebranch_field, $homebranch_subfield  );
+                    #Get the shelving locations limited by the item's homebranch
+                    $av = GetAuthorisedValues( $subfieldlib->{authorised_value}, undef, undef, $homebranch );
+                }
+                else {
+                    $av = GetAuthorisedValues( $subfieldlib->{authorised_value} );
+                }
+
+                for my $r ( @$av ) {
+                    push @authorised_values, $r->{authorised_value};
+                    $authorised_lib{$r->{authorised_value}} = $r->{lib};
+                }
             }
 
             if ($subfieldlib->{'hidden'}) {
@@ -777,7 +789,7 @@ if($itemrecord){
             next if subfield_is_koha_internal_p($subfieldtag);
             next if ($tagslib->{$tag}->{$subfieldtag}->{'tab'} ne "10");
 
-            my $subfield_data = generate_subfield_form($tag, $subfieldtag, $value, $tagslib, $subfieldlib, $branches, $today_iso, $biblionumber, $temp, \@loop_data, $i);        
+            my $subfield_data = generate_subfield_form($tag, $subfieldtag, $value, $tagslib, $subfieldlib, $branches, $today_iso, $biblionumber, $temp, \@loop_data, $i, $itemrecord);
 
             push @fields, "$tag$subfieldtag";
             push (@loop_data, $subfield_data);
@@ -802,7 +814,7 @@ foreach my $tag ( keys %{$tagslib}){
         my @values = (undef);
         @values = $itemrecord->field($tag)->subfield($subtag) if ($itemrecord && defined($itemrecord->field($tag)) && defined($itemrecord->field($tag)->subfield($subtag)));
         for my $value (@values){
-            my $subfield_data = generate_subfield_form($tag, $subtag, $value, $tagslib, $tagslib->{$tag}->{$subtag}, $branches, $today_iso, $biblionumber, $temp, \@loop_data, $i); 
+            my $subfield_data = generate_subfield_form($tag, $subtag, $value, $tagslib, $tagslib->{$tag}->{$subtag}, $branches, $today_iso, $biblionumber, $temp, \@loop_data, $i, $itemrecord);
             push (@loop_data, $subfield_data);
             $i++;
         } 

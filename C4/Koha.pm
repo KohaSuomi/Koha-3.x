@@ -1065,7 +1065,7 @@ sub GetAuthValCodeFromField {
 
 =head2 GetAuthorisedValues
 
-  $authvalues = GetAuthorisedValues([$category], [$selected]);
+  $authvalues = GetAuthorisedValues([$category], [$selected], [$opac], [$branch_limit]);
 
 This function returns all authorised values from the'authorised_value' table in a reference to array of hashrefs.
 
@@ -1073,11 +1073,16 @@ C<$category> returns authorised values for just one category (optional).
 
 C<$opac> If set to a true value, displays OPAC descriptions rather than normal ones when they exist.
 
+C<$branch_limit> branchcode, returns authorised values for this branchcode and for authorised values for the default branch (optional).
+
 =cut
 
 sub GetAuthorisedValues {
-    my ( $category, $selected, $opac ) = @_;
-    my $branch_limit = C4::Context->userenv ? C4::Context->userenv->{"branch"} : "";
+    my ( $category, $selected, $opac, $branch_limit ) = @_;
+    if (! $branch_limit) {
+        $branch_limit = C4::Context->userenv ? C4::Context->userenv->{"branch"} : "";
+    }
+
     my @results;
     my $dbh      = C4::Context->dbh;
     my $query = qq{
