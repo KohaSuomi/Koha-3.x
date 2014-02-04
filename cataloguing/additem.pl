@@ -822,6 +822,10 @@ foreach my $tag ( keys %{$tagslib}){
 }
 @loop_data = sort {$a->{subfield} cmp $b->{subfield} } @loop_data;
 
+#These are needed to target the right <select> element to receive shelving location AJAX-updates when the homebranch is changed.
+my ($shelvingLocationMarcTag, $shelvingLocationMarcSubfield) = C4::Biblio::GetMarcFromKohaField( "items.location", $frameworkcode );
+my ($homebranchMarcTag, $homebranchMarcSubfield) = C4::Biblio::GetMarcFromKohaField( "items.homebranch", $frameworkcode );
+
 # what's the next op ? it's what we are not in : an add if we're editing, otherwise, and edit.
 $template->param( title => $record->title() ) if ($record ne "-1");
 $template->param(
@@ -839,6 +843,10 @@ $template->param(
     opisadd => ($nextop eq "saveitem") ? 0 : 1,
     popup => $input->param('popup') ? 1: 0,
     C4::Search::enabled_staff_search_views,
+	shelvingLocationMarcTag => $shelvingLocationMarcTag,
+	shelvingLocationMarcSubfield => $shelvingLocationMarcSubfield,
+	homebranchMarcTag => $homebranchMarcTag,
+	homebranchMarcSubfield => $homebranchMarcSubfield,
 );
 $template->{'VARS'}->{'searchid'} = $searchid;
 

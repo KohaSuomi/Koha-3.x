@@ -14,7 +14,36 @@
     var browser = KOHA.browser('[% searchid %]', parseInt('[% biblionumber %]', 10));
     browser.show();
 
+//Fetch the Shelving locations using AJAX
+//Build the replacement HTML for the shelving location options
+//Then replace the existing HTML with this.
+function reloadShelvingLocations(homebranch) {
+
+    $.ajax({
+        url: "/cgi-bin/koha/svc/getAuthorisedValues.pl",
+        type: "POST",
+        dataType: 'json',
+        data: { 'category' : 'LOC', 'branch_limit' : homebranch },
+        success: function(data, textStatus, jqXHR) {
+
+            var html_replacement = '<option value="" selected="selected"></option>\n';
+            for (var i in data) {
+                html_replacement += '<option value="'+data[i].authorised_value+'">'+data[i].lib+'</option>\n';
+            }
+            $("select[id*='tag_[% shelvingLocationMarcTag %]_subfield_[% shelvingLocationMarcSubfield %]']").html(html_replacement);
+        }
+    });
+}
+
+
 $(document).ready(function(){
+
+    //Reload shelving location with AJAX if the "Permanent location" (homebranch) changes.
+    $("select[id*='tag_[% homebranchMarcTag %]_subfield_[% homebranchMarcSubfield %]']").change(function() {
+        reloadShelvingLocations(this.value);
+    });
+
+
     [% IF (popup) %]
         [% IF (opisadd) %]
             window.close();
