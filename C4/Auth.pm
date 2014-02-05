@@ -1396,6 +1396,9 @@ sub check_api_auth {
 Given a CGISESSID cookie set during a previous login to Koha, determine
 if the user has the privileges specified by C<$userflags>.
 
+C<$userflags> is a hash of module => subpermission, eg
+{ tools => 'upload_local_cover_images', catalogue => '*' }
+
 C<check_cookie_auth> is meant for authenticating special services
 such as tools/upload-file.pl that are invoked by other pages that
 have been authenticated in the usual way.
