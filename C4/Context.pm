@@ -798,9 +798,22 @@ sub _new_dbh
     my $db_port   = $context->config("port") || '';
     my $db_user   = $context->config("user");
     my $db_passwd = $context->config("pass");
-    # MJR added or die here, as we can't work without dbh
-    my $dbh = DBI->connect("DBI:$db_driver:dbname=$db_name;host=$db_host;port=$db_port",
-    $db_user, $db_passwd, {'RaiseError' => $ENV{DEBUG}?1:0 }) or die $DBI::errstr;
+    my $db_mysql_socket   = $context->config("mysql_socket") || '';
+
+    my $dbh;
+    #if a unix socket is given use that instead of TCP (as it is way faster!) ONLY Mysql-derivatives
+    # Instead of dying, just warn about the error because we can fall back to a TCP-connection.
+    if ($db_mysql_socket && ($db_driver =~ /mysql/i || $db_driver =~ /mariadb/i)) {
+            # MJR added or die here, as we can't work without dbh
+            $dbh = DBI->connect("DBI:$db_driver:dbname=$db_name;mysql_socket=$db_mysql_socket",
+                $db_user, $db_passwd, {'RaiseError' => $ENV{DEBUG}?1:0 }) or warn $DBI::errstr;
+    }
+    #Try making a TCP connection
+    if ((! defined ($dbh))) {
+        # MJR added or die here, as we can't work without dbh
+        $dbh = DBI->connect("DBI:$db_driver:dbname=$db_name;host=$db_host;port=$db_port",
+            $db_user, $db_passwd, {'RaiseError' => $ENV{DEBUG}?1:0 }) or die $DBI::errstr;
+    }
 
     # Check for the existence of a systempreference table; if we don't have this, we don't
     # have a valid database and should not set RaiseError in order to allow the installer

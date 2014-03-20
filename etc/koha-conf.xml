@@ -85,6 +85,7 @@ __PAZPAR2_TOGGLE_XML_POST__
  <database>__DB_NAME__</database>
  <hostname>__DB_HOST__</hostname>
  <port>__DB_PORT__</port>
+<!-- <mysql_socket>__put your non-default mysql/mariadb socket path here. eg /tmp/mysqld.sock__</mysql_socket> -->
  <user>__DB_USER__</user>
  <pass>__DB_PASS__</pass>
  <biblioserver>biblios</biblioserver>
