@@ -188,7 +188,6 @@ sub AddReserve {
             "Reserve Charge - $title", $fee );
     }
 
-    #if ($const eq 'a'){
     my $query = qq/
         INSERT INTO reserves
             (borrowernumber,biblionumber,reservedate,branchcode,constrainttype,
@@ -233,19 +232,6 @@ sub AddReserve {
         }
     }
 
-    #}
-    ($const eq "o" || $const eq "e") or return;   # FIXME: why not have a useful return value?
-    $query = qq/
-        INSERT INTO reserveconstraints
-            (borrowernumber,biblionumber,reservedate,biblioitemnumber)
-        VALUES
-            (?,?,?,?)
-    /;
-    $sth = $dbh->prepare($query);    # keep prepare outside the loop!
-    foreach (@$bibitems) {
-        $sth->execute($borrowernumber, $biblionumber, $resdate, $_);
-    }
-        
     return;     # FIXME: why not have a useful return value?
 }
 
@@ -326,48 +312,8 @@ sub GetReservesFromBiblionumber {
     $query .= "ORDER BY priority";
     my $sth = $dbh->prepare($query);
     $sth->execute( @params );
-    my @results;
-    my $i = 0;
-    while ( my $data = $sth->fetchrow_hashref ) {
-
-        # FIXME - What is this doing? How do constraints work?
-        if ($data->{constrainttype} eq 'o') {
-            $query = '
-                SELECT biblioitemnumber
-                FROM  reserveconstraints
-                WHERE  biblionumber   = ?
-                AND   borrowernumber = ?
-                AND   reservedate    = ?
-            ';
-            my $csth = $dbh->prepare($query);
-            $csth->execute($data->{biblionumber}, $data->{borrowernumber}, $data->{reservedate});
-            my @bibitemno;
-            while ( my $bibitemnos = $csth->fetchrow_array ) {
-                push( @bibitemno, $bibitemnos );    # FIXME: inefficient: use fetchall_arrayref
-            }
-            my $count = scalar @bibitemno;
-    
-            # if we have two or more different specific itemtypes
-            # reserved by same person on same day
-            my $bdata;
-            if ( $count > 1 ) {
-                $bdata = GetBiblioItemData( $bibitemno[$i] );   # FIXME: This doesn't make sense.
-                $i++; #  $i can increase each pass, but the next @bibitemno might be smaller?
-            }
-            else {
-                # Look up the book we just found.
-                $bdata = GetBiblioItemData( $bibitemno[0] );
-            }
-            # Add the results of this latest search to the current
-            # results.
-            # FIXME - An 'each' would probably be more efficient.
-            foreach my $key ( keys %$bdata ) {
-                $data->{$key} = $bdata->{$key};
-            }
-        }
-        push @results, $data;
-    }
-    return \@results;
+    my $results = $sth->fetchall_arrayref({});
+    return $results;
 }
 
 =head2 GetReservesFromItemnumber
@@ -1186,45 +1132,39 @@ sub ModReserveFill {
     my $borrowernumber    = $res->{'borrowernumber'};
     my $resdate = $res->{'reservedate'};
 
+    $reserve_id = GetReserveId({biblionumber   => $biblionumber,
+			        borrowernumber => $borrowernumber,
+			        reservedate    => $resdate}) if (!$reserve_id);
+    return if (!$reserve_id);
+
     # get the priority on this record....
     my $priority;
     my $query = "SELECT priority
                  FROM   reserves
-                 WHERE  biblionumber   = ?
-                  AND   borrowernumber = ?
-                  AND   reservedate    = ?";
+                 WHERE  reserve_id = ?";
     my $sth = $dbh->prepare($query);
-    $sth->execute( $biblionumber, $borrowernumber, $resdate );
+    $sth->execute( $reserve_id );
     ($priority) = $sth->fetchrow_array;
 
     # update the database...
     $query = "UPDATE reserves
                   SET    found            = 'F',
                          priority         = 0
-                 WHERE  biblionumber     = ?
-                    AND reservedate      = ?
-                    AND borrowernumber   = ?
-                ";
+                 WHERE  reserve_id        = ?";
     $sth = $dbh->prepare($query);
-    $sth->execute( $biblionumber, $resdate, $borrowernumber );
+    $sth->execute( $reserve_id );
 
     # move to old_reserves
     $query = "INSERT INTO old_reserves
                  SELECT * FROM reserves
-                 WHERE  biblionumber     = ?
-                    AND reservedate      = ?
-                    AND borrowernumber   = ?
-                ";
+                 WHERE  reserve_id  = ?";
     $sth = $dbh->prepare($query);
-    $sth->execute( $biblionumber, $resdate, $borrowernumber );
+    $sth->execute( $reserve_id );
     $query = "DELETE FROM reserves
-                 WHERE  biblionumber     = ?
-                    AND reservedate      = ?
-                    AND borrowernumber   = ?
-                ";
+                 WHERE  reserve_id = ?";
     $sth = $dbh->prepare($query);
-    $sth->execute( $biblionumber, $resdate, $borrowernumber );
-    
+    $sth->execute( $reserve_id );
+
     # now fix the priority on the others (if the priority wasn't
     # already sorted!)....
     unless ( $priority == 0 ) {
@@ -1284,15 +1224,14 @@ sub ModReserveAffect {
     $sth->execute($itemnumber);
     my ($biblionumber) = $sth->fetchrow;
 
-    # get request - need to find out if item is already
-    # waiting in order to not send duplicate hold filled notifications
-    my $reserve_id = GetReserveId({
-        borrowernumber => $borrowernumber,
-        biblionumber   => $biblionumber,
-    });
+    my $reserve_id = GetReserveNextEligible({
+	    borrowernumber => $borrowernumber,
+	    biblionumber   => $biblionumber,
+	    itemnumber     => $itemnumber
+					    });
+
     return unless defined $reserve_id;
     my $request = GetReserveInfo($reserve_id);
-    my $already_on_shelf = ($request && $request->{found} eq 'W') ? 1 : 0;
 
     # If we affect a reserve that has to be transfered, don't set to Waiting
     my $query;
@@ -1302,8 +1241,7 @@ sub ModReserveAffect {
         SET    priority = 0,
                itemnumber = ?,
                found = 'T'
-        WHERE borrowernumber = ?
-          AND biblionumber = ?
+        WHERE reserve_id = ?
     ";
     }
     else {
@@ -1314,14 +1252,17 @@ sub ModReserveAffect {
                     found = 'W',
                     waitingdate = NOW(),
                     itemnumber = ?
-            WHERE borrowernumber = ?
-              AND biblionumber = ?
+            WHERE reserve_id = ?
         ";
     }
     $sth = $dbh->prepare($query);
-    $sth->execute( $itemnumber, $borrowernumber,$biblionumber);
-    _koha_notify_reserve( $itemnumber, $borrowernumber, $biblionumber ) if ( !$transferToDo && !$already_on_shelf );
-    _FixPriority( { biblionumber => $biblionumber } );
+    $sth->execute( $itemnumber, $reserve_id );
+    _koha_notify_reserve( $itemnumber, $borrowernumber, $biblionumber, $reserve_id ) if ( !$transferToDo );
+
+    if ( $request && $request->{priority} != 0 ) {
+        _FixPriority({ reserve_id => $reserve_id });
+    }
+
     if ( C4::Context->preference("ReturnToShelvingCart") ) {
       CartToShelf( $itemnumber );
     }
@@ -1540,7 +1481,7 @@ sub AlterPriority {
 
 =head2 ToggleLowestPriority
 
-  ToggleLowestPriority( $borrowernumber, $biblionumber );
+  ToggleLowestPriority( $reserve_id );
 
 This function sets the lowestPriority field to true if is false, and false if it is true.
 
@@ -1804,6 +1745,7 @@ sub _Findgroupreserve {
     my $item_level_target_query = qq/
         SELECT reserves.biblionumber        AS biblionumber,
                reserves.borrowernumber      AS borrowernumber,
+               reserves.reserve_id          AS reserve_id,
                reserves.reservedate         AS reservedate,
                reserves.branchcode          AS branchcode,
                reserves.cancellationdate    AS cancellationdate,
@@ -1836,6 +1778,7 @@ sub _Findgroupreserve {
     my $title_level_target_query = qq/
         SELECT reserves.biblionumber        AS biblionumber,
                reserves.borrowernumber      AS borrowernumber,
+               reserves.reserve_id          AS reserve_id,
                reserves.reservedate         AS reservedate,
                reserves.branchcode          AS branchcode,
                reserves.cancellationdate    AS cancellationdate,
@@ -1867,6 +1810,7 @@ sub _Findgroupreserve {
     my $query = qq/
         SELECT reserves.biblionumber               AS biblionumber,
                reserves.borrowernumber             AS borrowernumber,
+               reserves.reserve_id                 AS reserve_id,
                reserves.reservedate                AS reservedate,
                reserves.waitingdate                AS waitingdate,
                reserves.branchcode                 AS branchcode,
@@ -1875,22 +1819,18 @@ sub _Findgroupreserve {
                reserves.reservenotes               AS reservenotes,
                reserves.priority                   AS priority,
                reserves.timestamp                  AS timestamp,
-               reserveconstraints.biblioitemnumber AS biblioitemnumber,
-               reserves.itemnumber                 AS itemnumber,
-               reserves.reserve_id                 AS reserve_id
+               biblioitems.biblioitemnumber        AS biblioitemnumber,
+               reserves.itemnumber                 AS itemnumber
         FROM reserves
-          LEFT JOIN reserveconstraints ON reserves.biblionumber = reserveconstraints.biblionumber
+        JOIN biblioitems USING (biblionumber)
         WHERE reserves.biblionumber = ?
-          AND ( ( reserveconstraints.biblioitemnumber = ?
-          AND reserves.borrowernumber = reserveconstraints.borrowernumber
-          AND reserves.reservedate    = reserveconstraints.reservedate )
-          OR  reserves.constrainttype='a' )
+          AND (reserves.constrainttype='a')
           AND (reserves.itemnumber IS NULL OR reserves.itemnumber = ?)
           AND reserves.reservedate <= DATE_ADD(NOW(),INTERVAL ? DAY)
           AND suspend = 0
     /;
     $sth = $dbh->prepare($query);
-    $sth->execute( $biblio, $bibitem, $itemnumber, $lookahead||0);
+    $sth->execute( $biblio, $itemnumber, $lookahead||0);
     @results = ();
     while ( my $data = $sth->fetchrow_hashref ) {
         push( @results, $data );
@@ -1900,7 +1840,7 @@ sub _Findgroupreserve {
 
 =head2 _koha_notify_reserve
 
-  _koha_notify_reserve( $itemnumber, $borrowernumber, $biblionumber );
+  _koha_notify_reserve( $itemnumber, $borrowernumber, $biblionumber, $reserve_id );
 
 Sends a notification to the patron that their hold has been filled (through
 ModReserveAffect, _not_ ModReserveFill)
@@ -1908,7 +1848,7 @@ ModReserveAffect, _not_ ModReserveFill)
 =cut
 
 sub _koha_notify_reserve {
-    my ($itemnumber, $borrowernumber, $biblionumber) = @_;
+    my ($itemnumber, $borrowernumber, $biblionumber, $reserve_id) = @_;
 
     my $dbh = C4::Context->dbh;
     my $borrower = C4::Members::GetMember(borrowernumber => $borrowernumber);
@@ -1926,8 +1866,9 @@ sub _koha_notify_reserve {
         FROM   reserves
         WHERE  borrowernumber = ?
             AND biblionumber = ?
+            AND reserve_id = ?
     ");
-    $sth->execute( $borrowernumber, $biblionumber );
+    $sth->execute( $borrowernumber, $biblionumber, $reserve_id );
     my $reserve = $sth->fetchrow_hashref;
     my $branch_details = GetBranchDetail( $reserve->{'branchcode'} );
 
@@ -2013,18 +1954,16 @@ sub _ShiftPriorityByDateAndPriority {
     # Shift the priority up by one; works in conjunction with the next SQL statement
     $query = "UPDATE reserves
               SET priority = priority+1
-              WHERE biblionumber = ?
-              AND borrowernumber = ?
-              AND reservedate = ?
+              WHERE reserve_id = ?
               AND found IS NULL";
     my $sth_update = $dbh->prepare( $query );
 
     # Select all reserves for the biblio with priority greater than $new_priority, and order greatest to least
-    $query = "SELECT borrowernumber, reservedate FROM reserves WHERE priority >= ? AND biblionumber = ? ORDER BY priority DESC";
+    $query = "SELECT reserve_id FROM reserves WHERE priority >= ? AND biblionumber = ? ORDER BY priority DESC";
     $sth = $dbh->prepare( $query );
     $sth->execute( $new_priority, $biblio );
     while ( my $row = $sth->fetchrow_hashref ) {
-	$sth_update->execute( $biblio, $row->{borrowernumber}, $row->{reservedate} );
+	$sth_update->execute( $row->{reserve_id} );
     }
 
     return $new_priority;  # so the caller knows what priority they wind up receiving
@@ -2074,11 +2013,7 @@ sub MoveReserve {
             RevertWaitingStatus({ itemnumber => $itemnumber });
         }
         elsif ( $cancelreserve eq 'cancel' || $cancelreserve ) { # cancel reserves on this item
-            CancelReserve({
-                biblionumber   => $res->{'biblionumber'},
-                itemnumber     => $res->{'itemnumber'},
-                borrowernumber => $res->{'borrowernumber'}
-            });
+            CancelReserve({ reserve_id => $res->{'reserve_id'} });
         }
     }
 }
@@ -2154,6 +2089,7 @@ sub RevertWaitingStatus {
         SELECT * FROM reserves
         WHERE itemnumber = ?
         AND found IS NOT NULL
+        ORDER BY priority
     ";
     my $sth = $dbh->prepare( $query );
     $sth->execute( $itemnumber );
@@ -2190,7 +2126,7 @@ sub RevertWaitingStatus {
 
 =head2 GetReserveId
 
-  $reserve_id = GetReserveId({ biblionumber => $biblionumber, borrowernumber => $borrowernumber [, itemnumber => $itemnumber ] });
+  $reserve_id = GetReserveId({ biblionumber => $biblionumber, borrowernumber => $borrowernumber [, itemnumber => $itemnumber ] } );
 
   Returnes the first reserve id that matches the given criteria
 
@@ -2216,11 +2152,51 @@ sub GetReserveId {
 
     $sql .= join( " AND ", @limits );
 
+    $sql .= " ORDER BY priority";
+
     my $sth = $dbh->prepare( $sql );
     $sth->execute( @params );
     my $row = $sth->fetchrow_hashref();
 
     return $row->{'reserve_id'};
+}
+
+=head2 GetReserveNextEligible
+
+ GetReserveNextEligible({ biblionumber => $bibnum, borrowernumber => $bornum
+                       [, itemnumber => $itemnum ]
+                       })
+
+ Returns the next eligible reserve id, or undef.
+
+ If reserve is for a certain item, it is eligible only if it matches the itemnumber.
+ If a matching reserve is already waiting, return undef.
+
+=cut
+
+sub GetReserveNextEligible {
+    my ( $params ) = @_;
+
+    return unless ( $params->{'biblionumber'} && $params->{'borrowernumber'} );
+
+    my $dbh = C4::Context->dbh();
+
+    my $sql = "SELECT reserve_id, found, itemnumber
+                 FROM reserves
+                WHERE biblionumber=?
+                  AND borrowernumber=?
+             ORDER BY priority";
+
+    my $sth = $dbh->prepare( $sql );
+    $sth->execute( $params->{'biblionumber'}, $params->{'borrowernumber'} );
+
+    while ( my $row = $sth->fetchrow_hashref() ) {
+	next if ($row->{'itemnumber'} && ($row->{'itemnumber'} ne $params->{'itemnumber'}));
+	return if ($row->{'found'} =~ /[WF]/); # Waiting or Found(?) are never eligible
+	return $row->{'reserve_id'};
+    }
+
+    return;
 }
 
 =head2 ReserveSlip

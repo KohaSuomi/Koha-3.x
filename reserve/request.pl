@@ -213,7 +213,7 @@ foreach my $biblionumber (@biblionumbers) {
     }
 
     if ( $holds_count ) {
-            $alreadyreserved = 1;
+            #$alreadyreserved = 1;
             $biblioloopiter{warn} = 1;
             $biblioloopiter{alreadyres} = 1;
     }
