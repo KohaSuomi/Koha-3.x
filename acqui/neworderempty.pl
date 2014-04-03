@@ -321,6 +321,11 @@ if ( defined $subscriptionid ) {
 # Find the items.barcode subfield for barcode validations
 my (undef, $barcode_subfield) = GetMarcFromKohaField('items.barcode', '');
 
+#Find the Marc Subfields for changing the shelving location based on the item's homebranch.
+#These are needed to target the right <select> element to receive shelving location AJAX-updates when the homebranch is changed.
+my ($shelvingLocationMarcTag, $shelvingLocationMarcSubfield) = C4::Biblio::GetMarcFromKohaField( "items.location", $params->{'frameworkcode'} );
+my ($homebranchMarcTag, $homebranchMarcSubfield) = C4::Biblio::GetMarcFromKohaField( "items.homebranch", $params->{'frameworkcode'} );
+
 # fill template
 $template->param(
     close        => $close,
@@ -397,7 +402,11 @@ $template->param(
     import_batch_id  => $import_batch_id,
     subscriptionid   => $subscriptionid,
     acqcreate        => C4::Context->preference("AcqCreateItem") eq "ordering" ? 1 : "",
-    (uc(C4::Context->preference("marcflavour"))) => 1
+    (uc(C4::Context->preference("marcflavour"))) => 1,
+	shelvingLocationMarcTag => $shelvingLocationMarcTag,
+	shelvingLocationMarcSubfield => $shelvingLocationMarcSubfield,
+	homebranchMarcTag => $homebranchMarcTag,
+	homebranchMarcSubfield => $homebranchMarcSubfield,
 );
 
 output_html_with_http_headers $input, $cookie, $template->output;

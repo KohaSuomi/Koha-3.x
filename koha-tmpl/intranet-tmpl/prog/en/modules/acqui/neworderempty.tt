@@ -8,9 +8,15 @@
 <script type="text/javascript" src="[% themelang %]/js/additem.js"></script>
 <script type="text/javascript" src="[% themelang %]/js/cataloging.js"></script>
 <script type="text/javascript" src="[% themelang %]/js/prevent_submit.js"></script>
+<script type="text/javascript" src="[% themelang %]/js/koha-to-marc-mapping-api.js"></script>
 <script type="text/javascript">
 //<![CDATA[
 actTotal = "";
+//Set javascript globals to find the shelving location and homebranch elements from the HTML mess.
+var shelvingLocationMarcTag = "[% shelvingLocationMarcTag %]";
+var shelvingLocationMarcSubfield = "[% shelvingLocationMarcSubfield %]";
+var homebranchMarcTag = "[% homebranchMarcTag %]";
+var homebranchMarcSubfield = "[% homebranchMarcSubfield %]";
 
 function Check(ff) {
     [% IF (AcqCreateItemOrdering) %]
@@ -159,7 +165,7 @@ $(document).ready(function()
             getAuthValueDropbox( 'sort2', sort2_authcat, destination_sort2, sort2 );
         });
         $("#budget_id").change();
-    });
+});
 //]]>
 </script>
 </head>

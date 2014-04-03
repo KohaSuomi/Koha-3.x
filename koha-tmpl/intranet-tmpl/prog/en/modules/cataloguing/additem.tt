@@ -9,38 +9,20 @@
 <script type="text/javascript" src="[% interface %]/lib/shims/json2.min.js"></script>
 <![endif]-->
 <script type="text/javascript" src="[% interface %]/js/browser.js"></script>
+<script type="text/javascript" src="[% themelang %]/js/koha-to-marc-mapping-api.js"></script>
 <script type="text/javascript">
 //<![CDATA[
     var browser = KOHA.browser('[% searchid %]', parseInt('[% biblionumber %]', 10));
     browser.show();
 
-//Fetch the Shelving locations using AJAX
-//Build the replacement HTML for the shelving location options
-//Then replace the existing HTML with this.
-function reloadShelvingLocations(homebranch) {
-
-    $.ajax({
-        url: "/cgi-bin/koha/svc/getAuthorisedValues.pl",
-        type: "POST",
-        dataType: 'json',
-        data: { 'category' : 'LOC', 'branch_limit' : homebranch },
-        success: function(data, textStatus, jqXHR) {
-
-            var html_replacement = '<option value="" selected="selected"></option>\n';
-            for (var i in data) {
-                html_replacement += '<option value="'+data[i].authorised_value+'">'+data[i].lib+'</option>\n';
-            }
-            $("select[id*='tag_[% shelvingLocationMarcTag %]_subfield_[% shelvingLocationMarcSubfield %]']").html(html_replacement);
-        }
-    });
-}
-
 
 $(document).ready(function(){
-
     //Reload shelving location with AJAX if the "Permanent location" (homebranch) changes.
-    $("select[id*='tag_[% homebranchMarcTag %]_subfield_[% homebranchMarcSubfield %]']").change(function() {
-        reloadShelvingLocations(this.value);
+    //Function is bound from koha-to-marc-mapping-api.js
+    $("select[id^='tag_[% homebranchMarcTag %]_subfield_[% homebranchMarcSubfield %]']").change(function() {
+        var shelvingLocationSelector = $(this).closest("ol") //Get the shelving location <select>-element of this specific Item. On this same page there can be many items.
+                                           .find("select[id^='tag_[% shelvingLocationMarcTag %]_subfield_[% shelvingLocationMarcSubfield %]']");
+        reloadShelvingLocations(this.value, [% frameworkcode || 0 %], shelvingLocationSelector);
     });
 
 
@@ -296,4 +278,5 @@ $(document).ready(function() {
 
 </div>
 </div>
+
 [% INCLUDE 'intranet-bottom.inc' %]

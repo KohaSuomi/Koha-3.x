@@ -161,6 +161,16 @@ function cloneItemBlock(index, unique_item_fields) {
             });
 
             $("#outeritemblock").append(clone);
+
+            //Add a onChange handler to "Permanent Location"-<select> to update shelving locations based on the items homebranch.
+            var homebranchSelector = $(clone).find("div[id=subfield"+homebranchMarcSubfield+"]").find("select[name=field_value]");
+            var shelvingLocationSelector = $(clone).find("div[id=subfield"+shelvingLocationMarcSubfield+"]").find("select[name=field_value]");
+
+            //Reload shelving location with AJAX if the "Permanent location" (homebranch) changes.
+            //Function is bound from koha-to-marc-mapping-api.js
+            $(homebranchSelector).change(function() {
+                reloadShelvingLocations(this.value, '', shelvingLocationSelector);
+            });
         }
     });
 }
