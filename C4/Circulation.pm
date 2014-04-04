@@ -1251,7 +1251,7 @@ sub AddIssue {
           );
         unless ($datedue) {
             my $itype = ( C4::Context->preference('item-level_itypes') ) ? $biblio->{'itype'} : $biblio->{'itemtype'};
-            $datedue = CalcDateDue( $issuedate, $itype, $branch, $borrower );
+            $datedue = CalcDateDue( $item, $issuedate, $itype, $branch, $borrower ); #$item is a sneak variable which tries to sneak in but is not required.
 
         }
         $datedue->truncate( to => 'minute');
@@ -2677,7 +2677,7 @@ sub AddRenewal {
         $datedue = (C4::Context->preference('RenewalPeriodBase') eq 'date_due') ?
                                         dt_from_string( $issuedata->{date_due} ) :
                                         DateTime->now( time_zone => C4::Context->tz());
-        $datedue =  CalcDateDue($datedue, $itemtype, $issuedata->{'branchcode'}, $borrower, 'is a renewal');
+        $datedue =  CalcDateDue($item, $datedue, $itemtype, $issuedata->{'branchcode'}, $borrower, 'is a renewal');
     }
 
     # Update the issues record to have the new due date, and a new count
@@ -3199,6 +3199,7 @@ C<$isrenewal> = Boolean: is true if we want to calculate the date due for a rene
 =cut
 
 sub CalcDateDue {
+	my $item = (exists $_[0]->{homebranch}) ? shift @_ : undef; #A hack to sneak the item in if it is given. Hopefully more maintainable.
     my ( $startdate, $itemtype, $branch, $borrower, $isrenewal ) = @_;
 
     $isrenewal ||= 0;
@@ -3210,6 +3211,16 @@ sub CalcDateDue {
     my $length_key = ( $isrenewal and defined $loanlength->{renewalperiod} )
             ? qq{renewalperiod}
             : qq{issuelength};
+
+    ##OPLIB hack crack fat jack!  Set the shortloan (lyhytlaina) and fastloan (pikalaina) durations.
+    if ($item && $item->{ccode} eq 'LYLA') { #LYLA ccode is removed via a cronjob.
+        if ( $loanlength->{lengthunit} eq 'hours' ) {
+            $loanlength->{$length_key} = 336;
+        } else {
+            $loanlength->{$length_key} = 14;
+        }
+    }
+
 
     my $datedue;
     if ( $startdate ) {
