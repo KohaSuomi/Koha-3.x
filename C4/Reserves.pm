@@ -2220,7 +2220,7 @@ sub ReserveSlip {
 
     return  C4::Letters::GetPreparedLetter (
         module => 'circulation',
-        letter_code => 'RESERVESLIP',
+        letter_code => $transfer ? 'TRANSFERSLIP' : 'RESERVESLIP',
         branchcode => $branch,
         tables => {
             'reserves'    => $reserve,
