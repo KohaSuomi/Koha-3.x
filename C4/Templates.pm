@@ -112,6 +112,7 @@ sub output {
     $vars->{opacsmallimage} = C4::Context->preference('opacsmallimage');
     $vars->{opaclayoutstylesheet} =
         C4::Context->preference('opaclayoutstylesheet');
+    $vars->{dateformatstyle} = C4::Dates->new()->formatstr();
 
     # add variables set via param to $vars for processing
     # and clean any utf8 mess

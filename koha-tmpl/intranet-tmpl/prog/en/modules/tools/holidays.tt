@@ -255,9 +255,7 @@ td.repeatableyearly a.ui-state-default {  background:  #FFCC66 none; color :  Bl
             <li>
                 <strong>From Date:</strong>
                 <span id="showDaynameOutput"></span>, 
-                
-                                [% IF ( dateformat == "us" ) %]<span id="showMonthOutput"></span>/<span id="showDayOutput"></span>/<span id="showYearOutput"></span>[% ELSIF ( dateformat == "metric" ) %]<span id="showDayOutput"></span>/<span id="showMonthOutput"></span>/<span id="showYearOutput"></span>[% ELSE %]<span id="showYearOutput"></span>/<span id="showMonthOutput"></span>/<span id="showDayOutput"></span>[% END %]
-
+                [% dateformatstyle | replace('yyyy', '<span id="showYearOutput"></span>') | replace('mm', '<span id="showMonthOutput"></span>') | replace('dd', '<span id="showDayOutput"></span>') %]
                 <input type="hidden" id="showDayname" name="showDayname" />
                 <input type="hidden" id="showWeekday" name="showWeekday" />
                 <input type="hidden" id="showDay" name="showDay" />
@@ -326,9 +324,7 @@ td.repeatableyearly a.ui-state-default {  background:  #FFCC66 none; color :  Bl
             <li>
                 <strong>From date:</strong>
                 <span id="newDaynameOutput"></span>, 
-
-                         [% IF ( dateformat == "us" ) %]<span id="newMonthOutput"></span>/<span id="newDayOutput"></span>/<span id="newYearOutput"></span>[% ELSIF ( dateformat == "metric" ) %]<span id="newDayOutput"></span>/<span id="newMonthOutput"></span>/<span id="newYearOutput"></span>[% ELSE %]<span id="newYearOutput"></span>/<span id="newMonthOutput"></span>/<span id="newDayOutput"></span>[% END %]
-
+                [% dateformatstyle | replace('yyyy', '<span id="newYearOutput"></span>') | replace('mm', '<span id="newMonthOutput"></span>') | replace('dd', '<span id="newDayOutput"></span>') %]
                 <input type="hidden" id="newDayname" name="showDayname" />
                 <input type="hidden" id="newWeekday" name="newWeekday" />
                 <input type="hidden" id="newDay" name="newDay" />

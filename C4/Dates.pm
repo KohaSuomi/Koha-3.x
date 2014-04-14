@@ -40,20 +40,21 @@ use vars qw($prefformat);
 
 sub _prefformat {
     unless ( defined $prefformat ) {
-        $prefformat = C4::Context->preference('dateformat');
+        $prefformat = C4::Context->preference('dateformat') || 'us';
     }
     return $prefformat;
 }
 
 sub reset_prefformat {  # subroutine to clear the prefformat, called when we change it
     if (defined $prefformat){
-	$prefformat = C4::Context->preference('dateformat');
+	$prefformat = C4::Context->preference('dateformat') || 'us';
     }
 }
 
 our %format_map = (
     iso    => 'yyyy-mm-dd',           # plus " HH:MM:SS"
     metric => 'dd/mm/yyyy',           # plus " HH:MM:SS"
+    dmydot => 'dd.mm.yyyy',
     us     => 'mm/dd/yyyy',           # plus " HH:MM:SS"
     sql    => 'yyyymmdd    HHMMSS',
     rfc822 => 'a, dd b y HH:MM:SS z ',
@@ -61,6 +62,7 @@ our %format_map = (
 our %posix_map = (
     iso    => '%Y-%m-%d',             # or %F, "Full Date"
     metric => '%d/%m/%Y',
+    dmydot => '%d.%m.%Y',
     us     => '%m/%d/%Y',
     sql    => '%Y%m%d    %H%M%S',
     rfc822 => '%a, %d %b %Y %H:%M:%S %z',
@@ -70,6 +72,7 @@ our %dmy_subs = (                     # strings to eval  (after using regular ex
                                       # make arrays for POSIX::strftime()
     iso    => '[(($6||0),($5||0),($4||0),$3, $2 - 1, $1 - 1900)]',
     metric => '[(($6||0),($5||0),($4||0),$1, $2 - 1, $3 - 1900)]',
+    dmydot => '[(($6||0),($5||0),($4||0),$1, $2 - 1, $3 - 1900)]',
     us     => '[(($6||0),($5||0),($4||0),$2, $1 - 1, $3 - 1900)]',
     sql    => '[(($6||0),($5||0),($4||0),$3, $2 - 1, $1 - 1900)]',
     rfc822 => '[($7, $6, $5, $2, $3, $4 - 1900, $8)]',
@@ -81,7 +84,7 @@ our @days = qw(Sun Mon Tue Wed Thu Fri Sat);
 
 sub regexp ($;$) {
     my $self   = shift;
-    my $delim  = qr/:?\:|\/|-/;                                                                  # "non memory" cluster: no backreference
+    my $delim  = qr/:?\:|\/|-|\./;                                                                  # "non memory" cluster: no backreference
     my $format = (@_) ? _recognize_format(shift) : ( $self->{'dateformat'} || _prefformat() );
 
     # Extra layer of checking $self->{'dateformat'}.
@@ -211,6 +214,12 @@ sub format {                 # get or set dateformat: iso, metric, us, etc.
     my $self = shift;
     (@_) or return $self->{'dateformat'};
     $self->{'dateformat'} = _recognize_format(shift);
+}
+
+# get format string, eg. "yyyy-mm-dd"
+sub formatstr {
+    my $self = shift;
+    return $format_map{$self->{'dateformat'}};
 }
 
 sub visual {

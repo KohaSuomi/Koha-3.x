@@ -8533,6 +8533,16 @@ if ( CheckVersion($DBversion) ) {
     SetVersion ($DBversion);
 }
 
+$DBversion = "3.15.00.XXX";
+if(CheckVersion($DBversion)) {
+    $dbh->do(q{
+        UPDATE systempreferences SET options = 'metric|us|iso|dmydot', explanation = 'Define global date format (us mm/dd/yyyy, metric dd/mm/yyy, ISO yyyy-mm-dd, DMY separated by dots dd.mm.yyyy)' WHERE variable = 'dateformat'
+    });
+    print "Upgrade to $DBversion done (Bug 12072 - New dateformat dd.mm.yyyy)\n";
+    SetVersion($DBversion);
+}
+
+
 =head1 FUNCTIONS
 
 =head2 TableExists($table)

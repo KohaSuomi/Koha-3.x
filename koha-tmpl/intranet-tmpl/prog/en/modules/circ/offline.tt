@@ -37,7 +37,7 @@ var NO_UPLOAD_PENDING_MESSAGE = _("You do not have any pending transactions in t
 
 var start;
 
-var dateformat = '[% IF ( dateformat_us ) %]mm/dd/yy[% ELSIF ( dateformat_metric ) %]dd/mm/yy[% ELSE %]yy-mm-dd[% END %]';
+var dateformat = '[% dateformatstyle | replace("yyyy", "yy") %]';
 
 function checkin(barcode, item, error) {
     var alerts = checkAlerts(barcode, item);

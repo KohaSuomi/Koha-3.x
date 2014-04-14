@@ -40,21 +40,12 @@ if ($description) {
     $description = '';
 }   
 
-# We format the date
+
+my $datecancelrange = C4::Dates->new($datecancelrange)->output('iso');
 my @dateend = split(/[\/-]/, $datecancelrange);
-if (C4::Context->preference("dateformat") eq "metric") {
-    $day1 = $dateend[0];
-    $month1 = $dateend[1];
-    $year1 = $dateend[2];
-}elsif (C4::Context->preference("dateformat") eq "us") {
-    $month1 = $dateend[0];
-    $day1 = $dateend[1];
-    $year1 = $dateend[2];
-} else {
-    $year1 = $dateend[0];
-    $month1 = $dateend[1];
-    $day1 = $dateend[2];
-}
+$year1 = $dateend[0];
+$month1 = $dateend[1];
+$day1 = $dateend[2];
 
 # We make an array with holiday's days
 my @holiday_list;

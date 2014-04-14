@@ -34,20 +34,12 @@ my $calendardate        = sprintf("%04d-%02d-%02d", $year, $month, $day);
 my $isodate             = C4::Dates->new($calendardate, 'iso');
 $calendardate           = $isodate->output('syspref');
 
+my $dateofrange = C4::Dates->new($dateofrange)->output('iso');
 my @dateend = split(/[\/-]/, $dateofrange);
-if (C4::Context->preference("dateformat") eq "metric") {
-    $day1 = $dateend[0];
-    $month1 = $dateend[1];
-    $year1 = $dateend[2];
-}elsif (C4::Context->preference("dateformat") eq "us") {
-    $month1 = $dateend[0];
-    $day1 = $dateend[1];
-    $year1 = $dateend[2];
-} else {
-    $year1 = $dateend[0];
-    $month1 = $dateend[1];
-    $day1 = $dateend[2];
-}
+$year1 = $dateend[0];
+$month1 = $dateend[1];
+$day1 = $dateend[2];
+
 $title || ($title = '');
 if ($description) {
 	$description =~ s/\r/\\r/g;

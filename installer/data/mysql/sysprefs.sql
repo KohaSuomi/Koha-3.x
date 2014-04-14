@@ -87,7 +87,7 @@ INSERT INTO systempreferences ( `variable`, `value`, `options`, `explanation`, `
 ('COinSinOPACResults','1','','If ON, use COinS in OPAC search results page.  NOTE: this can slow down search response time significantly','YesNo'),
 ('ConfirmFutureHolds','0','','Number of days for confirming future holds','Integer'),
 ('CurrencyFormat','US','US|FR','Determines the display format of currencies. eg: \'36000\' is displayed as \'360 000,00\'  in \'FR\' or \'360,000.00\'  in \'US\'.','Choice'),
-('dateformat','us','metric|us|iso','Define global date format (us mm/dd/yyyy, metric dd/mm/yyy, ISO yyyy-mm-dd)','Choice'),
+('dateformat','us','metric|us|iso|dmydot','Define global date format (us mm/dd/yyyy, metric dd/mm/yyy, ISO yyyy-mm-dd, dmydot dd.mm.yyyy)','Choice'),
 ('DebugLevel','2','0|1|2','Define the level of debugging information sent to the browser when errors are encountered (set to 0 in production). 0=none, 1=some, 2=most','Choice'),
 ('decreaseLoanHighHolds',NULL,'','Decreases the loan period for items with number of holds above the threshold specified in decreaseLoanHighHoldsValue','YesNo'),
 ('decreaseLoanHighHoldsDuration',NULL,'','Specifies a number of days that a loan is reduced to when used in conjunction with decreaseLoanHighHolds','Integer'),

@@ -68,6 +68,10 @@ sub dt_from_string {
             $date_string =~ s#-#/#g;
             $date_string =~ s/^00/01/;    # system allows the 0th of the month
             $date_string =~ s#^(\d{1,2})/(\d{1,2})#$2/$1#;
+        } elsif ( $date_format eq 'dmydot' ) {
+            $date_string =~ s#\.#/#g;
+            $date_string =~ s/^00/01/;    # system allows the 0th of the month
+            $date_string =~ s#^(\d{1,2})/(\d{1,2})#$2/$1#;
         } else {
             if ( $date_format eq 'iso' ) {
                 $date_string =~ s/-00/-01/;
@@ -140,6 +144,11 @@ sub output_pref {
         $date = $dateonly
           ? $dt->strftime("%d/%m/%Y")
           : $dt->strftime("%d/%m/%Y $time");
+    }
+    elsif ( $pref =~ m/^dmydot/ ) {
+        return $dateonly
+          ? $dt->strftime("%d.%m.%Y")
+          : $dt->strftime("%d.%m.%Y $time");
     }
     elsif ( $pref =~ m/^us/ ) {
         $date = $dateonly

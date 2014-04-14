@@ -24,16 +24,9 @@
                 <option value='sort2'>Sort field 2</option>
             </select>
             <script type="text/javascript">
-                [% SET dateformat = Koha.Preference('dateformat') %]
                 $("#searchfields").change(function() {
                     if ( $(this).val() == 'dateofbirth' ) {
-                        [% IF dateformat == 'us' %]
-                            var MSG_DATE_FORMAT = _("Dates of birth should be entered in the format 'MM/DD/YYYY'");
-                        [% ELSIF dateformat == 'iso' %]
-                            var MSG_DATE_FORMAT = _("Dates of birth should be entered in the format 'YYYY-MM-DD'");
-                        [% ELSIF dateformat == 'metric' %]
-                            var MSG_DATE_FORMAT = _("Dates of birth should be entered in the format 'DD/MM/YYYY'");
-                        [% END %]
+                            var MSG_DATE_FORMAT = _("Dates of birth should be entered in the format '[% dateformatstyle | upper %]'");
                         $('#searchmember').attr("title",MSG_DATE_FORMAT).tooltip('show');
                     } else {
                         $('#searchmember').tooltip('destroy');
