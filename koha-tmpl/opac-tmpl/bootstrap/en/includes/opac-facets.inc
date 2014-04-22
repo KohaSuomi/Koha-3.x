@@ -29,6 +29,8 @@
                             [% IF ( facets_loo.type_label_HoldingLibrary ) %]<span id="facet-holding-libraries">Holding libraries</span>[% END %]
                         [% END %]
                         [% IF facets_loo.type_label_Location %]<h5 id="facet-locations">Locations</h5>[% END %]
+                        [% IF facets_loo.type_label_Language %]<h5 id="facet-language">Languages</h5>[% END %]
+
                         <ul>
                             [% FOREACH facet IN facets_loo.facets %]
                                 <li>
