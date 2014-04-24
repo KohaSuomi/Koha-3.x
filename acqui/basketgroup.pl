@@ -58,6 +58,7 @@ use C4::Acquisition qw/CloseBasketgroup ReOpenBasketgroup GetOrders GetBasketsBy
 use C4::Bookseller qw/GetBookSellerFromId/;
 use C4::Branch qw/GetBranches/;
 use C4::Members qw/GetMember/;
+use C4::OPLIB::AcquisitionIntegration;
 
 our $input=new CGI;
 
@@ -107,6 +108,11 @@ sub displaybasketgroups {
                 ++$i;
             }
             $basketgroup -> {'basketsqty'} = $basketsqty;
+
+            #Check if the basketgroup has been delivered already
+            if (C4::OPLIB::AcquisitionIntegration::isBasketgroupOrdered($basketgroup)) {
+                $basketgroup->{'ordered'} = 1;
+            }
         }
         $template->param(basketgroups => $basketgroups);
     }
@@ -298,6 +304,7 @@ if ( $op eq "add" ) {
     $template->param(grouping => 1);
     my $basketgroups = &GetBasketgroups($booksellerid);
     my $baskets = &GetBasketsByBookseller($booksellerid);
+	$template->param(  orderInterface => C4::OPLIB::AcquisitionIntegration::GetOrderInterface( $bookseller )  );
     displaybasketgroups($basketgroups, $bookseller, $baskets);
 } elsif ($op eq 'mod_basket') {
 #
@@ -314,7 +321,8 @@ if ( $op eq "add" ) {
 #
     my $basketgroupid = $input->param('basketgroupid');
     CloseBasketgroup($basketgroupid);
-    printbasketgrouppdf($basketgroupid);
+    #printbasketgrouppdf($basketgroupid);
+    print $input->redirect('/cgi-bin/koha/acqui/basketgroup.pl?booksellerid=' . $booksellerid.'&amp;listclosed=1');
     exit;
 }elsif ($op eq 'print'){
 #
@@ -323,6 +331,22 @@ if ( $op eq "add" ) {
     my $basketgroupid = $input->param('basketgroupid');
     printbasketgrouppdf($basketgroupid);
     exit;
+}elsif ( $op eq "send_order") {
+#
+# Send this closed basketgroup to the bookseller using the booksellers desired method
+#
+    my $basketgroupid = $input->param('basketgroupid');
+    my $errorsList = C4::OPLIB::AcquisitionIntegration::SendBasketgroupToVendors($basketgroupid);
+
+	$template->param(listclosed => 1);
+	$template->param(orderErrorList => $errorsList) if $errorsList;
+    my $basketgroups = &GetBasketgroups($booksellerid);
+    my $bookseller = &GetBookSellerFromId($booksellerid);
+    my $baskets = &GetBasketsByBookseller($booksellerid);
+	$template->param(  orderInterface => C4::OPLIB::AcquisitionIntegration::GetOrderInterface( $bookseller )  );
+    displaybasketgroups($basketgroups, $bookseller, $baskets);
+    #WHY DO THEY REDIRECT?? THIS SUCKS! print $input->redirect('/cgi-bin/koha/acqui/basketgroup.pl?booksellerid=' . $booksellerid.'&amp;listclosed=1');
+    #exit;
 }elsif ( $op eq "export" ) {
 #
 # export a closed basketgroup in csv
@@ -404,7 +428,7 @@ if ( $op eq "add" ) {
     my $basketgroups = &GetBasketgroups($booksellerid);
     my $bookseller = &GetBookSellerFromId($booksellerid);
     my $baskets = &GetBasketsByBookseller($booksellerid);
-
+	$template->param(  orderInterface => C4::OPLIB::AcquisitionIntegration::GetOrderInterface( $bookseller )  );
     displaybasketgroups($basketgroups, $bookseller, $baskets);
 }
 $template->param(listclosed => ((defined $input->param('listclosed')) && ($input->param('listclosed') eq '1'))? 1:0 );
