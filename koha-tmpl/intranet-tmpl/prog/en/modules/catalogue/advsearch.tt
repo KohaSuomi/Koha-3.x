@@ -115,10 +115,23 @@
     <h4>Limit to any of the following:</h4>
     <table>
         <tr>
+    [% IF (1) %]
+        <td>
+        <select id="advsearch-itemtype-limit" name="limit" size="10" multiple>
+    [% FOREACH itemtypeloo IN advsearchloo.code_loop %]
+        <option id="[% itemtypeloo.ccl FILTER remove(',') %]-[% itemtypeloo.number %]" value="mc-[% itemtypeloo.ccl %]:[% itemtypeloo.code %]"/>
+        [% itemtypeloo.description %]
+        </option>
+    [% END %]
+        </select>
+        </td>
+	</tr>
+    [% ELSE %]
     [% FOREACH itemtypeloo IN advsearchloo.code_loop %]
         <td><input type="checkbox" id="[% itemtypeloo.ccl FILTER remove(',') %]-[% itemtypeloo.number %]" name="limit" value="mc-[% itemtypeloo.ccl %]:[% itemtypeloo.code %]"/><label for="[% itemtypeloo.ccl FILTER remove(',') %]-[% itemtypeloo.number %]">[% UNLESS ( noItemTypeImages ) %][% IF ( itemtypeloo.imageurl ) %]<img border="0" src="[% itemtypeloo.imageurl %]" alt="[% itemtypeloo.description %]" />[% END %]&nbsp;[% END %]
         [% itemtypeloo.description %]</label></td>
         [% IF ( loop.last ) %]</tr>[% ELSE %][% UNLESS ( loop.count % 5 ) %]</tr><tr>[% END %][% END %]
+    [% END %]
     [% END %]
     </table>
     </div>
