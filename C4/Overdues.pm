@@ -30,6 +30,7 @@ use C4::Context;
 use C4::Accounts;
 use C4::Log; # logaction
 use C4::Debug;
+use C4::Items qw/GetItem/;
 
 use vars qw($VERSION @ISA @EXPORT);
 
@@ -253,6 +254,14 @@ sub CalcFine {
         $data->{fine} = 0.5;
     }
 
+    #HACKMAN HERE! Childrens and young adults material from permanent_location LAP, LAK, LVA, NUO, NUA is not fined,
+    #  unless it is of itemtypes VI, DV, DR, KP, CR, BR
+    my $itemRow = GetItem( undef, $item->{barcode}, undef );
+    my $pl = $itemRow->{permanent_location};
+    if ( ($pl eq 'KUV' || $pl eq 'LAP' || $pl eq 'LAK' || $pl eq 'LVA' || $pl eq 'NUO' || $pl eq 'NUA' || $pl eq 'NUV' || $pl eq 'OHE') &&
+        ( $itemtype ne 'VI' && $itemtype ne 'DV' && $itemtype ne 'DR' && $itemtype ne 'KP' && $itemtype ne 'CR' && $itemtype ne 'BR')) {
+            $data->{fine} = 0;
+    }
 
     my $chargeable_units = _get_chargeable_units($fine_unit, $start_date, $end_date, $branchcode);
     my $units_minus_grace = $chargeable_units - $data->{firstremind};
