@@ -535,7 +535,8 @@ var holdForPatron = function () {
 
                                 <td><div class="availability">
                                     [% IF ( SEARCH_RESULT.items_count ) %]<strong>[% SEARCH_RESULT.items_count %]
-                                    [% IF ( SEARCH_RESULT.itemsplural ) %]items[% ELSE %]item[% END %][% IF ( SEARCH_RESULT.availablecount ) %], [% SEARCH_RESULT.availablecount %] available:[% ELSE %], None available[% END %]</strong>
+                                    [% IF ( SEARCH_RESULT.itemsplural ) %]items[% ELSE %]item[% END %][% IF ( SEARCH_RESULT.availablecount ) %], [% SEARCH_RESULT.availablecount %] available[% ELSE %], None available[% END %]</strong>
+<!--
 
                                     [% IF ( SEARCH_RESULT.availablecount ) %]
                                     <ul>
@@ -558,9 +559,10 @@ var holdForPatron = function () {
                                     [% END %]
                                     </ul>
                                     [% END %]
-
+-->
                                    [% IF ( SEARCH_RESULT.onloancount ) %]
-                                   <span class="status">[% SEARCH_RESULT.onloancount %] on loan:</span>
+                                   <span class="status">[% SEARCH_RESULT.onloancount %] on loan</span>
+<!--
                                     <ul>
                                     [% FOREACH onloan_items_loo IN SEARCH_RESULT.onloan_items_loop %]
                                         [% IF item_level_itypes && !noItemTypeImages && onloan_items_loo.imageurl %]
@@ -579,10 +581,12 @@ var holdForPatron = function () {
                                         </li>
                                     [% END %]
                                     </ul>
+-->
                                     [% END %]
 
                                     [% IF ( SEARCH_RESULT.othercount ) %]
-                                    <span class="unavailable">[% SEARCH_RESULT.othercount %] unavailable:</span>
+                                    <span class="unavailable">[% SEARCH_RESULT.othercount %] unavailable</span>
+<!--
                                     <ul>
                                     [% FOREACH other_items_loo IN SEARCH_RESULT.other_items_loop %]
                                         [% IF item_level_itypes && !noItemTypeImages && other_items_loo.imageurl %]
@@ -607,6 +611,7 @@ var holdForPatron = function () {
                                         </li>
                                     [% END %]
                                     </ul>
+-->
                                     [% END %]
                                     [% ELSE %]
                                     [% IF ( SEARCH_RESULT.ALTERNATEHOLDINGS.count ) %]
