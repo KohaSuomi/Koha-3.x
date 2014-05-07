@@ -298,7 +298,7 @@
 		[% IF ( mandatorysurname ) %]<span class="required">Required</span>[% END %]
 		</li>
         [% END %]
-		[% UNLESS ( I ) %]
+		[% UNLESS ( 0 ) %]
         [% UNLESS nofirstname %]
             <li>
                 [% IF ( mandatoryfirstname ) %]
