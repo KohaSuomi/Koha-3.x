@@ -2346,7 +2346,7 @@ sub IssueSlip {
             $it->{'overdue'} = 1;
         }
         my $dt = dt_from_string( $it->{'date_due'} );
-        $it->{'date_due'} = output_pref( $dt );;
+        $it->{'date_due'} = output_pref( { dt => $dt, dateonly => 1 } );
     }
     my @issues = sort { $b->{'timestamp'} <=> $a->{'timestamp'} } @$issueslist;
 
