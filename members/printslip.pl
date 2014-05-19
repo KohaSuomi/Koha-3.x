@@ -81,6 +81,10 @@ if ($print eq 'checkinslip') {
         $slip = $letter->{content};
         $is_html = $letter->{is_html};
     }
+} elsif ($print eq 'fineslip') {
+    my $letter = FineSlip($borrowernumber, $session->param('branch') || $branch);
+    $slip = $letter->{content};
+    $is_html = $letter->{is_html};
 } elsif (my $letter = IssueSlip ($session->param('branch') || $branch, $borrowernumber, $print eq "qslip")) {
     $slip = $letter->{content};
     $is_html = $letter->{is_html};

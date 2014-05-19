@@ -43,6 +43,11 @@ $(document).ready(function(){
         $(".btn-group").removeClass("open");
         return false;
     });
+    $("#printfineslip").click(function(){
+        printx_window("fineslip");
+        $(".btn-group").removeClass("open");
+        return false;
+    });
     $("#searchtohold").click(function(){
         searchToHold();
         return false;
@@ -130,6 +135,7 @@ function searchToHold(){
                 <li><a id="printslip" href="#">Print slip</a></li>
                 <li><a id="printquickslip" href="#">Print quick slip</a></li>
                 <li><a id="printcheckinslip" href="#">Print checked-in today -slip</a></li>
+                <li><a id="printfineslip" href="#">Print fines</a></li>
             </ul>
     </div>
     <a id="searchtohold" class="btn btn-small" href="#"><i class="icon-search"></i> Search to hold</a>
