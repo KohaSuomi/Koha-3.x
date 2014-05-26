@@ -36,7 +36,7 @@ $(document).ready(function(){
             [% END %]
         </div>
 	[% ELSE %]
-            <input id="findborrower" name="findborrower" size="40" class="focus" type="text" />
+            <input id="findborrower" name="findborrower" size="40" class="focus" type="text" autocomplete="off" />
             <input name="branch" value="[% branch %]" type="hidden" />
             <input name="printer" value="" type="hidden" />
             [% IF ( stickyduedate ) %]
