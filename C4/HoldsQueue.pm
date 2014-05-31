@@ -318,7 +318,13 @@ sub GetItemsAvailableToFillHoldRequestsForBib {
     $items_query .=   "WHERE items.notforloan = 0
                        AND holdingbranch IS NOT NULL
                        AND itemlost = 0
-                       AND withdrawn = 0";
+                       AND withdrawn = 0
+                       AND ccode != 'PILA'\n". #HACKMAN HERE, no quick circulating items for holds targeter plz!
+                      "AND permanent_location = 'SII' ". #Siirtokokoelma is not reservable
+                      "AND homebranch != 'JOE_LAKO' ". #HACKMAN HERE, no holds targeter for JOE_LAKO man!
+                      "AND homebranch != 'JOE_LASI' ". #HACKMAN HERE, no holds targeter for JOE_LASI!
+                      "AND permanent_location != 'REF' ". #HACKMAN HERE, no holds targeter for REF-location!
+                      "AND itype != 'EK' "; #HACKMAN HERE, no holds targeter for EK-itype!
     $items_query .= "  AND damaged = 0" unless C4::Context->preference('AllowHoldsOnDamagedItems');
     $items_query .= "  AND items.onloan IS NULL
                        AND (itemtypes.notforloan IS NULL OR itemtypes.notforloan = 0)

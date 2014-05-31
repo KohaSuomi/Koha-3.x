@@ -417,8 +417,11 @@ sub CanItemBeReserved{
     # item->{itype} will come for biblioitems if necessery
     my $item = GetItem($itemnumber);
 
-    ##HACKMAN HERE! quickloan items cannot be put on hold!
-    if ($item->{ccode} eq 'PILA') {
+    ##HACKMAN HERE! certain Items cannot be put on hold!
+    if ($item->{ccode} eq 'PILA' ||
+        $item->{permanent_location} eq 'SII' || $item->{permanent_location} eq 'REF' ||
+        $item->{homebranch} eq 'JOE_LAKO' || $item->{homebranch} eq 'JOE_LASI' ||
+        $item->{itype} eq 'EK') {
         return (0);
     }
 
@@ -850,6 +853,10 @@ sub CheckReserves {
            itemtypes.notforloan,
            items.notforloan AS itemnotforloan,
            items.itemnumber,
+           items.homebranch,
+           items.ccode,
+           items.itype,
+           items.permanent_location,
            items.damaged
            FROM   items
            LEFT JOIN biblioitems ON items.biblioitemnumber = biblioitems.biblioitemnumber
@@ -863,6 +870,10 @@ sub CheckReserves {
            itemtypes.notforloan,
            items.notforloan AS itemnotforloan,
            items.itemnumber,
+           items.homebranch,
+           items.ccode,
+           items.itype,
+           items.permanent_location,
            items.damaged
            FROM   items
            LEFT JOIN biblioitems ON items.biblioitemnumber = biblioitems.biblioitemnumber
@@ -879,7 +890,7 @@ sub CheckReserves {
         $sth->execute($barcode);
     }
     # note: we get the itemnumber because we might have started w/ just the barcode.  Now we know for sure we have it.
-    my ( $biblio, $bibitem, $notforloan_per_itemtype, $notforloan_per_item, $itemnumber, $damaged ) = $sth->fetchrow_array;
+    my ( $biblio, $bibitem, $notforloan_per_itemtype, $notforloan_per_item, $itemnumber, $homebranch, $ccode, $itype, $permanent_location, $damaged ) = $sth->fetchrow_array;
 
     return if ( $damaged && !C4::Context->preference('AllowHoldsOnDamagedItems') );
 
@@ -888,6 +899,12 @@ sub CheckReserves {
     # if item is not for loan it cannot be reserved either.....
     #    execpt where items.notforloan < 0 :  This indicates the item is holdable. 
     return if  ( $notforloan_per_item > 0 ) or $notforloan_per_itemtype;
+
+    #HACKMAN HERE: Don't catch certain Items for reservation/holding!
+    return if ($ccode eq 'PILA' ||
+               $homebranch eq 'JOE_LAKO' || $homebranch eq 'JOE_LASI' ||
+               $permanent_location eq 'SII' || $permanent_location eq 'REF' ||
+               $itype eq 'EK');
 
     # Find this item in the reserves
     my @reserves = _Findgroupreserve( $bibitem, $biblio, $itemnumber, $lookahead_days);
