@@ -1968,6 +1968,7 @@ sub AddReturn {
             $debug and warn sprintf "about to call ModItemTransfer(%s, %s, %s)", $item->{'itemnumber'},$branch, $hbr;
             $debug and warn "item: " . Dumper($item);
             ModItemTransfer($item->{'itemnumber'}, $branch, $hbr);
+			UpdateHoldingbranch( $branch,$item->{'itemnumber'} ); #KD-122For some strange reason ModItemTransfer has to set the holding branch to the transfer destination branch??
             $messages->{'WasTransfered'} = 1;
         } else {
             $messages->{'NeedsTransfer'} = 1;   # TODO: instead of 1, specify branchcode that the transfer SHOULD go to, $item->{homebranch}
