@@ -1985,7 +1985,7 @@ sub searchResults {
                         || $item->{itemlost}
                         || $item->{damaged}
                         || $item->{notforloan}
-                        || $items_count > 20) {
+                        || $items_count > 50) { #HACKMAN HERE! increasing this threshold from 20 so this is more helpful for us
 
                     # A couple heuristics to limit how many times
                     # we query the database for item transfer information, sacrificing
