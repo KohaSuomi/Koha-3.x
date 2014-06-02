@@ -424,6 +424,7 @@ sub CanItemBeReserved{
         $item->{itype} eq 'EK') {
         return (0);
     }
+    return 0 if ($item->{location} eq 'OHE'); # Oheislukemistot eivät ole varattavissa
 
     # If an item is damaged and we don't allow holds on damaged items, we can stop right here
     return 0 if ( $item->{damaged} && !C4::Context->preference('AllowHoldsOnDamagedItems') );
