@@ -69,6 +69,8 @@ my $today        = C4::Dates->new();
 my @all_messages = @{ GetPrintMessages() };
 exit unless (@all_messages);
 
+@all_messages = grep { $_->{letter_code} !~ /^ODUE.+/ } @all_messages; #HACKMAN HERE Remove ODUE* letters, because they are sent via send_overdue_messages.pl
+
 ## carriage return replaced by <br/> as output is html
 foreach my $message (@all_messages) {
     local $_ = $message->{'content'};
