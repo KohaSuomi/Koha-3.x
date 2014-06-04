@@ -143,6 +143,12 @@ $(document).ready(function () {
 <div class="dialog alert"><h3>Cannot check in</h3><p>This item must be checked in at its home library. <strong>NOT CHECKED IN</strong></p>
 </div>
 [% END %]
+
+[% IF ( ended_acquisitions_process ) %]
+<div class="dialog alert"><p>Niteeltä poistettu hankinnassa-tila</p>
+</div>
+[% END %]
+
 <!-- case of a mistake in transfer loop -->
 [% IF ( WrongTransfer ) %]<div id="return2" class="dialog message"><!-- WrongTransfer --><h3>Please return <a href="/cgi-bin/koha/catalogue/detail.pl?type=intra&amp;biblionumber=[% itembiblionumber %]">[% title |html %]</a> to [% Branches.GetName( TransferWaitingAt ) %]</h3><h3><a href="#" onclick="Dopop('transfer-slip.pl?transferitem=[% itemnumber %]&amp;&amp;branchcode=[% homebranch %]&amp;op=slip'); return true;">Print slip</a> or <a href="/cgi-bin/koha/circ/returns.pl?itemnumber=[% itemnumber %]&amp;canceltransfer=1">Cancel transfer</a></h3>
 [% IF ( wborcnum ) %]<h5>Hold for:</h5>

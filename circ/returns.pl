@@ -362,6 +362,12 @@ if ( $messages->{'Wrongbranch'} ){
         wrongbranch => 1,
     );
 }
+#HACKMAN HERE! KD-128
+if ( $messages->{'ended_acquisitions_process'} ){
+    $template->param(
+        ended_acquisitions_process => 1,
+    );
+}
 
 # case of wrong transfert, if the document wasn't transfered to the right library (according to branchtransfer (tobranch) BDD)
 
@@ -494,6 +500,8 @@ foreach my $code ( keys %$messages ) {
     elsif ( $code eq 'NeedsTransfer' ) {
     }
     elsif ( $code eq 'Wrongbranch' ) {
+    }
+	elsif ( $code eq 'ended_acquisitions_process' ) {
     }
     elsif ( $code eq 'Debarred' ) {
         $err{debarred}            = $messages->{'Debarred'};
