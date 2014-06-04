@@ -1763,6 +1763,14 @@ sub AddReturn {
         $branches->{$hbr}->{PE} and $messages->{'IsPermanent'} = $hbr;
     }
 
+	#HACKMAN HERE! Setting Items which are in acquisitions process, to available, when they are checked out.
+	if ($item->{notforloan} == -1) {
+		#$item->{notforloan} = 0;
+		ModItem({ notforloan => 0 }, $item->{'biblionumber'}, $item->{'itemnumber'});
+		$messages->{'ended_acquisitions_process'} = 1;
+	}
+
+
     # check if the return is allowed at this branch
     my ($returnallowed, $message) = CanBookBeReturned($item, $branch);
     unless ($returnallowed){
