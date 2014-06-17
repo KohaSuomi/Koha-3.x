@@ -343,6 +343,24 @@ my $quantity = $input->param('rr_quantity_to_order') ?
       $data->{'quantity'};
 $quantity //= 0;
 
+#
+# Returns a hash-ref to 4 commonly used fields - undefined hash-values
+# are also needed for use (as a check) in the template for this view.
+# (UI-improvements: KD-130)
+##
+sub get_common_fields_template {
+    my $marcRecord = GetMarcBiblio($biblionumber);
+    my %marc_field;
+
+    return unless $marcRecord;
+
+    $marc_field{'marc84a'} = $marcRecord->subfield('084', "a");
+    $marc_field{'marc100a'} = $marcRecord->subfield('100', "a");
+    $marc_field{'marc110a'} = $marcRecord->subfield('110', "a");
+    $marc_field{'marc245a'} = $marcRecord->subfield('245', "a");
+    return \%marc_field;
+}
+
 $template->param(
     existing         => $biblionumber,
     ordernumber           => $ordernumber,
@@ -408,6 +426,11 @@ $template->param(
 	homebranchMarcTag => $homebranchMarcTag,
 	homebranchMarcSubfield => $homebranchMarcSubfield,
 );
+
+$template->param ( notes => $data->{'notes'} ) if ( $ordernumber );
+
+# For UI-improvements (KD-130)
+$template->param(commonMarcFieldRef => get_common_fields_template);
 
 output_html_with_http_headers $input, $cookie, $template->output;
 

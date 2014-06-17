@@ -171,6 +171,8 @@ function cloneItemBlock(index, unique_item_fields) {
             $(homebranchSelector).change(function() {
                 reloadShelvingLocations(this.value, '', shelvingLocationSelector);
             });
+			// KD-130
+			addAutoShelvingLoc("acquisition");
         }
     });
 }

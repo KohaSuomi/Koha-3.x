@@ -37,7 +37,6 @@ use C4::Search;
 use Storable qw(thaw freeze);
 use URI::Escape;
 
-
 use MARC::File::XML;
 use URI::Escape;
 
@@ -378,6 +377,21 @@ if ($prefillitem) {
             $cookieitemrecord = removeFieldsForPrefill($cookieitemrecord);
         }
     }
+}
+
+#
+# Returns a hash-ref to 4 commonly used fields - undefined hash-values
+# are also needed for use (as a check) in the template for this view.
+# (UI-improvements: KD-130)
+##
+sub get_common_fields_template {
+    my $marcRecord = GetMarcBiblio($biblionumber);
+    my %marc_field;
+    $marc_field{'marc84a'} = $marcRecord->subfield('084', "a");
+    $marc_field{'marc100a'} = $marcRecord->subfield('100', "a");
+    $marc_field{'marc110a'} = $marcRecord->subfield('110', "a");
+    $marc_field{'marc245a'} = $marcRecord->subfield('245', "a");
+    return \%marc_field;
 }
 
 #-------------------------------------------------------------------------------
@@ -848,6 +862,10 @@ $template->param(
 	homebranchMarcTag => $homebranchMarcTag,
 	homebranchMarcSubfield => $homebranchMarcSubfield,
 );
+
+# For UI-improvements (KD-130)
+$template->param(commonMarcFieldRef => get_common_fields_template);
+
 $template->{'VARS'}->{'searchid'} = $searchid;
 
 if ($frameworkcode eq 'FA'){
