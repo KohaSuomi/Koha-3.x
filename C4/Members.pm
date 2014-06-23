@@ -2348,9 +2348,10 @@ sub IssueSlip {
             $it->{'overdue'} = 1;
         }
         my $dt = dt_from_string( $it->{'date_due'} );
+	$it->{'date_due_orig'} = $it->{'date_due'};
         $it->{'date_due'} = output_pref( { dt => $dt, dateonly => 1 } );
     }
-    my @issues = sort { $b->{'timestamp'} <=> $a->{'timestamp'} } @$issueslist;
+    my @issues = sort { $a->{'date_due_orig'} <=> $b->{'date_due_orig'} || $b->{'timestamp'} <=> $a->{'timestamp'} } @$issueslist;
 
     my ($letter_code, %repeat);
     if ( $quickslip ) {
