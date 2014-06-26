@@ -4,3 +4,12 @@ Tools:
         - pref: MaxItemsForBatch
           class: integer
         - items in a single modification or deletion batch.
+
+    -
+        - The absolute path to the .odt-file used as a template for claim letters. Defaults to $KOHA_PATH/misc/claimlettertemplate.odt
+        - pref: claimlettertemplate
+          class: free
+    -
+        - Set the fine for the 1st, 2nd and 3rd overdue notifications. Separated by |, eg. <strong>3|3|7</strong>
+        - pref: claimingFines
+          class: Choice

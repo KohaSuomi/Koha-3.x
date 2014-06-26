@@ -1881,8 +1881,12 @@ sub AddReturn {
         ShelfToCart( $item->{'itemnumber'} ) if ( C4::Context->preference("ReturnToShelvingCart") );
     }
 
+    #Catch claimed items and notify about the event!
+    if ( $item->{notforloan} == 6 ) {
+        $messages->{'isClaimed'} = 1;
+    }
     # fix up the accounts.....
-    if ( $item->{'itemlost'} ) {
+    elsif ( $item->{'itemlost'} ) {
         $messages->{'WasLost'} = 1;
 
         if ( C4::Context->preference('RefundLostItemFeeOnReturn' ) ) {

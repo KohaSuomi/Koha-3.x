@@ -8543,6 +8543,15 @@ if(CheckVersion($DBversion)) {
 }
 
 
+$DBversion = "3.16.00.XXX";
+if (CheckVersion($DBversion)) {
+    $dbh->do("INSERT INTO permissions (module_bit, code, description) VALUES
+             (13, 'claim', 'Claim long overdue issues from our borrowers')");
+    $dbh->do("INSERT INTO systempreferences ( `variable`, `value`, `options`, `explanation`, `type` ) VALUES ('claimlettertemplate','',NULL,'The absolute path to the .odt-file used as a template for claim letters. Defaults to \$KOHA_PATH/misc/claimlettertemplate.odt','free')");
+    $dbh->do("INSERT INTO systempreferences ( `variable`, `value`, `options`, `explanation`, `type` ) VALUES ('claimingFines','3|3|7','2|2|5','Set the fine for the 1st, 2nd and 3rd overdue notifications. Separated by |, eg. 3|3|7','Choice')");
+    print "Upgrade to $DBversion done (KD-38 - Claim long overdue issues)\n";
+    SetVersion($DBversion);
+}
 =head1 FUNCTIONS
 
 =head2 TableExists($table)

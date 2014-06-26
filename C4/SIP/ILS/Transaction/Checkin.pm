@@ -112,6 +112,11 @@ sub do_checkin {
         $self->{item}->hold_patron_id( $messages->{ResFound}->{borrowernumber} );
         $self->{item}->destination_loc( $messages->{ResFound}->{branchcode} );
     }
+
+	#Whatever happens, claimed Items must be caught first with the proper code so they can be un-claimed
+	if ($messages->{isClaimed}) {
+        $self->alert_type('53'); #Alert type 53 is arbitrary and might conflict with other alert_types! Be aware!
+    }
     $self->alert(1) if defined $self->alert_type;  # alert_type could be "00", hypothetically
     $self->ok($return);
 }
