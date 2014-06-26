@@ -84,6 +84,8 @@ INSERT INTO systempreferences ( `variable`, `value`, `options`, `explanation`, `
 ('CircAutocompl','1',NULL,'If ON, autocompletion is enabled for the Circulation input','YesNo'),
 ('CircAutoPrintQuickSlip','qslip',NULL,'Choose what should happen when an empty barcode field is submitted in circulation: Display a print quick slip window, Display a print slip window or Clear the screen.','Choice'),
 ('CircControl','ItemHomeLibrary','PickupLibrary|PatronLibrary|ItemHomeLibrary','Specify the agency that controls the circulation and fines policy','Choice'),
+('claimlettertemplate','',NULL,'The absolute path to the .odt-file used as a template for claim letters. Defaults to $KOHA_PATH/misc/claimlettertemplate.odt','free'),
+('claimingFines','3|3|7','2|2|5','Set the fine for the 1st, 2nd and 3rd overdue notifications. Separated by |, eg. 3|3|7','Choice')
 ('COinSinOPACResults','1','','If ON, use COinS in OPAC search results page.  NOTE: this can slow down search response time significantly','YesNo'),
 ('ConfirmFutureHolds','0','','Number of days for confirming future holds','Integer'),
 ('CurrencyFormat','US','US|FR','Determines the display format of currencies. eg: \'36000\' is displayed as \'360 000,00\'  in \'FR\' or \'360,000.00\'  in \'US\'.','Choice'),

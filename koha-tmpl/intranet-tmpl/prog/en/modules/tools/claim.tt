@@ -1,0 +1,88 @@
+[% INCLUDE 'doc-head-open.inc' %]
+<title>Koha &rsaquo; Tools &rsaquo; Claiming</title>
+[% INCLUDE 'doc-head-close.inc' %]
+[% INCLUDE 'calendar.inc' %]
+<link rel="stylesheet" type="text/css" href="[% themelang %]/css/datatables.css" />
+[% INCLUDE 'datatables.inc' %]
+</head>
+<body id="tools_holidays" class="tools">
+[% INCLUDE 'header.inc' %]
+[% INCLUDE 'cat-search.inc' %]
+
+<div id="breadcrumbs"><a href="/cgi-bin/koha/mainpage.pl">Home</a> &rsaquo; <a href="/cgi-bin/koha/tools/tools-home.pl">Tools</a> &rsaquo; <strong>Claiming</strong></div>
+
+<div id="doc3" class="yui-t1">
+
+  <div id="bd">
+    <div id="yui-main">
+      <form action="/cgi-bin/koha/tools/claim.pl" charset="utf-8" method="POST">
+        <div class="yui-b">
+        <h2>Claiming</h2>
+        <div class="yui-g">
+          [% IF nothing_to_claim_branch %]
+            <div class="dialog alert">
+              <h3>There was nothing to claim from [% nothing_to_claim_branch %].</h3>
+            </div>
+          [% END %]
+          <label for="branches">
+            <strong>Collect claim letters for selected branches.</strong><br />
+            The number after the branch name is the amount of claim letters waiting.<br />
+            HINT: You can use CTRL and SHIFT to select multiple branches at once!<br />
+            <br />
+          </label>
+        <div class="yui-u first">
+          <div></div>
+          <select id="branches" name="branches" multiple="multiple" size="30">
+            [% FOREACH branchloo IN branchloop %]
+              [% IF ( branchloo.selected ) %]
+                <option value="[% branchloo.value %]" selected="selected">[% branchloo.branchname %][% IF branchloo.claimscount %] : [% branchloo.claimscount %][% END %]</option>
+              [% ELSE %]
+                <option value="[% branchloo.value %]">[% branchloo.branchname %][% IF branchloo.claimscount %] : [% branchloo.claimscount %][% END %]</option>
+              [% END %]
+            [% END %]
+          </select>
+        </div>
+        <div>
+          <br /><br /><br />
+            <label><strong>Select format</strong></label><br />
+            <label for="asOdt">As OpenDocument text <input type="radio" name="outputFormat" value="asOdt" checked></label><br />
+            <label for="asTxt">As plain text <input type="radio" name="outputFormat" value="asTxt" > <strong>Select this if you are still using Micro$oft Word.</strong></label>
+          <br /><br /><br />
+          <input type="submit" name="get_letters" id="get_letters" value="Get letters!">
+          <br /><br />
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          <strong>
+            or
+          </strong>
+          <br /><br />
+          <input type="submit" name="close_letters" id="close_letters" value="Close claiming!">
+          <br /><br />
+          Click <strong>"Get letters!"</strong> to simply generate claim letters.<br />
+          Click <strong>"Close claiming!"</strong> to <br />
+          -mark claim letters as sent<br />
+          -move them to the <a href="/static_content/claiming/old_claims/" target="_blank">old_claims-directory</a><br />
+          -fine our patrons the overdue charge<br />
+        </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
+<div class="yui-b noprint">
+    [% INCLUDE 'tools-menu.inc' %]
+</div>
+
+[% INCLUDE 'intranet-bottom.inc' %]
+
+<script type="text/javascript">
+//<![CDATA[
+  var MSG_CONFIRM_CLAIMING = _("Confirm closing these claim letters and billing our borrowers?");
+//]]>
+</script>
+
+<script type="text/javascript">
+  $("#close_letters").click(function() {
+    return confirm( MSG_CONFIRM_CLAIMING );
+  });
+</script>
