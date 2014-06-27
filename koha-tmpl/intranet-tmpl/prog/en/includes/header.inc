@@ -36,6 +36,9 @@
                     [% END %]
                     <li><a href="/cgi-bin/koha/about.pl">About Koha</a></li>
                 </ul>
+            <li>
+                <a href="http://renki.pohjoiskarjala.net:8090/pages/viewpage.action?pageId=29917189&fullname=[% loggedinusername %]&email=[% emailaddress %]" >Tee ilmoitus ylläpidolle</a>
+            </li>
             </li>
         </ul>
         <ul class="nav pull-right">
