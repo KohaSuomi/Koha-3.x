@@ -34,6 +34,8 @@ use C4::Dates;
 use C4::Debug;
 use C4::Letters;
 use C4::Templates;
+use C4::Items;
+use C4::Reserves;
 use File::Spec;
 use Getopt::Long;
 
@@ -44,15 +46,22 @@ Usage: $0 OUTPUT_DIRECTORY
   OUTPUT_DIRECTORY/notices-CURRENT_DATE.html .
 
   -s --split  Split messages into separate file by borrower home library to OUTPUT_DIRECTORY/notices-CURRENT_DATE-BRANCHCODE.html
+
+  --holdbarcode  If you want to separate HOLD-letters based on the reserve's pickup branch instead of the borrowers homebranch
+                 Define this regexp to find the Item barcodes from the HOLD-letters. Items need to be found so the reservation
+                 information can be found. Regexp could be like 'Item: (\\S+)<br />' or 'Barcode (\\S+)<br />'. Remember that
+                 these letters are htmlized, so lines end/start with <br />! You must define a capture group between
+                 parenthesis () to catch the barcode.
 USAGE
     exit $_[0];
 }
 
-my ( $stylesheet, $help, $split );
+my ( $stylesheet, $help, $split, $HOLDbarcodeParsingRegexp );
 
 GetOptions(
     'h|help'  => \$help,
     's|split' => \$split,
+    'holdbarcode=s' => \$HOLDbarcodeParsingRegexp,
 ) || usage(1);
 
 usage(0) if ($help);
@@ -82,9 +91,18 @@ foreach my $message (@all_messages) {
 my $OUTPUT;
 
 if ($split) {
+
     my %messages_by_branch;
     foreach my $message (@all_messages) {
-        push( @{ $messages_by_branch{ $message->{'branchcode'} } }, $message );
+        my $defaultBranch = $message->{'branchcode'};
+
+        #Catch HOLD print letters so we can direct them to branches which actually have the items waiting for pickup.
+        if (defined $HOLDbarcodeParsingRegexp && $message->{letter_code} eq 'HOLD') {
+            fetchPickupLocations( $defaultBranch, $message, \%messages_by_branch );
+        }
+        else {
+            push( @{ $messages_by_branch{ $defaultBranch } }, $message );
+        }
     }
 
     foreach my $branchcode ( keys %messages_by_branch ) {
@@ -140,4 +158,27 @@ else {
 
     close $OUTPUT;
 
+}
+
+#Finds the barcodes using a regexp and then gets the reservations attached to them.
+#Sends the same letter to the branches from which there are Items' pickup locations inside this one letter.
+sub fetchPickupLocations {
+    my ($defaultBranch, $message, $messages_by_branch) = @_;
+    #Find out the barcodes
+    my @barcodes = $message->{content} =~ /$HOLDbarcodeParsingRegexp/mg;
+    my %targetBranches; #The same letter can have Items from multiple pickup locations so we need to send this letter to each separate pickup branch.
+    foreach my $barcode (@barcodes) {
+        my $itemnumber = C4::Items::GetItemnumberFromBarcode( $barcode );
+        my ( $reservedate, $borrowernumber, $branchcode, $reserve_id, $waitingdate ) = GetReservesFromItemnumber($itemnumber);
+        $targetBranches{ $branchcode } = 1 if $branchcode; #Set the branches which receives this print notification.
+    }
+
+    if (%targetBranches) { #Send the same message to each branch from which there are pickup locations.
+        foreach my $branchcode (keys %targetBranches) {
+            push( @{ $messages_by_branch->{ $branchcode } }, $message );
+        }
+    }
+    else { #Or default to the default!
+        push( @{ $messages_by_branch->{  $defaultBranch  } }, $message );
+    }
 }
