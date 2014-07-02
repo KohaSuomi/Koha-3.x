@@ -58,10 +58,12 @@ the Koha database, which acts as an activity log.
 =item UpdateStats
 
   &UpdateStats($branch, $type, $value, $other, $itemnumber,
-               $itemtype, $borrowernumber);
+               $itemtype, $borrowernumber, $usercode);
 
 Adds a line to the statistics table of the Koha database. In effect,
 it logs an event.
+
+C<$usercode> is borrowers.categorycode
 
 C<$branch>, C<$type>, C<$value>, C<$other>, C<$itemnumber>,
 C<$itemtype>, and C<$borrowernumber> correspond to the fields of the
@@ -76,18 +78,18 @@ sub UpdateStats {
     my (
         $branch,         $type,
         $amount,   $other,          $itemnum,
-        $itemtype, $borrowernumber, $accountno, $ccode
+        $itemtype, $borrowernumber, $accountno, $ccode, $usercode
       )
       = @_;
     my $dbh = C4::Context->dbh;
     my $sth = $dbh->prepare(
         "INSERT INTO statistics
-        (datetime, branch, type, value,
+        (datetime, branch, type, value, usercode,
          other, itemnumber, itemtype, borrowernumber, proccode, ccode)
-         VALUES (now(),?,?,?,?,?,?,?,?,?)"
+         VALUES (now(),?,?,?,?,?,?,?,?,?,?)"
     );
     $sth->execute(
-        $branch,    $type,    $amount,
+        $branch,    $type,    $amount, $usercode,
         $other,     $itemnum, $itemtype, $borrowernumber,
 		$accountno, $ccode
     );

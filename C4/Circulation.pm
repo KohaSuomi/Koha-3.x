@@ -740,7 +740,7 @@ sub CanBookBeIssued {
     #
     if ( $borrower->{'category_type'} eq 'X' && (  $item->{barcode}  )) { 
     	# stats only borrower -- add entry to statistics table, and return issuingimpossible{STATS} = 1  .
-        &UpdateStats(C4::Context->userenv->{'branch'},'localuse','','',$item->{'itemnumber'},$item->{'itemtype'},$borrower->{'borrowernumber'}, undef, $item->{'ccode'});
+        &UpdateStats(C4::Context->userenv->{'branch'},'localuse','','',$item->{'itemnumber'},$item->{'itemtype'},$borrower->{'borrowernumber'}, undef, $item->{'ccode'}, $borrower->{'categorycode'});
         ModDateLastSeen( $item->{'itemnumber'} );
         return( { STATS => 1 }, {});
     }
@@ -1303,7 +1303,7 @@ sub AddIssue {
             C4::Context->userenv->{'branch'},
             'issue', $charge,
             ($sipmode ? "SIP-$sipmode" : ''), $item->{'itemnumber'},
-            $item->{'itype'}, $borrower->{'borrowernumber'}, undef, $item->{'ccode'}
+            $item->{'itype'}, $borrower->{'borrowernumber'}, undef, $item->{'ccode'}, $borrower->{'categorycode'}
         );
 
         # Send a checkout slip.
@@ -2762,7 +2762,7 @@ sub AddRenewal {
     }
 
     # Log the renewal
-    UpdateStats( $branch, 'renew', $charge, '', $itemnumber, $item->{itype}, $borrowernumber, undef, $item->{'ccode'});
+    UpdateStats( $branch, 'renew', $charge, '', $itemnumber, $item->{itype}, $borrowernumber, undef, $item->{'ccode'}, $borrower->{'categorycode'});
 	return $datedue;
 }
 
