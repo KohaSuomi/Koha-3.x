@@ -444,7 +444,13 @@ if ($delete){
 if ($nok or !$nodouble){
     $op="add" if ($op eq "insert");
     $op="modify" if ($op eq "save");
-    %data=%newdata; 
+    # KD-155:
+    # If we're modifying an existing record, we don't want to have the patron data
+    # replaced by mostly empty fields.
+    #
+    unless ($op eq "modify") {
+        %data = %newdata;
+    }
     $template->param( updtype => ($op eq 'add' ?'I':'M'));	# used to check for $op eq "insert"... but we just changed $op!
     unless ($step){  
         $template->param( step_1 => 1,step_2 => 1,step_3 => 1, step_4 => 1, step_5 => 1, step_6 => 1);
