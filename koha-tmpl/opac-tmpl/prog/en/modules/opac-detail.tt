@@ -45,6 +45,16 @@
 <script type="text/javascript">
 //<![CDATA[
 
+    //Setting the height of the component part record container to prevent overflow
+    $(document).ready(function() {
+        var containerHeight = $("#catalogue_detail_biblio").height();
+        $(".componentPartRecordsContainer").height( containerHeight );
+    });
+    $(window).resize(function() {
+        var containerHeight = $("#catalogue_detail_biblio").height();
+        $(".componentPartRecordsContainer").height( containerHeight );
+    });
+
     [% IF ( OpacBrowseResults && busc ) %]
         var arrPagination = new Array();
         var pag_index_ini = [% indexPag %];
@@ -540,6 +550,7 @@ YAHOO.util.Event.onContentReady("furtherm", function () {
     <div class="yui-b"><div id="opac-detail-yui-ge" class="yui-ge">
     <div class="yui-u first">
     <div id="userdetail" class="container">
+    <div class="yui-g" style="float: none">[%# This prevents overflow from the component part records list from breaking the detail view. %]
     <div id="catalogue_detail_biblio">
 
     <div id="bookcover">
@@ -942,6 +953,7 @@ YAHOO.util.Event.onContentReady("furtherm", function () {
 
 </div>
 
+</div>[%# End of div class="yui-g" %]
 <div id="bibliodescriptions" class="toptabs">
 
 <ul>   

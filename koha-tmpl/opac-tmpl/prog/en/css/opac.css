@@ -1136,6 +1136,12 @@ table#marc div.results_summary ul li {
 	display : inline;
 }
 
+.componentPartRecordsContainer {
+    float: right;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
 #basketcount {
 	display : inline;
 }
