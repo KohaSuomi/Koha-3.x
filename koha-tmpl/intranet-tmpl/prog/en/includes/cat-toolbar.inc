@@ -5,7 +5,7 @@
 	function PopupZ3950() {
 		var strQuery = GetZ3950Terms();
 		if(strQuery){
-			window.open("/cgi-bin/koha/cataloguing/z3950_search.pl?biblionumber=[% biblionumber %]"+strQuery,"z3950search",'width=740,height=450,location=yes,toolbar=no,scrollbars=yes,resize=yes');
+			window.open("/cgi-bin/koha/cataloguing/z3950_search.pl?biblionumber=[% biblionumber %]"+strQuery,"z3950search",'width=1280,height=720,location=yes,toolbar=no,scrollbars=yes,resize=yes');
 		} 
 	}
     function PopupZ3950Confirmed() {
