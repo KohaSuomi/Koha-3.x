@@ -410,12 +410,19 @@ if($params->{'multibranchlimit'}) {
     push @limits, $multibranch if ($multibranch ne  '()');
 }
 
-my $available;
+my ($available, $availableBranch);
 foreach my $limit(@limits) {
     if ($limit =~/available/) {
         $available = 1;
     }
+    elsif ($limit =~ /branch:(.*?)$/) { #Catch holdingbranch from facets and branch from advanced search
+        $availableBranch = $1;
+    }
 }
+if ($availableBranch && $available) {
+    $available = $availableBranch;
+}
+undef $availableBranch; #Don't pollute namespace!
 $template->param(available => $available);
 
 # append year limits if they exist
@@ -519,7 +526,7 @@ if ($tag) {
     $pasarParams .= '&amp;simple_query=' . $simple_query;
     $pasarParams .= '&amp;query_type=' . $query_type if ($query_type);
     eval {
-        ($error, $results_hashref, $facets) = getRecords($query,$simple_query,\@sort_by,\@servers,$results_per_page,$offset,$expanded_facet,$branches,$itemtypes,$query_type,$scan,1);
+        ($error, $results_hashref, $facets) = getRecords($query,$simple_query,\@sort_by,\@servers,$results_per_page,$offset,$expanded_facet,$branches,$itemtypes,$query_type,$scan,1,$available);
     };
 }
 # This sorts the facets into alphabetical order
