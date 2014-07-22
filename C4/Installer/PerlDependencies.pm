@@ -14,6 +14,11 @@ our $PERL_DEPS = {
         'required' => '1',
         'min_ver'  => '0.09'
     },
+    'Text::Diff' => {
+        'usage'    => 'BatchOverlay',
+        'required' => '1',
+        'min_ver'  => '1.41'
+    },
     'Storable' => {
         'usage'    => 'Core',
         'required' => '1',
