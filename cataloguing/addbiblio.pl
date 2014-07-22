@@ -35,6 +35,7 @@ use C4::Branch;    # XXX subfield_is_koha_internal_p
 use C4::ClassSource;
 use C4::ImportBatch;
 use C4::Charset;
+use C4::Matcher;
 
 use Date::Calc qw(Today);
 use MARC::File::USMARC;
@@ -722,6 +723,7 @@ my $error = $input->param('error');
 my $biblionumber  = $input->param('biblionumber'); # if biblionumber exists, it's a modif, not a new biblio.
 my $parentbiblio  = $input->param('parentbiblionumber');
 my $breedingid    = $input->param('breedingid');
+my $matcherid    = $input->param('matcherid');
 my $z3950         = $input->param('z3950');
 my $op            = $input->param('op');
 my $mode          = $input->param('mode');
@@ -808,6 +810,16 @@ if (($biblionumber) && !($breedingid)){
 }
 if ($breedingid) {
     ( $record, $encoding ) = MARCfindbreeding( $breedingid ) ;
+}
+#Use a matcher to preserve defined fields/subfields
+# -old fields are cloned, if new biblio doesn't have them
+# -If preserved fields exist. All old fields, or those defined, are overlayed to the new biblio.
+if (($biblionumber) && ($breedingid) && ($matcherid)){
+    my $old_record = GetMarcBiblio($biblionumber);
+    ( $record, $encoding ) = MARCfindbreeding( $breedingid ) ;
+    my $matcher = C4::Matcher->fetch($matcherid);
+
+    $matcher->overlayRecord($old_record, $record); #Makes modifications directly to the $record-object
 }
 
 #populate hostfield if hostbiblionumber is available

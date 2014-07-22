@@ -2,13 +2,18 @@
 <title>Koha &rsaquo; Z39.50 search results</title>
 [% INCLUDE 'greybox.inc' %]
 [% INCLUDE 'doc-head-close.inc' %]
-<script type="text/javascript" src="[% interface %]/lib/jquery/plugins/jquery.checkboxes.min.js"></script>
+<script type="text/javascript" src="[% themelang %]/lib/jquery/plugins/jquery.checkboxes.min.js"></script>
+<script type="text/javascript" src="[% themelang %]/lib/jquery/plugins/jquery.cookie.min.js"></script>
 <link rel="stylesheet" type="text/css" href="[% themelang %]/css/datatables.css" />
 [% INCLUDE 'datatables.inc' %]
 <script type="text/javascript">
 //<![CDATA[
 function Import(GetThisOne,biblionumber) {
-    opener.document.location="../cataloguing/addbiblio.pl?biblionumber="+biblionumber+"&z3950=1&frameworkcode=[% frameworkcode %]&breedingid="+GetThisOne;
+
+    var matcherid = $("select[breeding="+GetThisOne+"]").val();
+    $.cookie('matcher', matcherid); //Firstly set the matcher persistence cookie
+
+    opener.document.location="../cataloguing/addbiblio.pl?biblionumber="+biblionumber+"&z3950=1&frameworkcode=[% frameworkcode %]&breedingid="+GetThisOne+"&matcherid="+matcherid;
     window.close();
     return false;
 }
@@ -43,7 +48,7 @@ $(document).ready(function(){
             $(".linktools").hide();
             $("tr").removeClass("selected");
             row.addClass("selected");
-            if($tgt.is("a")||$tgt.is(":nth-child(7)")||$tgt.is(":nth-child(8)")||$tgt.is(":nth-child(9)")||$tgt.is(":nth-child(10)")){
+            if($tgt.is("option")||$tgt.is("select")||$tgt.is("a")||$tgt.is(":nth-child(7)")||$tgt.is(":nth-child(8)")||$tgt.is(":nth-child(9)")||$tgt.is(":nth-child(10)")||$tgt.is(":nth-child(11)")){
                 return true;
             } else {
                 var position = $(this).offset();
@@ -160,6 +165,7 @@ tr.selected { background-color : #FFFFCC; } tr.selected td { background-color : 
         <th>LCCN</th>
         <th>MARC</th>
         <th>Card</th>
+        <th>Matcher</th>
 		<th>&nbsp;</th>
     </tr></thead>
     <tbody>[% FOREACH breeding_loo IN breeding_loop %]
@@ -175,6 +181,10 @@ tr.selected { background-color : #FFFFCC; } tr.selected td { background-color : 
             <td>[% breeding_loo.lccn %]</td>
             <td><a href="/cgi-bin/koha/catalogue/showmarc.pl?importid=[% breeding_loo.breedingid %]" title="MARC" rel="gb_page_center[600,500]">MARC</a></td>
             <td><a href="/cgi-bin/koha/catalogue/showmarc.pl?viewas=card&amp;importid=[% breeding_loo.breedingid %]" title="MARC" rel="gb_page_center[600,500]">Card</a></td>
+            <td><select breeding="[% breeding_loo.breedingid %]" id="matcher" name="matcher">
+                    <option value=""></option>[% FOREACH matcher IN matchers %]
+                    <option value="[% matcher.matcher_id %]" [% IF matcher.selected %]selected[% END %]>[% matcher.description %]</option>
+            [% END %]</select></td>
             <td><a href="#" onclick="Import([% breeding_loo.breedingid %],[% breeding_loo.biblionumber %]); return false">Import</a></td> 
         </tr>
         [% END %]
