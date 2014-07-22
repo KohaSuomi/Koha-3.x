@@ -92,6 +92,37 @@
             </xsl:choose>
         </xsl:variable>
 
+
+        <!--Component part records: Displaying title and author of component part records if available. These are floated to right by css. -->
+        <xsl:if test="marc:componentPartRecords/marc:componentPart">
+            <span class="componentPartRecordsContainer results_summary">
+                <h5>Component part records:</h5>
+                <xsl:for-each select="marc:componentPartRecords/marc:componentPart">
+                    <span class="componentPartRecord">
+                            <span class="componentPartRecordTitle">
+                                <a><xsl:attribute name="href">/cgi-bin/koha/opac-detail.pl?biblionumber=<xsl:value-of select="marc:biblionumber" /></xsl:attribute>
+                                    <xsl:choose>
+                                        <xsl:when test="marc:title">
+                                            <xsl:value-of select="substring-before( concat(marc:title, '/'), '/')" />
+                                        </xsl:when>
+                                        <xsl:otherwise>
+                                            <xsl:value-of select="substring-before( concat(marc:unititle, '/'), '/')" />
+                                        </xsl:otherwise>
+                                    </xsl:choose>
+                                </a>
+                            </span>
+                        <xsl:if test="marc:author">
+                            -
+                            <span class="componentPartRecordAuthor">
+                                <xsl:value-of select="marc:author" />
+                            </span>
+                        </xsl:if>
+                    </span>
+                    <br />
+                </xsl:for-each>
+            </span>
+        </xsl:if>
+
         <!-- Schema.org type -->
         <xsl:variable name="schemaOrgType">
             <xsl:choose>
@@ -108,6 +139,7 @@
             <xsl:attribute name="vocab">http://schema.org/</xsl:attribute>
             <xsl:attribute name="typeof"><xsl:value-of select='$schemaOrgType' /> Product</xsl:attribute>
             <xsl:attribute name="resource">#record</xsl:attribute>
+
 
         <!-- Title Statement -->
         <!-- Alternate Graphic Representation (MARC 880) -->

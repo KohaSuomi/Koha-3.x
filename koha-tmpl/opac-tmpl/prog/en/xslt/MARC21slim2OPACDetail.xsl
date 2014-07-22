@@ -120,6 +120,37 @@
             </h1>
         </xsl:if>
 
+		<!--Component part records: Displaying title and author of component part records if available. These are floated to right by css. -->
+		<xsl:if test="marc:componentPartRecords/marc:componentPart">
+		 <span class="componentPartRecordsContainer results_summary">
+			   <h5>Component part records:</h5>
+			   <xsl:for-each select="marc:componentPartRecords/marc:componentPart">
+				 <span class="componentPartRecord">
+						 <span class="componentPartRecordTitle">
+							   <a><xsl:attribute name="href">/cgi-bin/koha/catalogue/detail.pl?biblionumber=<xsl:value-of select="marc:biblionumber" /></xsl:attribute>
+								  <xsl:choose>
+									<xsl:when test="marc:title">
+									  <xsl:value-of select="substring-before( concat(marc:title, '/'), '/')" />
+									</xsl:when>
+									<xsl:otherwise>
+									  <xsl:value-of select="substring-before( concat(marc:unititle, '/'), '/')" />
+									</xsl:otherwise>
+								  </xsl:choose>
+							   </a>
+						 </span>
+					   <xsl:if test="marc:author">
+						 -
+						 <span class="componentPartRecordAuthor">
+							   <xsl:value-of select="marc:author" />
+						 </span>
+					   </xsl:if>
+				 </span>
+				 <br />
+			   </xsl:for-each>
+		 </span>
+		</xsl:if>
+
+
         <xsl:if test="marc:datafield[@tag=245]">
         <h1 class="title" property="name">
             <xsl:for-each select="marc:datafield[@tag=245]">
@@ -145,6 +176,7 @@
             </xsl:for-each>
         </h1>
         </xsl:if>
+
 
         <!-- Author Statement: Alternate Graphic Representation (MARC 880) -->
         <xsl:if test="$display880">
@@ -983,7 +1015,7 @@
         </xsl:if>
 
     </xsl:element>
-    </xsl:template>
+    </xsl:template><!-- End of  marc:record -->
 
     <xsl:template name="showAuthor">
         <xsl:param name="authorfield" />
