@@ -219,6 +219,7 @@ att 9009    cn-prefix
 att 9010    cn-suffix
 att 9011    Suppress
 att 9012    Identifier-other
+att 9013    Control-number-identifier
 
 # Items Index
 att 8001    withdrawn
