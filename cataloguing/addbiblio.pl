@@ -966,6 +966,20 @@ elsif ( $op eq "delete" ) {
 	exit;
     }
     
+    #Check if there are component part records to delete
+    my @removalErrors;
+    foreach my $componentPartBiblionumber (  @{C4::Biblio::getComponentBiblionumbers( $record )}  ) {
+        my $error = &DelBiblio($componentPartBiblionumber);
+        my $html = "<a href='/cgi-bin/koha/catalogue/detail.pl?biblionumber=$componentPartBiblionumber'>$componentPartBiblionumber</a>";
+        push(@removalErrors, $html.' : '.$error) if $error;
+    }
+    if (@removalErrors) {
+        warn "ERROR when DELETING COMPONENT PART BIBLIOS: \n" . join("\n",@removalErrors);
+        print "Content-Type: text/html\n\n<html><body><h1>ERROR when DELETING COMPONENT PART BIBLIOS:</h1>" . join("<br />",@removalErrors)."</body></html>";
+	    exit;
+    }
+    #I think we got them all!
+
     print $input->redirect('/cgi-bin/koha/catalogue/search.pl');
     exit;
     
