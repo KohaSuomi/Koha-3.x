@@ -120,17 +120,19 @@ sub BreedingSearch {
 
 =head2 Z3950Search
 
-Z3950Search($pars, $template);
+Z3950Search($pars, $template, $getAll);
 
 Parameters for Z3950 search are all passed via the $pars hash. It may contain isbn, title, author, dewey, subject, lccall, controlnumber, stdid, srchany.
 Also it should contain an arrayref id that points to a list of id's of the z3950 targets to be queried (see z3950servers table).
 This code is used in acqui/z3950_search and cataloging/z3950_search.
 The second parameter $template is a Template object. The routine uses this parameter to store the found values into the template.
 
+Param3 $getAll, Get all the results instead of a small subset. $template is interpreted as a HASH where the search object is stored.
+
 =cut
 
 sub Z3950Search {
-    my ($pars, $template)= @_;
+    my ($pars, $template, $getAll)= @_;
 
     my @id= @{$pars->{id}};
     my $page= $pars->{page};
@@ -258,7 +260,18 @@ sub Z3950Search {
                 my $numresults = $oResult[$k]->size();
                 my $i;
                 my $result = '';
-                if ( $numresults > 0  and $numresults >= (($page-1)*20)) {
+                if ($getAll && $numresults > 0) {
+                    for ($i = 0 ; $i < $numresults ; $i++) {
+                        if($oResult[$k]->record($i)) {
+                            my $res=_handle_one_result($oResult[$k]->record($i), $serverinfo[$k], ++$imported, $biblionumber); #ignores error in sequence numbering
+                            push @breeding_loop, $res if $res;
+                        }
+                        else {
+                            push(@breeding_loop,{'server'=>$serverinfo[$k]->{name},'title'=>join(': ',$oConnection[$k]->error_x()),'breedingid'=>-1,'biblionumber'=>-1});
+                        }
+                    }
+                }
+                elsif ( $numresults > 0  and $numresults >= (($page-1)*20)) {
                     $show_next = 1 if $numresults >= ($page*20);
                     $total_pages = int($numresults/20)+1 if $total_pages < ($numresults/20);
                     for ($i = ($page-1)*20; $i < (($numresults < ($page*20)) ? $numresults : ($page*20)); $i++) {
@@ -274,13 +287,22 @@ sub Z3950Search {
             }
         }    # if $k !=0
 
-        $template->param(
-            numberpending => $nremaining,
-            current_page => $page,
-            total_pages => $total_pages,
-            show_nextbutton => $show_next?1:0,
-            show_prevbutton => $page!=1,
-        );
+        if ($getAll) {
+            $template->{numberpending} = $nremaining;
+            $template->{current_page} = $page;
+            $template->{total_pages} = $total_pages;
+            $template->{show_nextbutton} = $show_next;
+            $template->{show_prevbutton} = $page;
+        }
+        else {
+            $template->param(
+                numberpending => $nremaining,
+                current_page => $page,
+                total_pages => $total_pages,
+                show_nextbutton => $show_next?1:0,
+                show_prevbutton => $page!=1,
+            );
+        }
     } # while nremaining
 
     #close result sets and connections
@@ -293,11 +315,18 @@ sub Z3950Search {
     foreach my $id (@id) {
         push @servers, {id => $id};
     }
-    $template->param(
-        breeding_loop => \@breeding_loop,
-        servers => \@servers,
-        errconn       => \@errconn
-    );
+    if ($getAll) {
+        $template->{breeding_loop} = \@breeding_loop;
+        $template->{servers} = \@servers;
+        $template->{errconn} = \@errconn;
+    }
+    else {
+        $template->param(
+            breeding_loop => \@breeding_loop,
+            servers => \@servers,
+            errconn       => \@errconn
+        );
+    }
 }
 
 sub _handle_one_result {
