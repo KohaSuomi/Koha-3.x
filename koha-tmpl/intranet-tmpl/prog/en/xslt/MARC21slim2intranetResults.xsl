@@ -717,6 +717,12 @@
 	</span>
 </xsl:if> <!-- DisplayIconsXSLT -->
 
+    <xsl:if test="marc:datafield[@tag=041]">
+      <span class="results_summary language">
+        <xsl:call-template name="getLanguageImages" />
+      </span>
+    </xsl:if>
+
     <!-- Publisher Statement: Alternate Graphic Representation (MARC 880) -->
     <xsl:if test="$display880">
       <xsl:call-template name="m880Select">
