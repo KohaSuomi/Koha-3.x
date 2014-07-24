@@ -124,17 +124,20 @@ if ( $run_report ) {
             GROUP_CONCAT(DISTINCT items.copynumber
                     ORDER BY items.itemnumber SEPARATOR '<br/>') l_copynumber,
             items.itemnumber,
+            biblio.notes,
             notificationdate,
             reminderdate,
             max(priority) as priority,
             reserves.found,
             biblio.title,
             biblio.author,
+            biblioitems.marcxml,
             count(DISTINCT items.itemnumber) as icount,
             count(DISTINCT reserves.borrowernumber) as rcount
     FROM  reserves
         LEFT JOIN items ON items.biblionumber=reserves.biblionumber 
         LEFT JOIN biblio ON reserves.biblionumber=biblio.biblionumber
+        LEFT JOIN biblioitems ON reserves.biblionumber=biblioitems.biblionumber
         LEFT JOIN branchtransfers ON items.itemnumber=branchtransfers.itemnumber
         LEFT JOIN issues ON items.itemnumber=issues.itemnumber
     WHERE
@@ -175,6 +178,7 @@ if ( $run_report ) {
                 phone           => $data->{phone},
                 email           => $data->{email},
                 biblionumber    => $data->{biblionumber},
+                languagecodes   => getLanguageCodes(  $data->{marcxml}  ),
                 statusw         => ( $data->{found} eq "W" ),
                 statusf         => ( $data->{found} eq "F" ),
                 holdingbranch   => $data->{l_holdingbranch},
@@ -207,3 +211,26 @@ $template->param(
 );
 
 output_html_with_http_headers $input, $cookie, $template->output;
+
+sub getLanguageCodes {
+    my $marcxml = shift;
+
+    if ($marcxml =~ /<datafield tag="041".*?>(.*?)<\/datafield>/s) {
+        my $fieldStr = $1;
+        my @subfields = $fieldStr =~ /<subfield code="(.)">(.*?)<\/subfield>/sg;
+        my %sortedByCode;
+        for (my $i=0 ; $i<@subfields ; $i=$i+2) {
+            my $code = $subfields[$i];
+            my $content = $subfields[$i+1];
+
+            if ($sortedByCode{$code}) { push @{$sortedByCode{$code}} , $content; }
+            else { $sortedByCode{$code} = [$content]; }
+        }
+
+        #foreach my $code (sort keys %sortedByCode) {
+        #
+        #}
+        return \%sortedByCode;
+    }
+    return {};
+}

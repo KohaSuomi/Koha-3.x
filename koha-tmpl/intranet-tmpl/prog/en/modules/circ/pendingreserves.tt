@@ -112,9 +112,12 @@ $(document).ready(function() {
             <td>[% reserveloo.rcount %]</td>
             <td>
             <p>
-                [% INCLUDE 'biblio-default-view.inc' biblionumber = reserveloo.biblionumber %]
-                [% reserveloo.title |html %]</a></p>
-                [% IF ( reserveloo.author ) %]<p> by [% reserveloo.author %]</p>[% END %]
+        [% INCLUDE 'biblio-default-view.inc' biblionumber = reserveloo.biblionumber %]
+                    [% reserveloo.title |html %]
+
+                [% INCLUDE 'showLanguages.inc' languagecodes = reserveloo.languagecodes %]
+                </a> [% IF ( reserveloo.author ) %]<p> by [% reserveloo.author %]</p>[% END %]
+            </p>
             </td>
         [% ELSE %]
             <td>"</td>
