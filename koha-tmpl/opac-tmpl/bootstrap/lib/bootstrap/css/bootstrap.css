@@ -6305,3 +6305,9 @@ button.close {
     overflow: visible !important;
   }
 }
+
+.lang_icon {
+  padding-right: 5px;
+  vertical-align: baseline;
+  height: 11px;
+}

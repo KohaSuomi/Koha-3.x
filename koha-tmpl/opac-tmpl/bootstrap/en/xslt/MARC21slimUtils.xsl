@@ -191,6 +191,49 @@
 
     </xsl:template>
 
+    <!-- Function getLanguages:  Gets the language flag images for this MARC record
+    -->
+    <xsl:template name="getLanguageImages">
+        <xsl:if test="marc:datafield[@tag=041]">
+            <xsl:for-each select="marc:datafield[@tag=041]">
+                <xsl:if test="marc:subfield[@code='a']">
+                    <span class="label">Language: </span>
+                    <xsl:for-each select="marc:subfield[@code='a']">
+                        <xsl:call-template name="getLanguageImage"><xsl:with-param name="languageCode"><xsl:value-of select="."/></xsl:with-param></xsl:call-template>
+                    </xsl:for-each>
+                </xsl:if>
+                <xsl:if test="marc:subfield[@code='b']">
+                    <span class="label">Summary language: </span>
+                    <xsl:for-each select="marc:subfield[@code='b']">
+                        <xsl:call-template name="getLanguageImage"><xsl:with-param name="languageCode"><xsl:value-of select="."/></xsl:with-param></xsl:call-template>
+                    </xsl:for-each>
+                </xsl:if>
+                <xsl:if test="marc:subfield[@code='d']">
+                    <span class="label">Spoken language: </span>
+                    <xsl:for-each select="marc:subfield[@code='d']">
+                        <xsl:call-template name="getLanguageImage"><xsl:with-param name="languageCode"><xsl:value-of select="."/></xsl:with-param></xsl:call-template>
+                    </xsl:for-each>
+                </xsl:if>
+                <xsl:if test="marc:subfield[@code='h']">
+                    <span class="label">Original language: </span>
+                    <xsl:for-each select="marc:subfield[@code='h']">
+                        <xsl:call-template name="getLanguageImage"><xsl:with-param name="languageCode"><xsl:value-of select="."/></xsl:with-param></xsl:call-template>
+                    </xsl:for-each>
+                </xsl:if>
+                <xsl:if test="marc:subfield[@code='j']">
+                    <span class="label">Subtitle language: </span>
+                    <xsl:for-each select="marc:subfield[@code='j']">
+                        <xsl:call-template name="getLanguageImage"><xsl:with-param name="languageCode"><xsl:value-of select="."/></xsl:with-param></xsl:call-template>
+                    </xsl:for-each>
+                </xsl:if>
+            </xsl:for-each>
+        </xsl:if>
+    </xsl:template>
+    <xsl:template name="getLanguageImage">
+        <xsl:param name="languageCode"/>
+<!--        <xsl:element name="img"><xsl:attribute name="src">/opac-tmpl/lib/phoca_flag_icons/<xsl:value-of select="$languageCode"/>.png</xsl:attribute><xsl:attribute name="alt"><xsl:value-of select="$languageCode"/></xsl:attribute><xsl:attribute name="title"><xsl:value-of select="$languageCode"/></xsl:attribute><xsl:attribute name="class">lang_icon</xsl:attribute></xsl:element>-->
+        <xsl:element name="img"><xsl:attribute name="src">/opac-tmpl/lib/famfamfam/languages/<xsl:value-of select="$languageCode"/>.png</xsl:attribute><xsl:attribute name="alt"><xsl:value-of select="$languageCode"/></xsl:attribute><xsl:attribute name="title"><xsl:value-of select="$languageCode"/></xsl:attribute><xsl:attribute name="class">lang_icon</xsl:attribute></xsl:element>
+    </xsl:template>
 </xsl:stylesheet>
 
 <!-- Stylus Studio meta-information - (c)1998-2002 eXcelon Corp.

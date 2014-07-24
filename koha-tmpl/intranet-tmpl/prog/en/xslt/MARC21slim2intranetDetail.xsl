@@ -184,6 +184,11 @@
         </span>
     </xsl:if>
 
+    <xsl:if test="marc:datafield[@tag=041]">
+      <span class="results_summary language">
+        <xsl:call-template name="getLanguageImages" />
+      </span>
+    </xsl:if>
 
         <!--Series: Alternate Graphic Representation (MARC 880) -->
         <xsl:if test="$display880">
