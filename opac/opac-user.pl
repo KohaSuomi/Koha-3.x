@@ -192,6 +192,7 @@ if ($issues){
         if ($renewerror) {
             $issue->{'too_many'}   = 1 if $renewerror eq 'too_many';
             $issue->{'on_reserve'} = 1 if $renewerror eq 'on_reserve';
+            $issue->{'non_renewable'} = 1 if $renewerror eq 'non_renewable';
 
             if ( $renewerror eq 'too_soon' ) {
                 $issue->{'too_soon'}         = 1;

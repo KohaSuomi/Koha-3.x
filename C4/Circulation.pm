@@ -720,7 +720,7 @@ sub CanBookBeIssued {
 
         my $branch = _GetCircControlBranch($item,$borrower);
         my $itype = ( C4::Context->preference('item-level_itypes') ) ? $item->{'itype'} : $biblioitem->{'itemtype'};
-        $duedate = CalcDateDue( $issuedate, $itype, $branch, $borrower );
+        $duedate = CalcDateDue( $item, $issuedate, $itype, $branch, $borrower );
 
         # Offline circ calls AddIssue directly, doesn't run through here
         #  So issuingimpossible should be ok.
@@ -1121,7 +1121,7 @@ sub checkHighHolds {
           ? $biblio->{'itype'}
           : $biblio->{'itemtype'};
         my $orig_due =
-          C4::Circulation::CalcDateDue( $issuedate, $itype, $branch,
+          C4::Circulation::CalcDateDue( $item, $issuedate, $itype, $branch,
             $borrower );
 
         my $reduced_datedue =
@@ -2573,6 +2573,12 @@ sub CanBookBeRenewed {
     my $item      = GetItem($itemnumber)      or return ( 0, 'no_item' );
     my $itemissue = GetItemIssue($itemnumber) or return ( 0, 'no_checkout' );
 
+    ##HACKMAN HERE! quickloan items cannot be renewed!
+    if ($item->{ccode} eq 'PILA') {
+        return (0, 'non_renewable');
+    }
+
+
     $borrowernumber ||= $itemissue->{borrowernumber};
     my $borrower = C4::Members::GetMember( borrowernumber => $borrowernumber )
       or return;
@@ -2757,6 +2763,11 @@ sub GetRenewCount {
 
     my $borrower = C4::Members::GetMember( borrowernumber => $bornum);
     my $item     = GetItem($itemno); 
+
+    #Quick circulating (PILA) cannot be renewed!
+    if ($item && $item->{ccode} eq 'PILA') {
+        return (0, 0, 0); #returns ( $renewcount, $renewsallowed, $renewsleft );
+    }
 
     # Look in the issues table for this item, lent to this borrower,
     # and not yet returned.
@@ -3220,7 +3231,13 @@ sub CalcDateDue {
             $loanlength->{$length_key} = 14;
         }
     }
-
+    if ($item && $item->{ccode} eq 'PILA') {
+        if ( $loanlength->{lengthunit} eq 'hours' ) {
+            $loanlength->{$length_key} = 168;
+        } else {
+            $loanlength->{$length_key} = 7;
+        }
+    }
 
     my $datedue;
     if ( $startdate ) {

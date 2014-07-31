@@ -226,6 +226,8 @@ var MSG_CONFIRM_RESUME_HOLDS  = _("Are you sure you want to resume all suspended
                         <span class="renewals">([% ISSUE.renewsleft %] of [% ISSUE.renewsallowed %] renewals remaining)</span>
                     [% ELSIF ( ISSUE.too_many ) %]
                         Not renewable
+                    [% ELSIF ( ISSUE.non_renewable ) %]
+                        Not renewable
                     [% ELSIF ( ISSUE.too_soon ) %]
                         No renewal before [% ISSUE.soonestrenewdate %]
                         <span class="renewals">([% ISSUE.renewsleft %] of [% ISSUE.renewsallowed %] renewals remaining)</span>

@@ -417,6 +417,11 @@ sub CanItemBeReserved{
     # item->{itype} will come for biblioitems if necessery
     my $item = GetItem($itemnumber);
 
+    ##HACKMAN HERE! quickloan items cannot be put on hold!
+    if ($item->{ccode} eq 'PILA') {
+        return (0);
+    }
+
     # If an item is damaged and we don't allow holds on damaged items, we can stop right here
     return 0 if ( $item->{damaged} && !C4::Context->preference('AllowHoldsOnDamagedItems') );
 

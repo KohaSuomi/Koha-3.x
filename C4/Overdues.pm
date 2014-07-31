@@ -109,14 +109,14 @@ sub Getoverdues {
     my $statement;
     if ( C4::Context->preference('item-level_itypes') ) {
         $statement = "
-   SELECT issues.*, items.itype as itemtype, items.homebranch, items.barcode
+   SELECT issues.*, items.itype as itemtype, items.homebranch, items.barcode, items.ccode
      FROM issues 
 LEFT JOIN items       USING (itemnumber)
     WHERE date_due < NOW()
 ";
     } else {
         $statement = "
-   SELECT issues.*, biblioitems.itemtype, items.itype, items.homebranch, items.barcode
+   SELECT issues.*, biblioitems.itemtype, items.itype, items.homebranch, items.barcode, items.ccode
      FROM issues 
 LEFT JOIN items       USING (itemnumber)
 LEFT JOIN biblioitems USING (biblioitemnumber)
@@ -247,6 +247,12 @@ sub CalcFine {
     my $data = C4::Circulation::GetIssuingRule($bortype, $itemtype, $branchcode);
     my $fine_unit = $data->{lengthunit};
     $fine_unit ||= 'days';
+
+    #HACKMAN HERE! If we have quick loan items identified by ccode == PILA (Pikalaina), their fine is 0.50!
+    if ($item->{ccode} eq 'PILA') {
+        $data->{fine} = 0.5;
+    }
+
 
     my $chargeable_units = _get_chargeable_units($fine_unit, $start_date, $end_date, $branchcode);
     my $units_minus_grace = $chargeable_units - $data->{firstremind};

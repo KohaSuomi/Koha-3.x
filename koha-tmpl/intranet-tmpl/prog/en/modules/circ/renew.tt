@@ -81,6 +81,10 @@
 
                                 <p>[% borrower.firstname %] [% borrower.surname %] ( <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=[% borrower.borrowernumber %]"> [% borrower.cardnumber %] </a> ) is currently restricted.</p>
 
+                            [% ELSIF error == "non_renewable" %]
+
+                                <p>This item is non renewable.</p>
+
                             [% ELSE %]
 
                                 [% error %]
