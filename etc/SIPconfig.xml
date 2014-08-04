@@ -8,9 +8,9 @@
   For OpenSolaris, add: syslog_logsock=stream
 -->
   <server-params
-    min_servers='1'
-    min_spare_servers='0' 
-    log_file='Sys::Syslog'
+    min_servers='3'
+    min_spare_servers='1'
+    log_file='/home/koha/koha-dev/var/log/sip2.log'
     syslog_ident='koha_sip'
     syslog_facility='local6'
   />
@@ -28,19 +28,22 @@
       protocol="SIP/2.00"
       timeout="60" />
 
+<!-- IN 3.16.x protocol is SIP/2.00, we have 2.10?
+     Host kohasipserver is defined in /etc/hosts and points to the current containers defined SIPserver,
+     this makes migrating these configurations to various containers easier. -->
     <service
-      port="127.0.0.1:6001/tcp"
+      port="kohasipserver:6001/tcp"
       transport="RAW" 
-      protocol="SIP/2.00"
+      protocol="SIP/2.10"
       timeout="60" />
   </listeners>
 
   <accounts>
-      <login id="term1"  password="term1" delimiter="|" error-detect="enabled" institution="CPL" encoding="ascii" />
-      <login id="koha"   password="koha"  delimiter="|" error-detect="enabled" institution="kohalibrary" encoding="utf8" />
-      <login id="koha2"  password="koha" institution="kohalibrary2" terminator="CR" />
-      <login id="lpl-sc" password="1234" institution="LPL" />
-      <login id="lpl-sc-beacock" password="xyzzy"
+    <login id="aino"  password="ainokainen"       delimiter="|" error-detect="enabled" institution="JOE_JOE" terminator="CR" encoding="utf8" />
+    <login id="oiva"   password="oivallinen"      delimiter="|" error-detect="enabled" institution="JOE_JOE" terminator="CR" encoding="utf8" />
+    <login id="herkules"  password="palautathan"  delimiter="|" error-detect="enabled" institution="JOE_JOE" terminator="CR" encoding="utf8" />
+    <login id="markiisi"  password="pimeys vie minut"  delimiter="|" error-detect="enabled" institution="JOE_YMY" terminator="CR" encoding="utf8" />
+    <login id="lpl-sc-beacock" password="xyzzy"
              delimiter="|" error-detect="enabled" institution="LPL"
              send_patron_home_library_in_af="1" />
   </accounts>
@@ -53,32 +56,16 @@ in our case "ILS".
 -->
 
 <institutions>
-    <institution id="MAIN" implementation="ILS" parms="">
-          <policy checkin="true" renewal="true" checkout="true"
-	  	  status_update="false" offline="false"
-		  timeout="100"
-	  	  retries="5" />
-    </institution>
-    <institution id="CPL" implementation="ILS" parms="">
+    <institution id="JOE_JOE" implementation="ILS" parms="">
           <policy checkin="true" renewal="true" checkout="true"
 	  	  status_update="false" offline="false"
 		  timeout="25"
 	  	  retries="5" />
     </institution>
-    <institution id="kohalibrary" implementation="ILS" parms="">
-          <policy checkin="true" renewal="false" checkout="true"
+    <institution id="JOE_YMY" implementation="ILS" parms="">
+          <policy checkin="true" renewal="true" checkout="true"
 	  	  status_update="false" offline="false"
-		  timeout="100"
-	  	  retries="5" />
-    </institution>
-    <institution id="kohalibrary2" implementation="ILS" parms="">
-          <policy checkin="true" renewal="false" checkout="true"
-		  timeout="100"
-	  	  retries="3" />
-    </institution>
-    <institution id="LPL" implementation="ILS">
-          <policy checkin="true" renewal="false" checkout="true"
-		  timeout="100"
+		  timeout="25"
 	  	  retries="5" />
     </institution>
 </institutions>
