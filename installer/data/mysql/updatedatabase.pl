@@ -8572,6 +8572,53 @@ if (CheckVersion($DBversion)) {
     SetVersion($DBversion);
 }
 
+$DBversion = "3.15.00.XXX";
+if (CheckVersion($DBversion)) {
+    $dbh->do(q{
+        ALTER TABLE collections CHANGE colBranchcode colBranchcode VARCHAR( 10 ) NULL DEFAULT NULL
+    });
+    $dbh->do(q{
+        ALTER TABLE collections ADD INDEX ( colBranchcode )
+    });
+    $dbh->do(q{
+        ALTER TABLE collections
+            ADD CONSTRAINT collections_ibfk_1 FOREIGN KEY (colBranchcode) REFERENCES branches (branchcode) ON DELETE CASCADE ON UPDATE CASCADE
+    });
+
+    $dbh->do(q{
+        ALTER TABLE collections_tracking
+            ADD origin_branchcode VARCHAR(10) NULL DEFAULT NULL
+    });
+
+    $dbh->do(q{
+        ALTER TABLE collections_tracking
+            ADD transfer_branch VARCHAR(10) NULL DEFAULT NULL
+    });
+
+    $dbh->do(q{
+        ALTER TABLE collections
+            ADD owningBranchcode VARCHAR(10) NULL DEFAULT NULL
+    });
+
+    $dbh->do(q{
+        ALTER TABLE collections
+            ADD CONSTRAINT collections_owning_1 FOREIGN KEY (owningBranchcode) REFERENCES branches (branchcode) ON DELETE CASCADE ON UPDATE CASCADE
+    });
+
+    $dbh->do(q{
+        ALTER TABLE collections_tracking
+            ADD CONSTRAINT collections_origin_1 FOREIGN KEY (origin_branchcode) REFERENCES branches (branchcode) ON DELETE CASCADE ON UPDATE CASCADE
+    });
+
+    $dbh->do(q{
+        ALTER TABLE collections_tracking
+            ADD CONSTRAINT collections_transfer_1 FOREIGN KEY (transfer_branch) REFERENCES branches (branchcode) ON DELETE CASCADE ON UPDATE CASCADE
+    });
+
+    print "Upgrade to $DBversion done (Bug 8836 - Resurrect Rotating Collections)\n";
+    SetVersion($DBversion);
+}
+
 =head1 FUNCTIONS
 
 =head2 TableExists($table)

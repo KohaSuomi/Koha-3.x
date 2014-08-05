@@ -571,7 +571,10 @@ function verify_images() {
                         </td>
                     [% END %]
                     <td class="location">[% UNLESS ( singlebranchmode ) %][% item.branchname %] [% END %]</td>
-                    <td class="homebranch">[% item.homebranch %]<span class="shelvingloc">[% item.location %]</span> </td>
+                    <td class="homebranch">[% item.homebranch %]<span class="shelvingloc">[% item.location %]</span>
+                    [% IF item.inCollection %]
+                    <span class="shelvingloc">(Rotating collections)</span> </td>
+                    [% END %]
                     [% IF ( itemdata_ccode ) %]<td>[% item.ccode %]</td>[% END %]
                     <td class="itemcallnumber">[% IF ( item.itemcallnumber ) %] [% item.itemcallnumber %][% END %]</td>
                     <td class="status">

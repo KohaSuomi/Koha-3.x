@@ -1,6 +1,79 @@
 [% INCLUDE 'doc-head-open.inc' %]
 <title>Koha &rsaquo; Tools &rsaquo; Rotating collections &rsaquo; Edit collections</title>
 [% INCLUDE 'doc-head-close.inc' %]
+[% INCLUDE 'datatables.inc' %]
+<link rel="stylesheet" type="text/css" href="[% themelang %]/css/datatables.css" />
+<script type="text/javascript">
+  //<![CDATA[
+      $( document ).ready(function() {
+        var my_table = $("#table-collections").dataTable($.extend(true, {}, dataTablesDefaults, {
+          'bAutoWidth': true,
+          'bPaginate': false,
+          'bFilter': false,
+          'bInfo': false,
+          "aoColumnDefs": [
+            { 'bSortable': false, 'aTargets': [ 'nosort' ] }
+          ]
+        }));
+
+        // KD-139: Handle collection removal clicks
+        $("button[id^=remove-col]").click(function() {
+          var selectedCollectionId = this.getAttribute('data-colId');
+          var selectedCollectionTitle = this.getAttribute('data-colTitle');
+          var selectedCollectionDesc = this.getAttribute('data-colDesc');
+          if (selectedCollectionId && selectedCollectionTitle) {
+            $("#btn-remove-confirm").attr("data-colId", selectedCollectionId);
+            $("#modal-remove-body-message").text("Please confirm the removal of collection: " + selectedCollectionTitle);
+            $("#modal-remove-body-desc").text("Description: " + selectedCollectionDesc);
+          }
+        });
+
+        $("#btn-remove-confirm").click(function() {
+          var colToRemove = this.getAttribute('data-colid');
+          if (colToRemove) {
+            removeCollection(colToRemove);
+          }
+        });
+
+        $(document).ajaxStart(function (event) {
+            $("#alert-block").hide();
+            $("#alert-block").after($(".loading").show());
+        });
+        $(document).ajaxStop(function () {
+            $(".loading").hide();
+            $("#alert-block").show();
+        });
+
+      });
+
+      // KD-139: Removes a collection using a standard ajax-call
+      function removeCollection(selectedCollectionId) {
+        $.get("editCollections.pl?action=delete&colId=" + selectedCollectionId, function(response) {
+          var resultMsg = $(response).find("#alert-block");
+          var rowToRemove = $("button[id=remove-col-" + selectedCollectionId + "]").closest('tr');
+          $("#alert-block").html(resultMsg);
+          if ($("#alert-block").find('.alert-success')) {
+            reloadDataTable();
+          }
+          var collectionTableRows = $('#table-collections tr').length;
+          if (collectionTableRows < 2) {
+            window.location.reload();
+          }
+        });
+      }
+
+      function reloadDataTable() {
+        $(document).ready(function() {
+          $.get("editCollections.pl", function(response) {
+              var newCollectionsTable = $(response).find("#table-collections");
+              var oldCollectionsTable = $("#table-collections");
+              $("#table-collections_wrapper #table-collections").remove();
+              $("#create-edit-collection").after(newCollectionsTable.html());
+          });
+        });
+      }
+  //]]>
+</script>
 </head>
 <body id="rcoll_editCollections" class="tools rcoll">
 [% INCLUDE 'header.inc' %]
@@ -10,63 +83,40 @@
 
 <div id="doc3">
 <div id="bd">
-        <div class="yui-gb">
+    <div class="yui-gb">
       <h1>Rotating collections: Edit collections</h1>
 
-<!--
+      <div id="alert-block">
       [% IF ( previousActionCreate ) %]
         [% IF ( createSuccess ) %]
-          <div>Collection '[% createdTitle %]' Created successfully!</div>
+          <div class="alert-success">Collection '[% createdTitle %]' Created successfully!</div>
         [% ELSE %]
-          <div>Collection '[% createdTitle %]' Failed to be created!</div>
-          <div>Reason: <strong>[% failureMessage %]</strong></div>
+          <div class="alert-error">Collection '[% createdTitle %]' Failed to be created!</div>
+          <div class="alert-error">Reason: <strong>[% failureMessage %]</strong></div>
         [% END %]
       [% END %]
 
       [% IF ( previousActionDelete ) %]
-        [% IF ( DeleteSuccess ) %]
-          <div>Collection Deleted successfully!</div>
+        [% IF ( deleteSuccess ) %]
+          <div class="alert-success">Collection Deleted successfully!</div>
         [% ELSE %]
-          <div>Collection Failed to be deleted!</div>
+          <div class="alert-error">Collection Failed to be deleted!</div>
         [% END %]
       [% END %]
--->
+
 
       [% IF ( previousActionUpdate ) %]
         [% IF ( updateSuccess ) %]
-          <div>Collection '[% updatedTitle %]' Updated successfully!</div>
+          <div class="alert-success">Collection '[% updatedTitle %]' Updated successfully!</div>
         [% ELSE %]
-          <div>Collection '[% updatedTitle %]' Failed to be updated!</div>
-          <div>Reason: <strong>[% failureMessage %]</strong></div>
+          <div class="alert-error">Collection '[% updatedTitle %]' Failed to be updated!</div>
+          <div class="alert-error">Reason: <strong>[% failureMessage %]</strong></div>
         [% END %]
       [% END %]
-
+      </div><br />
       <div>
-        [% IF ( collectionsLoop ) %]
-          <table>
-            <tr>
-              <th>Title</th>
-              <th>Description</th>
-              <th>Holding library</th>
-              <td></td>
-              <td></td>
-            </tr>
-            [% FOREACH collectionsLoo IN collectionsLoop %]
-              <tr>
-                <td>[% collectionsLoo.colTitle %]</td>
-                <td>[% collectionsLoo.colDesc %]</td>
-                <td>[% collectionsLoo.colBranchcode %]</td>
-                <td><a href="editCollections.pl?action=edit&amp;colId=[% collectionsLoo.colId %]">Edit</a></td>
-                <td><a href="editCollections.pl?action=delete&amp;colId=[% collectionsLoo.colId %]">Delete</a></td>
-              </tr>
-            [% END %]
-          </table>
-        [% ELSE %]
-          There are no collections currently defined.
-        [% END %]
-      </div>    
 
-      <div>
+      <div id="create-edit-collection">
         <br />
 
         [% IF ( previousActionEdit ) %]
@@ -99,7 +149,7 @@
                 <label for="description">Description: </label>
               </td>
               <td>
-                [% IF (editColDescription ) %]<input type="text" size="50" name="description" value="[ editColDescription %]" />
+                [% IF (editColDescription ) %]<input type="text" size="50" name="description" value="[% editColDescription %]" />
                 [% ELSE %]<input type="text" size="50" name="description" />[% END %]
               </td>
             </tr>
@@ -116,13 +166,58 @@
           </table>
         </form>
       </div>
+      <br />
+
+        [% IF ( collectionsLoop ) %]
+          <table id="table-collections">
+           <thead>
+            <tr>
+              <th>Title</th>
+              <th>Description</th>
+              <th>Transferred to</th>
+              <th class="nosort">Edit</th>
+              <th class="nosort">Delete</th>
+            </tr>
+           <thead>
+           <tbody>
+            [% FOREACH collectionsLoo IN collectionsLoop %]
+              <tr>
+                <td>[% collectionsLoo.colTitle %]</td>
+                <td>[% collectionsLoo.colDesc %]</td>
+                <td>[% IF collectionsLoo.branchname %][% collectionsLoo.branchname %][% ELSE %]Not yet transferred[% END %]</td>
+                <td><a class="btn btn-small" href="editCollections.pl?action=edit&amp;colId=[% collectionsLoo.colId %]"><i class="icon-edit"></i> Edit</a></td>
+                <td><a class="btn btn-small" id="remove-col-[% collectionsLoo.colId %]" data-toggle="modal" href="#removeColModal" data-coltitle="[% collectionsLoo.colTitle %]" data-colid="[% collectionsLoo.colId %]" data-coldesc="[% collectionsLoo.colDesc %]"><i class="icon-remove"></i> Delete</a></td>
+              </tr>
+            [% END %]
+           </tbody>
+          </table>
+        [% ELSE %]
+          There are no collections currently defined.
+        [% END %]
+      </div>
 
       <div>
         <br/>
-        <input type="button" value="Return to rotating collections home" onclick="window.location.href='rotatingCollections.pl'">
+        <a href="rotatingCollections.pl" class="btn btn-small"><i class="icon-home"></i> Return to rotating collections home</a>
       </div>
 
 </div>
 </div>
+<!-- Modal for confirm deletion box-->
+<div class="modal hide" id="removeColModal" tabindex="-1" role="dialog" aria-labelledby="removeColModalLabel" aria-hidden="true">
+    <div class="modal-header">
+        <button type="button" class="closebtn" data-dismiss="modal" aria-hidden="true">×</button>
+        <h3 id="removeColModalHeader">Confirm collection removal</h3>
+    </div>
+    <div class="modal-body">
+       <strong><p id="modal-remove-body-message"></p></strong>
+       <p id="modal-remove-body-desc"></p>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-primary" id="btn-remove-cancel" data-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-default" id="btn-remove-confirm" data-colId="" data-dismiss="modal">Remove collection</button>
+    </div>
+</div>
+<div class="loading hide"><strong>Processing...</strong><img src="/intranet-tmpl/prog/img/loading.gif" /></div>
 [% INCLUDE 'intranet-bottom.inc' %]
 

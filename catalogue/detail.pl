@@ -44,6 +44,7 @@ use Koha::DateUtils;
 use C4::HTML5Media;
 use C4::CourseReserves qw(GetItemCourseReservesInfo);
 use C4::Acquisition qw(GetOrdersByBiblionumber);
+use C4::RotatingCollections qw(isItemInAnyCollection); # KD-139
 
 my $query = CGI->new();
 
@@ -256,6 +257,12 @@ foreach my $item (@items) {
         $item->{transfertfrom} = $branches->{$transfertfrom}{branchname};
         $item->{transfertto}   = $branches->{$transfertto}{branchname};
         $item->{nocancel} = 1;
+    }
+
+    # KD-139: Check the item's rotating collection status
+    my $inCollection = isItemInAnyCollection($item->{'itemnumber'});
+    if ($inCollection) {
+        $item->{inCollection} = 1;
     }
 
     # item has a host number if its biblio number does not match the current bib

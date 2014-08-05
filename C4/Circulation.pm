@@ -42,6 +42,7 @@ use C4::Koha qw(
     GetKohaAuthorisedValueLib
 );
 use C4::Overdues qw(CalcFine UpdateFine);
+use C4::RotatingCollections;
 use Algorithm::CheckDigits;
 
 use Data::Dumper;
@@ -336,8 +337,16 @@ sub transferbook {
 
     # can't transfer book if is already there....
     if ( $fbr eq $tbr ) {
-        $messages->{'DestinationEqualsHolding'} = 1;
-        $dotransfer = 0;
+        # KD-139: Allow transferred items that are still in their origin to be returned
+        my $transfers = GetTransfers($itemnumber);
+        my $originBranch = C4::RotatingCollections::GetItemOriginBranch($itemnumber);
+        if ($transfers && $originBranch && ($originBranch eq $fbr)) {
+            DeleteTransfer($itemnumber);
+        }
+        else {
+            $messages->{'DestinationEqualsHolding'} = 1;
+            $dotransfer = 0;
+        }
     }
 
     # check if it is still issued to someone, return it...
@@ -1986,6 +1995,7 @@ sub AddReturn {
             $messages->{'NeedsTransfer'} = 1;   # TODO: instead of 1, specify branchcode that the transfer SHOULD go to, $item->{homebranch}
         }
     }
+
     return ( $doreturn, $messages, $issue, $borrower );
 }
 
