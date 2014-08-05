@@ -1,9 +1,9 @@
 package C4::RotatingCollections;
 
-# $Id: RotatingCollections.pm,v 0.1 2007/04/20 kylemhall 
+# $Id: RotatingCollections.pm,v 0.1 2007/04/20 kylemhall
 
 # This package is inteded to keep track of what library
-# Items of a certain collection should be at. 
+# Items of a certain collection should be at.
 
 # Copyright 2007 Kyle Hall
 #
@@ -22,13 +22,14 @@ package C4::RotatingCollections;
 # with Koha; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-use strict;
-#use warnings; FIXME - Bug 2505
-
-require Exporter;
+use Modern::Perl;
 
 use C4::Context;
 use C4::Circulation;
+use C4::Reserves qw(GetReserveStatus);
+use C4::Biblio;
+use C4::Branch;
+use C4::Items;
 
 use DBI;
 
@@ -47,23 +48,34 @@ C4::RotatingCollections - Functions for managing rotating collections
 
 =cut
 
-@ISA = qw( Exporter );
-@EXPORT = qw( 
-  CreateCollection
-  UpdateCollection
-  DeleteCollection
-  
-  GetItemsInCollection
+BEGIN {
+    require Exporter;
+    @ISA    = qw( Exporter );
+    @EXPORT = qw(
+      CreateCollection
+      UpdateCollection
+      DeleteCollection
 
-  GetCollection
-  GetCollections
-  
-  AddItemToCollection
-  RemoveItemFromCollection
-  TransferCollection  
+      GetItemsInCollection
 
-  GetCollectionItemBranches
-);
+      GetCollection
+      GetCollections
+
+      AddItemToCollection
+      RemoveItemFromCollection
+      TransferCollection
+      TransferCollectionItem
+      ReturnCollectionItemToOrigin
+      ReturnCollectionToOrigin
+
+      GetCollectionItemBranches
+
+      GetItemOriginBranch
+      GetItemsCollection
+
+      isItemInAnyCollection
+    );
+}
 
 =head2  CreateCollection
  ( $success, $errorcode, $errormessage ) = CreateCollection( $title, $description );
@@ -81,27 +93,41 @@ C4::RotatingCollections - Functions for managing rotating collections
 =cut
 
 sub CreateCollection {
-  my ( $title, $description ) = @_;
+    my ( $title, $description, $owningbranch ) = @_;
 
-  ## Check for all neccessary parameters
-  if ( ! $title ) {
-    return ( 0, 1, "No Title Given" );
-  } 
-  if ( ! $description ) {
-    return ( 0, 2, "No Description Given" );
-  } 
+    ## Check for all neccessary parameters
+    if ( !$title ) {
+        return ( 0, 1, "No title given" );
+    }
+    if ( !$description ) {
+        return ( 0, 2, "No description given" );
+    }
 
-  my $success = 1;
+    if ( !$owningbranch ) {
+        return ( 0, 3, "No owning branch given" );
+    }
 
-  my $dbh = C4::Context->dbh;
+    # KD-139: Check whether a collection with the given title already exists
+    my $collections = GetCollections();
+    for my $col (@$collections) {
+        if ($col->{'colTitle'} eq $title) {
+            return (0, 4, "A collection with the title '" . $title . "' already exists");
+        }
+    }
 
-  my $sth;
-  $sth = $dbh->prepare("INSERT INTO collections ( colId, colTitle, colDesc ) 
-                        VALUES ( NULL, ?, ? )");
-  $sth->execute( $title, $description ) or return ( 0, 3, $sth->errstr() );
+    my $success = 1;
 
-  return 1;
- 
+    my $dbh = C4::Context->dbh;
+
+    my $sth;
+    $sth = $dbh->prepare(
+        "INSERT INTO collections ( colId, colTitle, colDesc, owningBranchcode )
+                        VALUES ( NULL, ?, ?, ? )"
+    );
+    $sth->execute( $title, $description, $owningbranch ) or return ( 0, 5, $sth->errstr() );
+
+    return 1;
+
 }
 
 =head2 UpdateCollection
@@ -123,30 +149,33 @@ Updates a collection
 =cut
 
 sub UpdateCollection {
-  my ( $colId, $title, $description ) = @_;
+    my ( $colId, $title, $description ) = @_;
 
-  ## Check for all neccessary parameters
-  if ( ! $colId ) {
-    return ( 0, 1, "No Id Given" );
-  }
-  if ( ! $title ) {
-    return ( 0, 2, "No Title Given" );
-  } 
-  if ( ! $description ) {
-    return ( 0, 3, "No Description Given" );
-  } 
+    ## Check for all neccessary parameters
+    if ( !$colId ) {
+        return ( 0, 1, "No Id Given" );
+    }
+    if ( !$title ) {
+        return ( 0, 2, "No Title Given" );
+    }
+    if ( !$description ) {
+        return ( 0, 3, "No Description Given" );
+    }
 
-  my $dbh = C4::Context->dbh;
+    my $dbh = C4::Context->dbh;
 
-  my $sth;
-  $sth = $dbh->prepare("UPDATE collections
+    my $sth;
+    $sth = $dbh->prepare(
+        "UPDATE collections
                         SET 
                         colTitle = ?, colDesc = ? 
-                        WHERE colId = ?");
-  $sth->execute( $title, $description, $colId ) or return ( 0, 4, $sth->errstr() );
-  
-  return 1;
-  
+                        WHERE colId = ?"
+    );
+    $sth->execute( $title, $description, $colId )
+      or return ( 0, 4, $sth->errstr() );
+
+    return 1;
+
 }
 
 =head2 DeleteCollection
@@ -165,21 +194,29 @@ sub UpdateCollection {
 =cut
 
 sub DeleteCollection {
-  my ( $colId ) = @_;
+    my ($colId) = @_;
 
-  ## Paramter check
-  if ( ! $colId ) {
-    return ( 0, 1, "No Collection Id Given" );;
-  }
-  
-  my $dbh = C4::Context->dbh;
+    ## Paramter check
+    if ( !$colId ) {
+        return ( 0, 1, "No Collection Id Given" );
+    }
 
-  my $sth;
+    my $collectionItems = GetItemsInCollection($colId);
+    # KD-139: Actually remove all items from the collection before removing the collection itself.
+    for my $item (@$collectionItems) {
+        my $itembiblio = GetBiblioFromItemNumber(undef, $item->{'barcode'});
+        my $itemnumber = $itembiblio->{'itemnumber'};
+        RemoveItemFromCollection($colId, $itemnumber);
+    }
 
-  $sth = $dbh->prepare("DELETE FROM collections WHERE colId = ?");
-  $sth->execute( $colId ) or return ( 0, 4, $sth->errstr() );
+    my $dbh = C4::Context->dbh;
 
-  return 1;
+    my $sth;
+
+    $sth = $dbh->prepare("DELETE FROM collections WHERE colId = ?");
+    $sth->execute($colId) or return ( 0, 4, $sth->errstr() );
+
+    return 1;
 }
 
 =head2 GetCollections
@@ -198,17 +235,32 @@ sub DeleteCollection {
 
 sub GetCollections {
 
-  my $dbh = C4::Context->dbh;
-  
-  my $sth = $dbh->prepare("SELECT * FROM collections");
-  $sth->execute() or return ( 1, $sth->errstr() );
-  
-  my @results;
-  while ( my $row = $sth->fetchrow_hashref ) {
-    push( @results , $row );
-  }
-  
-  return \@results;
+    my $dbh = C4::Context->dbh;
+    my $query = '
+    SELECT *
+    FROM collections
+    LEFT JOIN branches ON owningBranchcode = branches.branchcode
+    ';
+
+    my $sth = $dbh->prepare($query);
+    $sth->execute() or return ( 1, $sth->errstr() );
+
+    my @results;
+    while ( my $row = $sth->fetchrow_hashref ) {
+        my $colItems = GetItemsInCollection($row->{'colId'});
+        my $itemsTransferred = 0;
+        for my $item(@$colItems) {
+          my $itemOriginBranch = GetItemOriginBranch($item->{'itemnumber'});
+          my $itemCurHomeBranch = $item->{'homebranch'};
+          my ($transferred, $errocode, $errormessage) = isItemTransferred($item->{'itemnumber'});
+          $itemsTransferred++ if $transferred;
+        }
+        $row->{'colItemsCount'} = scalar(@$colItems);
+        $row->{'itemsTransferred'} = $itemsTransferred;
+        push( @results, $row );
+    }
+
+    return \@results;
 }
 
 =head2 GetItemsInCollection
@@ -229,32 +281,49 @@ sub GetCollections {
 =cut
 
 sub GetItemsInCollection {
-  my ( $colId ) = @_;
+    my ($colId) = @_;
 
-  ## Paramter check
-  if ( ! $colId ) {
-    return ( 0, 0, 1, "No Collection Id Given" );;
-  }
+    ## Paramter check
+    if ( !$colId ) {
+        return ( 0, 0, 1, "No Collection Id Given" );
+    }
 
-  my $dbh = C4::Context->dbh;
-  
-  my $sth = $dbh->prepare("SELECT 
-                             biblio.title,
-                             items.itemcallnumber,
-                             items.barcode
-                           FROM collections, collections_tracking, items, biblio
-                           WHERE collections.colId = collections_tracking.colId
+    my $dbh = C4::Context->dbh;
+
+    my $sth = $dbh->prepare(
+        "SELECT
+                            biblio.title,
+                            biblio.biblionumber,
+                            items.itemcallnumber,
+                            items.barcode,
+                            items.itemnumber,
+                            items.holdingbranch,
+                            items.homebranch,
+                            branches.branchname,
+                            collections_tracking.origin_branchcode
+                           FROM collections, collections_tracking, items, biblio, branches
+                           WHERE items.homebranch = branches.branchcode
+                           AND collections.colId = collections_tracking.colId
                            AND collections_tracking.itemnumber = items.itemnumber
                            AND items.biblionumber = biblio.biblionumber
-                           AND collections.colId = ? ORDER BY biblio.title");
-  $sth->execute( $colId ) or return ( 0, 0, 2, $sth->errstr() );
-  
-  my @results;
-  while ( my $row = $sth->fetchrow_hashref ) {
-    push( @results , $row );
-  }
-  
-  return \@results;
+                           AND collections.colId = ?
+                           ORDER BY biblio.title"
+    );
+    $sth->execute($colId) or return ( 0, 0, 2, $sth->errstr() );
+
+    my @results;
+    while ( my $row = $sth->fetchrow_hashref ) {
+        my $originbranchname = GetBranchName($row->{'origin_branchcode'});
+        my $holdingbranchname = GetBranchName($row->{'holdingbranch'});
+        my ($transferred, $errocode, $errormessage) = isItemTransferred($row->{'itemnumber'});
+        $row->{'holdingbranchname'} = $holdingbranchname;
+        $row->{'origin_branchname'} = $originbranchname;
+        $row->{'transferred'} = $transferred;
+        $row->{'intransit'} = GetTransfers($row->{'itemnumber'});
+        push( @results, $row );
+    }
+
+    return \@results;
 }
 
 =head2 GetCollection
@@ -271,23 +340,52 @@ Returns information about a collection
 =cut
 
 sub GetCollection {
-  my ( $colId ) = @_;
+    my ($colId) = @_;
 
-  my $dbh = C4::Context->dbh;
+    my $dbh = C4::Context->dbh;
 
-  my ( $sth, @results );
-  $sth = $dbh->prepare("SELECT * FROM collections WHERE colId = ?");
-  $sth->execute( $colId ) or return 0;
-    
-  my $row = $sth->fetchrow_hashref;
-  
-  return (
-      $$row{'colId'},
-      $$row{'colTitle'},
-      $$row{'colDesc'},
-      $$row{'colBranchcode'}
-  );
-    
+    my ( $sth, @results );
+    $sth = $dbh->prepare("SELECT * FROM collections WHERE colId = ?");
+    $sth->execute($colId) or return 0;
+
+    my $row = $sth->fetchrow_hashref;
+
+    return (
+        $$row{'colId'},   $$row{'colTitle'},
+        $$row{'colDesc'}, $$row{'colBranchcode'}
+    );
+
+}
+
+=head2 GetItemsCollection
+
+$itemsCollection = GetItemsCollection($itemnumber)
+
+Returns an item's collection if it exists
+
+ Input:
+   $itemnumber: itemnumber of the item
+ Output:
+   $colId of the item's collection or 0 if the item is not in a collection
+
+=cut
+
+sub GetItemsCollection {
+    my $itemnumber = shift;
+
+    if (!isItemInAnyCollection($itemnumber)) {
+        return 0;
+    }
+
+    my $dbh = C4::Context->dbh;
+    my $sth = $dbh->prepare("SELECT * FROM collections_tracking WHERE itemnumber = ?");
+    $sth->execute($itemnumber) or return 0;
+
+    my $colItem = $sth->fetchrow_hashref;
+    if ($colItem) {
+        return $colItem->{'colId'};
+    }
+    return 0;
 }
 
 =head2 AddItemToCollection
@@ -307,31 +405,40 @@ Adds an item to a rotating collection.
 =cut
 
 sub AddItemToCollection {
-  my ( $colId, $itemnumber ) = @_;
+    my ( $colId, $itemnumber ) = @_;
 
-  ## Check for all neccessary parameters
-  if ( ! $colId ) {
-    return ( 0, 1, "No Collection Given" );
-  } 
-  if ( ! $itemnumber ) {
-    return ( 0, 2, "No Itemnumber Given" );
-  } 
-  
-  if ( isItemInThisCollection( $itemnumber, $colId ) ) {
-    return ( 0, 2, "Item is already in the collection!" );
-  } elsif ( isItemInAnyCollection( $itemnumber ) ) {
-    return ( 0, 3, "Item is already in a different collection!" );
-  }
+    ## Check for all neccessary parameters
+    if ( !$colId ) {
+        return ( 0, 1, "No Collection Given" );
+    }
+    if ( !$itemnumber ) {
+        return ( 0, 2, "No Itemnumber Given" );
+    }
 
-  my $dbh = C4::Context->dbh;
+    if ( isItemInThisCollection( $itemnumber, $colId ) ) {
+        return ( 0, 2, "Item is already in the collection!" );
+    }
+    elsif ( isItemInAnyCollection($itemnumber) ) {
+        return ( 0, 3, "Item is already in a different collection!" );
+    }
 
-  my $sth;
-  $sth = $dbh->prepare("INSERT INTO collections_tracking ( collections_tracking_id, colId, itemnumber )
-                        VALUES ( NULL, ?, ? )");
-  $sth->execute( $colId, $itemnumber ) or return ( 0, 3, $sth->errstr() );
+    my $itembiblio = GetBiblioFromItemNumber($itemnumber, undef);
+    my $originbranchcode = $itembiblio->{'homebranch'};
 
-  return 1;
-  
+    my $dbh = C4::Context->dbh;
+
+    my $sth;
+    $sth = $dbh->prepare("
+        INSERT INTO collections_tracking (
+            colId,
+            itemnumber,
+            origin_branchcode
+        ) VALUES ( ?, ?, ? )
+    ");
+    $sth->execute( $colId, $itemnumber, $originbranchcode ) or return ( 0, 3, $sth->errstr() );
+
+    return 1;
+
 }
 
 =head2  RemoveItemFromCollection
@@ -352,25 +459,175 @@ Removes an item to a collection
 =cut
 
 sub RemoveItemFromCollection {
-  my ( $colId, $itemnumber ) = @_;
+    my ( $colId, $itemnumber ) = @_;
 
-  ## Check for all neccessary parameters
-  if ( ! $itemnumber ) {
-    return ( 0, 2, "No Itemnumber Given" );
-  } 
-  
-  if ( ! isItemInThisCollection( $itemnumber, $colId ) ) {
-    return ( 0, 2, "Item is not in the collection!" );
-  } 
+    ## Check for all neccessary parameters
+    if ( !$itemnumber ) {
+        return ( 0, 2, "No Itemnumber Given" );
+    }
 
-  my $dbh = C4::Context->dbh;
+    if ( !isItemInThisCollection( $itemnumber, $colId ) ) {
+        return ( 0, 2, "Item is not in the collection!" );
+    }
 
-  my $sth;
-  $sth = $dbh->prepare("DELETE FROM collections_tracking 
-                        WHERE itemnumber = ?");
-  $sth->execute( $itemnumber ) or return ( 0, 3, $sth->errstr() );
+    # KD-139: Attempt to transfer the item being removed if it has its origin branch
+    # set up.
+    my $itembiblio = GetBiblioFromItemNumber($itemnumber, undef);
+    my $currenthomebranchcode = $itembiblio->{'homebranch'};
+    my $originbranchcode = GetItemOriginBranch($itemnumber);
+    my $barcode = $itembiblio->{'barcode'};
+    my ($dotransfer, $messages, $iteminformation);
 
-  return 1;
+    if ($originbranchcode && $barcode) {
+        if (GetTransfers($itemnumber)) {
+            DeleteTransfer($itemnumber)
+        }
+        ($dotransfer, $messages, $iteminformation) = transferbook($originbranchcode, $barcode, 1);
+    }
+
+    my $dbh = C4::Context->dbh;
+    my $sth;
+    $sth = $dbh->prepare(
+        "DELETE FROM collections_tracking
+                        WHERE itemnumber = ?"
+    );
+    $sth->execute($itemnumber) or return ( 0, 3, $sth->errstr() );
+
+    # KD-139: Transfer was not done - not considered an error here, but passed to template
+    # for use in usability stuff
+    if (!$dotransfer) {
+        return (1, 4, $messages);
+    }
+
+    ModItem({ homebranch => $originbranchcode }, undef, $itemnumber);
+
+    return 1;
+}
+
+=head2  ReturnCollectionToOrigin
+
+ ($success, $errorcode, $errormessage) = ReturnCollectionToOrigin($colId);
+
+Marks a collection to be returned to their origin branch, e.g. the branch that was
+the item's home branch when it was first added to the collection
+
+ Input:
+   $colId: Collection the returned item belongs to
+
+ Output:
+   $success: 1 if all database operations were successful, 0 otherwise
+   $errorcode: Code for reason of failure, good for translating errors in templates
+   $errormessages: English description of any errors with return operations
+=cut
+
+sub ReturnCollectionToOrigin {
+    my $colId = shift;
+
+    if (!$colId) {
+        return (0, 1, "No collection id given");
+    }
+
+    my $collectionItems = GetItemsInCollection($colId);
+    my $collectionItemsCount = scalar(@$collectionItems);
+    my ($colSuccess, $errorcode, @errormessages);
+
+    for my $item (@$collectionItems) {
+        my $itemOriginBranch = GetItemOriginBranch($item->{'itemnumber'});
+        my ($success, $errocode, $errormessage);
+        if ($itemOriginBranch) {
+            ($success, $errorcode, $errormessage) =
+                ReturnCollectionItemToOrigin($colId, $item->{'itemnumber'});
+            if (!$success) {
+                push(@errormessages, $errormessage);
+            }
+        }
+    }
+    my $errorCount = scalar(@errormessages);
+    if ($errorCount == $collectionItemsCount) {
+        return (0, 2, "No items in collection transferred");
+    }
+    else {
+        # Some items were succesfully returned - return info about failed transfers for template usage
+        return (1, 0, \@errormessages);
+    }
+}
+
+
+
+=head2  ReturnCollectionItemToOrigin
+
+ ($success, $errorcode, $errormessage) = ReturnCollectionItemToOrigin($colId, $itemnumber);
+
+Marks a collection item to be returned to their origin branch, e.g. the branch that was
+the item's home branch when it was first added to the collection
+
+ Input:
+   $colId: Collection the returned item belongs to
+   $itemnumber: Item in the collection to be returned to their origin branch
+
+ Output:
+   $success: 1 if all database operations were successful, 0 otherwise
+   $errorCode: Code for reason of failure, good for translating errors in templates
+   $errorMessage: English description of error
+
+=cut
+
+sub ReturnCollectionItemToOrigin {
+    my ($colId, $itemnumber) = @_;
+    my $originBranch = GetItemOriginBranch($itemnumber);
+
+    ## Check for all neccessary parameters
+    if (!$colId) {
+        return (0, 1, "No collection id given");
+    }
+    if (!$itemnumber) {
+        return (0, 2, "No itemnumber given");
+    }
+
+    if (!$originBranch) {
+        return (0, 3, "Item has no origin branch set");
+    }
+
+    if (!isItemTransferred($itemnumber)) {
+        return (0, 4, "Cannot return an item that is not transferred");
+    }
+
+    my $dbh = C4::Context->dbh;
+    my $sth = $dbh->prepare(q{
+        SELECT items.itemnumber, items.barcode, items.homebranch, items.holdingbranch FROM collections_tracking
+        LEFT JOIN items ON collections_tracking.itemnumber = items.itemnumber
+        LEFT JOIN issues ON items.itemnumber = issues.itemnumber
+        WHERE issues.borrowernumber IS NULL
+          AND collections_tracking.colId = ? AND collections_tracking.itemnumber = ?
+    });
+
+    $sth->execute($colId, $itemnumber) or return (0, 5, $sth->errstr);
+    my ($dotransfer, $messages, $iteminformation);
+    if (my $item = $sth->fetchrow_hashref) {
+        unless (GetReserveStatus($item->{itemnumber}) eq "Waiting") {
+            ($dotransfer, $messages, $iteminformation)
+                = transferbook($originBranch, $item->{barcode}, 1);
+        }
+    }
+    # Push all issues with the transfer into a list for template usage.
+    if (!$dotransfer) {
+        my @errorlist;
+        for my $message (keys %$messages) {
+            push(@errorlist, $message);
+        }
+        return (0, 6, \@errorlist);
+    }
+
+    $sth = $dbh->prepare(q{
+        UPDATE collections_tracking
+        SET
+        transfer_branch = NULL
+        WHERE itemnumber = ?
+    });
+    $sth->execute($itemnumber) or return (0, 7, $sth->errstr);
+    ModItem({ homebranch => $originBranch }, undef, $itemnumber);
+
+    return 1;
 }
 
 =head2 TransferCollection
@@ -391,37 +648,126 @@ Transfers a collection to another branch
 =cut
 
 sub TransferCollection {
-  my ( $colId, $colBranchcode ) = @_;
+    my ($colId, $colBranchcode) = @_;
 
-  ## Check for all neccessary parameters
-  if ( ! $colId ) {
-    return ( 0, 1, "No Id Given" );
-  }
-  if ( ! $colBranchcode ) {
-    return ( 0, 2, "No Branchcode Given" );
-  } 
+    ## Check for all neccessary parameters
+    if (!$colId) {
+        return (0, 1, "No id given");
+    }
+    if (!$colBranchcode) {
+        return (0, 2, "No branchcode given");
+    }
 
-  my $dbh = C4::Context->dbh;
+    my $colItems = GetItemsInCollection($colId);
+    my $colItemsCount = scalar(@$colItems);
+    my ($transfersuccess, $error, @errorlist);
+    my $problemItemCount = 0;
 
-  my $sth;
-  $sth = $dbh->prepare("UPDATE collections
-                        SET 
-                        colBranchcode = ? 
-                        WHERE colId = ?");
-  $sth->execute( $colBranchcode, $colId ) or return ( 0, 4, $sth->errstr() );
-  
-  $sth = $dbh->prepare("SELECT barcode FROM items, collections_tracking 
-                        WHERE items.itemnumber = collections_tracking.itemnumber
-                        AND collections_tracking.colId = ?");
-  $sth->execute( $colId ) or return ( 0, 4, $sth->errstr );
-  my @results;
-  while ( my $item = $sth->fetchrow_hashref ) {
-    my ( $dotransfer, $messages, $iteminformation ) = transferbook( $colBranchcode, $item->{'barcode'}, my $ignore_reserves = 1);
-  }
+    for my $item (@$colItems) {
+	my $itemOriginBranch = GetItemOriginBranch($item->{'itemnumber'});
+		my $itemCurHomeBranch = $item->{'homebranch'};
+        my ($dotransfer, $errorcode, $errormessage) = TransferCollectionItem($colId, $item->{'itemnumber'}, $colBranchcode);
+        if (!$dotransfer) {
+            $problemItemCount++;
+            push(@errorlist, $item->{'title'} . ":");
+            if (ref $errormessage eq "ARRAY") {
+                for my $message (@$errormessage) {
+                    push(@errorlist, $message);
+                }
+            }
+            else {
+                push (@errorlist, $errormessage);
+            }
+        }
+    }
 
-  return 1;
-  
+    if ($problemItemCount == $colItemsCount) {
+        return (0, 3, \@errorlist);
+    }
+    elsif ($problemItemCount < $colItemsCount) {
+        return (1, 0, \@errorlist);
+    }
+    else {
+        return 1;
+    }
 }
+
+=head2 TransferItem
+
+ ($success, $errorcode, $errormessage) = TransferCollection($colId, $itemnumber, $transferBranch);
+
+Transfers an item to another branch
+
+ Input:
+   $colId: id of the collection to be updated
+   $itemnumber: the itemnumber of the item in the collection being transferred
+   $transferBranch: branch where item is moving to
+
+ Output:
+   $success: 1 if all database operations were successful, 0 otherwise
+   $errorCode: Code for reason of failure, good for translating errors in templates
+   $errorMessage: English description of error
+
+=cut
+
+sub TransferCollectionItem {
+    my ($colId, $itemnumber, $transferBranch) = @_;
+
+    if (!$colId) {
+        return (0, 1, "No collection id given");
+    }
+
+    if (!$itemnumber) {
+        return (0, 2, "No itemnumber given");
+    }
+
+    if (!$transferBranch) {
+        return (0, 3, "No transfer branch given");
+    }
+
+    if (isItemTransferred($itemnumber)) {
+        return (0, 4, "Item is already transferred");
+    }
+
+    my $dbh = C4::Context->dbh;
+    my $sth = $dbh->prepare(q{
+        SELECT items.itemnumber, items.barcode, items.homebranch FROM collections_tracking
+        LEFT JOIN items ON collections_tracking.itemnumber = items.itemnumber
+        LEFT JOIN issues ON items.itemnumber = issues.itemnumber
+        WHERE issues.borrowernumber IS NULL
+          AND collections_tracking.colId = ? AND collections_tracking.itemnumber = ?
+    });
+
+    $sth->execute($colId, $itemnumber) or return ( 0, 5, $sth->errstr );
+    my ($dotransfer, $messages, $iteminformation);
+    if (my $item = $sth->fetchrow_hashref) {
+        unless (GetReserveStatus($item->{itemnumber}) eq "Waiting") {
+            ($dotransfer, $messages, $iteminformation)
+                = transferbook($transferBranch, $item->{barcode}, 1);
+        }
+    }
+
+    # Push all issues with the transfer into a list for template usage.
+    if (!$dotransfer) {
+        my @errorlist;
+        for my $message (keys %$messages) {
+            push(@errorlist, $message);
+        }
+        return (0, 6, \@errorlist);
+    }
+
+    $sth = $dbh->prepare(q{
+        UPDATE collections_tracking
+        SET
+        transfer_branch = ?
+        WHERE itemnumber = ?
+    });
+    $sth->execute($transferBranch, $itemnumber) or return (0, 7, $sth->errstr);
+    ModItem({ homebranch => $transferBranch }, undef, $itemnumber);
+
+    return 1;
+}
+
 
 =head2 GetCollectionItemBranches
 
@@ -430,27 +776,26 @@ sub TransferCollection {
 =cut
 
 sub GetCollectionItemBranches {
-  my ( $itemnumber ) = @_;
+    my ($itemnumber) = @_;
 
-  if ( ! $itemnumber ) {
-    return;
-  }
+    if ( !$itemnumber ) {
+        return;
+    }
 
-  my $dbh = C4::Context->dbh;
+    my $dbh = C4::Context->dbh;
 
-  my ( $sth, @results );
-  $sth = $dbh->prepare("SELECT holdingbranch, colBranchcode FROM items, collections, collections_tracking 
+    my ( $sth, @results );
+    $sth = $dbh->prepare(
+"SELECT holdingbranch, transfer_branch FROM items, collections, collections_tracking
                         WHERE items.itemnumber = collections_tracking.itemnumber
                         AND collections.colId = collections_tracking.colId
-                        AND items.itemnumber = ?");
-  $sth->execute( $itemnumber );
-    
-  my $row = $sth->fetchrow_hashref;
-  
-  return (
-      $$row{'holdingbranch'},
-      $$row{'colBranchcode'},
-  );  
+                        AND items.itemnumber = ?"
+    );
+    $sth->execute($itemnumber);
+
+    my $row = $sth->fetchrow_hashref;
+
+    return ( $$row{'holdingbranch'}, $$row{'transfer_branch'}, );
 }
 
 =head2 isItemInThisCollection
@@ -460,16 +805,18 @@ sub GetCollectionItemBranches {
 =cut
 
 sub isItemInThisCollection {
-  my ( $itemnumber, $colId ) = @_;
-  
-  my $dbh = C4::Context->dbh;
-  
-  my $sth = $dbh->prepare("SELECT COUNT(*) as inCollection FROM collections_tracking WHERE itemnumber = ? AND colId = ?");
-  $sth->execute( $itemnumber, $colId ) or return( 0 );
-      
-  my $row = $sth->fetchrow_hashref;
-        
-  return $$row{'inCollection'};
+    my ( $itemnumber, $colId ) = @_;
+
+    my $dbh = C4::Context->dbh;
+
+    my $sth = $dbh->prepare(
+"SELECT COUNT(*) as inCollection FROM collections_tracking WHERE itemnumber = ? AND colId = ?"
+    );
+    $sth->execute( $itemnumber, $colId ) or return (0);
+
+    my $row = $sth->fetchrow_hashref;
+
+    return $$row{'inCollection'};
 }
 
 =head2 isItemInAnyCollection
@@ -479,21 +826,95 @@ $inCollection = isItemInAnyCollection( $itemnumber );
 =cut
 
 sub isItemInAnyCollection {
-  my ( $itemnumber ) = @_;
-  
-  my $dbh = C4::Context->dbh;
-  
-  my $sth = $dbh->prepare("SELECT itemnumber FROM collections_tracking WHERE itemnumber = ?");
-  $sth->execute( $itemnumber ) or return( 0 );
-      
-  my $row = $sth->fetchrow_hashref;
-        
-  $itemnumber = $row->{itemnumber};
-  if ( $itemnumber ) {
-    return 1;
-  } else {
-    return 0;
-  }
+    my ($itemnumber) = @_;
+
+    my $dbh = C4::Context->dbh;
+
+    my $sth = $dbh->prepare(
+        "SELECT itemnumber FROM collections_tracking WHERE itemnumber = ?");
+    $sth->execute($itemnumber) or return (0);
+
+    my $row = $sth->fetchrow_hashref;
+
+    $itemnumber = $row->{itemnumber};
+    if ($itemnumber) {
+        return 1;
+    }
+    else {
+        return 0;
+    }
+}
+
+=head2 isItemTramsferred
+
+($transferred, $errorcode, $errormessage) = isItemTransferred($itemnumber);
+
+=cut
+
+sub isItemTransferred {
+    my $itemnumber = shift;
+
+    my $dbh = C4::Context->dbh;
+    my $sth;
+
+    my $query = '
+    Select * FROM collections_tracking
+    WHERE itemnumber = ?
+    ';
+
+    $sth = $dbh->prepare($query);
+    $sth->execute($itemnumber) or return (0, 1, $sth->errstr);
+    my $resultrow = $sth->fetchrow_hashref;
+    if (!$resultrow) {
+        return (0, 2, "Item is not in a collection");
+    }
+
+    if ($resultrow->{'transfer_branch'}) {
+        return 1;
+    }
+    else {
+        return 0;
+    }
+
+}
+
+
+
+=head2 GetItemOriginBranch
+
+$originBranch = GetItemOriginBranch($itemnumber);
+
+Kd-139: Returns the given item's origin branch, e.g. the home branch at the time it was
+being added to a collection or 0 the item has no origin
+
+=cut
+
+sub GetItemOriginBranch {
+    my $itemnumber = shift;
+
+    my $dbh = C4::Context->dbh;
+    my $sth;
+
+    my $query = '
+    SELECT *
+    FROM collections_tracking
+    WHERE itemnumber = ?
+    ';
+    $sth = $dbh->prepare($query);
+    $sth->execute($itemnumber);
+    my $resultrow = $sth->fetchrow_hashref;
+
+    if (!$resultrow) {
+        return 0;
+    }
+
+    my $originBranchCode = $resultrow->{'origin_branchcode'};
+    if ($originBranchCode) {
+        return $originBranchCode;
+    }
+    else {
+        return 0;
+    }
 }
 
 1;
