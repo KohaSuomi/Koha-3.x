@@ -8615,6 +8615,11 @@ if (CheckVersion($DBversion)) {
             ADD CONSTRAINT collections_transfer_1 FOREIGN KEY (transfer_branch) REFERENCES branches (branchcode) ON DELETE CASCADE ON UPDATE CASCADE
     });
 
+    $dbh->do(q{
+        ALTER TABLE collections_tracking
+            ADD COLUMN transferred TINYINT(1) DEFAULT 0
+    });
+
     print "Upgrade to $DBversion done (Bug 8836 - Resurrect Rotating Collections)\n";
     SetVersion($DBversion);
 }

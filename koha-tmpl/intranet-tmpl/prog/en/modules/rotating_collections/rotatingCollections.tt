@@ -9,9 +9,9 @@
 
         var collectionsTable = $("#table-collections").dataTable($.extend(true, {}, dataTablesDefaults, {
           'bAutoWidth': true,
-          'bPaginate': false,
-          'bFilter': false,
-          'bInfo': false,
+          'bPaginate': true,
+          'bFilter': true,
+          'bInfo': true,
           "aoColumnDefs": [
             { 'bSortable': false, 'aTargets': [ 'nosort' ] }
           ]
@@ -180,9 +180,9 @@
           }
           $("#table-collections").dataTable($.extend(true, {}, dataTablesDefaults, {
             'bAutoWidth': true,
-            'bPaginate': false,
-            'bFilter': false,
-            'bInfo': false,
+            'bPaginate': true,
+            'bFilter': true,
+            'bInfo': true,
             "aoColumnDefs": [
               { 'bSortable': false, 'aTargets': [ 'nosort' ] }
             ]
@@ -216,7 +216,7 @@
                 <th>Owner</th>
                 <th>Items</th>
                 <th>Transferred</th>
-                <th class="nosort">Manage collection</th>
+<!--                <th class="nosort">Manage collection</th>-->
                 <th class="nosort">Transfer collection</th>
                 <th class="nosort">Edit</th>
                 <th class="nosort">Delete</th>
@@ -224,8 +224,8 @@
             </thead>
             [% FOREACH collectionsLoo IN collectionsLoop %]
               <tr>
-                <td><a href="editCollections.pl?action=edit&colId=[% collectionsLoo.colId %]">[% collectionsLoo.colTitle %]</a></td>
-                <td><a href="editCollections.pl?action=edit&colId=[% collectionsLoo.colId %]">[% collectionsLoo.colDesc %]</a></td>
+                <td><a href="addItems.pl?colId=[% collectionsLoo.colId %]">[% collectionsLoo.colTitle %]</a></td>
+                <td>[% collectionsLoo.colDesc %]</a></td>
                 <td>[% collectionsLoo.branchname %]</td>
                 <td>[% collectionsLoo.colItemsCount %]</td>
                 <td>[% IF collectionsLoo.itemsTransferred > 0 %]
@@ -238,7 +238,7 @@
                       None transferred yet
                     [% END %]
                 </td>
-                <td><a href="addItems.pl?colId=[% collectionsLoo.colId %]">Manage collection</a></td>
+<!--                <td><a href="addItems.pl?colId=[% collectionsLoo.colId %]">Manage collection</a></td>-->
                 <td><a class="btn btn-small" id="transfer-col-[% collectionsLoo.colId %]" data-toggle="modal" href="#transferColModal" class="btn btn-small" data-colid="[% collectionsLoo.colId %]" data-coltitle="[% collectionsLoo.colTitle %]" data-coldesc="[% collectionsLoo.colDesc %]"><i class="icon-gift"></i> Transfer collection</a>
                 <select name="transfer-branch-[% collectionsLoo.colId %]" id="transfer-branch-[% collectionsLoo.colId %]">
                     [% FOREACH branch IN branchesLoop %]
@@ -276,6 +276,12 @@
     <div class="modal-body">
        <strong><p id="modal-remove-body-message"></p></strong>
        <p id="modal-remove-body-desc"></p>
+       <p class="alert-info">
+        <strong>Note:</strong> any currently transferred items in the removed collection will be returned to their respective origin branch
+        via a branch transfer. Before deleting a collection, make sure that the collection is really no longer needed and that all items
+        in it are good to go for a transfer back to their origin branch. If you're unsure about certain items in the collection, deal with
+        those individually before deleting the collection.
+       </p>
     </div>
     <div class="modal-footer">
         <button type="button" class="btn btn-primary" id="btn-remove-cancel" data-dismiss="modal">Cancel</button>
@@ -291,6 +297,11 @@
     <div class="modal-body">
        <strong><p id="modal-transfer-body-message"></p></strong>
        <p id="modal-transfer-body-desc"></p>
+       <p class="alert-info">
+        <strong>Note:</strong> any items in the collection currently not transferred to a branch will be transferred to the selected
+        destination branch via a branch transfer. This action transfers the whole collection to the same destination - if you need
+        separate transfer destinations for individual items in the collection, open the collection and perform transfers on individual items.
+       </p>
     </div>
     <div class="modal-footer">
         <button type="button" class="btn btn-primary" id="btn-transfer-cancel" data-dismiss="modal">Cancel</button>

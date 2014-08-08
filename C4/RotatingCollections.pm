@@ -59,6 +59,7 @@ BEGIN {
       GetItemsInCollection
 
       GetCollection
+      GetCollectionByTitle
       GetCollections
 
       AddItemToCollection
@@ -247,15 +248,9 @@ sub GetCollections {
 
     my @results;
     while ( my $row = $sth->fetchrow_hashref ) {
-        my $colItems = GetItemsInCollection($row->{'colId'});
-        my $itemsTransferred = 0;
-        for my $item(@$colItems) {
-          my $itemOriginBranch = GetItemOriginBranch($item->{'itemnumber'});
-          my $itemCurHomeBranch = $item->{'homebranch'};
-          my ($transferred, $errocode, $errormessage) = isItemTransferred($item->{'itemnumber'});
-          $itemsTransferred++ if $transferred;
-        }
-        $row->{'colItemsCount'} = scalar(@$colItems);
+        my $colItemCount = GetCollectionItemCount($row->{'colId'});
+        my $itemsTransferred = GetTransferredItemCount($row->{'colId'});
+        $row->{'colItemsCount'} = $colItemCount;
         $row->{'itemsTransferred'} = $itemsTransferred;
         push( @results, $row );
     }
@@ -300,7 +295,7 @@ sub GetItemsInCollection {
                             items.holdingbranch,
                             items.homebranch,
                             branches.branchname,
-                            collections_tracking.origin_branchcode
+                            collections_tracking.*
                            FROM collections, collections_tracking, items, biblio, branches
                            WHERE items.homebranch = branches.branchcode
                            AND collections.colId = collections_tracking.colId
@@ -315,10 +310,8 @@ sub GetItemsInCollection {
     while ( my $row = $sth->fetchrow_hashref ) {
         my $originbranchname = GetBranchName($row->{'origin_branchcode'});
         my $holdingbranchname = GetBranchName($row->{'holdingbranch'});
-        my ($transferred, $errocode, $errormessage) = isItemTransferred($row->{'itemnumber'});
         $row->{'holdingbranchname'} = $holdingbranchname;
         $row->{'origin_branchname'} = $originbranchname;
-        $row->{'transferred'} = $transferred;
         $row->{'intransit'} = GetTransfers($row->{'itemnumber'});
         push( @results, $row );
     }
@@ -346,6 +339,37 @@ sub GetCollection {
 
     my ( $sth, @results );
     $sth = $dbh->prepare("SELECT * FROM collections WHERE colId = ?");
+    $sth->execute($colId) or return 0;
+
+    my $row = $sth->fetchrow_hashref;
+
+    return (
+        $$row{'colId'},   $$row{'colTitle'},
+        $$row{'colDesc'}, $$row{'colBranchcode'}
+    );
+
+}
+
+=head2 GetCollectionByTitle
+
+ ($colId, $colTitle, $colDesc, $colBranchcode) = GetCollectionByTitle($colTitle);
+
+Returns information about a collection
+
+ Input:
+   $colTitle: Title of the collection
+ Output:
+   $colId, $colTitle, $colDesc, $colBranchcode
+
+=cut
+
+sub GetCollectionByTitle {
+    my ($colId) = @_;
+
+    my $dbh = C4::Context->dbh;
+
+    my ( $sth, @results );
+    $sth = $dbh->prepare("SELECT * FROM collections WHERE colTitle = ?");
     $sth->execute($colId) or return 0;
 
     my $row = $sth->fetchrow_hashref;
@@ -424,6 +448,7 @@ sub AddItemToCollection {
 
     my $itembiblio = GetBiblioFromItemNumber($itemnumber, undef);
     my $originbranchcode = $itembiblio->{'homebranch'};
+    my $transferred = 0;
 
     my $dbh = C4::Context->dbh;
 
@@ -433,9 +458,9 @@ sub AddItemToCollection {
             colId,
             itemnumber,
             origin_branchcode
-        ) VALUES ( ?, ?, ? )
+        ) VALUES (?, ?, ?)
     ");
-    $sth->execute( $colId, $itemnumber, $originbranchcode ) or return ( 0, 3, $sth->errstr() );
+    $sth->execute($colId, $itemnumber, $originbranchcode) or return ( 0, 3, $sth->errstr() );
 
     return 1;
 
@@ -755,14 +780,16 @@ sub TransferCollectionItem {
         }
         return (0, 6, \@errorlist);
     }
+    my $transferred = 1;
 
     $sth = $dbh->prepare(q{
         UPDATE collections_tracking
         SET
-        transfer_branch = ?
+        transfer_branch = ?,
+        transferred = ?
         WHERE itemnumber = ?
     });
-    $sth->execute($transferBranch, $itemnumber) or return (0, 7, $sth->errstr);
+    $sth->execute($transferBranch, $transferred, $itemnumber) or return (0, 7, $sth->errstr);
     ModItem({ homebranch => $transferBranch }, undef, $itemnumber);
 
     return 1;
@@ -796,6 +823,48 @@ sub GetCollectionItemBranches {
     my $row = $sth->fetchrow_hashref;
 
     return ( $$row{'holdingbranch'}, $$row{'transfer_branch'}, );
+}
+
+=head2 GetTransferredItemCount
+
+  $transferredCount = GetTransferredItemCount($colId);
+
+=cut
+
+sub GetTransferredItemCount {
+  my $colId = shift;
+
+  my $dbh = C4::Context->dbh;
+  my $query = "SELECT COUNT(*)
+              FROM collections_tracking
+              WHERE colId = ? AND transferred = 1
+              ";
+  my $sth = $dbh->prepare($query);
+  $sth->execute($colId) or die $sth->errstr();
+
+  my $result = $sth->fetchrow();
+  return $result;
+}
+
+=head2 GetCollectionItemCount
+
+  $colItemCount = GetCollectionItemCount($colId);
+
+=cut
+
+sub GetCollectionItemCount {
+  my $colId = shift;
+
+  my $dbh = C4::Context->dbh;
+  my $query = "SELECT COUNT(colId)
+              FROM collections_tracking
+              WHERE colId = ?
+              ";
+  my $sth = $dbh->prepare($query);
+  $sth->execute($colId) or die $sth->errstr();
+
+  my $result = $sth->fetchrow();
+  return $result;
 }
 
 =head2 isItemInThisCollection
