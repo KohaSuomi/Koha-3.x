@@ -41,21 +41,23 @@ $flagsrequired->{borrowers}=1;
 my $member=$input->param('member');
 my $cardnumber = $input->param('cardnumber');
 my $destination = $input->param('destination');
-my @errors;
+my %errors;
 my ($bor)=GetMember('borrowernumber' => $member);
 if(( $member ne $loggedinuser ) && ($bor->{'category_type'} eq 'S' ) ) {
-	push(@errors,'NOPERMISSION') unless($staffflags->{'superlibrarian'} || $staffflags->{'staffaccess'} );
+	$errors{'NOPERMISSION'} = 1 unless($staffflags->{'superlibrarian'} || $staffflags->{'staffaccess'} );
 	# need superlibrarian for koha-conf.xml fakeuser.
 }
 my $newpassword = $input->param('newpassword');
 my $newpassword2 = $input->param('newpassword2');
 
-push(@errors,'NOMATCH') if ( ( $newpassword && $newpassword2 ) && ($newpassword ne $newpassword2) );
+if ($newpassword) {
+    my ($success, $errorcode, $errormessage) = ValidateMemberPassword($member, $newpassword, $newpassword2);
+    if ($errorcode) {
+        $errors{$errorcode} = $errormessage;
+    }
+}
 
-my $minpw = C4::Context->preference('minPasswordLength');
-push(@errors,'SHORTPASSWORD') if( $newpassword && $minpw && (length($newpassword) < $minpw ) );
-
-if ( $newpassword  && !scalar(@errors) ) {
+if ( $newpassword  && !scalar(keys %errors) ) {
     my $digest=Koha::AuthUtils::hash_password($input->param('newpassword'));
     my $uid = $input->param('newuserid');
     my $dbh=C4::Context->dbh;
@@ -67,18 +69,12 @@ if ( $newpassword  && !scalar(@errors) ) {
 		    print $input->redirect("/cgi-bin/koha/members/moremember.pl?borrowernumber=$member");
 		}
     } else {
-			push(@errors,'BADUSERID');
+            $errors{'BADUSERID'} = 1;
     }
 } else {
     my $userid = $bor->{'userid'};
 
-    my $chars='abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    my $length=int(rand(2))+C4::Context->preference("minPasswordLength");
-    my $defaultnewpassword='';
-    for (my $i=0; $i<$length; $i++) {
-	$defaultnewpassword.=substr($chars, int(rand(length($chars))),1);
-    }
-
+    my $defaultnewpassword = GenMemberPasswordSuggestion($member);
 	$template->param( defaultnewpassword => $defaultnewpassword );
 }
     if ( $bor->{'category_type'} eq 'C') {
@@ -122,16 +118,13 @@ if (C4::Context->preference('ExtendedPatronAttributes')) {
 	    destination => $destination,
 		is_child        => ($bor->{'category_type'} eq 'C'),
 		activeBorrowerRelationship => (C4::Context->preference('borrowerRelationship') ne ''),
-        minPasswordLength => $minpw,
+        minPasswordLength => C4::Context->preference('minPasswordLength'),
         RoutingSerials => C4::Context->preference('RoutingSerials'),
+        errors => \%errors
 	);
 
-if( scalar(@errors )){
+if( scalar(keys %errors )){
 	$template->param( errormsg => 1 );
-	foreach my $error (@errors) {
-        $template->param($error) || $template->param( $error => 1);
-	}
-
 }
 
 output_html_with_http_headers $input, $cookie, $template->output;

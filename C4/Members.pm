@@ -41,6 +41,7 @@ use Koha::DateUtils;
 use Koha::Borrower::Debarments qw(IsDebarred);
 use Text::Unaccent qw( unac_string );
 use Koha::AuthUtils qw(hash_password);
+use App::Genpass;
 
 our ($VERSION,@ISA,@EXPORT,@EXPORT_OK,$debug);
 
@@ -105,6 +106,9 @@ BEGIN {
         GetBorrowersWithEmail
 
         HasOverdues
+
+        &GenMemberPasswordSuggestion
+        &ValidateMemberPassword
     );
 
     #Modify data
@@ -329,6 +333,7 @@ sub GetMemberDetails {
             SELECT borrowers.*,
                    category_type,
                    categories.description,
+                   categories.passwordpolicy,
                    categories.BlockExpiredPatronOpacActions,
                    reservefee,
                    enrolmentperiod
@@ -343,6 +348,7 @@ sub GetMemberDetails {
             SELECT borrowers.*,
                    category_type,
                    categories.description,
+                   categories.passwordpolicy,
                    categories.BlockExpiredPatronOpacActions,
                    reservefee,
                    enrolmentperiod
@@ -2611,6 +2617,102 @@ sub HasOverdues {
     my ( $count ) = $sth->fetchrow_array();
 
     return $count;
+}
+
+=head2 GenMemberPasswordSuggestion
+
+    $password = GenMemberPasswordSuggestion($borrowernumber);
+
+Returns a new patron password suggestion based on borrowers password policy from categories
+
+=cut
+
+sub GenMemberPasswordSuggestion {
+    my $borrowernumber = shift;
+    my $minpasslength = C4::Context->preference('minPasswordLength');
+
+    my $borrowerinfo = GetMemberDetails($borrowernumber);
+    my $policycode = $borrowerinfo->{'passwordpolicy'};
+
+    my $pass;
+    my $length = int(rand(3)) + $minpasslength;
+    if ($policycode) {
+        # Generates complex passwords with numbers and uppercase, lowercase and special characters
+        if ($policycode eq "complex") {
+            my $specials = ['!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '_'];
+            $pass = App::Genpass->new(specials => $specials, readable => 0, length => $length);
+        }
+
+        # Generates simple passwords with numbers and uppercase and lowercase characters
+        elsif ($policycode eq "alphanumeric") {
+            $pass = App::Genpass->new(length => $length);
+        }
+
+        # Generates passwords with digits 0-9 only
+        else {
+            # verify => 0 due to a bug in generate() (workaround)
+            $pass = App::Genpass->new(lowercase => [], uppercase => [], verify => 0, length => $length);
+        }
+    }
+    # Defaults to empty constuctor which gives readable complex passwords
+    else {
+        $pass = App::Genpass->new(length => $length);
+    }
+
+    return $pass->generate();
+}
+
+=head2 ValidateMemberPassword
+
+    ($success, $errorcode, $errormessage) = ValidateMemberPassword($borrowernumber, $newpassword1, $newpassword2);
+
+Validates a member's password based on category password policy and/or minPasswordLength
+
+=cut
+
+sub ValidateMemberPassword {
+    my ($borrowernumber, $newpassword1, $newpassword2) = @_;
+    my $minpasslength = C4::Context->preference('minPasswordLength');
+
+    if (!$borrowernumber) {
+        return (0, ,"NOBORROWER", "No borrowernumber given");
+    }
+
+    if ((!$newpassword1 || !$newpassword2) || ($newpassword1 ne $newpassword2)) {
+        return (0, "NOMATCH", "The passwords do not match");
+    }
+
+    if (length($newpassword1) < $minpasslength) {
+        return (0, "SHORTPASSWORD", "The password is too short");
+    }
+
+    my $memberinfo = GetMemberDetails($borrowernumber);
+    my $passwordpolicy = $memberinfo->{'passwordpolicy'};
+
+    if ($passwordpolicy) {
+        if ($passwordpolicy eq "simplenumeric") {
+           if ($newpassword1 !~ /[0-9]+/) {
+                return (0, "NOPOLICYMATCH", "Password policy: password can only contain digits 0-9");
+           }
+        }
+        elsif ($passwordpolicy eq "alphanumeric") {
+            unless ($newpassword1 =~ /[0-9]/
+                    && $newpassword1 =~ /[a-zA-ZöäåÖÄÅ]/
+                    && $newpassword1 !~ /\W/
+                    && $newpassword1 !~ /[_-]/) {
+                return (0, "NOPOLICYMATCH", "Password policy: password must contain both numbers and non-special characters (at least one of both)");
+            }
+        }
+        else {
+            unless ($newpassword1 =~ /[0-9]/
+                    && $newpassword1 =~ /[a-zåäö]/
+                    && $newpassword1 =~ /[A-ZÅÄÖ]/
+                    && $newpassword1 =~ /[\|\[\]\{\}!@#\$%\^&\*\(\)_\-\+\?]/) {
+                return (0, "NOPOLICYMATCH", "Password policy: password must contain numbers, characters and special characters (at least one of each)");
+            }
+        }
+    }
+    return 1;
 }
 
 END { }    # module clean-up code here (global destructor)
