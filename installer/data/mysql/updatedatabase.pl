@@ -8624,6 +8624,17 @@ if (CheckVersion($DBversion)) {
     SetVersion($DBversion);
 }
 
+$DBversion = "3.16.00.XXX";
+if ( CheckVersion($DBversion) ) {
+
+    $dbh->do("ALTER TABLE categories
+              ADD COLUMN passwordpolicy VARCHAR(40) DEFAULT NULL
+    ");
+    print "Upgrade to KD-156 done \n";
+    SetVersion ($DBversion);
+}
+
+
 =head1 FUNCTIONS
 
 =head2 TableExists($table)

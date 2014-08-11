@@ -45,6 +45,7 @@ use C4::Branch;
 use C4::Output;
 use C4::Dates;
 use C4::Form::MessagingPreferences;
+use C4::Members;
 
 sub StringSearch  {
 	my ($searchstring,$type)=@_;
@@ -139,6 +140,7 @@ if ($op eq 'add_form') {
                 SMSSendDriver => C4::Context->preference("SMSSendDriver"),
                 TalkingTechItivaPhone => C4::Context->preference("TalkingTechItivaPhoneNotification"),
 				"type_".$data->{'category_type'} => 1,
+                selectedpasswordpolicy  => $data->{'passwordpolicy'},
                 branches_loop           => \@branches_loop,
                 BlockExpiredPatronOpacActions => $data->{'BlockExpiredPatronOpacActions'},
 				);
@@ -169,6 +171,7 @@ if ($op eq 'add_form') {
                     hidelostitems=?,
                     overduenoticerequired=?,
                     category_type=?,
+                    passwordpolicy=?,
                     BlockExpiredPatronOpacActions=?
                 WHERE categorycode=?"
             );
@@ -184,6 +187,7 @@ if ($op eq 'add_form') {
                     'hidelostitems',
                     'overduenoticerequired',
                     'category_type',
+                    'password-policy',
                     'block_expired',
                     'categorycode'
                 )
@@ -219,9 +223,10 @@ if ($op eq 'add_form') {
                 hidelostitems,
                 overduenoticerequired,
                 category_type,
+                passwordpolicy,
                 BlockExpiredPatronOpacActions
             )
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?)");
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)");
         $sth->execute(
             map { $input->param($_) } (
                 'categorycode',
@@ -235,6 +240,7 @@ if ($op eq 'add_form') {
                 'hidelostitems',
                 'overduenoticerequired',
                 'category_type',
+                'password-policy',
                 'block_expired'
             )
         );
@@ -331,6 +337,7 @@ if ($op eq 'add_form') {
 				category_type           => $results->[$i]{'category_type'},
                 "type_".$results->[$i]{'category_type'} => 1,
                 branches                => \@selected_branches,
+                passwordpolicy          => $results->[$i]{'passwordpolicy'}
         );
         if (C4::Context->preference('EnhancedMessagingPreferences')) {
             my $brief_prefs = _get_brief_messaging_prefs($results->[$i]{'categorycode'});

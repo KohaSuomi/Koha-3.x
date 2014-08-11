@@ -25,6 +25,11 @@
     if ( $("#branches option:selected").length < 1 ) {
         $("#branches option:first").attr("selected", "selected");
     }
+
+    var selectedPassPolicy = "[% selectedpasswordpolicy %]";
+    if (selectedPassPolicy) {
+        $("#password-policy").val(selectedPassPolicy);
+    }
 });
 	function isNotNull(f,noalert) {
 		if (f.value.length ==0) {
@@ -189,6 +194,19 @@
         <span>Select All if this category type must to be displayed all the time. Otherwise select librairies you want to associate with this value.
         </span>
     </li>
+    <li>
+        <label for="password-policy">Category password policy</label>
+        <select name="password-policy" id="password-policy">
+            <option value=""></option>
+            <option value="complex">Complex</option>
+            <option value="alphanumeric">Alphanumeric</option>
+            <option value="simplenumeric">Numbers only</option>
+        </select>
+        <span>
+            Selecting a password policy for a category affects both automatically created suggested passwords and enfo$
+            of rules.
+        </span>
+    </li>
     <li><label for="block_expired">Block expired patrons</label>
         <select name="block_expired" id="block_expired">
             [% IF ( BlockExpiredPatronOpacActions == -1  ) %]
@@ -309,6 +327,7 @@ Confirm deletion of category [% categorycode |html %][% END %]</legend>
             <th scope="col">Messaging</th>
             [% END %]
             <th scope="col">Branches limitations</th>
+            <th scope="col">Password policy</th>
             <th scope="col">&nbsp; </th>
             <th scope="col">&nbsp; </th>
         </tr>
@@ -382,6 +401,7 @@ Confirm deletion of category [% categorycode |html %][% END %]</legend>
                                 No limitation
                             [% END %]
                         </td>
+                        <td>[% loo.passwordpolicy %]</td>
                         <td><a href="[% loo.script_name %]?op=add_form&amp;categorycode=[% loo.categorycode |uri %]">Edit</a></td>
                         <td><a href="[% loo.script_name %]?op=delete_confirm&amp;categorycode=[% loo.categorycode |uri %]">Delete</a></td>
 		</tr>
