@@ -117,7 +117,7 @@ if ( $run_report ) {
                     ORDER BY items.itemnumber SEPARATOR '<br/>') l_itype,
             GROUP_CONCAT(DISTINCT items.location 
                     ORDER BY items.itemnumber SEPARATOR '<br/>') l_location,
-            GROUP_CONCAT(DISTINCT items.itemcallnumber 
+            GROUP_CONCAT(CONCAT_WS(' Col ', items.itemcallnumber, collections_tracking.colId)
                     ORDER BY items.itemnumber SEPARATOR '<br/>') l_itemcallnumber,
             GROUP_CONCAT(DISTINCT items.enumchron
                     ORDER BY items.itemnumber SEPARATOR '<br/>') l_enumchron,
@@ -140,6 +140,7 @@ if ( $run_report ) {
         LEFT JOIN biblioitems ON reserves.biblionumber=biblioitems.biblionumber
         LEFT JOIN branchtransfers ON items.itemnumber=branchtransfers.itemnumber
         LEFT JOIN issues ON items.itemnumber=issues.itemnumber
+        LEFT JOIN collections_tracking ON collections_tracking.itemnumber = items.itemnumber
     WHERE
     reserves.found IS NULL
     $sqldatewhere
