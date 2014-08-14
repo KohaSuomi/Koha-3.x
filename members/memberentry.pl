@@ -43,6 +43,7 @@ use C4::Branch; # GetBranches
 use C4::Form::MessagingPreferences;
 use Koha::Borrower::Debarments;
 use Koha::DateUtils;
+use Email::Valid;
 
 use vars qw($debug);
 
@@ -336,6 +337,45 @@ if ($op eq 'save' || $op eq 'insert'){
   my $password2 = $input->param('password2');
   push @errors, "ERROR_password_mismatch" if ( $password ne $password2 );
   push @errors, "ERROR_short_password" if( $password && $minpw && $password ne '****' && (length($password) < $minpw) );
+
+    # Validate phone numbers & emails
+    my $phoneprimary = $input->param('phone');
+    my $phonesecondary = $input->param('phonepro');
+    my $phoneother = $input->param('mobile');
+    my $emailprimary = $input->param('email');
+    my $emailsecondary = $input->param('emailpro');
+    my $phonealt = $input->param('B_phone');
+    my $emailalt = $input->param('B_email');
+
+    if ($phoneprimary) {
+        my $code = "ERROR_bad_phone";
+        my ($success, $errorcode, $errormessage) = ValidateMemberPhoneNumber($phoneprimary);
+        push(@errors, $code) if (!$success);
+    }
+    if ($phonesecondary) {
+        my $code = "ERROR_bad_phone";
+        my ($success, $errorcode, $errormessage) = ValidateMemberPhoneNumber($phonesecondary);
+        push(@errors, $errorcode . "_secondary") if (!$success);
+    }
+    if ($phoneother) {
+        my $code = "ERROR_bad_phone";
+        my ($success, $errorcode, $errormessage) = ValidateMemberPhoneNumber($phoneother);
+        push(@errors, $errorcode . "_other") if (!$success);
+    }
+    if ($emailprimary) {
+        push (@errors, "ERROR_bad_email") if (!Email::Valid->address($emailprimary));
+    }
+    if ($emailsecondary) {
+        push (@errors, "ERROR_bad_email_secondary") if (!Email::Valid->address($emailsecondary));
+    }
+    if ($phonealt) {
+        my $code = "ERROR_bad_phone";
+        my ($success, $errorcode, $errormessage) = ValidateMemberPhoneNumber($phonealt);
+        push(@errors, $errorcode . "_alt") if (!$success);
+    }
+    if ($emailalt) {
+        push (@errors, "ERROR_bad_email_alternative") if (!Email::Valid->address($emailalt));
+    }
 
   if (C4::Context->preference('ExtendedPatronAttributes')) {
     $extended_patron_attributes = parse_extended_patron_attributes($input);
@@ -814,6 +854,20 @@ sub patron_attributes_form {
 
     $template->param(patron_attributes => \@attribute_loop);
 
+}
+
+sub ValidateMemberPhoneNumber {
+    my $phonenumber = shift;
+    if (!$phonenumber) {
+        return (0, 1, "No phone number given.");
+    }
+
+    if ($phonenumber !~ /^((\+)?[1-9]{1,2})?([-\s\.])?((\(\d{1,4}\))|\d{1,4})(([-\s\.])?[0-9]{1,12}){1,2}$/) {
+        return (0, "ERROR_bad_phone", "The number " . $phonenumber . " is not a valid phone number");
+    }
+    else {
+        return 1;
+    }
 }
 
 # Local Variables:
