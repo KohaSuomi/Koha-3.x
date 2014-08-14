@@ -7,8 +7,21 @@
 [% INCLUDE 'calendar.inc' %]
 <script type="text/javascript">
 //<![CDATA[
+    var MSG_INCORRECT_PHONE = _("Please enter a valid phone number.");
     $(document).ready(function() {
         $("fieldset.rows input, fieldset.rows select").addClass("noEnterSubmit");
+
+        $.validator.addMethod('phone', function(value) {
+            if (!value.trim()) {
+                return 1;
+            }
+            else {
+                // http://regexlib.com/REDetails.aspx?regexp_id=3009
+                return (value.match(/^((\+)?[1-9]{1,2})?([-\s\.])?((\(\d{1,4}\))|\d{1,4})(([-\s\.])?[0-9]{1,12}){1,2}$/));
+            }
+        },
+        MSG_INCORRECT_PHONE);
+
         $("#guarantordelete").click(function() {
             $("#contact-details").hide().find('a').remove();
             $("#guarantorid, #contactname, #contactfirstname").each(function () { this.value = "" });
@@ -39,14 +52,60 @@
         [% END %]
         $("#dateofbirth").datepicker({ maxDate: "-1D" });
         $("#entryform").validate({
+            rules: {
+                phone: {
+                    phone: true,
+                    required: false,
+                    minlength: 5,
+                    maxlength: 20
+                },
+                phonepro: {
+                    phone: true,
+                    required: false,
+                    minlength: 5,
+                    maxlength: 20,
+                },
+                mobile: {
+                    phone: true,
+                    required: false,
+                    minlength: 5,
+                    maxlength: 20
+                },
+                email: {
+                    required: false,
+                    email: true
+                },
+                emailpro: {
+                    required: false,
+                    email: true
+                },
+                B_email: {
+                    required: false,
+                    email: true
+                },
+                SMSnumber: {
+                    required: false,
+                    phone: true,
+                    minlength: 5,
+                    maxlength: 20
+                },
+                B_phone: {
+                    required: false,
+                    phone: true,
+                    minlength: 5,
+                    maxlength: 20
+                }
+            },
             submitHandler: function(form) {
                 $("body, form input[type='submit'], form button[type='submit'], form a").addClass('waiting');
-                if (form.beenSubmitted)
+                if (form.beenSubmitted) {
                     return false;
-                else
+                }
+                else {
                     form.beenSubmitted = true;
                     form.submit();
                 }
+            }
         });
 
         var mrform = $("#manual_restriction_form");
@@ -216,6 +275,27 @@
                 <li id="ERROR_extended_unique_id_failed">The attribute value 
                     [% ERROR_extended_unique_id_failed_value %] is already in use by another patron record.</li>
 			[% END %]
+            [% IF ERROR_bad_phone %]
+                <li id="ERROR_bad_phone">The primary phone number is invalid.</li>
+            [% END %]
+            [% IF ERROR_bad_phone_secondary %]
+                <li id="ERROR_bad_phone_secondary">The secondary phone number is invalid.</li>
+            [% END %]
+            [% IF ERROR_bad_phone_other %]
+                <li id="ERROR_bad_phone_other">The mobile phone number is invalid.</li>
+            [% END %]
+            [% IF ERROR_bad_email %]
+                <li id="ERROR_bad_email">The primary email is invalid.</li>
+            [% END %]
+            [% IF ERROR_bad_email_secondary %]
+                <li id="ERROR_bad_email_secondary">The secondary email is invalid.</li>
+            [% END %]
+            [% IF ERROR_bad_phone_alt %]
+                <li id="ERROR_bad_email_secondary">The alternative phone number invalid.</li>
+            [% END %]
+            [% IF ERROR_bad_email_alternative %]
+                <li id="ERROR_bad_email_alternative">The alternative email is invalid.</li>
+            [% END %]
 			</ul>
 		</div>
 	[% END %]

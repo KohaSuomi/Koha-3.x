@@ -27,6 +27,7 @@ use C4::Members;
 use Koha::Borrower::Modifications;
 use C4::Branch qw(GetBranchesLoop);
 use C4::Scrubber;
+use Email::Valid;
 
 my $cgi = new CGI;
 my $dbh = C4::Context->dbh;
@@ -72,11 +73,13 @@ if ( $action eq 'create' ) {
     %borrower = DelEmptyFields(%borrower);
 
     my @empty_mandatory_fields = CheckMandatoryFields( \%borrower, $action );
+    my $invalidformfields = sort(CheckOtherFormFields(\%borrower));
 
-    if (@empty_mandatory_fields) {
+    if (@empty_mandatory_fields || @$invalidformfields) {
         $template->param(
             empty_mandatory_fields => \@empty_mandatory_fields,
-            borrower               => \%borrower
+            borrower               => \%borrower,
+            invalid_form_fields    => $invalidformfields
         );
     }
     elsif (
@@ -163,11 +166,13 @@ elsif ( $action eq 'update' ) {
     my %borrower_changes = DelEmptyFields(%borrower);
     my @empty_mandatory_fields =
       CheckMandatoryFields( \%borrower_changes, $action );
+    my $invalidformfields = CheckOtherFormFields(\%borrower_changes);
 
-    if (@empty_mandatory_fields) {
+    if (@empty_mandatory_fields || @$invalidformfields) {
         $template->param(
             empty_mandatory_fields => \@empty_mandatory_fields,
-            borrower               => \%borrower
+            borrower               => \%borrower,
+            invalid_form_fields    => $invalidformfields
         );
 
         $template->param( action => 'edit' );
@@ -316,4 +321,56 @@ sub DelEmptyFields {
     }
 
     return %borrower;
+}
+
+sub CheckOtherFormFields {
+    my $borrower = shift;
+    my @invalidFields;
+
+    foreach my $field (keys %$borrower) {
+        if ($field eq "phone") {
+            my ($success, $errorcode, $errormessage) = ValidateMemberPhoneNumber($borrower->{$field});
+            push(@invalidFields, $field) if (!$success);
+        }
+        elsif ($field eq "phonepro") {
+            my ($success, $errorcode, $errormessage) = ValidateMemberPhoneNumber($borrower->{$field});
+            push(@invalidFields, $field) if (!$success);
+        }
+        elsif ($field eq "mobile") {
+            my ($success, $errorcode, $errormessage) = ValidateMemberPhoneNumber($borrower->{$field});
+            push(@invalidFields, $field) if (!$success);
+        }
+        elsif ($field eq "email") {
+            push(@invalidFields, $field) if (!Email::Valid->address($borrower->{$field}));
+        }
+        elsif ($field eq "emailpro") {
+            push(@invalidFields, $field) if (!Email::Valid->address($borrower->{$field}));
+        }
+        elsif ($field eq "fax") {
+            my ($success, $errorcode, $errormessage) = ValidateMemberPhoneNumber($borrower->{$field});
+            push(@invalidFields, $field) if (!$success);
+        }
+        elsif ($field eq "B_phone") {
+            my ($success, $errorcode, $errormessage) = ValidateMemberPhoneNumber($borrower->{$field});
+            push(@invalidFields, $field) if (!$success);
+        }
+        elsif ($field eq "B_email") {
+            push(@invalidFields, $field) if (!Email::Valid->address($borrower->{$field}));
+        }
+    }
+    return \@invalidFields;
+}
+
+sub ValidateMemberPhoneNumber {
+    my $phonenumber = shift;
+    if (!$phonenumber) {
+        return (0, 1, "No phone number given.");
+    }
+
+    if ($phonenumber !~ /^((\+)?[1-9]{1,2})?([-\s\.])?((\(\d{1,4}\))|\d{1,4})(([-\s\.])?[0-9]{1,12}){1,2}$/) {
+        return (0, "ERROR_bad_phone", "The number " . $phonenumber . " is not a valid phone number");
+    }
+    else {
+        return 1;
+    }
 }
