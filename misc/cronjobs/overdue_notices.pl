@@ -69,6 +69,11 @@ overdue_notices.pl
    -borcat       <categorycode>   category code that must be included
    -borcatout    <categorycode>   category code that must be excluded
    -email        <email_type>     type of email that will be used. Can be 'email', 'emailpro' or 'B_email'. Repeatable.
+   -letternumbers <[1][2][3]>     The letters you want to generate. First and/or second and/or third...
+                                  Default behaviour is to generate all three letters "123".
+                                  For ex. "12" generates only the first and second overdue letter.
+                                  Ex. "13" Generates the first and third overdue letters.
+                                  Ex. "2" Generates only the second overdue letter.
 
 =head1 OPTIONS
 
@@ -103,7 +108,7 @@ any CSV files. Defaults to 90 to match F<longoverdues.pl>.
 =item B<-library>
 
 select overdues for one specific library. Use the value in the
-branches.branchcode table. This option can be repeated in order 
+branches.branchcode table. This option can be repeated in order
 to select overdues for a group of libraries.
 
 =item B<-csv>
@@ -147,18 +152,18 @@ Repetable field, permis to exclude some patrons categories.
 
 =item B<-t> | B<--triggered>
 
-This option causes a notice to be generated if and only if 
+This option causes a notice to be generated if and only if
 an item is overdue by the number of days defined in a notice trigger.
 
-By default, a notice is sent each time the script runs, which is suitable for 
-less frequent run cron script, but requires syncing notice triggers with 
+By default, a notice is sent each time the script runs, which is suitable for
+less frequent run cron script, but requires syncing notice triggers with
 the  cron schedule to ensure proper behavior.
-Add the --triggered option for daily cron, at the risk of no notice 
+Add the --triggered option for daily cron, at the risk of no notice
 being generated if the cron fails to run on time.
 
 =item B<-list-all>
 
-Default items.content lists only those items that fall in the 
+Default items.content lists only those items that fall in the
 range of the currently processing notice.
 Choose list-all to include all overdue items in the list (limited by B<-max> setting).
 
@@ -290,6 +295,7 @@ my $itemscontent = join( ',', qw( date_due title barcode author itemnumber ) );
 my @myborcat;
 my @myborcatout;
 my $date;
+my $letternumbers = 123; #overdue notifications letter1, letter2, letter3 to generate.
 
 GetOptions(
     'help|?'         => \$help,
@@ -308,6 +314,7 @@ GetOptions(
     'borcat=s'       => \@myborcat,
     'borcatout=s'    => \@myborcatout,
     'email=s'        => \@emails,
+    'letternumbers=s'  => \$letternumbers,
 ) or pod2usage(2);
 pod2usage(1) if $help;
 pod2usage( -verbose => 2 ) if $man;
@@ -333,19 +340,19 @@ if ($branchcount) {
 
 if (@branchcodes) {
     $verbose and warn "$branchcodes_word @branchcodes passed on parameter\n";
-    
+
     # Getting libraries which have overdue rules
     my %seen = map { $_ => 1 } @branchcodes;
     @branches = grep { $seen{$_} } @overduebranches;
-    
-    
+
+
     if (@branches) {
 
     	my $branch_word = scalar @branches > 1 ? 'branches' : 'branch';
 	$verbose and warn "$branch_word @branches have overdue rules\n";
 
     } else {
-    
+
         $verbose and warn "No active overduerules for $branchcodes_word  '@branchcodes'\n";
         ( scalar grep { '' eq $_ } @branches )
           or die "No active overduerules for DEFAULT either!";
@@ -437,16 +444,16 @@ END_SQL
     my $query = "SELECT * FROM overduerules WHERE delay1 IS NOT NULL AND branchcode = ? ";
     $query .= " AND categorycode IN (".join( ',' , ('?') x @myborcat ).") " if (@myborcat);
     $query .= " AND categorycode NOT IN (".join( ',' , ('?') x @myborcatout ).") " if (@myborcatout);
-    
+
     my $rqoverduerules =  $dbh->prepare($query);
     $rqoverduerules->execute($branchcode, @myborcat, @myborcatout);
-    
+
     # We get default rules is there is no rule for this branch
     if($rqoverduerules->rows == 0){
         $query = "SELECT * FROM overduerules WHERE delay1 IS NOT NULL AND branchcode = '' ";
         $query .= " AND categorycode IN (".join( ',' , ('?') x @myborcat ).") " if (@myborcat);
         $query .= " AND categorycode NOT IN (".join( ',' , ('?') x @myborcatout ).") " if (@myborcatout);
-        
+
         $rqoverduerules = $dbh->prepare($query);
         $rqoverduerules->execute(@myborcat, @myborcatout);
     }
@@ -454,6 +461,7 @@ END_SQL
     # my $outfile = 'overdues_' . ( $mybranch || $branchcode || 'default' );
     while ( my $overdue_rules = $rqoverduerules->fetchrow_hashref ) {
       PERIOD: foreach my $i ( 1 .. 3 ) {
+            next unless $letternumbers =~ $i; #Generate only the letters we want.
             $verbose and warn "branch '$branchcode', pass $i\n";
             my $mindays = $overdue_rules->{"delay$i"};    # the notice will be sent after mindays days (grace period)
             my $maxdays = (
@@ -534,9 +542,9 @@ END_SQL
                     # FIXME : Does this mean a letter must be defined in order to trigger a debar ?
                     next PERIOD;
                 }
-    
+
                 if ( $overdue_rules->{"debarred$i"} ) {
-    
+
                     #action taken is debarring
                     AddUniqueDebarment(
                         {
@@ -554,7 +562,7 @@ END_SQL
                 my $itemcount = 0;
                 my $titles = "";
                 my @items = ();
-                
+
                 my $j = 0;
                 my $exceededPrintNoticesMaxLines = 0;
                 while ( my $item_info = $sth2->fetchrow_hashref() ) {
@@ -695,7 +703,7 @@ END_SQL
         my $attachment = {
             filename => defined $csvfilename ? 'attachment.csv' : 'attachment.txt',
             type => 'text/plain',
-            content => $content, 
+            content => $content,
         };
 
         my $letter = {
