@@ -756,7 +756,9 @@ sub SendQueuedMessages {
         warn sprintf( 'sending %s message to patron: %s',
                       $message->{'message_transport_type'},
                       $message->{'borrowernumber'} || 'Admin' )
-          if $params->{'verbose'} or $debug;
+            if (  ($params->{'verbose'} || $debug) &&
+               (  not($message->{'message_transport_type'} eq 'print')  )
+            ); #Print messages are dealt with elsewhere so don't log them needlessly
         # This is just begging for subclassing
         next MESSAGE if ( lc($message->{'message_transport_type'}) eq 'rss' );
         if ( lc( $message->{'message_transport_type'} ) eq 'email' ) {
