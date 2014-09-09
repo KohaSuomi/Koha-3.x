@@ -115,9 +115,9 @@ if ( $run_report ) {
             items.holdingbranch as branch,
             GROUP_CONCAT(DISTINCT items.itype 
                     ORDER BY items.itemnumber SEPARATOR '<br/>') l_itype,
-            GROUP_CONCAT(DISTINCT items.location 
+            GROUP_CONCAT(DISTINCT items.location
                     ORDER BY items.itemnumber SEPARATOR '<br/>') l_location,
-            GROUP_CONCAT(CONCAT_WS(' Col ', items.itemcallnumber, collections_tracking.colId)
+            GROUP_CONCAT(DISTINCT(CONCAT_WS(' Col ', items.itemcallnumber, collections_tracking.colId))
                     ORDER BY items.itemnumber SEPARATOR '<br/>') l_itemcallnumber,
             GROUP_CONCAT(DISTINCT items.enumchron
                     ORDER BY items.itemnumber SEPARATOR '<br/>') l_enumchron,
