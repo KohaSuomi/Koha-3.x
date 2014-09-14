@@ -1919,6 +1919,8 @@ sub _koha_notify_reserve {
 
     my $admin_email_address = $branch_details->{'branchemail'} || C4::Context->preference('KohaAdminEmailAddress');
 
+    my $expiration = _reserve_last_pickup_date($reserve);
+
     my %letter_params = (
         module => 'reserves',
         branchcode => $reserve->{branchcode},
@@ -1929,7 +1931,10 @@ sub _koha_notify_reserve {
             'reserves'  => $reserve,
             'items', $reserve->{'itemnumber'},
         },
-        substitute => { today => C4::Dates->new()->output() },
+        substitute => {
+                    today => C4::Dates->new()->output(),
+                    lastpickupdate => C4::Dates->new($expiration->ymd(), 'iso')->output()
+        },
     );
 
     my $notification_sent = 0; #Keeping track if a Hold_filled message is sent. If no message can be sent, then default to a print message.
@@ -2263,6 +2268,8 @@ sub ReserveSlip {
     }) or return unless $reserve_id;
     my $reserve = GetReserveInfo($reserve_id) or return;
 
+    my $expiration = _reserve_last_pickup_date($reserve);
+
     return  C4::Letters::GetPreparedLetter (
         module => 'circulation',
         letter_code => $transfer ? 'TRANSFERSLIP' : 'RESERVESLIP',
@@ -2273,6 +2280,9 @@ sub ReserveSlip {
             'borrowers'   => $reserve->{borrowernumber},
             'biblio'      => $reserve->{biblionumber},
             'items'       => $reserve->{itemnumber},
+        },
+        substitute => {
+            lastpickupdate => C4::Dates->new($expiration->ymd(), 'iso')->output()
         },
     );
 }
