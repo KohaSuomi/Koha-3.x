@@ -321,6 +321,10 @@ foreach my $res (@reserves) {
             }
             # set found to 1 if reserve is waiting for patron pickup
             $res->{'found'} = 1 if $res->{'found'} eq 'W';
+
+            my $lastpickupdate = C4::Reserves::_reserve_last_pickup_date( $res );
+            $res->{'lastpickupdate'} = $lastpickupdate if $lastpickupdate;
+
         } else {
             my ($transfertwhen, $transfertfrom, $transfertto) = GetTransfers( $res->{'itemnumber'} );
             if ($transfertwhen) {

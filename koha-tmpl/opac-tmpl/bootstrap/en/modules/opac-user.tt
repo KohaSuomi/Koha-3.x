@@ -493,6 +493,7 @@
                                         <tr>
                                             <th class="anti-the">Title</th>
                                             <th class="psort">Placed on</th>
+                                            <th class="psort">Last pickup date</th>
                                             <th>Expires on</th>
                                             <th>Pick up location</th>
                                             [% IF ( showpriority ) %]
@@ -528,6 +529,12 @@
                                                 <span title="[% RESERVE.reservedate %]">
                                                     <span class="tdlabel">Hold date:</span>
                                                     [% RESERVE.reservedate | $KohaDates %]
+                                                </span>
+                                            </td>
+                                            <td class="lastpickupdate">
+                                                <span title="[% RESERVE.lastpickupdate %]">
+                                                    <span class="tdlabel">Last pickup date:</span>
+                                                    [% RESERVE.lastpickupdate | $KohaDates %]
                                                 </span>
                                             </td>
                                             <td class="expirationdate">

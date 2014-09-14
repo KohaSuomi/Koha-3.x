@@ -10,6 +10,7 @@ $(document).ready(function() {
                     {
                         "mDataProp": "reservedate_formatted"
                     },
+                    { "mDataProp": "lastpickupdate_formatted" },
                     {
                         "mDataProp": function ( oObj ) {
                             title = "<a href='/cgi-bin/koha/reserve/request.pl?biblionumber="

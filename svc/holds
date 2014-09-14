@@ -31,6 +31,7 @@ use C4::Context;
 
 use Koha::Database;
 use Koha::DateUtils;
+use Koha::Reserves;
 
 my $input = new CGI;
 
@@ -53,8 +54,8 @@ my $borrowernumber    = $input->param('borrowernumber');
 my $offset            = $input->param('iDisplayStart');
 my $results_per_page  = $input->param('iDisplayLength');
 my $sorting_direction = $input->param('sSortDir_0') || 'desc';
-my $sorting_column    = $sort_columns[ $input->param('iSortCol_0') ]
-  || 'reservedate';
+my $sorting_column    = ( $input->param('iSortCol_0') )   ?
+        $sort_columns[ $input->param('iSortCol_0') ]   :   'reservedate';
 
 binmode STDOUT, ":encoding(UTF-8)";
 print $input->header( -type => 'text/plain', -charset => 'UTF-8' );
@@ -106,7 +107,18 @@ while ( my $h = $holds_rs->next() ) {
           )
         : q{},
     };
-
+    
+    #Calculate the last pickup date for reservations that are waiting for pickup.
+    if ($hold->{waiting}) {
+        my $lastpickupdate = Koha::Reserves::GetLastpickupdate( $h );
+        $hold->{lastpickupdate} = $lastpickupdate->ymd();
+        $hold->{lastpickupdate_formatted} = C4::Dates->new($lastpickupdate->ymd(), 'iso')->output();
+    }
+    else {#These values need to be initialized anyway for DataTables to not complain.
+        $hold->{lastpickupdate} = '';
+        $hold->{lastpickupdate_formatted} = '';
+    }
+    
     $hold->{transfered}     = 0;
     $hold->{not_transfered} = 0;
 

@@ -31,11 +31,8 @@ use C4::Members;
 use C4::Biblio;
 use C4::Items;
 
-use Date::Calc qw(
-  Today
-  Add_Delta_Days
-  Date_to_Days
-);
+use DateTime;
+
 use C4::Reserves;
 use C4::Koha;
 
@@ -86,7 +83,7 @@ my ($reservcount, $overcount);
 my @getreserves = $all_branches ? GetReservesForBranch() : GetReservesForBranch($default);
 # get reserves for the branch we are logged into, or for all branches
 
-my $today = Date_to_Days(&Today);
+my $today = DateTime->now();
 foreach my $num (@getreserves) {
     next unless ($num->{'waitingdate'} && $num->{'waitingdate'} ne '0000-00-00');
 
@@ -106,13 +103,11 @@ foreach my $num (@getreserves) {
     my $getborrower = GetMember(borrowernumber => $num->{'borrowernumber'});
     my $itemtypeinfo = getitemtypeinfo( $gettitle->{'itemtype'} );  # using the fixed up itype/itemtype
     $getreserv{'waitingdate'} = $num->{'waitingdate'};
-    my ( $waiting_year, $waiting_month, $waiting_day ) = split (/-/, $num->{'waitingdate'});
-    ( $waiting_year, $waiting_month, $waiting_day ) =
-      Add_Delta_Days( $waiting_year, $waiting_month, $waiting_day,
-        C4::Context->preference('ReservesMaxPickUpDelay'));
-    my $calcDate = Date_to_Days( $waiting_year, $waiting_month, $waiting_day );
+
+    my $lastpickupdate = C4::Reserves::_reserve_last_pickup_date( $num );
 
     $getreserv{'itemtype'}       = $itemtypeinfo->{'description'};
+    $getreserv{'lastpickupdate'} = C4::Dates->new($lastpickupdate->ymd(), 'iso')->output();
     $getreserv{'title'}          = $gettitle->{'title'};
     $getreserv{'biblionumber'}   = $gettitle->{'biblionumber'};
     $getreserv{'barcode'}        = $gettitle->{'barcode'};
@@ -132,7 +127,7 @@ foreach my $num (@getreserves) {
         $getreserv{'borrowermail'}  = $getborrower->{'emailaddress'};
     }
  
-    if ($today > $calcDate) {
+    if (   DateTime->compare( $today,$lastpickupdate ) == 1   ) { #If today is bigger than lastpickupdate, pickup time has expired
         if ($cancelall) {
             my $res = cancel( $itemnumber, $borrowernum, $holdingbranch, $homebranch, !$transfer_when_cancel_all );
             push @cancel_result, $res if $res;
