@@ -753,7 +753,7 @@ sub GetReservesForBranch {
     my $dbh = C4::Context->dbh;
 
     my $query = "
-        SELECT reserve_id,borrowernumber,reservedate,itemnumber,waitingdate
+        SELECT reserve_id,borrowernumber,reservedate,itemnumber,waitingdate,branchcode
         FROM   reserves 
         WHERE   priority='0'
         AND found='W'
@@ -983,12 +983,16 @@ sub CancelExpiredReserves {
         $sth = $dbh->prepare( $query );
         $sth->execute( $max_pickup_delay );
 
-        while (my $res = $sth->fetchrow_hashref ) {
-            if ( $charge ) {
-                manualinvoice($res->{'borrowernumber'}, $res->{'itemnumber'}, 'Hold waiting too long', 'F', $charge);
-            }
+        my $today = DateTime->now( time_zone => C4::Context->tz() );
 
-            CancelReserve({ reserve_id => $res->{'reserve_id'} });
+        while (my $res = $sth->fetchrow_hashref ) {
+            my $expiration = _reserve_last_pickup_date( $res );
+            if ( $today > $expiration ) {
+                if ( $charge ) {
+                    manualinvoice($res->{'borrowernumber'}, $res->{'itemnumber'}, 'Hold waiting too long', 'F', $charge);
+                }
+                CancelReserve({ reserve_id => $res->{'reserve_id'} });
+            }
         }
     }
 
