@@ -38,6 +38,9 @@ use C4::Branch qw( GetBranchDetail );
 use C4::Dates qw( format_date_in_iso );
 
 use Koha::DateUtils;
+use Koha::Calendar;
+
+use DateTime;
 
 use List::MoreUtils qw( firstidx );
 
@@ -132,6 +135,8 @@ BEGIN {
         &ReserveSlip
         &ToggleSuspend
         &SuspendAll
+
+        &_reserve_last_pickup_date
 
         &GetReservesControlBranch
     );
@@ -1851,6 +1856,31 @@ sub _Findgroupreserve {
         push( @results, $data );
     }
     return @results;
+}
+
+=head2 _reserve_last_pickup_date
+
+ my $last_dt = _reserve_last_pickup_date($reserve);
+
+Returns the DateTime for the last pickup date for reserve.
+
+The datetime has a time component of 23:59:59, so the day expires as it should when comparing times as well.
+=cut
+
+sub _reserve_last_pickup_date {
+    my ($reserve) = @_;
+
+    my $startdate = $reserve->{waitingdate} ? dt_from_string($reserve->{waitingdate}) : DateTime->now( time_zone => C4::Context->tz() );
+    my $calendar = Koha::Calendar->new( branchcode => $reserve->{branchcode} );
+    my $expiration = $calendar->days_forward( $startdate, C4::Context->preference('ReservesMaxPickUpDelay') );
+       #It is necessary to set the time portion of DateTime as well, because we are actually getting the
+       #  last pickup datetime and importantly days end at 23:59:59.
+       #  Without this set, last pickup dates expire 1 day too early and frustrates patrons and staff alike!
+    $expiration->set( hour       => 23, 
+                      minute     => 59,  
+                      second     => 59 );
+
+    return $expiration;
 }
 
 =head2 _koha_notify_reserve

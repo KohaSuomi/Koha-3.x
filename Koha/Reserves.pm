@@ -27,7 +27,8 @@ BEGIN {
     @ISA = qw(Exporter);
     @EXPORT = qw(
 
-
+        &GetLastpickupdate
+        &GetWaitingReserves
     );
 }    
 
@@ -35,3 +36,30 @@ use C4::Context;
 use Koha::DateUtils;
 use Koha::Database;
 
+=head2 GetLastpickupdate
+
+ my $last_dt = GetLastpickupdate($reserve);
+
+@PARAM1 Koha::Schema::Result::Reserve-object received via DBIx searching
+@RETURNS the DateTime for the last pickup date for the given reserve.
+=cut
+
+sub GetLastpickupdate {
+    my ($reserve) = @_;
+
+    my $branchcode = $reserve->branchcode();
+    if (ref $branchcode eq 'Koha::Schema::Result::Branch') {
+        $branchcode = $branchcode->branchcode();
+    }
+
+    my $waitingdate = $reserve->waitingdate();
+    my $startdate = $waitingdate ? Koha::DateUtils::dt_from_string($waitingdate) : DateTime->now( time_zone => C4::Context->tz() );
+    my $calendar = Koha::Calendar->new( branchcode => $branchcode );
+    my $expiration = $calendar->days_forward( $startdate, C4::Context->preference('ReservesMaxPickUpDelay') );
+
+    return $expiration;
+}
+
+
+
+return 1;
