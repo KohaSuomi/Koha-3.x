@@ -43,6 +43,7 @@ use C4::Members::Attributes qw(GetBorrowerAttributes);
 use Koha::Borrower::Debarments qw(GetDebarments IsDebarred);
 use Koha::DateUtils;
 use Koha::Database;
+use Koha::Reserves;
 
 use Date::Calc qw(
   Today
@@ -381,6 +382,8 @@ if ($borrowernumber) {
           ->count( { borrowernumber => $borrowernumber } ) );
 
     $template->param( adultborrower => 1 ) if ( $borrower->{'category_type'} eq 'A' );
+
+    $template->param( WaitingReserveLoop => Koha::Reserves::GetWaitingReserves($borrowernumber) );
 }
 
 my @values;
