@@ -60,6 +60,71 @@ sub GetLastpickupdate {
     return $expiration;
 }
 
+=head2 GetWaitingReserves
 
+  my $waitingReserves = GetWaitingReserves($borrowernumber);
+  
+@PARAM1 Integer from koha.borrowers.borrowernumber
+@RETURNS DBIx:: containing Reservation-objects.
+=cut
+sub GetWaitingReserves {
+    my ($borrowernumber) = @_;
+    
+    my $schema = Koha::Database->new()->schema();
+    my $reserves_rs = $schema->resultset('Reserve')->search(
+        { -and => [
+               borrowernumber => $borrowernumber,
+               found => 'W'
+            ]
+        },
+        {
+            prefetch => { 'item'  =>  'biblio' },
+        }
+    );
+
+    my $currentBranch = C4::Context->userenv->{branch};
+
+    my @waitingReserves;
+    while ( my $reserve = $reserves_rs->next() ) {
+        my %waitingReserveInfo;
+
+        my $lastpickupdate = Koha::Reserves::GetLastpickupdate( $reserve );
+        $lastpickupdate = C4::Dates->new($lastpickupdate->ymd(), 'iso')->output();
+
+        my $pickupBranchcode = $reserve->branchcode();
+        my $pickupBranch;
+        if (ref $pickupBranchcode eq 'Koha::Schema::Result::Branch') {
+            $pickupBranch = $pickupBranchcode;
+            $pickupBranchcode = $pickupBranchcode->branchcode();
+        }
+
+        my $biblio = $reserve->biblio();
+        if ($biblio) { #For some reason it is possible for a waiting hold to not have a biblio?
+            $waitingReserveInfo{title}          = $biblio->title();
+            $waitingReserveInfo{biblionumber}   = $biblio->biblionumber();
+            $waitingReserveInfo{author}         = $biblio->author();
+        }
+        else {
+            $waitingReserveInfo{title}          = "<<ERROR, no biblio found>>";
+        }
+
+        $waitingReserveInfo{lastpickupdate} = $lastpickupdate;
+
+        my $item = $reserve->item();
+        if ($item) {
+            $waitingReserveInfo{itemcallnumber} = $reserve->item()->itemcallnumber();
+        }
+        else {
+            $waitingReserveInfo{itemcallnumber} = "<<ERROR, no item found>>";
+        }
+
+        #$waitingReserveInfo{itemcallnumber} = $reserve->item()->itemcallnumber();
+        $waitingReserveInfo{waitinghere}    = 1 if $pickupBranchcode eq $currentBranch;
+        $waitingReserveInfo{waitingat}      = $pickupBranch->branchname();
+
+        push @waitingReserves, \%waitingReserveInfo;
+    }
+    return \@waitingReserves;
+}
 
 return 1;

@@ -1,5 +1,6 @@
 [% USE Branches %]
 [% USE KohaDates %]
+[% USE EncodeUTF8 %]
 [% IF ( export_remove_fields OR export_with_csv_profile ) %]
    [% SET exports_enabled = 1 %]
 [% END %]
@@ -614,20 +615,25 @@ No patron matched <span class="ex">[% message %]</span>
 			</ul>
         </div>
 
-			[% IF ( WaitingReserveLoop ) %]
-			<div id="holdswaiting" class="circmessage">
-		    <h4>Holds waiting:</h4>
-			        [% FOREACH WaitingReserveLoo IN WaitingReserveLoop %]
-			            <ul>
-			                <li> <a href="/cgi-bin/koha/reserve/request.pl?biblionumber=[% WaitingReserveLoo.biblionumber %]">[% WaitingReserveLoo.title |html %]</a> ([% WaitingReserveLoo.itemtype %]), [% IF ( WaitingReserveLoo.author ) %]by [% WaitingReserveLoo.author %][% END %] [% IF ( WaitingReserveLoo.itemcallnumber ) %][[% WaitingReserveLoo.itemcallnumber %]] [% END %]Hold placed on [% WaitingReserveLoo.reservedate %].
-			            [% IF ( WaitingReserveLoo.waitingat ) %]
-			                <br />[% IF ( WaitingReserveLoo.waitinghere ) %]<strong class="waitinghere">[% ELSE %]<strong>[% END %]Waiting at [% WaitingReserveLoo.waitingat %]</strong>
-			            [% END %]
-			                </li>
-			            </ul>
-			    [% END %]
-			</div>
-			<!-- /If WaitingReserveLoop -->[% END %]
+            [% IF ( WaitingReserveLoop ) %]
+            <div id="holdswaiting" class="circmessage">
+            <h4>Holds waiting:</h4>
+                    [% FOREACH WaitingReserveLoo IN WaitingReserveLoop %]
+                        <ul>
+                            <li> <a href="/cgi-bin/koha/reserve/request.pl?biblionumber=[% WaitingReserveLoo.biblionumber | $EncodeUTF8 | html %]">[% WaitingReserveLoo.title | $EncodeUTF8 | html %]</a> [% IF ( WaitingReserveLoo.author ) %] [% WaitingReserveLoo.author | $EncodeUTF8 | html %][% END %] [% IF ( WaitingReserveLoo.itemcallnumber ) %][[% WaitingReserveLoo.itemcallnumber | $EncodeUTF8 | html %]] [% END %]
+                        [% IF ( WaitingReserveLoo.lastpickupdate ) %]
+                            Last pickup date [% WaitingReserveLoo.lastpickupdate | $EncodeUTF8 | html %]
+                        [% END %]
+                        [% IF ( WaitingReserveLoo.waitingat ) %]
+                            <br />[% IF ( WaitingReserveLoo.waitinghere ) %]<strong class="waitinghere">[% ELSE %]<strong>[% END %]
+                                Waiting at [% WaitingReserveLoo.waitingat | $EncodeUTF8 | html %]
+                            </strong>
+                        [% END %]
+                            </li>
+                        </ul>
+                [% END %]
+            </div>
+            <!-- /If WaitingReserveLoop -->[% END %]
 	[% IF ( notes ) %]
 			<div id="circnotes" class="circmessage">
 			<h4>Notes:</h4>
