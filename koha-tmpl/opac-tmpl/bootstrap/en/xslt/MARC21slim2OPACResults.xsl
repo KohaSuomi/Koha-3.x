@@ -393,6 +393,7 @@
 -->
         </xsl:variable>
 
+    <p>
         <!-- Title Statement: Alternate Graphic Representation (MARC 880) -->
         <xsl:if test="$display880">
            <xsl:call-template name="m880Select">
@@ -438,7 +439,6 @@
         </xsl:for-each>
         </xsl:if>
     </a>
-    <p>
 
     <!-- Author Statement: Alternate Graphic Representation (MARC 880) -->
     <xsl:if test="$display880">
@@ -507,6 +507,42 @@
     </xsl:when>
     </xsl:choose>
     </p>
+
+    <xsl:if test="($Show856uAsImage='Results' or $Show856uAsImage='Both')">
+      <xsl:if test="marc:datafield[@tag=856]/marc:subfield[@code='u']">
+        <xsl:for-each select="marc:datafield[@tag=856]">
+          <xsl:variable name="SubqText">
+            <xsl:value-of select="marc:subfield[@code='q']"/>
+          </xsl:variable>
+          <xsl:choose>
+            <xsl:when test="($Show856uAsImage='Details' or $Show856uAsImage='Both') and 
+                      (substring($SubqText,1,5)='IMAGE' or substring($SubqText,1,5)='image' or $SubqText='img' or
+                      $SubqText='bmp' or $SubqText='cod' or $SubqText='gif' or $SubqText='ief' or
+                      $SubqText='jpe' or $SubqText='jpeg' or $SubqText='jpg' or $SubqText='jfif' or
+                      $SubqText='png' or $SubqText='svg' or $SubqText='tif' or $SubqText='tiff' or
+                      $SubqText='ras' or $SubqText='cmx' or $SubqText='ico' or $SubqText='pnm' or 
+                      $SubqText='pbm' or $SubqText='pgm' or $SubqText='ppm' or $SubqText='rgb' or
+                      $SubqText='xbm' or $SubqText='xpm' or $SubqText='xwd')">
+              <a>
+                <xsl:attribute name="href">
+                  <xsl:value-of select="marc:subfield[@code='u']"/>
+                </xsl:attribute>
+                <span class="jokunen_image_container">
+                  <xsl:element name="img">
+                    <xsl:attribute name="src">
+                      <xsl:value-of select="marc:subfield[@code='u']"/>
+                    </xsl:attribute>
+                    <xsl:attribute name="alt">
+                      <xsl:value-of select="marc:subfield[@code='y']"/>
+                    </xsl:attribute>
+                  </xsl:element>
+                </span>
+              </a>
+            </xsl:when>
+          </xsl:choose>
+        </xsl:for-each>
+      </xsl:if>
+    </xsl:if>
 
     <xsl:if test="marc:datafield[@tag=250]">
     <span class="results_summary edition">
@@ -951,7 +987,7 @@
             </xsl:for-each>
 	</span>
     </xsl:if>
-    <xsl:if test="marc:datafield[@tag=856]">
+<!--    <xsl:if test="marc:datafield[@tag=856]">
          <span class="results_summary online_resources">
 			   <span class="label">Online Access: </span>
                             <xsl:for-each select="marc:datafield[@tag=856]">
@@ -1032,7 +1068,7 @@
                                     </xsl:choose>
                             </xsl:for-each>
                             </span>
-                        </xsl:if>
+                        </xsl:if> -->
                         <span class="results_summary availability">
                         <span class="label">Availability: </span>
                         <xsl:choose>
@@ -1059,7 +1095,7 @@
                <xsl:choose>
                <xsl:when test="$singleBranchMode=1">
                <xsl:for-each select="$available_items[generate-id() = generate-id(key('item-by-status-and-branch', concat(items:status, ' ', items:homebranch))[1])]">
-                   <xsl:if test="items:itemcallnumber != '' and items:itemcallnumber"> [<xsl:value-of select="items:itemcallnumber"/>]</xsl:if>
+<!--                   <xsl:if test="items:itemcallnumber != '' and items:itemcallnumber"> [<xsl:value-of select="items:itemcallnumber"/>]</xsl:if> -->
                                <xsl:text> (</xsl:text>
                                <xsl:value-of select="count(key('item-by-status-and-branch', concat(items:status, ' ', items:homebranch)))"/>
                                <xsl:text>)</xsl:text>
@@ -1069,7 +1105,7 @@
                <xsl:otherwise>
                    <xsl:for-each select="$available_items[generate-id() = generate-id(key('item-by-status-and-branch', concat(items:status, ' ', items:homebranch))[1])]">
                        <xsl:value-of select="items:homebranch"/>
-                   <xsl:if test="items:itemcallnumber != '' and items:itemcallnumber and $OPACItemLocation='callnum'"> [<xsl:value-of select="items:itemcallnumber"/>]</xsl:if>
+<!--                   <xsl:if test="items:itemcallnumber != '' and items:itemcallnumber and $OPACItemLocation='callnum'"> [<xsl:value-of select="items:itemcallnumber"/>]</xsl:if> -->
                                <xsl:text> (</xsl:text>
                                <xsl:value-of select="count(key('item-by-status-and-branch', concat(items:status, ' ', items:homebranch)))"/>
                                <xsl:text>)</xsl:text>
@@ -1091,7 +1127,7 @@
                             <xsl:if test="$singleBranchMode=0">
                                 <xsl:value-of select="items:homebranch"/>
                             </xsl:if>
-                            <xsl:if test="items:itemcallnumber != '' and items:itemcallnumber"> [<xsl:value-of select="items:itemcallnumber"/>]</xsl:if>
+<!--                            <xsl:if test="items:itemcallnumber != '' and items:itemcallnumber"> [<xsl:value-of select="items:itemcallnumber"/>]</xsl:if> -->
                             <xsl:text> (</xsl:text>
                             <xsl:value-of select="count(key('item-by-status-and-branch', concat(items:status, ' ', items:homebranch)))"/>
                             <xsl:text> )</xsl:text>
