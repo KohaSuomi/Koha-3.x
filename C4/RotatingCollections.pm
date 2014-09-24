@@ -30,6 +30,7 @@ use C4::Reserves qw(GetReserveStatus);
 use C4::Biblio;
 use C4::Branch;
 use C4::Items;
+use Koha::DateUtils;
 
 use DBI;
 
@@ -313,6 +314,7 @@ sub GetItemsInCollection {
         $row->{'holdingbranchname'} = $holdingbranchname;
         $row->{'origin_branchname'} = $originbranchname;
         $row->{'intransit'} = GetTransfers($row->{'itemnumber'});
+        $row->{'date_added_format'} = output_pref({ dt => dt_from_string($row->{'date_added'}), dateonly => 1 });
         push( @results, $row );
     }
 
@@ -457,8 +459,9 @@ sub AddItemToCollection {
         INSERT INTO collections_tracking (
             colId,
             itemnumber,
-            origin_branchcode
-        ) VALUES (?, ?, ?)
+            origin_branchcode,
+            date_added
+        ) VALUES (?, ?, ?, now())
     ");
     $sth->execute($colId, $itemnumber, $originbranchcode) or return ( 0, 3, $sth->errstr() );
 
