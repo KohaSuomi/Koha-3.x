@@ -250,6 +250,7 @@
                 <th>Title</th>
                 <th>Call number</th>
                 <th>Barcode</th>
+                <th>Date added</th>
                 <th>Origin library</th>
                 <th>Home library</th>
                 <th>Current location</th>
@@ -264,6 +265,7 @@
                 <td><a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=[% collectionItemsLoo.biblionumber %]">[% collectionItemsLoo.title |html %]</a></td>
                 <td>[% collectionItemsLoo.itemcallnumber %]</td>
                 <td><a href="/cgi-bin/koha/catalogue/moredetail.pl?biblionumber=[% collectionItemsLoo.biblionumber %]#item[% collectionItemsLoo.itemnumber %]">[% collectionItemsLoo.barcode %]</a></td>
+                <td>[% collectionItemsLoo.date_added_format %]</td>
                 <td>[% collectionItemsLoo.origin_branchname %]</td>
                 <td>[% collectionItemsLoo.branchname %]</td>
                 <td>[% collectionItemsLoo.holdingbranchname %]</td>
