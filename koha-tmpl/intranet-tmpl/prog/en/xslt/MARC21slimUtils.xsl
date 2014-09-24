@@ -107,12 +107,12 @@
 	</xsl:template>
 
     <!-- Function m880Select:  Display Alternate Graphic Representation (MARC 880) for selected latin "base"tags
-        - should be called immediately before the corresonding latin tags are processed 
+        - should be called immediately before the corresonding latin tags are processed
         - tags in right-to-left languages are displayed floating right
         * Parameter:
            + basetags: display these tags if found in linkage section ( subfield 6) of tag 880
            + codes: display these subfields codes
-        * Options: 
+        * Options:
             - class: wrap output in <span class="$class">...</span>
             - label: prefix each(!) tag with label $label
             - bibno: link to biblionumber $bibno
@@ -121,7 +121,7 @@
             - displays every field on a separate line (to switch between rtl and ltr)
          * Pitfalls:
            (!) output might be empty
-    --> 
+    -->
     <xsl:template name="m880Select">
          <xsl:param name="basetags"/> <!-- e.g.  100,700,110,710 -->
         <xsl:param name="codes"/> <!-- e.g. abc  -->
@@ -143,10 +143,10 @@
                      <xsl:when test="boolean($class)">
                         <xsl:attribute name="class"><xsl:value-of select="$class"/></xsl:attribute>
                         <xsl:attribute name="style">display:block; </xsl:attribute>
-                    </xsl:when>    
+                    </xsl:when>
                      <xsl:when test="substring($code6,string-length($code6)-1,2) ='/r'">
                         <xsl:attribute name="class"><xsl:value-of select="$class"/> m880</xsl:attribute>
-                    </xsl:when>                                    
+                    </xsl:when>
                     </xsl:choose>
                     <xsl:if test="boolean($label)">
                         <span class="label">
@@ -231,7 +231,7 @@
     <xsl:template name="getLanguageImage">
         <xsl:param name="languageCode"/>
 <!--        <xsl:element name="img"><xsl:attribute name="src">/intranet-tmpl/prog/img/phoca_flag_icons/<xsl:value-of select="$languageCode"/>.png</xsl:attribute><xsl:attribute name="alt"><xsl:value-of select="$languageCode"/></xsl:attribute><xsl:attribute name="title"><xsl:value-of select="$languageCode"/></xsl:attribute><xsl:attribute name="class">lang_icon</xsl:attribute></xsl:element> -->
-        <xsl:element name="img"><xsl:attribute name="src">/intranet-tmpl/prog/img/famfamfam/languages/<xsl:value-of select="$languageCode"/>.png</xsl:attribute><xsl:attribute name="alt"><xsl:value-of select="$languageCode"/></xsl:attribute><xsl:attribute name="title"><xsl:value-of select="$languageCode"/></xsl:attribute><xsl:attribute name="class">lang_icon</xsl:attribute></xsl:element>
+        <xsl:element name="img"><xsl:attribute name="src">/opac-tmpl/lib/famfamfam/languages/<xsl:value-of select="$languageCode"/>.png</xsl:attribute><xsl:attribute name="alt"><xsl:value-of select="$languageCode"/></xsl:attribute><xsl:attribute name="title"><xsl:value-of select="$languageCode"/></xsl:attribute><xsl:attribute name="class">lang_icon</xsl:attribute></xsl:element>
     </xsl:template>
 </xsl:stylesheet>
 

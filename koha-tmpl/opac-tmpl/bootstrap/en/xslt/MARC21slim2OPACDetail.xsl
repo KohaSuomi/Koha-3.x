@@ -155,27 +155,67 @@
         <xsl:if test="marc:datafield[@tag=245]">
         <h1 class="title" property="name">
             <xsl:for-each select="marc:datafield[@tag=245]">
-                    <xsl:call-template name="subfieldSelect">
-                        <xsl:with-param name="codes">a</xsl:with-param>
-                    </xsl:call-template>
-                    <xsl:if test="marc:subfield[@code='h']">
-                        <xsl:text> </xsl:text>
-                        <xsl:call-template name="subfieldSelect">
-                            <xsl:with-param name="codes">h</xsl:with-param>
-                        </xsl:call-template>
-                    </xsl:if>
-                    <xsl:if test="marc:subfield[@code='b']">
-                        <xsl:text> </xsl:text>
-                        <xsl:call-template name="subfieldSelect">
-                            <xsl:with-param name="codes">b</xsl:with-param>
-                        </xsl:call-template>
-                    </xsl:if>
+              <xsl:call-template name="subfieldSelect">
+                <xsl:with-param name="codes">a</xsl:with-param>
+              </xsl:call-template>
+              <xsl:if test="marc:subfield[@code='n']">
                 <xsl:text> </xsl:text>
-                    <xsl:call-template name="subfieldSelect">
-                        <xsl:with-param name="codes">fgknps</xsl:with-param>
-                    </xsl:call-template>
+                <xsl:call-template name="subfieldSelect">
+                  <xsl:with-param name="codes">n</xsl:with-param>
+                </xsl:call-template>
+              </xsl:if>
+              <xsl:if test="marc:subfield[@code='p']">
+                <xsl:text> </xsl:text>
+                <xsl:call-template name="subfieldSelect">
+                  <xsl:with-param name="codes">p</xsl:with-param>
+                </xsl:call-template>
+              </xsl:if>
+              <xsl:if test="marc:subfield[@code='h']">
+                <xsl:text> </xsl:text>
+                <xsl:call-template name="subfieldSelect">
+                  <xsl:with-param name="codes">h</xsl:with-param>
+                </xsl:call-template>
+              </xsl:if>
+              <xsl:if test="marc:subfield[@code='b']">
+                <xsl:text> </xsl:text>
+                <xsl:call-template name="subfieldSelect">
+                  <xsl:with-param name="codes">b</xsl:with-param>
+                </xsl:call-template>
+              </xsl:if>
+              <xsl:text> </xsl:text>
+              <xsl:call-template name="subfieldSelect">
+                <xsl:with-param name="codes">fgks</xsl:with-param>
+              </xsl:call-template>
             </xsl:for-each>
         </h1>
+        </xsl:if>
+
+        <xsl:if test="marc:datafield[@tag=856]/marc:subfield[@code='u']">
+        <!-- Display cover image -->
+          <xsl:for-each select="marc:datafield[@tag=856]">
+            <xsl:variable name="SubqText">
+              <xsl:value-of select="marc:subfield[@code='q']"/>
+            </xsl:variable>
+            <xsl:choose>
+              <xsl:when test="($Show856uAsImage='Details' or $Show856uAsImage='Both') and (substring($SubqText,1,5)='IMAGE' or substring($SubqText,1,5)='image' or $SubqText='img' or $SubqText='bmp' or $SubqText='cod' or $SubqText='gif' or $SubqText='ief' or $SubqText='jpe' or $SubqText='jpeg' or $SubqText='jpg' or $SubqText='jfif' or $SubqText='png' or $SubqText='svg' or $SubqText='tif' or $SubqText='tiff' or $SubqText='ras' or $SubqText='cmx' or $SubqText='ico' or $SubqText='pnm' or $SubqText='pbm' or $SubqText='pgm' or $SubqText='ppm' or $SubqText='rgb' or $SubqText='xbm' or $SubqText='xpm' or $SubqText='xwd')">
+                <a>
+                  <xsl:attribute name="href">
+                    <xsl:value-of select="marc:subfield[@code='u']"/>
+                  </xsl:attribute>
+                  <span class="jokunen_image_container">
+                    <xsl:element name="img">
+                      <xsl:attribute name="src">
+                        <xsl:value-of select="marc:subfield[@code='u']"/>
+                      </xsl:attribute>
+                      <xsl:attribute name="alt">
+                        <xsl:value-of select="marc:subfield[@code='y']"/>
+                      </xsl:attribute>
+                    </xsl:element>
+                  </span>
+                </a>
+              </xsl:when>
+            </xsl:choose>
+          </xsl:for-each>
         </xsl:if>
 
         <!-- Author Statement: Alternate Graphic Representation (MARC 880) -->
@@ -649,8 +689,8 @@
                 <xsl:attribute name="target">_blank</xsl:attribute>
             </xsl:if>
             <xsl:choose>
-            <xsl:when test="($Show856uAsImage='Details' or $Show856uAsImage='Both') and (substring($SubqText,1,6)='image/' or $SubqText='img' or $SubqText='bmp' or $SubqText='cod' or $SubqText='gif' or $SubqText='ief' or $SubqText='jpe' or $SubqText='jpeg' or $SubqText='jpg' or $SubqText='jfif' or $SubqText='png' or $SubqText='svg' or $SubqText='tif' or $SubqText='tiff' or $SubqText='ras' or $SubqText='cmx' or $SubqText='ico' or $SubqText='pnm' or $SubqText='pbm' or $SubqText='pgm' or $SubqText='ppm' or $SubqText='rgb' or $SubqText='xbm' or $SubqText='xpm' or $SubqText='xwd')">
-                <xsl:element name="img"><xsl:attribute name="src"><xsl:value-of select="marc:subfield[@code='u']"/></xsl:attribute><xsl:attribute name="alt"><xsl:value-of select="marc:subfield[@code='y']"/></xsl:attribute><xsl:attribute name="height">100</xsl:attribute></xsl:element><xsl:text></xsl:text>
+            <xsl:when test="($Show856uAsImage='Details' or $Show856uAsImage='Both') and (substring($SubqText,1,5)='image' or substring($SubqText,1,5)='IMAGE' or $SubqText='img' or $SubqText='bmp' or $SubqText='cod' or $SubqText='gif' or $SubqText='ief' or $SubqText='jpe' or $SubqText='jpeg' or $SubqText='jpg' or $SubqText='jfif' or $SubqText='png' or $SubqText='svg' or $SubqText='tif' or $SubqText='tiff' or $SubqText='ras' or $SubqText='cmx' or $SubqText='ico' or $SubqText='pnm' or $SubqText='pbm' or $SubqText='pgm' or $SubqText='ppm' or $SubqText='rgb' or $SubqText='xbm' or $SubqText='xpm' or $SubqText='xwd')">
+                <!-- Cover image is shown higher, this is here to prevent the Cover image from showing as text. -->
             </xsl:when>
             <xsl:when test="marc:subfield[@code='y' or @code='3' or @code='z']">
                 <xsl:call-template name="subfieldSelect">
