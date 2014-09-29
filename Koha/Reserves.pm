@@ -17,7 +17,6 @@ package Koha::Reserves;
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 use Modern::Perl;
-binmode STDOUT, ":encoding(UTF-8)";
 use vars qw($VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);
 
 BEGIN {
