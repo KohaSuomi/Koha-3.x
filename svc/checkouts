@@ -186,8 +186,10 @@ while ( my $c = $sth->fetchrow_hashref() ) {
     }
 }
 
-@checkouts_today = reverse(@checkouts_today)
-  if ( C4::Context->preference('todaysIssuesDefaultSortOrder') eq 'desc' );
+@checkouts_today = sort {$a->{issuedate} cmp $b->{issuedate}} @checkouts_today if ( C4::Context->preference('todaysIssuesDefaultSortOrder') eq 'desc' );
+@checkouts_today = sort {$b->{issuedate} cmp $a->{issuedate}} @checkouts_today unless ( C4::Context->preference('todaysIssuesDefaultSortOrder') eq 'desc' );
+#@checkouts_today = reverse(@checkouts_today)
+#  if ( C4::Context->preference('todaysIssuesDefaultSortOrder') eq 'desc' );
 @checkouts_previous = reverse(@checkouts_previous)
   if ( C4::Context->preference('previousIssuesDefaultSortOrder') eq 'desc' );
 
