@@ -421,6 +421,8 @@ sub CanItemBeReserved{
     # we retrieve borrowers and items informations #
     # item->{itype} will come for biblioitems if necessery
     my $item = GetItem($itemnumber);
+    my $biblioData = C4::Biblio::GetBiblioData( $item->{biblionumber} );
+    my $borrower = C4::Members::GetMember('borrowernumber'=>$borrowernumber);
 
     ##HACKMAN HERE! quickloan items cannot be put on hold!
     if ($item->{ccode} eq 'PILA' || $item->{permanent_location} eq 'SII' || $item->{homebranch} eq 'JOE_LAKO' || $item->{homebranch} eq 'JOE_LASI') {
@@ -431,8 +433,10 @@ sub CanItemBeReserved{
     # If an item is damaged and we don't allow holds on damaged items, we can stop right here
     return 0 if ( $item->{damaged} && !C4::Context->preference('AllowHoldsOnDamagedItems') );
 
-    my $borrower = C4::Members::GetMember('borrowernumber'=>$borrowernumber);     
-    
+    #Check for the age restriction
+    my ($ageRestriction, $daysToAgeRestriction) = C4::Circulation::GetAgeRestriction( $biblioData->{agerestriction}, $borrower );
+    return 0 if $daysToAgeRestriction && $daysToAgeRestriction > 0;
+
     my $controlbranch = C4::Context->preference('ReservesControlBranch');
     my $itemtypefield = C4::Context->preference('item-level_itypes') ? "itype" : "itemtype";
 
