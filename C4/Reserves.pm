@@ -945,13 +945,22 @@ sub CheckReserves {
 
 =head2 CancelExpiredReserves
 
-  CancelExpiredReserves();
+  CancelExpiredReserves(); #Brief
+  my $verboseLog = CancelExpiredReserves(2); #Verbose level 2
 
 Cancels all reserves with an expiration date from before today.
+
+@PARAM1 Integer, to define the verbosity level. 0 or undef to be brief.
+                 Supported values, 0,1,2,3.
+RETURNS String, the verbose output. Returns the output instead of printing it to
+                make it possible to run this module from a CGI-script.
 
 =cut
 
 sub CancelExpiredReserves {
+    my $verbose = shift;
+    my @sb; #Efficiently collect verbose output here.
+    my %usedCalendars; #Collect all used calendars here so they can be logged if verbose enough
 
     # Cancel reserves that have passed their expiration date.
     my $dbh = C4::Context->dbh;
@@ -962,10 +971,14 @@ sub CancelExpiredReserves {
     " );
     $sth->execute();
 
+    push @sb, "##Checking reserve expirationdates\n".
+          "reserve_id|borrowernumber|expirationdate|\n" if $verbose;
+
     while ( my $res = $sth->fetchrow_hashref() ) {
         CancelReserve({ reserve_id => $res->{'reserve_id'} });
+        push @sb, printReserve($res,'tab',['reserve_id','borrowernumber','expirationdate'])." expired.\n" if $verbose;
     }
-  
+
     # Cancel reserves that have been waiting too long
     if ( C4::Context->preference("ExpireReservesMaxPickUpDelay") ) {
         my $max_pickup_delay = C4::Context->preference("ReservesMaxPickUpDelay");
@@ -977,6 +990,9 @@ sub CancelExpiredReserves {
 
         my $today = DateTime->now( time_zone => C4::Context->tz() );
 
+        push @sb, "##Removing holds waiting too long\n##using today=$today, ReservesMaxPickUpDelay=$max_pickup_delay, ExpireReservesMaxPickUpDelayCharge=$charge\n".
+              "reserve_id|borrowernumber|branchcode|waitingdate|lastpickupdate|resolution\n" if $verbose;
+
         while (my $res = $sth->fetchrow_hashref ) {
             my $expiration = _reserve_last_pickup_date( $res );
             if ( $today > $expiration ) {
@@ -984,10 +1000,26 @@ sub CancelExpiredReserves {
                     manualinvoice($res->{'borrowernumber'}, $res->{'itemnumber'}, 'Hold waiting too long', 'F', $charge);
                 }
                 CancelReserve({ reserve_id => $res->{'reserve_id'} });
+                push @sb, printReserve($res,'tab',['reserve_id','borrowernumber','branchcode','waitingdate']).sprintf("% 14s",substr($expiration,0,10))."| past lastpickupdate.\n" if $verbose;
+            }
+            elsif($verbose > 1) {
+                push @sb, printReserve($res,'tab',['reserve_id','borrowernumber','branchcode','waitingdate']).sprintf("% 14s",substr($expiration,0,10))."| still waiting.\n" if $verbose > 1;
+            }
+            $usedCalendars{  $res->{branchcode}  } = Koha::Calendar->new( branchcode => $res->{branchcode} ) if (  $verbose > 2 && not(exists($usedCalendars{$res->{branchcode}}))  );
+        }
+
+        #Log the used calendars.
+        if ($verbose > 2) {
+            push @sb, "##Dumping used Calendars\n";
+            foreach my $branchcode (sort keys %usedCalendars) {
+                my $calendar = $usedCalendars{$branchcode};
+                push @sb, "<<  $branchcode >>\n";
+                push @sb, $calendar->printMe()."\n";
             }
         }
-    }
 
+    }
+    return join('',@sb) if $verbose;
 }
 
 =head2 AutoUnsuspendReserves
@@ -2360,6 +2392,34 @@ sub CalculatePriority {
     );
 
     return @row ? $row[0]+1 : 1;
+}
+
+=head printReserve
+
+    my $text = C4::Reserves::printReserve( $reserve, 'tab', ['reserve_id','borrowernumber','waitingdate', ...] );
+    assert($text, "         1|       1017466| 2014-11-06| ...");
+
+Gets a textual representation of a koha.reserves -row.
+
+@PARAM1 koha.reserves-row
+@PARAM2 String, type of formatting, currently supported are 'tab' to print tabular output.
+        Defaults the column width to the key length.
+@PARAM3 Array of columns, the desired reserves-columns to output in the given order.
+RETURNS String, depending on the type of formatting.
+
+=cut
+
+sub printReserve {
+    my ($reserve, $format, $keys) = @_;
+    my @sb;
+
+    if ($format eq 'tab') {
+        foreach my $key (@$keys) {
+            my $l = length $key;
+            push @sb, sprintf('% '.$l.'s', $reserve->{$key}).'|';
+        }
+        return join('',@sb);
+    }
 }
 
 =head1 AUTHOR

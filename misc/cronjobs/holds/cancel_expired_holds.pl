@@ -17,8 +17,10 @@
 # with Koha; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-#use strict;
-#use warnings; FIXME - Bug 2505
+use Modern::Perl;
+
+use Getopt::Long;
+use C4::Reserves qw(CancelExpiredReserves);
 
 BEGIN {
     # find Koha's Perl modules
@@ -27,8 +29,24 @@ BEGIN {
     eval { require "$FindBin::Bin/../kohalib.pl" };
 }
 
-# cancel all expired hold requests
+# These are defaults for command line options.
+my $verbose = 0;
+my $help    = 0;
 
-use C4::Reserves;
 
-CancelExpiredReserves();
+GetOptions(
+    'h|help|?'                     => \$help,
+    'v|verbose:i'                    => \$verbose,
+);
+
+if ($help) {
+    die <<HEAD;
+This scripts cancels all expired hold requests and all holds that have expired
+their last pickup date.
+
+    -v --verbose <level>    Prints more verbose information.
+                            Supported levels, 0,1,2,3
+HEAD
+}
+
+print CancelExpiredReserves($verbose);
