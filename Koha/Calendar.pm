@@ -364,6 +364,36 @@ sub add_holiday {
     return;
 }
 
+sub printMe {
+    my $self = shift;
+    my @sb; #String buffer to collect self output.
+
+    my $exception_holidays = $self->exception_holidays();
+    my $single_holidays = $self->single_holidays();
+    my $weekly_closed_days = $self->{weekly_closed_days};
+    my $month_day_closed_days = $self->{day_month_closed_days}; #Get the annually recurring holidays.
+
+    push @sb, "< Weekly days => ";
+    for (my $i=0 ; $i<@$weekly_closed_days ; $i++) {
+        push @sb, "$i," if $weekly_closed_days->[$i] > 0;
+    }
+    push @sb, "\n";
+    push @sb, "< Recurring month->days => ";
+    foreach my $month (sort {$a <=> $b} keys %$month_day_closed_days) {
+        push @sb, "$month->";
+        push @sb, join(',', (sort {$a <=> $b} keys %{ $month_day_closed_days->{$month} })  );
+        push @sb, ' & ';
+    }
+    push @sb, "\n";
+    push @sb, "< Single days => ";
+    my @single_holidays = sort {$a->ymd() cmp $b->ymd()} $single_holidays->as_list();
+    foreach my $dt (@single_holidays) {
+        push @sb, $dt->ymd().',';
+    }
+    push @sb, "\n";
+    return join('', @sb);
+}
+
 1;
 __END__
 
@@ -486,6 +516,10 @@ allow testing of more configurations
 Passed a datetime object this will add it to the calendar's list of
 closed days. This is for testing so that we can alter the Calenfar object's
 list of specified dates
+
+=head2 printMe
+
+Prints a textual representation of the Calendar object, useful for logging.
 
 =head1 DIAGNOSTICS
 
