@@ -418,7 +418,7 @@ $(document).ready(function() {
         </ul>
 
         [% IF (forceallow) %]
-            <li>Debarment overridden temporarily</li>
+            <li>Restriction overridden temporarily</li>
         [% END %]
 
 </div></div>
@@ -428,7 +428,7 @@ $(document).ready(function() {
 [% END %]
 
   [% IF (forceallow) %]
-      <div id="overridden_debarment" class="dialog alert">Debarment overridden temporarily</div>
+      <div id="overridden_debarment" class="dialog alert">Restriction overridden temporarily</div>
   [% END %]
 
     [% END %] <!-- /impossible -->
@@ -583,6 +583,11 @@ No patron matched <span class="ex">[% message %]</span>
 
                    <br/>
                    <a class="btn btn-small" href="#reldebarments" onclick="$('#debarments-tab-link').click()"><i class="icon-ban-circle"></i> View restrictions</a>
+                    [% IF (noissues && borrowernumber && CAN_user_circulate_force_checkout) %]
+                        <span class="override_debarment">
+                            <a href="/cgi-bin/koha/circ/circulation.pl?forceallow=1&amp;borrowernumber=[% borrowernumber %]" class="btn btn-small">Override restriction temporarily</a>
+                        </span>
+                    [% END %]
                </li>
             [% END %]
 
@@ -607,13 +612,6 @@ No patron matched <span class="ex">[% message %]</span>
 
 
 			</ul>
-
-[% IF (noissues && borrowernumber && CAN_user_circulate_force_checkout) %]
-<div class="override_debarment">
-<a href="/cgi-bin/koha/circ/circulation.pl?forceallow=1&amp;borrowernumber=[% borrowernumber %]" class="btn btn-small">Override debarment temporarily</a>
-</div>
-[% END %]
-
         </div>
 
 			[% IF ( WaitingReserveLoop ) %]
