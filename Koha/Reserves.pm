@@ -54,7 +54,15 @@ sub GetLastpickupdate {
     my $waitingdate = $reserve->waitingdate();
     my $startdate = $waitingdate ? Koha::DateUtils::dt_from_string($waitingdate) : DateTime->now( time_zone => C4::Context->tz() );
     my $calendar = Koha::Calendar->new( branchcode => $branchcode );
-    my $expiration = $calendar->days_forward( $startdate, C4::Context->preference('ReservesMaxPickUpDelay') );
+    my $expiration;
+    if ($branchcode eq 'JOE_LIPAU' ||
+        $branchcode eq 'JOE_KONAU' ||
+        $branchcode eq 'JOE_JOEAU' ) {
+        $expiration = $calendar->days_forward( $startdate, 10 );
+    }
+    else {
+        $expiration = $calendar->days_forward( $startdate, C4::Context->preference('ReservesMaxPickUpDelay') );
+    }
 
     return $expiration;
 }

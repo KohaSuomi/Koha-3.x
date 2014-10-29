@@ -1922,7 +1922,17 @@ sub _reserve_last_pickup_date {
 
     my $startdate = $reserve->{waitingdate} ? dt_from_string($reserve->{waitingdate}) : DateTime->now( time_zone => C4::Context->tz() );
     my $calendar = Koha::Calendar->new( branchcode => $reserve->{branchcode} );
-    my $expiration = $calendar->days_forward( $startdate, C4::Context->preference('ReservesMaxPickUpDelay') );
+    my $expiration;
+
+    if ($reserve->{branchcode} eq 'JOE_LIPAU' ||
+        $reserve->{branchcode} eq 'JOE_KONAU' ||
+        $reserve->{branchcode} eq 'JOE_JOEAU' ) {
+        $expiration = $calendar->days_forward( $startdate, 10 );
+    }
+    else {
+        $expiration = $calendar->days_forward( $startdate, C4::Context->preference('ReservesMaxPickUpDelay') );
+    }
+
        #It is necessary to set the time portion of DateTime as well, because we are actually getting the
        #  last pickup datetime and importantly days end at 23:59:59.
        #  Without this set, last pickup dates expire 1 day too early and frustrates patrons and staff alike!
