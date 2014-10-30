@@ -1252,8 +1252,8 @@ sub AddIssue {
         $sth->execute(
             $borrower->{'borrowernumber'},      # borrowernumber
             $item->{'itemnumber'},              # itemnumber
-            $issuedate->strftime('%Y-%m-%d %H:%M:00'), # issuedate
-            $datedue->strftime('%Y-%m-%d %H:%M:00'),   # date_due
+            $issuedate->strftime('%Y-%m-%d %H:%M:%S'), # issuedate
+            $datedue->strftime('%Y-%m-%d %H:%M:%S'),   # date_due
             C4::Context->userenv->{'branch'}    # branchcode
         );
         if ( C4::Context->preference('ReturnToShelvingCart') ) { ## ReturnToShelvingCart is on, anything issued should be taken off the cart.
