@@ -694,6 +694,27 @@ CREATE TABLE `class_sort_rules` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
+-- Table structure for table `class_sort_rules`
+--
+
+DROP TABLE IF EXISTS `oplib_label_mappings`;
+CREATE TABLE `oplib_label_mappings` (
+  `id` int(10) AUTO_INCREMENT PRIMARY KEY,  -- unique key
+  `timestamp` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP, -- date and time this record was last touched
+  `modifiernumber` int(11) NOT NULL default 0, -- borrowernumber of the user last modifying these records
+  `label` varchar(10) default NULL,  -- the label to map to the given branch/location/itemtype/ccode -combo
+  `branchcode` varchar(10) default NULL, -- to which branch this mappings is directed, use NULL for any branch
+  `location` int(10) default NULL,  -- the authorised_value location to map to, use NULL for any location
+  `itype` varchar(10) default NULL,  -- the itemtype to map to, use NULL for any itemtype
+  `ccode` int(10) default NULL,  -- the collectioncode to map to, use NULL for any collectioncode
+  `description` mediumtext default NULL, -- description of this mapping
+  CONSTRAINT FOREIGN KEY (`branchcode`) REFERENCES `branches` (`branchcode`) ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT FOREIGN KEY (`location`) REFERENCES `authorised_values` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT FOREIGN KEY (`itype`) REFERENCES `itemtypes` (`itemtype`) ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT FOREIGN KEY (`ccode`) REFERENCES `authorised_values` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
 -- Table structure for table `class_sources`
 --
 

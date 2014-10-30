@@ -81,6 +81,8 @@
       <dt><a href="/cgi-bin/koha/admin/searchengine/solr/indexes.pl">Search engine configuration</a></dt>
       <dd>Manage indexes, facets, and their mappings to MARC fields and subfields.</dd>
     [% END %]
+    <dt><a href="/cgi-bin/koha/admin/oplib-label-mappings.pl">Vaara-kirjastot's shelving label mappings</a></dt>
+    <dd>Map shelving labels by branch, shelving location, item type and collection code</dd>
 </dl>
 
 <h3>Acquisition parameters</h3>

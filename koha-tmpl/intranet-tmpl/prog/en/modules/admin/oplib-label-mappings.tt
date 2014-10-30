@@ -1,0 +1,181 @@
+[% INCLUDE 'doc-head-open.inc' %]
+<title>Koha &rsaquo; Administration &rsaquo; Vaara-kirjastot's label mapper</title>
+[% INCLUDE 'doc-head-close.inc' %]
+[% INCLUDE 'calendar.inc' %]
+<script type="text/javascript">
+//<![CDATA[
+
+function clear_edit(){
+    var cancel = confirm(_("Are you sure you want to cancel your changes?"));
+    if ( !cancel ) return;
+    $('#default-circulation-rules td').removeClass('highlighted-row');
+    var edit_row = $("#edit_row");
+    $(edit_row).find("input").each(function(){
+        var type = $(this).attr("type");
+        if (type != "button" && type != "submit" ) {
+            $(this).val("");
+            $(this).removeAttr("disabled");
+        }
+    });
+    $(edit_row).find("select").removeAttr("disabled");
+    $(edit_row).find("select option:first").attr("selected", "selected");
+    $(edit_row).find("td:last input[name='clear']").remove();
+}
+
+$(document).ready(function() {
+        $('#selectlibrary').find("input:submit").hide();
+        $('#branch').change(function() {
+                $('#selectlibrary').submit();
+        });
+        $(".editrule").click(function(){
+            if ( $(edit_row).find("input[type='text'][value!='']").length > 0 ) {
+                var edit = confirm(_("Are you sure you want to edit another rule?"));
+                if (!edit) return false;
+            }
+            $('td.highlighted-row').removeClass('highlighted-row');
+            $(this).parent().parent().find("td").each(function (i) {
+                $(this).addClass('highlighted-row');
+                itm = $(this).text();
+                itm = itm.replace(/^\s*|\s*$/g,'');
+                var current_column = $("#edit_row td:eq("+i+")");
+                if ( i != 8 ) {
+                    $(current_column).find("input[type='text']").val(itm);
+                    // select the corresponding option
+                    $(current_column).find("select option").each(function(){
+                        opt = $(this).text().toLowerCase();
+                        opt = opt.replace(/^\s*|\s*$/g,'');
+                        if ( opt == itm.toLowerCase() ) {
+                            $(this).attr('selected', 'selected');
+                        }
+                    });
+                } else {
+                    // specific processing for the Hard due date column
+                    var select_value = $(this).find("input[type='hidden'][name='hardduedatecomparebackup']").val();
+                    var input_value = '';
+                    if (typeof select_value === 'undefined'){
+                        select_value = '-1';
+                    }else {
+                        input_value = itm.split(' ')[1];
+                    }
+                    $(current_column).find("input[type='text']").val(input_value);
+                    $(current_column).find("select").val(select_value);
+                }
+            });
+            $("#default-circulation-rules tr:last td:eq(0) select").attr('disabled', 'disabled');
+            $("#default-circulation-rules tr:last td:eq(1) select").attr('disabled', 'disabled');
+            return false;
+        });
+});
+//]]>
+</script>
+</head>
+<body id="admin_smart-rules" class="admin">
+[% INCLUDE 'header.inc' %]
+[% INCLUDE 'cat-search.inc' %]
+
+<div id="breadcrumbs"><a href="/cgi-bin/koha/mainpage.pl">Home</a> &rsaquo; <a href="/cgi-bin/koha/admin/admin-home.pl">Administration</a> &rsaquo; Vaara-kirjastot's label mapper</div>
+
+<div id="doc3" class="yui-t1">
+
+<div id="bd">
+    <div id="yui-main">
+    <div class="yui-b">
+    <div class="help">
+        <h3>Vaara-kirjastot's shelving label mapper</h3>
+        <p>You can define the shelving label (SL) based on the homebranch code + shelving location + item type + collection code.<br />
+           You don't have to define every column. If a column is left blank, then that mapping is used as a default for that category.<br />
+        </p>
+        <p>The correct SL is calculated by examining the columns from left to right. First stopping at homebranch-column to see if the Items
+           homebranch matches. If it doesn't, then the empty default value is looked for. If a match is found, the search proceeds to the next
+           column, if not, an empty value is returned.</p>
+        <p><strong>Warning!</strong> It is possible to create a mapping trap by setting a column, but not setting default values for following
+           columns. The mapping is already limited by the preluding columns and a suitable mapping from the current column cannot be found. Then
+           no label is returned. So always set the default values for undefind columns after defined columns.
+        </p>
+        <p>The branch is not always the homebranch of an Item (it usually is), but can be something else, depending on the context these mapping
+           rules are used in.</p>
+    </div>
+    <div>
+        <form method="post" action="/cgi-bin/koha/admin/oplib-label-mappings.pl">
+            <input type="hidden" name="op" value="add" />
+            <input type="hidden" name="modifiernumber" value="[% USER_INFO.item(0).borrowernumber %]"/>
+            <table id="oplib-label-mappings">
+            <thead>
+            <tr>
+                <th>Id</th>
+                <th>Branch</th>
+                <th>Location</th>
+                <th>Item type</th>
+                <th>Collection code</th>
+                <th>Label</th>
+                <th>Descripton of purpose</th>
+                <th colspan="2">&nbsp;</th>
+            </tr>
+            </thead>
+            <tbody>
+				[% FOREACH mapping IN mappings %]
+					<tr id="row_[% loop.count %]">
+                        <td>[% mapping.id %]</td>
+                        <td>[% mapping.branchcode_name %]</td>
+						<td>[% mapping.location_lib %]</td>
+                        <td>[% mapping.itype_desc %]</td>
+                        <td>[% mapping.ccode_lib %]</td>
+                        <td>[% mapping.label %]</td>
+                        <td>[% mapping.description %]</td>
+                        <td><a href="#" class="editrule">Edit</a></td>
+                        <td><a class="button" href="/cgi-bin/koha/admin/oplib-label-mappings.pl?op=delete&amp;id=[% mapping.id %]">Delete</a></td>
+                	</tr>
+            	[% END %]
+                <tr id="edit_row">
+                    <td><input type="text" name="id" id="id" size="4" readonly="1" /></td>
+                    <td>
+                        <select name="branchcode" id="branchcode">
+                            <option value="">All</option>
+                        [% FOREACH branch IN branches %]
+                            <option value="[% branch.branchcode %]">[% branch.branchname %]</option>
+                        [% END %]
+                        </select>
+                    </td>
+                    <td>
+                        <select name="location" id="location" style="width:13em;">
+                            <option value="">All</option>
+                        [% FOREACH location IN locations %]
+                            <option value="[% location.id %]">[% location.lib %]</option>
+                        [% END %]
+                        </select>
+                    </td>
+                    <td>
+                        <select name="itype" id="itype" style="width:13em;">
+                            <option value="">All</option>
+                        [% FOREACH itemtype IN itemtypes %]
+                            <option value="[% itemtype.itemtype %]">[% itemtype.description %]</option>
+                        [% END %]
+                        </select>
+                    </td>
+                    <td>
+                        <select name="ccode" id="ccode" style="width:13em;">
+                            <option value="">All</option>
+                        [% FOREACH ccode IN ccodes %]
+                            <option value="[% ccode.id %]">[% ccode.lib %]</option>
+                        [% END %]
+                        </select>
+                    </td>
+                    <td><input type="text" name="label" id="label" size="10" /></td>
+                    <td><input type="text" name="description" id="description" size="20" /></td>
+                    <td colspan="2">
+                        <input type="submit" value="Save" class="submit" />
+                        <input type="button" name="cancel" value="Clear" onclick="clear_edit();return false;" />
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </form>
+    </div>
+</div>
+
+</div>
+<div class="yui-b">
+[% INCLUDE 'admin-menu.inc' %]
+</div>
+</div>
+[% INCLUDE 'intranet-bottom.inc' %]
