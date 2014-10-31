@@ -267,14 +267,14 @@ if ($op eq ""){
             my @field_values = $input->param('field_value');
             my @serials      = $input->param('serial');
             my @ind_tag   = $input->param('ind_tag');
-            my @indicator = $input->param('indicator');
+            my @indicator = $input->param('indicator'); #Passing the imaginary empty "  " -indicators from the templates, to stop C4::Biblio::TransformHtmlToXml() to warn the bejesus out of my koha-error.log
             my $item;
             push @{ $item->{tags} },         $tags[0];
             push @{ $item->{subfields} },    $subfields[0];
             push @{ $item->{field_values} }, $field_values[0];
             push @{ $item->{ind_tag} },      $ind_tag[0];
             push @{ $item->{indicator} },    $indicator[0];
-            my $xml = TransformHtmlToXml( \@tags, \@subfields, \@field_values, \@ind_tag, \@indicator );
+            my $xml = TransformHtmlToXml( \@tags, \@subfields, \@field_values, \@indicator, \@ind_tag );
             my $record = MARC::Record::new_from_xml( $xml, 'UTF-8' );
             for (my $qtyloop=1;$qtyloop <= $c_quantity;$qtyloop++) {
                 my ( $biblionumber, $bibitemnum, $itemnumber ) = AddItemFromMarc( $record, $biblionumber );
