@@ -64,6 +64,7 @@ BEGIN {
         GetLostItems
         GetItemsForInventory
         GetItemsCount
+        GetItemsCountByBranch
         GetItemInfosOf
         GetItemsByBiblioitemnumber
         GetItemsInfo
@@ -1133,6 +1134,30 @@ sub GetItemsCount {
     my $sth = $dbh->prepare($query);
     $sth->execute($biblionumber);
     my $count = $sth->fetchrow;  
+    return ($count);
+}
+
+=head GetItemsCountByBranch
+
+    my $itemcountsByBranch = GetItemsCountByBranch( $biblionumber ); #GROUPS BY the homebranch
+    my $itemcountsByBranch = GetItemsCountByBranch( $biblionumber, 1 ); #GROUPS BY the holdingbranch
+    print $itemcountsByBranch->{ $branchcode }->{'count'}; # prints the count as an integer.
+
+@PARAM1 $biblionumber, koha.biblio.biblionumber of the Biblios whose Items count is desired
+@PARAM2 OPTIONAL, Boolean, should we group the counts by homebranch (DEFAULT/FALSE) or the holdingbranch (TRUE)
+RETURNS hash of branchcodes with keys homebranch and count
+=cut
+
+sub GetItemsCountByBranch {
+    my ( $biblionumber, $homeOrHoldingbranch ) = @_;
+    $homeOrHoldingbranch = ($homeOrHoldingbranch) ? 'holdingbranch' : 'homebranch';
+    my $dbh = C4::Context->dbh;
+    my $query = "SELECT $homeOrHoldingbranch, count(*) AS count
+          FROM  items
+          WHERE biblionumber=? GROUP BY $homeOrHoldingbranch";
+    my $sth = $dbh->prepare($query);
+    $sth->execute($biblionumber);
+    my $count = $sth->fetchall_hashref($homeOrHoldingbranch);
     return ($count);
 }
 
