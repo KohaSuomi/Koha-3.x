@@ -174,7 +174,7 @@ if ($op eq ""){
         my $c_quantity = shift( @quantities ) || GetMarcQuantity($marcrecord, C4::Context->preference('marcflavour') ) || 1;
         my $c_budget_id = shift( @budgets_id ) || $input->param('all_budget_id') || $budget_id;
         my $c_discount = shift ( @discount);
-        $c_discount = $c_discount / 100 if $c_discount > 1;
+        $c_discount = $c_discount / 100 if $c_discount && $c_discount > 1;
         my $c_sort1 = shift( @sort1 ) || $input->param('all_sort1') || '';
         my $c_sort2 = shift( @sort2 ) || $input->param('all_sort2') || '';
 
@@ -196,6 +196,11 @@ if ($op eq ""){
             }
             ( $biblionumber, $bibitemnum ) = AddBiblio( $marcrecord, $cgiparams->{'frameworkcode'} || '' );
             SetImportRecordStatus( $biblio->{'import_record_id'}, 'imported' );
+
+            #We need to provide information to koha.import_record_matches to tell Koha that this import_record matches the
+            #just AddBiblio'd biblio. This is necessary to prevent adding the same import_record to koha.biblio many times.
+            SetImportRecordBiblioMatch($biblio->{'import_record_id'}, $biblionumber);
+
             # 2nd add authorities if applicable
             if (C4::Context->preference("BiblioAddsAuthorities")){
                 my $headings_linked =BiblioAutoLink($marcrecord, $cgiparams->{'frameworkcode'});
@@ -354,9 +359,11 @@ sub import_batches_list {
 
 sub import_biblios_list {
     my ($template, $import_batch_id) = @_;
+    #Recheck duplicates from this batch, because they tend to change a lot! Using the default 1st matcher
+    C4::ImportBatch::BatchFindDuplicates( $import_batch_id, C4::Matcher->fetch(1) );
     my $batch = GetImportBatch($import_batch_id,'staged');
     return () unless $batch and $batch->{import_status} =~ /^staged$|^reverted$/;
-    my $biblios = GetImportRecordsRange($import_batch_id,'','',$batch->{import_status});
+    my $biblios = GetImportRecordsRange($import_batch_id,'','',undef);
     my @list = ();
 
     foreach my $biblio (@$biblios) {
@@ -401,6 +408,9 @@ sub import_biblios_list {
         $cellrecord{discount} = $discount || '';
         $cellrecord{sort1} = $sort1 || '';
         $cellrecord{sort2} = $sort2 || '';
+
+        get_matched_cellrecord_items( \%cellrecord );
+
 
         push @list, \%cellrecord;
     }
@@ -460,6 +470,27 @@ sub add_matcher_list {
         }
     }
     $template->param(available_matchers => \@matchers);
+}
+
+#Get the Items already in Koha for this import_record.
+#A summary of them is displayed for the user.
+sub get_matched_cellrecord_items {
+    my $cellrecord = shift;
+
+    if ($cellrecord->{match_biblionumber}) {
+        my $itemsCountByBranch = C4::Items::GetItemsCountByBranch( $cellrecord->{match_biblionumber} );
+        my $loginBranchcode = $template->{VARS}->{LoginBranchcode};
+        my $totalItemsCount = 0;
+        my @availabilityMap;
+        foreach my $homebranch (sort keys %$itemsCountByBranch) {
+            push (@availabilityMap, $homebranch.' = '.$itemsCountByBranch->{ $homebranch }->{ count });
+            $totalItemsCount += $itemsCountByBranch->{ $homebranch }->{ count };
+        }
+        my $loginBranchcount = $itemsCountByBranch->{ $loginBranchcode }->{ count };
+        $cellrecord->{loginBranchItemsCount} = $loginBranchcount || '0';
+        $cellrecord->{totalItemsCount} = $totalItemsCount;
+        $cellrecord->{availabilityMap} = join("\n", @availabilityMap);
+    }
 }
 
 sub get_infos_syspref {

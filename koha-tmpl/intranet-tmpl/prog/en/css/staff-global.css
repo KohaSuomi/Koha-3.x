@@ -28,6 +28,10 @@ a:hover, a:active {
     border-radius: 5px;
 }
 
+.matched_orderline {
+       background-color: #F0E8F9;
+}
+
 .yui-button,.yui-button a:link,.yui-button a:visited {
 	color : #000;
 }
