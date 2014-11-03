@@ -304,6 +304,9 @@ if ($op eq 'save' || $op eq 'insert'){
                 ? 'ERROR_cardnumber_length'
                 : ()
     }
+	if (my $borrowernumber = checkUniqueOthernames($newdata{othernames}, $borrowernumber)){
+        push @errors, 'ERROR_othernames_not_unique';
+    }
 
     if ($newdata{dateofbirth} && $dateofbirthmandatory) {
         my $age = GetAge($newdata{dateofbirth});

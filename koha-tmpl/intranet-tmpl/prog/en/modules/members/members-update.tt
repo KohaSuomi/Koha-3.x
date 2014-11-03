@@ -16,7 +16,7 @@
         surname         => "Surname"
         firstname       => "First name"
         title           => "Title"
-        othernames      => "Other names"
+        othernames      => "Holds identifier / Other names"
         initials        => "Initials"
         streetnumber    => "Street number"
         streettype      => "Street type"

@@ -8435,6 +8435,15 @@ if ( CheckVersion($DBversion) ) {
     SetVersion($DBversion);
 }
 
+$DBversion = "3.17.00.XXX";
+if ( CheckVersion($DBversion) ) {
+    $dbh->do("UPDATE borrowers SET othernames = NULL WHERE othernames = '';");
+    $dbh->do("ALTER TABLE borrowers MODIFY COLUMN othernames VARCHAR(50);");
+    $dbh->do("ALTER TABLE borrowers ADD UNIQUE (`othernames`);");
+    print "Upgrade to $DBversion done (KD-205-SelfServiceHoldsPickup)\n";
+    SetVersion($DBversion);
+}
+
 $DBversion = "3.15.00.049";
 if ( C4::Context->preference("Version") < TransformToNum($DBversion) ) {
     $dbh->do("ALTER TABLE biblioitems DROP INDEX isbn");
