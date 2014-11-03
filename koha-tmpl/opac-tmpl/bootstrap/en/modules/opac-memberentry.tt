@@ -50,6 +50,10 @@
                     <div class="alert">You have not filled out all required fields. Please fill in all missing fields and resubmit.</div>
                 [% END %]
 
+                [% IF ERROR_othernames_not_unique %]
+                    <div class="alert">Holds identifier is not unique.</div>
+                [% END %]
+
                 [%  IF invalid_form_fields %]
                     <div class="alert"><strong>The following fields are invalid:</strong>
                         <ul>
@@ -214,10 +218,13 @@
                                             [% ELSE %]
                                                 <label for="borrower_othernames">
                                             [% END %]
-                                            Other names:</label>
+                                            Holds identifier:</label>
 
                                             <input type="text" id="borrower_othernames" name="borrower_othernames" value="[% borrower.othernames %]" />
                                             [% IF mandatory.defined('othernames') %]<span class="required">Required</span>[% END %]
+                                            <span style="color: #808080; font-size: small; font-weight: bold; display: inline-block;">
+                                                The Joensuu main library starts to provide self-service holds. Use this name to find your own holds from the self-service shelf.
+                                            </span>
                                         </li>
                                     [% END %]
 
@@ -869,5 +876,24 @@
         });
     //]]>
     </script>
+<script type="text/javascript">
+    var MSG_OTHERNAMES_NOT_UNIQUE = _("Sorry, but this holds identifier is already taken.");
+    function checkUniqueOthernames () {
+        $.get("/cgi-bin/koha/svc/members/check_unique_othernames", { othernames: $("#borrower_othernames").val(), borrowernumber: "[% borrower.borrowernumber %]" }, function (sjson) {
+            var uniqueelement = $("#othernames_uniquecheck");
+            if (sjson.borrowernumber) {
+                if (uniqueelement.length != 0) { //Prevents spamming this uniqueness warning
+                    uniqueelement.remove();
+                }
+                //We havent yet checked for uniqueness
+                $("#borrower_othernames").after('<span id="othernames_uniquecheck" class="required">'+MSG_OTHERNAMES_NOT_UNIQUE+'</span>');
+            }
+            else {
+                uniqueelement.remove();
+            }
+        });
+    }
+    $("#borrower_othernames").change(checkUniqueOthernames);
+</script>
 [% INCLUDE 'calendar.inc' %]
 [% END %]

@@ -51,6 +51,35 @@
             }
         [% END %]
         $("#dateofbirth").datepicker({ maxDate: "-1D" });
+        var MSG_OTHERNAMES_NOT_UNIQUE = _("Not unique! Used by borrower");
+        function updateOthername() {
+            var othernames = $("#othernames");
+            var firstname = $("#firstname");
+            var surname = $("#surname");
+
+            if (othernames.val().length > 0) {
+                return;
+            }
+
+            $("#othernames").val(  surname.val() + ", " + firstname.val()  );
+        }
+        function checkUniqueOthernames () {
+            $.get("/cgi-bin/koha/svc/members/check_unique_othernames", { othernames: $("#othernames").val()[% IF borrowernumber %], borrowernumber: [% borrowernumber %] [% END %] }, function (sjson) {
+                var uniqueelement = $("#othernames_uniquecheck");
+                if (sjson.borrowernumber) {
+                    if (uniqueelement.length != 0) { //Prevents spamming this uniqueness warning
+                        uniqueelement.remove();
+                    }
+                    //We havent yet checked for uniqueness
+                    $("#othernames").after('<span id="othernames_uniquecheck" class="required">'+MSG_OTHERNAMES_NOT_UNIQUE+' <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber='+sjson.borrowernumber+'">'+sjson.borrowernumber+'</a> - </span>');
+                }
+                else {
+                    uniqueelement.remove();
+                }
+            });
+        }
+        $("#othernames").focus(updateOthername);
+        $("#othernames").change(checkUniqueOthernames);
         $("#entryform").validate({
             rules: {
                 phone: {
@@ -265,6 +294,9 @@
 			[% IF ( ERROR_dateexpiry ) %]
 				<li id="ERROR_dateexpiry">Date of expiration is invalid.</li>
 			[% END %]
+            [% IF ( ERROR_othernames_not_unique ) %]
+				<li id="ERROR_othernames_not_unique">Holds identifier is not unique.</li>
+			[% END %]
 			[% IF ( ERROR_short_password ) %]
 				<li id="ERROR_short_password">Password must be at least [% minPasswordLength %] characters long.</li>
 			[% END %]
@@ -437,7 +469,7 @@
 			[% ELSE %]
 			<label for="othernames">
 			[% END %]
-            Other name: </label>
+            Holds identifier / Other name: </label>
             <input type="text" id="othernames" name="othernames" size="20"  value="[% othernames %]" class="[% focusAction %]" />
 [% IF ( mandatoryothernames ) %]<span class="required">Required</span>[% END %]
 		[% IF ( I ) %]<input type="hidden" name="sex" value="N" />[% END %]

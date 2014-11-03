@@ -135,6 +135,7 @@ BEGIN {
     push @EXPORT, qw(
         &checkuniquemember
         &checkuserpassword
+        &checkUniqueOthernames
         &Check_Userid
         &Generate_Userid
         &fixEthnicity
@@ -1364,6 +1365,36 @@ sub checkuniquemember {
     my @data = $sth->fetchrow;
     ( $data[0] ) and return $data[0], $data[1];
     return 0;
+}
+
+=head2 checkUniqueOthernames
+
+  ($borrowernumber)  = &checkUniqueOthernames($othernames, [$borrowernumber]);
+
+Checks that a othernames-column doesn't contain the given value.
+If the same value exists, the borrowernumber of the value holder is returned.
+If a $borrowernumber is given as a parameter, then makes sure that the othernames-holder
+is not the same borrower.
+
+@PARAM1, String, the othernames value to check for uniqueness.
+@PARAM2, Long, the owner of the proposed othernames. This function won't fail if the borrower
+               already owns the othernames.
+RETURNS, Long, the borrowernumber of the othernames owner.
+=cut
+
+sub checkUniqueOthernames {
+    my ( $othernames, $borrowernumber ) = @_;
+    my $dbh = C4::Context->dbh;
+    my $sth = $dbh->prepare('SELECT borrowernumber FROM borrowers WHERE othernames = ?');
+    $sth->execute( $othernames );
+    my @data = $sth->fetchrow;
+    if ($borrowernumber) {
+        return $data[0] if $data[0] != $borrowernumber;
+    }
+    else {
+        return $data[0];
+    }
+
 }
 
 sub checkcardnumber {

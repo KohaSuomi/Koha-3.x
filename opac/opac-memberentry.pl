@@ -166,11 +166,16 @@ elsif ( $action eq 'update' ) {
     my %borrower_changes = DelEmptyFields(%borrower);
     my @empty_mandatory_fields =
       CheckMandatoryFields( \%borrower_changes, $action );
+
+    my $prev_othernames_owner = C4::Members::checkUniqueOthernames($borrower_changes{othernames}, $borrowernumber) if $borrower_changes{othernames};
+    $borrower{borrowernumber} = $borrowernumber; #Unbelievable that this is removed from the template?
+
     my $invalidformfields = CheckOtherFormFields(\%borrower_changes);
 
-    if (@empty_mandatory_fields || @$invalidformfields) {
+    if (@empty_mandatory_fields || @$invalidformfields || $prev_othernames_owner) {
         $template->param(
             empty_mandatory_fields => \@empty_mandatory_fields,
+            ERROR_othernames_not_unique => $prev_othernames_owner,
             borrower               => \%borrower,
             invalid_form_fields    => $invalidformfields
         );
