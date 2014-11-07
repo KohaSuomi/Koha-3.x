@@ -157,6 +157,7 @@ if ($op eq ""){
     my $import_batch_id = $cgiparams->{'import_batch_id'};
     my $biblios = GetImportRecordsRange($import_batch_id);
     my @import_record_id_selected = $input->param("import_record_id");
+    my @overlay = $input->param("overlay");
     my @quantities = $input->param('quantity');
     my @prices = $input->param('price');
     my @budgets_id = $input->param('budget_id');
@@ -171,6 +172,7 @@ if ($op eq ""){
         my $marcrecord = MARC::Record->new_from_usmarc($marcblob) || die "couldn't translate marc information";
         my $match = GetImportRecordMatches( $biblio->{'import_record_id'}, 1 );
         my $biblionumber=$#$match > -1?$match->[0]->{'biblionumber'}:0;
+        my $c_overlay = shift @overlay;
         my $c_quantity = shift( @quantities ) || GetMarcQuantity($marcrecord, C4::Context->preference('marcflavour') ) || 1;
         my $c_budget_id = shift( @budgets_id ) || $input->param('all_budget_id') || $budget_id;
         my $c_discount = shift ( @discount);
@@ -178,8 +180,8 @@ if ($op eq ""){
         my $c_sort1 = shift( @sort1 ) || $input->param('all_sort1') || '';
         my $c_sort2 = shift( @sort2 ) || $input->param('all_sort2') || '';
 
-        # 1st insert the biblio, or find it through matcher
-        unless ( $biblionumber ) {
+        # INSERT the biblio if no match found, or if we want to overlay the existing match
+        if ( not($biblionumber) || $c_overlay ) {
             # add the biblio
             my $bibitemnum;
 
@@ -194,7 +196,8 @@ if ($op eq ""){
                     }
                 }
             }
-            ( $biblionumber, $bibitemnum ) = AddBiblio( $marcrecord, $cgiparams->{'frameworkcode'} || '' );
+            ( $biblionumber, $bibitemnum ) = AddBiblio( $marcrecord, $cgiparams->{'frameworkcode'} || '' ) unless $c_overlay;
+            ModBiblio( $marcrecord, $biblionumber, $cgiparams->{'frameworkcode'} || '' ) if $c_overlay;
             SetImportRecordStatus( $biblio->{'import_record_id'}, 'imported' );
 
             #We need to provide information to koha.import_record_matches to tell Koha that this import_record matches the
