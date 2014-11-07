@@ -213,6 +213,7 @@
                                 [% END %]
                                 [% IF ( biblio.match_biblionumber ) %]
                                   Matches biblio [% biblio.match_biblionumber %] (score = [% biblio.match_score %]): <a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=[% biblio.match_biblionumber %]">[% biblio.match_citation %]</a>
+                                  Overlay? <input type="checkbox" name="overlay" id="overlay_record_[% biblio.import_record_id %]" value="[% biblio.import_record_id %]" />
                                 [% END %]
                               </span>
                             </li>
