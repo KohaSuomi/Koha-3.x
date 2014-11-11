@@ -1,0 +1,36 @@
+[% INCLUDE 'help-top.inc' %]
+
+<h1>OKM annual reports</h1>
+
+<h5>Statistical OKM library groups</h5>
+<p>Library groups are defined in the "Libraries and groups"-page (admin/branches.pl).<br/>
+Library groups that are statistical OKM groups are named as &lt;group_code&gt;_OKM. For ex. JOE_OKM, VAL_OKM, JUU_OKM. Only libraries that are in the properly named statistical groups are included in the statistics.</p>
+<h5>Finnish material</h5>
+<p>An Item is counted as finnish language, if the first subfield 'a' of Field '084' is 'fin'.
+<h5>Swedish material</h5>
+<p>An Item is counted as swedish language, if the first subfield 'a' of Field '084' is 'swe'.
+<h5>Other language material</h5>
+<p>An Item is counted as other language, if the first subfield 'a' of Field '084' is not 'fin' or 'swe'.
+<h5>Juvenile material</h5>
+<p>An Item is counted as juvenile material if it is in the proper shelving locations. Shelving locations that constitute to the juveniles group are marked with the okm_juvenile.png-icon from the okm-icons set. These shelving location icons are repurposed for statistical purposes because they are not used anywhere.<br/>To set the icons go to "Authorized values"-page (admin/authorised_values.pl) and edit the LOC-category.</p>
+<h5>Fiction</h5>
+<p>An Item is considered to be fiction, if it is in ykl-classes 81 to 85.</p>
+<h5>Musical recording</h5>
+<p>An Item is considered to be a musical recording, if it is in the ykl-class 78.</p>
+<h5>Acquisitions</h5>
+<p>An Item is considered to be acquired, if it has been ordered using the acquisitions module and received on the given year.<br/>
+However, if the acquisitions-module is not used, the Item is considered acquired if it has been added to the collection on the given year.</p>
+<h5>Issues</h5>
+<p>Issues are direct check-outs or renewals for material from our collection, given to our civilian borrowers (not ILL's or internal library use).<br/>
+An issue is counted if it hapened on the given year and was given to one of the following borrower categories: HENKILO, VIRKAILIJA, LAPSI, MUUKUINLAP, TAKAAJA or YHTEISO.</p>
+<h5>Main libraries</h5>
+<p>By default there is only one main library in each statistical group and that cannot currently be changed.</p>
+<h5>Give me statistics, or give me death!</h5>
+<p>https://en.wikipedia.org/wiki/Give_me_liberty%2C_or_give_me_death!<br/>
+This is a reference to a statement against foreign rule. A statement to resist being slowly bled dry by overseas bankers and monarchs. An equally valid quote during modern times.</p>
+<h5>Testing</h5>
+<p>This feature can be tested by giving a GET parameter "limit". This is transformed to an SQL LIMIT -clause limiting the fetched data group size, thus making the statistics generate faster but with limited results.<br/>
+Invoke this as the url: okm_reports.pl?op=run&limit=50</p>
+
+
+[% INCLUDE 'help-bottom.inc' %]

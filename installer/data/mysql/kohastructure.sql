@@ -1835,6 +1835,18 @@ CREATE TABLE `reserveconstraints` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
+-- Table structure for table `okm_statistics`
+--
+
+DROP TABLE IF EXISTS `okm_statistics`;
+CREATE TABLE `okm_statistics` (
+  `year` YEAR NOT NULL,
+  `okm_serialized` LONGTEXT default NULL, -- the C4::OPLIB::OKM-object serialized.
+  `timestamp` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
+  PRIMARY KEY (`year`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
 -- Table structure for table `reserves`
 --
 
