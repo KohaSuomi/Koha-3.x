@@ -8120,6 +8120,20 @@ if ( CheckVersion($DBversion) ) {
     SetVersion($DBversion);
 }
 
+$DBversion = "3.16.04.XXX";
+if(CheckVersion($DBversion)) {
+    $dbh->do(q|
+        CREATE TABLE `okm_statistics` (
+            `year` YEAR NOT NULL,
+            `okm_serialized` LONGTEXT default NULL, -- the C4::OPLIB::OKM-object serialized.
+            `timestamp` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
+            PRIMARY KEY (`year`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+    |);
+    print "Upgrade to $DBversion done (KD-207 - OKM annual statistics)\n";
+    SetVersion($DBversion);
+}
+
 $DBversion = "3.15.00.030";
 if(CheckVersion($DBversion)) {
     $dbh->do(q|

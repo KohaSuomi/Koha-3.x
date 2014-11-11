@@ -1,0 +1,47 @@
+[% INCLUDE 'doc-head-open.inc' %]
+<title>Koha &rsaquo; Reports &rsaquo; OKM annual report</title>
+[% INCLUDE 'doc-head-close.inc' %]
+
+</head>
+<body id="rep_reports-home" class="rep">
+[% INCLUDE 'header.inc' %]
+[% INCLUDE 'circ-search.inc' %]
+
+<div id="breadcrumbs"><a href="/cgi-bin/koha/mainpage.pl">Home</a> &rsaquo; <a href="/cgi-bin/koha/reports/reports-home.pl">Reports</a> &rsaquo; OKM annual report</div>
+<div id="page" style="margin-left: 1em;">
+
+	<h1>OKM annual reports</h1>
+    <h6>See help for instructions</h6>
+
+    <form method="POST" action="/cgi-bin/koha/reports/okm_reports.pl" id="run_OKM_form">
+        <input type="hidden" name="op" value="run"/>
+        Statistical year <input type="text" size="4" name="statisticalYear" value="[% thisYear %]" onchange='$("#mirrorStatisticalYear").val( $(this).val() )'/>
+        <a onClick="$('#run_OKM_form').submit();" class="btn btn-small" id="run_OKM"><i style="background-position: -96px -120px" class="icon-plus"></i> Give me statistics, or give me death!</a>
+    </form>
+
+    <br/><br/>
+    <div id="le_report_html">[% okm_report_html %]</div>
+    <div id="le_report_csv">[% okm_report_csv %]</div>
+    [% IF okm_report_errors %]<div id="le_report_errors">[% okm_report_errors %]</div>[% END %]
+
+    <br/>
+
+    <form action="/cgi-bin/koha/reports/okm_reports.pl" method="post">
+        <fieldset class="action">
+            <label for="format">Download the report: </label>
+            <select name="format" id="format">
+                <option value="csv">Comma separated text</option>
+                <option value="tab">Tab separated text</option>
+                <option value="ods">Open Document Spreadsheet</option>
+            </select>
+            <input type="hidden" name="statisticalYear" id="mirrorStatisticalYear" value="[% thisYear %]" />
+            <input type="hidden" name="op" value="export" />
+            <input type="submit" name="submit" value="Download" />
+        </fieldset>
+    </form>
+
+    <h5>Quote of the day!</h5>
+    [% quote %]
+
+</div>
+[% INCLUDE 'intranet-bottom.inc' %]
