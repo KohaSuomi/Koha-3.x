@@ -81,6 +81,10 @@ sub savereview {
   (?,?,?,0,now())";
     my $sth = $dbh->prepare($query);
     $sth->execute( $borrowernumber, $biblionumber, $review);
+
+	unless ($sth->err()) {
+		SendReviewAlert( $review, $borrowernumber );
+	}
 }
 
 sub updatereview {
@@ -89,6 +93,10 @@ sub updatereview {
     my $query = "UPDATE reviews SET review=?,datereviewed=now(),approved=0  WHERE borrowernumber=? and biblionumber=?";
     my $sth = $dbh->prepare($query);
     $sth->execute( $review, $borrowernumber, $biblionumber );
+
+	unless ($sth->err()) {
+		SendReviewAlert( $review, $borrowernumber );
+	}
 }
 
 sub numberofreviews {
@@ -184,6 +192,37 @@ sub deletereview {
                WHERE reviewid=?";
     my $sth = $dbh->prepare($query);
     $sth->execute($reviewid);
+}
+
+=head SendReviewAlert
+
+=cut
+
+sub SendReviewAlert {
+    my $review = shift;
+    my $borrowernumber = shift;
+
+    my $moderatorEmail = C4::Context->preference('CommentModeratorsEmail');
+    if (not($moderatorEmail)) {
+        return undef;
+    }
+
+    my $letter =  C4::Letters::GetPreparedLetter (
+        module => 'members',
+        letter_code => 'COMMENT_CREATED',
+        tables => {
+            'borrowers'   => $borrowernumber,
+        }
+    ) or return;
+
+    C4::Letters::EnqueueLetter({
+        letter                 => $letter,
+        borrowernumber         => $borrowernumber,
+        message_transport_type => 'email',
+        to_address             => $moderatorEmail,
+    });
+
+    return 1;
 }
 
 1;

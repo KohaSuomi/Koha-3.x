@@ -399,6 +399,10 @@ OPAC:
                   no: Hide
             - reviewer's photo beside comments in OPAC.
         -
+            - The email address where to send a notification (template code COMMENT_CREATED) when a Borrower adds/modifies a review/comment for a Biblio. Set to empty to disable sending email notifications.
+            - pref: CommentModeratorsEmail
+              class: textarea
+        -
             - pref: RequestOnOpac
               choices:
                   yes: Allow

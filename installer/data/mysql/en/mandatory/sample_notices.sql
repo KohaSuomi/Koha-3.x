@@ -118,6 +118,17 @@ http://<<OPACBaseURL>>/cgi-bin/koha/opac-registration-verify.pl?token=<<borrower
 If you did not initiate this request, you may safely ignore this one-time message. The request will expire shortly.'
 );
 
+INSERT INTO  letter (module, code, branchcode, name, is_html, title, content, message_transport_type)
+VALUES ( 'members', 'COMMENT_CREATED', '', 'Comment created notification', '0', 'Comment from <<borrowers.cardnumber>> is waiting for moderation', 'Dear moderator,
+
+We want to inform you that borrower <<borrowers.cardnumber>> has just created a new comment.
+
+Check it out!
+
+Your library.',
+'email'
+);
+
 INSERT INTO  letter (module, code, branchcode, name, is_html, title, content)
 VALUES ('members', 'SHARE_INVITE', '', 'Invitation for sharing a list', '0', 'Share list <<listname>>', 'Dear patron,
 
