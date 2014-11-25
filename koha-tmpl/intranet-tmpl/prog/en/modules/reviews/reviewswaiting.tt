@@ -55,6 +55,7 @@
         <td>
             [% IF ( status ) %]<a href="/cgi-bin/koha/reviews/reviewswaiting.pl?op=unapprove&amp;reviewid=[% review.reviewid %]">Unapprove</a>[% ELSE %]<a href="/cgi-bin/koha/reviews/reviewswaiting.pl?op=approve&amp;reviewid=[% review.reviewid %]">Approve</a>[% END %] |
             <a href="/cgi-bin/koha/reviews/reviewswaiting.pl?op=delete&amp;reviewid=[% review.reviewid %]">Delete</a>
+            | <a href="/cgi-bin/koha/svc/OPLIB/review?biblionumber=[% review.biblionumber %]&amp;borrowernumber=[% review.borrowernumber %]">Export</a>
         </td>
     </tr>
     [% END %]</tbody>

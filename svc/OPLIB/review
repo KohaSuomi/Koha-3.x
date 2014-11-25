@@ -1,0 +1,117 @@
+#!/usr/bin/perl
+
+# Copyright 2014 ByWater Solutions
+#
+# This file is part of Koha.
+#
+# Koha is free software; you can redistribute it and/or modify it under the
+# terms of the GNU General Public License as published by the Free Software
+# Foundation; either version 3 of the License, or (at your option) any later
+# version.
+#
+# Koha is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+# A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with Koha; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+use Modern::Perl;
+
+use CGI;
+
+use C4::Review;
+use C4::Ratings;
+use C4::Biblio;
+
+my $input = new CGI;
+
+my @sb;
+my $starstyle = 'style="width: 15px; height: 15px; float: left; background: url(\'https://oiva.vaarakirjastot.fi/opac-tmpl/bootstrap/images/star-ratings-sprite.png\'); background-position: 0px -32px !important;"';
+my $nostarstyle = 'style="width: 15px; height: 15px; float: left; background: url(\'http://oiva.vaarakirjastot.fi/opac-tmpl/bootstrap/images/star-ratings-sprite.png\'); background-position: 0px 0px !important;"';
+
+binmode STDOUT, ":encoding(UTF-8)";
+print $input->header( -type => 'text/html', -charset => 'UTF-8' );
+
+my $biblionumber = $input->param('biblionumber');
+my $borrowernumber = $input->param('borrowernumber');
+
+my $reviews;
+$reviews = C4::Review::getreviews($biblionumber, 1) unless $borrowernumber;
+$reviews = [C4::Review::getreview( $biblionumber, $borrowernumber )] if $borrowernumber;
+
+foreach my $review (@$reviews) {
+    my $marc = C4::Biblio::GetMarcBiblio($biblionumber);
+    my $rating = C4::Ratings::GetRating($biblionumber, undef);
+    my $stars;
+    if ($rating) {
+        my @stars;
+        push @stars, '<span>';
+        foreach (1..5) {
+            if ($rating->{rating_avg_int} >= $_) {
+                push @stars, '<div '.$starstyle.'></div>';
+            }
+            else {
+                push @stars, '<div '.$nostarstyle.'></div>';
+            }
+        }
+        push @stars, '</span>';
+        $stars = join('',@stars);
+    }
+
+    #Get the damn cover image the hard way!
+    my $url = '';
+    my @f856 = $marc->field('856');
+    for(my $i=0 ; $i<@f856 ; $i++) {
+        my $f = $f856[$i];
+        my $sf856u = $f->subfield('u');
+        my $sf856q = $f->subfield('q');
+
+        if ($sf856q =~ /image/i) {
+            $url = $sf856u;
+        }
+    }
+
+    my $title  = $marc->subfield('245', 'a') || '';
+    $title  = $marc->subfield('240', 'a') unless $title;
+    $title  =~ s/[\/:.,]\s*$//i if $title;
+    my $author = $marc->subfield('100', 'a') || '';
+    $author = $marc->subfield('110', 'a') unless $author;
+    $author =~ s/[\/:.,]\s*$//i if $author;
+    my $review_text = $review->{review} || '';
+    $review_text =~ s/\n/<br\/>/g if $review_text;
+
+    push @sb, '
+<div class="aineisto-vinkki">
+    <div class="vinkki_otsikko">
+        <div class="vinkki_tekija">
+            <h2>'.$author.'</h2>
+        </div>
+        <div class="vinkki_teoksen-nimi">
+            <h2>
+                <a class="vinkki_nimi-link" href="https://oiva.vaarakirjastot.fi/cgi-bin/koha/opac-detail.pl?biblionumber='.$biblionumber.'" target="_blank">
+                    '.$title.'
+                </a>
+            </h2>
+        </div>
+        <div class="vinkki_teoksen-nimi">
+            '.$stars.'
+        </div>
+    </div>
+    <div class="vinkki_sisalto">
+        <div class="vinkki_kuva">
+            <a class="vinkki_kuva-link" href="https://oiva.vaarakirjastot.fi/cgi-bin/koha/opac-detail.pl?biblionumber='.$biblionumber.'" target="_blank">
+		    <img src="'.$url.'" alt="vinkki-kuva">
+	    </a>
+        </div>
+        <div class="vinkki_teksti">
+            <p style="text-align: justify;">
+	            '.$review_text.'
+            </p>
+        </div>
+    </div>
+</div>';
+}
+
+print join("\n", @sb);
