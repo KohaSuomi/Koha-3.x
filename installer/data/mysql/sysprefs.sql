@@ -340,6 +340,7 @@ INSERT INTO systempreferences ( `variable`, `value`, `options`, `explanation`, `
 ('ReturnLog','1',NULL,'If ON, enables the circulation (returns) log','YesNo'),
 ('ReturnToShelvingCart','0','','If set, when any item is \'checked in\', it\'s location code will be changed to CART.','YesNo'),
 ('reviewson','1','','If ON, enables patron reviews of bibliographic records in the OPAC','YesNo'),
+('CommentModeratorsEmail','','','The email address where to send a notification (template code COMMENT_CREATED) when a Borrower adds/modifies a review/comment for a Biblio. Set to empty to disable sending email notifications.','Textarea'),
 ('RoutingListAddReserves','1','','If ON the patrons on routing lists are automatically added to holds on the issue.','YesNo'),
 ('RoutingListNote','To change this note edit <a href=\"/cgi-bin/koha/admin/preferences.pl?op=search&searchfield=RoutingListNote#jumped\">RoutlingListNote</a> system preference.','70|10','Define a note to be shown on all routing lists','Textarea'),
 ('RoutingSerials','1',NULL,'If ON, serials routing is enabled','YesNo'),

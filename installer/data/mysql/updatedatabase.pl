@@ -8346,6 +8346,30 @@ if ( CheckVersion($DBversion) ) {
     SetVersion($DBversion);
 }
 
+$DBversion = "3.17.00.XXX";
+if ( CheckVersion($DBversion) ) {
+    $dbh->do(q|
+INSERT INTO  letter (module, code, branchcode, name, is_html, title, content, message_transport_type)
+VALUES ( 'members', 'COMMENT_CREATED', '', 'Comment created notification', '0', 'Comment from <<borrowers.cardnumber>> is waiting for moderation', 'Dear moderator,
+
+We want to inform you that borrower <<borrowers.cardnumber>> has just created a new comment.
+
+Check it out!
+
+Your library.',
+'email'
+);
+    |);
+    $dbh->do(q|
+        INSERT INTO systempreferences
+            (variable,value,explanation,options,type)
+        VALUES
+        ('CommentModeratorsEmail','','','The email address where to send a notification (template code COMMENT_CREATED) when a Borrower adds/modifies a review/comment for a Biblio. Set to empty to disable sending email notifications.','Textarea')
+    |);
+    print "Upgrade to $DBversion done (Bug 1985 - Email notification of new OPAC comments)\n";
+    SetVersion($DBversion);
+}
+
 $DBversion = "3.15.00.041";
 if ( CheckVersion($DBversion) ) {
     my $name = $dbh->selectcol_arrayref(q|
