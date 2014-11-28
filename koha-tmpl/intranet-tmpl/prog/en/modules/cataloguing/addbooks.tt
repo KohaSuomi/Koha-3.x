@@ -69,6 +69,9 @@
                 [% END %]
             </ul>
         </div>
+        <div class="btn-group">
+            <a href="/cgi-bin/koha/cataloguing/deduplicator.pl"><button class="btn btn-small">Deduplicator</button></a>
+        </div>
   </div>
 [% END %]
 
