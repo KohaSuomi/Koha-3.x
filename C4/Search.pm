@@ -1040,6 +1040,7 @@ sub getIndexes{
                     'Dewey-classification',
                     'Dissertation-information',
                     'EAN',
+                    'Enc-level',
                     'extent',
                     'fic',
                     'fiction',

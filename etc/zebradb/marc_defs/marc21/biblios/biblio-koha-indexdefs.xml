@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <kohaidx:index_defs xmlns:kohaidx="http://www.koha-community.org/schemas/index-defs">
-  <!--record.abs line 40: xelm /record/leader llength:w:range(data,0,5),rtype:w:range(data,6,1),Bib-level:w:range(data,7,1)-->
+  <!--record.abs line 40: xelm /record/leader llength:w:range(data,0,5),rtype:w:range(data,6,1),Bib-level:w:range(data,7,1),Enc-level:w:range(data,17,1)-->
   <id>marc:datafield[@tag='999']/marc:subfield[@code='c']</id>
   <index_leader xmlns="http://www.koha-community.org/schemas/index-defs" offset="0" length="5">
     <target_index>llength:w</target_index>
@@ -10,6 +10,9 @@
   </index_leader>
   <index_leader xmlns="http://www.koha-community.org/schemas/index-defs" offset="7" length="1">
     <target_index>Bib-level:w</target_index>
+  </index_leader>
+  <index_leader xmlns="http://www.koha-community.org/schemas/index-defs" offset="17" length="1">
+    <target_index>Enc-level:w</target_index>
   </index_leader>
   <!--record.abs line 43: melm 001        Control-number-->
   <index_control_field xmlns="http://www.koha-community.org/schemas/index-defs" tag="001">
