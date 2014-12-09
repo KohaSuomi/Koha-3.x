@@ -89,31 +89,39 @@ sub deduplicate {
     my $verbose = $self->{verbose};
     my $biblionumbers = C4::Biblio::GetBiblionumberSlice( $self->{limit}, $self->{offset}, $self->{biblionumber} );
 
-    my @duplicates;
+    $self->{duplicates} = [];
     foreach my $biblionumber (@$biblionumbers) {
         my $marc = C4::Biblio::GetMarcBiblio($biblionumber);
         my @matches = $self->{matcher}->get_matches( $marc, $self->{max_matches} );
 
         if (scalar(@matches) > 1) {
-            foreach my $match (@matches) {
+            for (my $i=0 ; $i<scalar(@matches) ; $i++) {
+                my $match = $matches[$i];
                 my $itemsCount = C4::Items::GetItemsCount($match->{record_id});
                 $match->{itemsCount} = $itemsCount;
-                _buildSlimBiblio($match->{record_id}, $match, C4::Biblio::GetMarcBiblio($match->{record_id}));
+                unless(  _buildSlimBiblio($match->{record_id}, $match, C4::Biblio::GetMarcBiblio($match->{record_id}))  ) {
+                    #Sometimes we get an error where the marcxml is not available.
+                    splice(@matches, $i, 1);
+                    $i--; #Don't advance the iterator after this round or we will skip one record!
+                    next();
+                }
                 if ($match->{record_id} == $biblionumber) {
                     $match->{matchSource} = 'matchSource';
                 }
-
             }
             my $biblio = _buildSlimBiblio($biblionumber, undef, $marc);
+            unless ($biblio) { #Sometimes we get an error where the marcxml is not available.
+                next();
+            }
             $biblio->{matches} = \@matches;
 
-            push @duplicates, $biblio;
+            push @{$self->{duplicates}}, $biblio;
         }
         if ($verbose) {
             print $biblionumber."\n";
         }
     }
-    return \@duplicates;
+    return $self->{duplicates};
 }
 
 sub _buildSlimBiblio {
@@ -127,7 +135,7 @@ sub _buildSlimBiblio {
     }
     if (not($marc)) {
         warn "C4::Deduplicator::_buildSlimBiblio(), No MARC::Record for bn:$biblionumber";
-        return $biblio;
+        return undef;
     }
 
     $biblio->{marc} = $marc;
@@ -153,8 +161,9 @@ sub _buildSlimBiblio {
     my $author = $marc->subfield('100','a');
     $author = $marc->subfield('110','a') unless $author;
 
-    $biblio->{author} = $author;
+    $biblio->{author} = ($author) ? $author : '';
     $biblio->{title} = join(' ', @titles);
+    $biblio->{title} = '' unless $biblio->{title};
 
     return $biblio;
 }
@@ -167,18 +176,18 @@ sub _buildSlimBiblio {
 sub batchMergeDuplicates {
     my ($self, $duplicates, $mergeTargetFindingAlgorithm) = @_;
 
-    my @errors;
-    _findMergeTargets($duplicates, $mergeTargetFindingAlgorithm, \@errors);
+    $self->{mergeErrors} = [];
+    _findMergeTargets($duplicates, $mergeTargetFindingAlgorithm, $self->{mergeErrors});
 
     foreach my $duplicate (@$duplicates) {
         foreach my $match (@{$duplicate->{matches}}) {
             if ($match eq $duplicate->{'mergeTarget'}) { #Comparing Perl references, if htey point to the same object.
                 next(); #Don't merge itself to oneself.
             }
-            merge($match, $duplicate->{'mergeTarget'}, \@errors);
+            merge($match, $duplicate->{'mergeTarget'}, $self->{mergeErrors});
         }
     }
-    return \@errors if scalar @errors > 0;
+    return $self->{mergeErrors} if scalar @{$self->{mergeErrors}} > 0;
     return undef;
 }
 
@@ -187,6 +196,9 @@ sub _findMergeTargets {
 
     if ($mergeTargetFindingAlgorithm eq 'newest') {
         _mergeTargetFindingAlgorithm_newest( $duplicates );
+    }
+    else {
+        warn "Unknown merge target finding algorithm given: '$mergeTargetFindingAlgorithm'";
     }
 }
 
@@ -224,7 +236,6 @@ sub merge {
     my $dbh = C4::Context->dbh;
     my $sth;
 
-    # Creating a new record from the html code
     my $tobiblio     =  $mergeTarget->{biblionumber};
     my $frombiblio   =  $match->{biblionumber};
     if ($tobiblio == $frombiblio) {
@@ -284,6 +295,25 @@ sub merge {
         MergeHolds($dbh,$tobiblio,$frombiblio);
         my $error = DelBiblio($frombiblio);
         push @$errors, $error if ($error);
+    }
+}
+
+sub printDuplicatesAsText {
+    my ($self) = @_;
+
+    foreach my $duplicate (@{$self->{duplicates}}) {
+        print 'Match source: '.$duplicate->{biblionumber}.' - '.$duplicate->{title}.' '.$duplicate->{author}."\n";
+        foreach my $match (@{$duplicate->{matches}}) {
+            print $match->{record_id}.' - '.$match->{score}.' '.$match->{itemsCount}.'  '.$match->{title}.' '.$match->{author}."\n";
+        }
+        print "\n\n";
+    }
+}
+
+sub printMergesAsText {
+    my ($self) = @_;
+    foreach my $error (@{$self->{mergeErrors}}) {
+        print $error;
     }
 }
 1;

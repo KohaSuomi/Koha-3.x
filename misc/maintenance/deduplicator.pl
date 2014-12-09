@@ -26,13 +26,16 @@ use Koha::Deduplicator;
 
 use Getopt::Long qw(:config no_ignore_case);
 
-my ($help, $verbose, $offset, $biblionumber, $matcher_id, $merge);
+my ($help, $verbose, $biblionumber, $matcher_id, $merge);
 my $limit = 500;
+my $chunk = 500;
+my $offset = 0;
 
 GetOptions(
     'h|help'           => \$help,
     'v|verbose'        => \$verbose,
     'l|limit:i'        => \$limit,
+    'c|chunk:i'        => \$chunk,
     'o|offset:i'       => \$offset,
     'b|biblionumber:i' => \$biblionumber,
     'm|matcher:i'      => \$matcher_id,
@@ -52,9 +55,16 @@ This script has the following parameters :
 
     -l --limit        How many biblios to check for duplicates. Is the SQL
                       LIMIT-clause for gathering biblios to deduplicate.
+                      Defaults to 500. To run through the whole DB, set a sufficiently
+                      large number, like 999999999999999 :)
+
+    -c --chunk        How many records to process on one deduplicate->merge run.
+                      Defaults to 500. Use this to prevent memory from running
+                      out when deduplicating/merging large databases.
 
     -o --offset       How many records to skip from the start. Is the SQL
                       OFFSET-clause for gathering biblios to deduplicate.
+                      Defaults to 0.
 
     -b --biblionumber From which biblionumber (inclusive) to start gathering
                       the biblios to deduplicate. Obsoletes --offset
@@ -94,30 +104,55 @@ elsif ($merge) {
     exit;
 }
 
-my ($deduplicator, $initErrors) = Koha::Deduplicator->new( $matcher_id, $limit, $offset, $biblionumber, $verbose );
-if ($initErrors) {
-    print "Errors happened when creating the Deduplicator:\n";
-    print join("\n", @$initErrors);
-    print "\n";
-    print $usage;
-    exit;
+my $lastOffset = $offset;
+while ($lastOffset < $limit) {
+
+    my $chunkSize = _calculateChunkSize($lastOffset, $chunk, $limit);
+
+    runDeduplicateMergeChunk($matcher_id, $chunkSize, $lastOffset, $biblionumber, $verbose );
+
+    $lastOffset += $chunk;
 }
-else {
-    my $duplicates = $deduplicator->deduplicate();
 
-    foreach my $duplicate (@$duplicates) {
-        print 'Match source: '.$duplicate->{biblionumber}.' - '.$duplicate->{title}.' '.$duplicate->{author}."\n";
-        foreach my $match (@{$duplicate->{matches}}) {
-            print $match->{record_id}.' - '.$match->{score}.' '.$match->{itemsCount}.'  '.$match->{title}.' '.$match->{author}."\n";
-        }
-        print "\n\n";
+=head _calculateChunkSize
+
+    my $chunkSize = _calculateChunkSize($lastOffset, $chunk, $limit);
+
+It can be that the last chunk overflows the limit-paramter, thus leading to deduplicating/merging too many biblios.
+We don't want that, so calculate the remaining chunk size to not exceed the given limit!
+=cut
+sub _calculateChunkSize {
+    my ($lastOffset, $chunk, $limit) = @_;
+
+    my $chunkSize = $chunk;
+    if ($lastOffset + $chunk > $limit) {
+        $chunkSize = $limit - $lastOffset;
     }
+    return $chunkSize;
+}
 
-    if ($merge && $duplicates) {
-        my $errors = $deduplicator->batchMergeDuplicates($duplicates, $merge);
-        if ($errors) {
-            foreach my $error (@$errors) {
-                print $error;
+sub runDeduplicateMergeChunk {
+    my ($matcher_id, $chunkSize, $offset, $biblionumber, $verbose ) = @_;
+
+    my ($deduplicator, $initErrors) = Koha::Deduplicator->new( $matcher_id, $chunkSize, $offset, $biblionumber, $verbose );
+    if ($initErrors) {
+        print "Errors happened when creating the Deduplicator:\n";
+        print join("\n", @$initErrors);
+        print "\n";
+        print $usage;
+        exit;
+    }
+    else {
+        my $duplicates = $deduplicator->deduplicate();
+
+        $deduplicator->printDuplicatesAsText();
+
+        if ($merge && scalar(@$duplicates) > 0) {
+            my $errors = $deduplicator->batchMergeDuplicates($duplicates, $merge);
+            if ($errors) {
+                foreach my $error (@$errors) {
+                    print $error;
+                }
             }
         }
     }
