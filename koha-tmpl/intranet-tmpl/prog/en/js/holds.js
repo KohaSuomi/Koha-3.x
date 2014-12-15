@@ -22,6 +22,10 @@ $(document).ready(function() {
                                       title += " " + value.subfield;
                             });
 
+                            if ( oObj.enumchron ) {
+                                title += " "+oObj.enumchron+" ";
+                            }
+
                             title += "</a>";
 
                             if ( oObj.author ) {

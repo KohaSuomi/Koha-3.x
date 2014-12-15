@@ -70,6 +70,7 @@ my $sql = '
         barcode,
         itemnotes,
         itemcallnumber,
+        items.enumchron,
         replacementprice,
 
         issues.branchcode,
@@ -139,6 +140,7 @@ while ( my $c = $sth->fetchrow_hashref() ) {
         branchcode => $c->{branchcode},
         branchname => $c->{branchname},
         itemcallnumber => $c->{itemcallnumber}   || q{},
+        enumchron      => $c->{enumchron}        || q{},
         charge         => $charge,
         price          => $c->{replacementprice} || q{},
         can_renew      => $can_renew,
