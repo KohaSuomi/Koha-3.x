@@ -178,6 +178,10 @@ $(document).ready(function() {
                               title += " " + value.subfield;
                     });
 
+                    if ( oObj.enumchron ) {
+                        title += " "+oObj.enumchron+" ";
+                    }
+
                     title += "</a></span>";
 
                     if ( oObj.author ) {
@@ -384,6 +388,10 @@ $(document).ready(function() {
                             $.each(oObj.subtitle, function( index, value ) {
                                       title += " " + value.subfield;
                             });
+
+                            if ( oObj.enumchron ) {
+                                title += " "+oObj.enumchron+" ";
+                            }
 
                             title += "</a></span>";
 
