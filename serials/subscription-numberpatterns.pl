@@ -104,7 +104,7 @@ if($op && ($op eq 'new' || $op eq 'modify')) {
     }
     my @frequencies = GetSubscriptionFrequencies();
     my @subtypes;
-    push @subtypes, { value => $_ } for (qw/ issues weeks months /);
+    push @subtypes, { value => $_ } for (qw/ numberlength weeklength monthlength/);
 
     my $languages = [ map {
         {

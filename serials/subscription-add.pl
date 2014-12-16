@@ -59,7 +59,7 @@ my ($template, $loggedinuser, $cookie)
 
 
 my $sub_on;
-my @subscription_types = (qw(issues weeks months));
+my @subscription_types = (qw(numberlength weeklength monthlength)); #These are the same as the koha.subscription-columns
 my @sub_type_data;
 
 my $subs;
@@ -93,7 +93,7 @@ if ($op eq 'modify' || $op eq 'dup' || $op eq 'modsubscription') {
     $nextexpected->{'isfirstissue'} = $nextexpected->{planneddate} eq $firstissuedate ;
     $subs->{nextacquidate} = $nextexpected->{planneddate}  if($op eq 'modify');
     unless($op eq 'modsubscription') {
-        foreach my $length_unit (qw(numberlength weeklength monthlength)) {
+        foreach my $length_unit (@subscription_types) {
             if ($subs->{$length_unit}) {
                 $sub_length=$subs->{$length_unit};
                 $sub_on=$length_unit;
@@ -104,7 +104,6 @@ if ($op eq 'modify' || $op eq 'dup' || $op eq 'modsubscription') {
         $template->param( %{$subs} );
         $template->param(
                     $op => 1,
-                    "subtype_$sub_on" => 1,
                     sublength =>$sub_length,
                     history => ($op eq 'modify'),
                     firstacquiyear => substr($firstissuedate,0,4),
@@ -244,9 +243,9 @@ sub _get_sub_length {
     my ($type, $length) = @_;
     return
         (
-            $type eq 'issues' ? $length : 0,
-            $type eq 'weeks'   ? $length : 0,
-            $type eq 'months'  ? $length : 0,
+            $type eq 'numberlength' ? $length : 0,
+            $type eq 'weeklength'   ? $length : 0,
+            $type eq 'monthlength'  ? $length : 0,
         );
 }
 
@@ -317,7 +316,7 @@ sub redirect_add_subscription {
     my $enddate = format_date_in_iso( $query->param('enddate') );
     my $firstacquidate  = format_date_in_iso($query->param('firstacquidate'));
     if(!defined $enddate || $enddate eq '') {
-        if($subtype eq "issues") {
+        if($subtype eq "numberlength") {
             $enddate = _guess_enddate($firstacquidate, $periodicity, $numberlength, $weeklength, $monthlength);
         } else {
             $enddate = _guess_enddate($startdate, $periodicity, $numberlength, $weeklength, $monthlength);
@@ -384,7 +383,7 @@ sub redirect_mod_subscription {
 
     # Guess end date
     if(!defined $enddate || $enddate eq '') {
-        if($subtype eq "issues") {
+        if($subtype eq "numberlength") {
             $enddate = _guess_enddate($nextacquidate, $periodicity, $numberlength, $weeklength, $monthlength);
         } else {
             $enddate = _guess_enddate($startdate, $periodicity, $numberlength, $weeklength, $monthlength);

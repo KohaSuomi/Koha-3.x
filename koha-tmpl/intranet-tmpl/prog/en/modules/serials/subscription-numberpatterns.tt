@@ -218,7 +218,7 @@ function show_blocking_subs() {
                   <label for="sublength">Subscription length:</label>
                   <select id="subtype">
                     [% FOREACH subtype IN subtypes_loop %]
-                      <option value="[% subtype.value %]">[% subtype.value %]</option>
+                      <option value="[% subtype.value %]">[% INCLUDE serials/showSubscriptionLengthType.inc stl_name=subtype.value %]</option>
                     [% END %]
                   </select>
                   <input type="text" id="sublength" size="3" />
