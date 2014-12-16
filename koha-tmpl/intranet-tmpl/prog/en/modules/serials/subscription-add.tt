@@ -658,7 +658,7 @@ $(document).ready(function() {
                                                 [% ELSE %]
                                                     <option value="[% subt.name %]">
                                                 [% END %]
-                                                    [% subt.name %]
+                                                    [% INCLUDE serials/showSubscriptionLengthType.inc stl_name=subt.name %]
                                                 </option>
                                             [% END %]
                                         </select>

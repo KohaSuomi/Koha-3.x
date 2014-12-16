@@ -149,11 +149,11 @@ while( $i < 1000 ) {
 
     # Check if we don't have exceed end date
     if($sublength){
-        if($subtype eq "issues" && $i >= $sublength){
+        if($subtype eq "numberlength" && $i >= $sublength){
             last;
-        } elsif($subtype eq "weeks" && $date && Delta_Days( split(/-/, $date), Add_Delta_Days( split(/-/, $firstacquidate), 7*$sublength - 1 ) ) < 0) {
+        } elsif($subtype eq "weeklength" && $date && Delta_Days( split(/-/, $date), Add_Delta_Days( split(/-/, $firstacquidate), 7*$sublength - 1 ) ) < 0) {
             last;
-        } elsif($subtype eq "months" && $date && (Delta_Days( split(/-/, $date), Add_Delta_YM( split(/-/, $firstacquidate), 0, $sublength) ) - 1) < 0 ) {
+        } elsif($subtype eq "monthlength" && $date && (Delta_Days( split(/-/, $date), Add_Delta_YM( split(/-/, $firstacquidate), 0, $sublength) ) - 1) < 0 ) {
             last;
         }
     }
@@ -186,7 +186,7 @@ if ( $frequency->{unit} and not $custompattern ) {
 }
 
 if (   ( $date && $enddate && $date ne $enddate )
-    or ( $subtype eq 'issues' && $i < $sublength ) )
+    or ( $subtype eq 'numberlength' && $i < $sublength ) )
 {
     $template->param( not_consistent_end_date => 1 );
 }
