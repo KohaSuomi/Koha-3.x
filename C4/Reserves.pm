@@ -2319,14 +2319,18 @@ sub GetReserveNextEligible {
 
 =head2 ReserveSlip
 
-  ReserveSlip($branchcode, $borrowernumber, $biblionumber)
+  ReserveSlip($branchcode, $borrowernumber, $biblionumber, $itemnumber)
 
   Returns letter hash ( see C4::Letters::GetPreparedLetter ) or undef
 
+$itemnumber is needed to make sure that the ReserveSlip printing has access to the item in question.
+There is a race condition where the slip is printed before the reservation is confirmed to the DB,
+thus the reserve target needs to be explicitly passed from the calling module if such a race condition is encoutered.
+Otherwise $itemnumber is pulled properly from the reserves-table.
 =cut
 
 sub ReserveSlip {
-    my ($branch, $borrowernumber, $biblionumber, $transfer, $reserve_id) = @_;
+    my ($branch, $borrowernumber, $biblionumber, $transfer, $reserve_id, $itemnumber) = @_;
 
 #   return unless ( C4::Context->boolean_preference('printreserveslips') );
 
@@ -2335,6 +2339,8 @@ sub ReserveSlip {
         borrowernumber => $borrowernumber
     }) or return unless $reserve_id;
     my $reserve = GetReserveInfo($reserve_id) or return;
+
+    $reserve->{itemnumber} = $itemnumber if (not($reserve->{itemnumber}) && $itemnumber);
 
     my $expiration = _reserve_last_pickup_date($reserve);
 

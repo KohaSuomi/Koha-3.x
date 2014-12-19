@@ -275,8 +275,9 @@ if ($barcode) {
         author           => $biblio->{'author'},
         itembarcode      => $biblio->{'barcode'},
         itemtype         => $biblio->{'itemtype'},
+        itemnumber       => $itemnumber,
         ccode            => $biblio->{'ccode'},
-        itembiblionumber => $biblio->{'biblionumber'},    
+        itembiblionumber => $biblio->{'biblionumber'},
         borrower         => $borrower,
         additional_materials => $biblio->{'materials'},
     );

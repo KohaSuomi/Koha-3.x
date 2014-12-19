@@ -166,7 +166,7 @@ $(document).ready(function () {
             <input type="hidden" name="WT-waitingAt" value="[% TransferWaitingAt %]" />
             <input type="hidden" name="WT-From" value="[% wtransfertFrom %]" />
         <input type="submit" class="approve" value="Confirm" />
-            <input type="submit" value="Print slip and confirm" class="print" onclick="Dopop('hold-transfer-slip.pl?transfer=1&amp;borrowernumber=[% borrowernumber %]&amp;biblionumber=[% itembiblionumber %]&amp;op=slip'); this.form.submit();" />
+            <input type="submit" value="Print slip and confirm" class="print" onclick="Dopop('hold-transfer-slip.pl?transfer=1&amp;borrowernumber=[% borrowernumber %]&amp;biblionumber=[% itembiblionumber %]&amp;itemnumber=[% itemnumber %]&amp;op=slip'); this.form.submit();" />
     </form>
     [% END %]</div>
 [% END %]
@@ -202,7 +202,7 @@ $(document).ready(function () {
         <form method="post" action="returns.pl" class="confirm">
             <input type="submit" class="approve" value="Confirm" />
 
-            <input type="submit" value="Print and confirm" class="print" onclick="Dopop('hold-transfer-slip.pl?borrowernumber=[% borrowernumber %]&amp;biblionumber=[% itembiblionumber %]&amp;op=slip'); this.form.submit();" />
+            <input type="submit" value="Print and confirm" class="print" onclick="Dopop('hold-transfer-slip.pl?borrowernumber=[% borrowernumber %]&amp;biblionumber=[% itembiblionumber %]&amp;itemnumber=[% itemnumber %]&amp;op=slip'); this.form.submit();" />
             [% FOREACH inputloo IN inputloop %]
                 <input type="hidden" name="ri-[% inputloo.counter %]" value="[% inputloo.barcode %]" />
                 <input type="hidden" name="dd-[% inputloo.counter %]" value="[% inputloo.duedate %]" />
@@ -244,7 +244,7 @@ $(document).ready(function () {
 
         <form method="post" action="returns.pl" class="confirm">
             <input type="submit" class="approve" value="Confirm" />
-            <input type="submit" value="Print slip and confirm" class="print" onclick="Dopop('hold-transfer-slip.pl?transfer=1&amp;borrowernumber=[% borrowernumber %]&amp;biblionumber=[% itembiblionumber %]&amp;op=slip'); this.form.submit();" />
+            <input type="submit" value="Print slip and confirm" class="print" onclick="Dopop('hold-transfer-slip.pl?transfer=1&amp;borrowernumber=[% borrowernumber %]&amp;biblionumber=[% itembiblionumber %]&amp;itemnumber=[% itemnumber %]&amp;op=slip'); this.form.submit();" />
             [% FOREACH inputloo IN inputloop %]
                 <input type="hidden" name="ri-[% inputloo.counter %]" value="[% inputloo.barcode %]" />
                 <input type="hidden" name="dd-[% inputloo.counter %]" value="[% inputloo.duedate %]" />
@@ -352,10 +352,10 @@ $(document).ready(function () {
         <form method="post" action="returns.pl" class="confirm">
             [% IF ( transfertodo ) %]
                 <input type="submit" class="approve" value="Confirm hold and transfer" />
-                <input type="submit" value="Print slip, transfer, and confirm" class="print" onclick="Dopop('hold-transfer-slip.pl?transfer=1&amp;borrowernumber=[% borrowernumber %]&amp;biblionumber=[% itembiblionumber %]&amp;reserve_id=[% reserved.reserve_id %]&amp;op=slip'); this.form.submit();" />
+                <input type="submit" value="Print slip, transfer, and confirm" class="print" onclick="Dopop('hold-transfer-slip.pl?transfer=1&amp;borrowernumber=[% borrowernumber %]&amp;biblionumber=[% itembiblionumber %]&amp;reserve_id=[% reserved.reserve_id %]&amp;itemnumber=[% itemnumber %]&amp;op=slip'); this.form.submit();" />
             [% ELSE %]
                 <input type="submit" class="approve" value="Confirm hold" />
-                <input type="submit" value="Print slip and confirm" class="print" onclick="Dopop('hold-transfer-slip.pl?borrowernumber=[% borrowernumber %]&amp;biblionumber=[% itembiblionumber %]&amp;op=slip'); this.form.submit();" />
+                <input type="submit" value="Print slip and confirm" class="print" onclick="Dopop('hold-transfer-slip.pl?borrowernumber=[% borrowernumber %]&amp;biblionumber=[% itembiblionumber %]&amp;itemnumber=[% itemnumber %]&amp;op=slip'); this.form.submit();" />
             [% END %]
                 <input type="submit" class="deny" value="Ignore" onclick="$('.dialog:visible').hide('slow'); $('#barcode').focus(); return false;" />
             [% FOREACH inputloo IN inputloop %]
