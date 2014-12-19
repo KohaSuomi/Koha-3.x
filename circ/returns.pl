@@ -412,7 +412,7 @@ if ( $messages->{'ResFound'}) {
                 intransit    => ($userenv_branch eq $reserve->{'branchcode'} ? 0 : 1 ),
                 transfertodo => ($userenv_branch eq $reserve->{'branchcode'} ? 0 : 1 ),
                 resbarcode   => $barcode,
-                reserved     => 1,
+                reserved     => $reserve,
             );
         }
 

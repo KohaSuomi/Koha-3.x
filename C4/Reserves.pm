@@ -2208,14 +2208,14 @@ sub GetReserveNextEligible {
 =cut
 
 sub ReserveSlip {
-    my ($branch, $borrowernumber, $biblionumber) = @_;
+    my ($branch, $borrowernumber, $biblionumber, $transfer, $reserve_id) = @_;
 
 #   return unless ( C4::Context->boolean_preference('printreserveslips') );
 
-    my $reserve_id = GetReserveId({
+    $reserve_id = GetReserveId({
         biblionumber => $biblionumber,
         borrowernumber => $borrowernumber
-    }) or return;
+    }) or return unless $reserve_id;
     my $reserve = GetReserveInfo($reserve_id) or return;
 
     return  C4::Letters::GetPreparedLetter (

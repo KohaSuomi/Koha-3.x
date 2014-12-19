@@ -346,7 +346,7 @@ $(document).ready(function () {
         <form method="post" action="returns.pl" class="confirm">
             [% IF ( transfertodo ) %]
                 <input type="submit" class="approve" value="Confirm hold and transfer" />
-                <input type="submit" value="Print slip, transfer, and confirm" class="print" onclick="Dopop('hold-transfer-slip.pl?transfer=1&amp;borrowernumber=[% borrowernumber %]&amp;biblionumber=[% itembiblionumber %]&amp;op=slip'); this.form.submit();" />
+                <input type="submit" value="Print slip, transfer, and confirm" class="print" onclick="Dopop('hold-transfer-slip.pl?transfer=1&amp;borrowernumber=[% borrowernumber %]&amp;biblionumber=[% itembiblionumber %]&amp;reserve_id=[% reserved.reserve_id %]&amp;op=slip'); this.form.submit();" />
             [% ELSE %]
                 <input type="submit" class="approve" value="Confirm hold" />
                 <input type="submit" value="Print slip and confirm" class="print" onclick="Dopop('hold-transfer-slip.pl?borrowernumber=[% borrowernumber %]&amp;biblionumber=[% itembiblionumber %]&amp;op=slip'); this.form.submit();" />
