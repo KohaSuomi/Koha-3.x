@@ -569,6 +569,26 @@ msgstr ""
 msgid "cataloguing.pref#AcquisitionDetails# acquisition details on the biblio detail page."
 msgstr ""
 
+# Cataloging > Display
+msgid "cataloguing.pref#AddComponentPartRecordsToDetailedViews# Don't show"
+msgstr ""
+
+# Cataloging > Display
+msgid "cataloguing.pref#AddComponentPartRecordsToDetailedViews# Requires XSLTDetailsDisplay and/or OPACXSLTDetailsDisplay system preferences to be active. Works on MARC21. "
+msgstr ""
+
+# Cataloging > Display
+msgid "cataloguing.pref#AddComponentPartRecordsToDetailedViews# Show"
+msgstr ""
+
+# Cataloging > Display
+msgid "cataloguing.pref#AddComponentPartRecordsToDetailedViews# Technical explanation: This enables appending component part records to the bibliographic record data for the XSLT parsing. Component parts need to be indexed in the rcn-index, in which many by default are."
+msgstr ""
+
+# Cataloging > Display
+msgid "cataloguing.pref#AddComponentPartRecordsToDetailedViews# component part records in the detailed views. This might cause a performance penalty for records with lots of component part records."
+msgstr ""
+
 # Cataloging > Importing
 msgid "cataloguing.pref#AggressiveMatchOnISBN# When matching on ISBN with the record import tool,"
 msgstr ""
@@ -1658,8 +1678,8 @@ msgid "circulation.pref#ReservesMaxPickUpDelay# Mark a hold as problematic if it
 msgstr "Marquer une résevation comme problématique si elle est en attente depuis plus de"
 
 # Circulation > Holds Policy
-msgid "circulation.pref#ReservesMaxPickUpDelay# days."
-msgstr "jours."
+msgid "circulation.pref#ReservesMaxPickUpDelay# non-holiday days."
+msgstr ""
 
 # Circulation > Holds Policy
 msgid "circulation.pref#ReservesNeedReturns# Automatically"
@@ -2918,6 +2938,10 @@ msgid "i18n_l10n.pref#dateformat# Format dates like"
 msgstr "Renseigner les dates au format"
 
 # I18N/L10N
+msgid "i18n_l10n.pref#dateformat# dd.mm.yyyy"
+msgstr ""
+
+# I18N/L10N
 msgid "i18n_l10n.pref#dateformat# dd/mm/yyyy"
 msgstr "jj/mm/aaaa"
 
@@ -3164,6 +3188,10 @@ msgstr "Ne pas inclure"
 # OPAC > Appearance
 msgid "opac.pref#COinSinOPACResults# Include"
 msgstr "Inclure"
+
+# OPAC > Features
+msgid "opac.pref#CommentModeratorsEmail# The email address where to send a notification (template code COMMENT_CREATED) when a Borrower adds/modifies a review/comment for a Biblio. Set to empty to disable sending email notifications."
+msgstr ""
 
 # OPAC > Appearance
 msgid "opac.pref#DisplayOPACiconsXSLT# Don't show"
@@ -5239,6 +5267,14 @@ msgstr ""
 
 # Tools
 msgid "tools.pref#MaxItemsForBatch# items in a single modification or deletion batch."
+msgstr ""
+
+# Tools
+msgid "tools.pref#claimingFines# Set the fine for the 1st, 2nd and 3rd overdue notifications. Separated by |, eg. <strong>3|3|7</strong>"
+msgstr ""
+
+# Tools
+msgid "tools.pref#claimlettertemplate# The absolute path to the .odt-file used as a template for claim letters. Defaults to $KOHA_PATH/misc/claimlettertemplate.odt"
 msgstr ""
 
 # Web services

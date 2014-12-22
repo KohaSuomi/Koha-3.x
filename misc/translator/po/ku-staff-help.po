@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: koha\n"
-"POT-Creation-Date: 2014-07-15 22:25-0300\n"
+"POT-Creation-Date: 2015-05-04 16:50+0300\n"
 "PO-Revision-Date: 2013-06-19 01:21+0300\n"
 "Last-Translator: Harem Abdullah <harem.suli@gmail.com>\n"
 "Language-Team: kurdish translation team\n"
@@ -61,6 +61,69 @@ msgstr "\"STARTDATE:January 1, 2010\",\"TRACK:Day\""
 #: intranet-tmpl/prog/en/modules/help/offline_circ/list.tt:14
 #, c-format
 msgid "\"Success.\" if the transaction was processed correctly"
+msgstr ""
+
+#: intranet-tmpl/prog/en/modules/help/reports/okm_reports.tt:61
+#, c-format
+msgid ""
+"#Increase the collection for every Item found $stats->{collection}++ if not"
+"($deleted) && not($serial); $stats->{acquisitions}++ if $isAcquired && not"
+"($serial); $stats->{issues} += $issues; #Serials are included in the "
+"cumulative issues. $stats->{expenditureAcquisitions} += $row->{price} if "
+"$isAcquired && not($serial) && $row->{price}; if ($itemtype eq 'KI') "
+"{ $stats->{collectionBooksTotal}++ if not($deleted); $stats->"
+"{acquisitionsBooksTotal}++ if $isAcquired; $stats->"
+"{expenditureAcquisitionsBooks} += $row->{price} if $isAcquired && $row->"
+"{price}; $stats->{issuesBooksTotal} += $issues; if ($primaryLanguage eq "
+"'fin' || not(defined($primaryLanguage))) { $stats->{collectionBooksFinnish}+"
+"+ if not($deleted); $stats->{acquisitionsBooksFinnish}++ if $isAcquired; "
+"$stats->{issuesBooksFinnish} += $issues; } elsif ($primaryLanguage eq 'swe') "
+"{ $stats->{collectionBooksSwedish}++ if not($deleted); $stats->"
+"{acquisitionsBooksSwedish}++ if $isAcquired; $stats->{issuesBooksSwedish} += "
+"$issues; } else { $stats->{collectionBooksOtherLanguage}++ if not($deleted); "
+"$stats->{acquisitionsBooksOtherLanguage}++ if $isAcquired; $stats->"
+"{issuesBooksOtherLanguage} += $issues; } if ($isFiction) { if "
+"($isChildrensMaterial) { $stats->{collectionBooksFictionJuvenile}++ if not"
+"($deleted); $stats->{acquisitionsBooksFictionJuvenile}++ if $isAcquired; "
+"$stats->{issuesBooksFictionJuvenile} += $issues; } else { #Adults fiction "
+"$stats->{collectionBooksFictionAdult}++ if not($deleted); $stats->"
+"{acquisitionsBooksFictionAdult}++ if $isAcquired; $stats->"
+"{issuesBooksFictionAdult} += $issues; } } else { #Non-Fiction if "
+"($isChildrensMaterial) { $stats->{collectionBooksNonFictionJuvenile}++ if not"
+"($deleted); $stats->{acquisitionsBooksNonFictionJuvenile}++ if $isAcquired; "
+"$stats->{issuesBooksNonFictionJuvenile} += $issues; } else { #Adults Non-"
+"fiction $stats->{collectionBooksNonFictionAdult}++ if not($deleted); $stats->"
+"{acquisitionsBooksNonFictionAdult}++ if $isAcquired; $stats->"
+"{issuesBooksNonFictionAdult} += $issues; } } } elsif ($itemtype eq 'NU' || "
+"$itemtype eq 'PA') { $stats->{collectionSheetMusicAndScores}++ if not"
+"($deleted); $stats->{acquisitionsSheetMusicAndScores}++ if $isAcquired; "
+"$stats->{issuesSheetMusicAndScores} += $issues; } elsif ($itemtype eq 'KA' "
+"|| $itemtype eq 'CD' || $itemtype eq 'MP' || $itemtype eq 'LE' || $itemtype "
+"eq 'ÄT' || $itemtype eq 'NÄ') { if ($isMusicalRecording) { $stats->"
+"{collectionMusicalRecordings}++ if not($deleted); $stats->"
+"{acquisitionsMusicalRecordings}++ if $isAcquired; $stats->"
+"{issuesMusicalRecordings} += $issues; } else { $stats->"
+"{collectionOtherRecordings}++ if not($deleted); $stats->"
+"{acquisitionsOtherRecordings}++ if $isAcquired; $stats->"
+"{issuesOtherRecordings} += $issues; } } elsif ($itemtype eq 'VI') { $stats->"
+"{collectionVideos}++ if not($deleted); $stats->{acquisitionsVideos}++ if "
+"$isAcquired; $stats->{issuesVideos} += $issues; } elsif ($itemtype eq 'CR' "
+"|| $itemtype eq 'DR' || $itemtype eq 'KP') { $stats->{collectionCDROMs}++ if "
+"not($deleted); $stats->{acquisitionsCDROMs}++ if $isAcquired; $stats->"
+"{issuesCDROMs} += $issues; } elsif ($itemtype eq 'BR' || $itemtype eq 'DV') "
+"{ $stats->{collectionDVDsAndBluRays}++ if not($deleted); $stats->"
+"{acquisitionsDVDsAndBluRays}++ if $isAcquired; $stats->"
+"{issuesDVDsAndBluRays} += $issues; } elsif ($serial || $itemtype eq 'DI' || "
+"$itemtype eq 'ES' || $itemtype eq 'KO' || $itemtype eq 'KR' || $itemtype eq "
+"'MM' || $itemtype eq 'MO' || $itemtype eq 'SK' || $itemtype eq 'TY' || "
+"$itemtype eq 'MF' || $itemtype eq 'KU' || $itemtype eq 'MK' || $itemtype eq "
+"'KÄ') { $stats->{collectionOther}++ if not($deleted); $stats->"
+"{acquisitionsOther}++ if $isAcquired; $stats->{issuesOther} += $issues; "
+"#Serials and magazines are collected from the subscriptions-table using "
+"statisticsSubscriptions() #Don't count them for the collection, acquisitions "
+"or issues. Serials must be included in the cumulative Issues. } else { print "
+"\"\\nUnmapped itemtype \\n'$itemtype'\\n with this statistical row:\\n\"."
+"Data::Dumper::Dumper($row); } "
 msgstr ""
 
 #. %1$s:  themelang 
@@ -680,181 +743,181 @@ msgstr "يجب أن يساعدك الوصف على تحديد الميزانية
 msgid "(! means 'not visible' or in the case of collapsed 'not collapsed')"
 msgstr "(!واتە 'نابینرێت' یان لە کاتی هێنانەخوارەوەدا 'نەهاتۆتەخوار)'"
 
-#: intranet-tmpl/prog/en/modules/help/admin/didyoumean.tt:20
-#: intranet-tmpl/prog/en/modules/help/admin/admin-home.tt:33
-#: intranet-tmpl/prog/en/modules/help/admin/branches.tt:50
-#: intranet-tmpl/prog/en/modules/help/admin/z3950servers.tt:61
-#: intranet-tmpl/prog/en/modules/help/admin/authorised_values.tt:95
-#: intranet-tmpl/prog/en/modules/help/admin/smart-rules.tt:139
-#: intranet-tmpl/prog/en/modules/help/admin/marctagstructure.tt:24
-#: intranet-tmpl/prog/en/modules/help/admin/aqbudgetperiods.tt:37
-#: intranet-tmpl/prog/en/modules/help/admin/authtypes.tt:9
-#: intranet-tmpl/prog/en/modules/help/admin/classsources.tt:56
-#: intranet-tmpl/prog/en/modules/help/admin/aqbudgets.tt:34
-#: intranet-tmpl/prog/en/modules/help/admin/cities.tt:21
-#: intranet-tmpl/prog/en/modules/help/admin/aqplan.tt:15
-#: intranet-tmpl/prog/en/modules/help/admin/oai_set_mappings.tt:21
-#: intranet-tmpl/prog/en/modules/help/admin/branch_transfer_limits.tt:19
-#: intranet-tmpl/prog/en/modules/help/admin/itemtypes.tt:60
-#: intranet-tmpl/prog/en/modules/help/admin/patron-attr-types.tt:73
-#: intranet-tmpl/prog/en/modules/help/admin/auth_tag_structure.tt:22
-#: intranet-tmpl/prog/en/modules/help/admin/marc_subfields_structure.tt:130
-#: intranet-tmpl/prog/en/modules/help/admin/biblio_framework.tt:37
-#: intranet-tmpl/prog/en/modules/help/admin/item_circulation_alerts.tt:22
-#: intranet-tmpl/prog/en/modules/help/admin/transport-cost-matrix.tt:13
-#: intranet-tmpl/prog/en/modules/help/admin/categorie.tt:90
-#: intranet-tmpl/prog/en/modules/help/admin/preferences.tt:36
-#: intranet-tmpl/prog/en/modules/help/admin/koha2marclinks.tt:15
-#: intranet-tmpl/prog/en/modules/help/admin/oai_sets.tt:32
-#: intranet-tmpl/prog/en/modules/help/admin/fieldmapping.tt:23
-#: intranet-tmpl/prog/en/modules/help/admin/systempreferences.tt:11
-#: intranet-tmpl/prog/en/modules/help/admin/matching-rules.tt:49
-#: intranet-tmpl/prog/en/modules/help/admin/checkmarc.tt:9
-#: intranet-tmpl/prog/en/modules/help/admin/auth_subfields_structure.tt:66
-#: intranet-tmpl/prog/en/modules/help/admin/currency.tt:13
-#: intranet-tmpl/prog/en/modules/help/authorities/authorities-home.tt:17
-#: intranet-tmpl/prog/en/modules/help/authorities/authorities.tt:29
-#: intranet-tmpl/prog/en/modules/help/authorities/merge.tt:13
-#: intranet-tmpl/prog/en/modules/help/authorities/detail.tt:17
-#: intranet-tmpl/prog/en/modules/help/mainpage.tt:29
-#: intranet-tmpl/prog/en/modules/help/serials/serials-home.tt:9
-#: intranet-tmpl/prog/en/modules/help/serials/serials-collection.tt:13
-#: intranet-tmpl/prog/en/modules/help/serials/subscription-frequencies.tt:9
-#: intranet-tmpl/prog/en/modules/help/serials/checkexpiration.tt:11
-#: intranet-tmpl/prog/en/modules/help/serials/subscription-detail.tt:9
-#: intranet-tmpl/prog/en/modules/help/serials/subscription-numberpatterns.tt:11
-#: intranet-tmpl/prog/en/modules/help/serials/claims.tt:15
-#: intranet-tmpl/prog/en/modules/help/serials/routing.tt:21
-#: intranet-tmpl/prog/en/modules/help/serials/subscription-add.tt:86
-#: intranet-tmpl/prog/en/modules/help/serials/serials-edit.tt:27
-#: intranet-tmpl/prog/en/modules/help/cataloguing/merge.tt:21
-#: intranet-tmpl/prog/en/modules/help/cataloguing/moveitem.tt:13
-#: intranet-tmpl/prog/en/modules/help/cataloguing/linkitem.tt:30
-#: intranet-tmpl/prog/en/modules/help/cataloguing/addbooks.tt:33
-#: intranet-tmpl/prog/en/modules/help/cataloguing/addbiblio.tt:93
-#: intranet-tmpl/prog/en/modules/help/cataloguing/additem.tt:77
-#: intranet-tmpl/prog/en/modules/help/tools/marc_modification_templates.tt:61
-#: intranet-tmpl/prog/en/modules/help/tools/quotes-upload.tt:43
-#: intranet-tmpl/prog/en/modules/help/tools/manage-marc-import.tt:43
-#: intranet-tmpl/prog/en/modules/help/tools/csv-profiles.tt:55
-#: intranet-tmpl/prog/en/modules/help/tools/upload-cover-image.tt:43
-#: intranet-tmpl/prog/en/modules/help/tools/viewlog.tt:11
+#: intranet-tmpl/prog/en/modules/help/tools/overduerules.tt:49
 #: intranet-tmpl/prog/en/modules/help/tools/holidays.tt:68
-#: intranet-tmpl/prog/en/modules/help/tools/koha-news.tt:25
-#: intranet-tmpl/prog/en/modules/help/tools/picture-upload.tt:23
 #: intranet-tmpl/prog/en/modules/help/tools/import_borrowers.tt:58
-#: intranet-tmpl/prog/en/modules/help/tools/cleanborrowers.tt:24
+#: intranet-tmpl/prog/en/modules/help/tools/csv-profiles.tt:55
 #: intranet-tmpl/prog/en/modules/help/tools/tools-home.tt:7
 #: intranet-tmpl/prog/en/modules/help/tools/inventory.tt:19
-#: intranet-tmpl/prog/en/modules/help/tools/scheduler.tt:26
-#: intranet-tmpl/prog/en/modules/help/tools/overduerules.tt:48
-#: intranet-tmpl/prog/en/modules/help/tools/quotes.tt:41
-#: intranet-tmpl/prog/en/modules/help/tools/export.tt:62
-#: intranet-tmpl/prog/en/modules/help/tools/modborrowers.tt:17
 #: intranet-tmpl/prog/en/modules/help/tools/stage-marc-import.tt:30
+#: intranet-tmpl/prog/en/modules/help/tools/scheduler.tt:26
+#: intranet-tmpl/prog/en/modules/help/tools/manage-marc-import.tt:43
+#: intranet-tmpl/prog/en/modules/help/tools/cleanborrowers.tt:24
 #: intranet-tmpl/prog/en/modules/help/tools/letter.tt:296
-#: intranet-tmpl/prog/en/modules/help/reviews/reviewswaiting.tt:13
-#: intranet-tmpl/prog/en/modules/help/acqui/supplier.tt:54
-#: intranet-tmpl/prog/en/modules/help/acqui/basketgroup.tt:11
-#: intranet-tmpl/prog/en/modules/help/acqui/lateorders.tt:19
-#: intranet-tmpl/prog/en/modules/help/acqui/histsearch.tt:17
-#: intranet-tmpl/prog/en/modules/help/acqui/invoice.tt:11
-#: intranet-tmpl/prog/en/modules/help/acqui/uncertainprice.tt:7
-#: intranet-tmpl/prog/en/modules/help/acqui/parcels.tt:21
-#: intranet-tmpl/prog/en/modules/help/acqui/z3950_search.tt:17
-#: intranet-tmpl/prog/en/modules/help/acqui/neworderbiblio.tt:12
-#: intranet-tmpl/prog/en/modules/help/acqui/acqui-home.tt:13
-#: intranet-tmpl/prog/en/modules/help/acqui/addorderiso2709.tt:22
-#: intranet-tmpl/prog/en/modules/help/acqui/basketheader.tt:21
-#: intranet-tmpl/prog/en/modules/help/acqui/booksellers.tt:17
-#: intranet-tmpl/prog/en/modules/help/acqui/acqcontract.tt:19
-#: intranet-tmpl/prog/en/modules/help/acqui/invoices.tt:11
-#: intranet-tmpl/prog/en/modules/help/acqui/parcel.tt:21
-#: intranet-tmpl/prog/en/modules/help/acqui/neworderempty.tt:11
-#: intranet-tmpl/prog/en/modules/help/acqui/newordersuggestion.tt:17
-#: intranet-tmpl/prog/en/modules/help/acqui/basket.tt:109
-#: intranet-tmpl/prog/en/modules/help/acqui/orderreceive.tt:21
-#: intranet-tmpl/prog/en/modules/help/catalogue/moredetail.tt:21
-#: intranet-tmpl/prog/en/modules/help/catalogue/issuehistory.tt:9
-#: intranet-tmpl/prog/en/modules/help/catalogue/detail.tt:7
-#: intranet-tmpl/prog/en/modules/help/catalogue/search.tt:81
-#: intranet-tmpl/prog/en/modules/help/virtualshelves/shelves.tt:70
-#: intranet-tmpl/prog/en/modules/help/tags/review.tt:23
-#: intranet-tmpl/prog/en/modules/help/tags/list.tt:9
-#: intranet-tmpl/prog/en/modules/help/patron_lists/lists.tt:17
-#: intranet-tmpl/prog/en/modules/help/circ/renew.tt:11
-#: intranet-tmpl/prog/en/modules/help/circ/offline.tt:35
-#: intranet-tmpl/prog/en/modules/help/circ/transferstoreceive.tt:11
-#: intranet-tmpl/prog/en/modules/help/circ/returns.tt:77
-#: intranet-tmpl/prog/en/modules/help/circ/waitingreserves.tt:9
-#: intranet-tmpl/prog/en/modules/help/circ/selectbranchprinter.tt:11
-#: intranet-tmpl/prog/en/modules/help/circ/branchoverdues.tt:11
-#: intranet-tmpl/prog/en/modules/help/circ/branchtransfers.tt:24
-#: intranet-tmpl/prog/en/modules/help/circ/reserveratios.tt:7
-#: intranet-tmpl/prog/en/modules/help/circ/overdue.tt:14
-#: intranet-tmpl/prog/en/modules/help/circ/pendingreserves.tt:9
-#: intranet-tmpl/prog/en/modules/help/circ/view_holdsqueue.tt:21
-#: intranet-tmpl/prog/en/modules/help/circ/circulation-home.tt:23
-#: intranet-tmpl/prog/en/modules/help/circ/circulation.tt:152
-#: intranet-tmpl/prog/en/modules/help/nohelp.tt:5
-#: intranet-tmpl/prog/en/modules/help/plugins/plugins-home.tt:9
-#: intranet-tmpl/prog/en/modules/help/plugins/plugins-upload.tt:9
-#: intranet-tmpl/prog/en/modules/help/members/memberentry.tt:89
-#: intranet-tmpl/prog/en/modules/help/members/files.tt:11
-#: intranet-tmpl/prog/en/modules/help/members/moremember.tt:126
-#: intranet-tmpl/prog/en/modules/help/members/statistics.tt:7
-#: intranet-tmpl/prog/en/modules/help/members/readingrec.tt:11
-#: intranet-tmpl/prog/en/modules/help/members/routing-lists.tt:9
-#: intranet-tmpl/prog/en/modules/help/members/members-update.tt:11
-#: intranet-tmpl/prog/en/modules/help/members/member-flags.tt:485
-#: intranet-tmpl/prog/en/modules/help/members/member.tt:51
-#: intranet-tmpl/prog/en/modules/help/members/member-password.tt:14
-#: intranet-tmpl/prog/en/modules/help/members/purchase-suggestions.tt:11
-#: intranet-tmpl/prog/en/modules/help/members/maninvoice.tt:17
-#: intranet-tmpl/prog/en/modules/help/members/boraccount.tt:22
-#: intranet-tmpl/prog/en/modules/help/members/paycollect.tt:60
-#: intranet-tmpl/prog/en/modules/help/members/mancredit.tt:14
-#: intranet-tmpl/prog/en/modules/help/members/notices.tt:9
-#: intranet-tmpl/prog/en/modules/help/members/members-home.tt:53
-#: intranet-tmpl/prog/en/modules/help/members/pay.tt:60
-#: intranet-tmpl/prog/en/modules/help/reports/issues_stats.tt:22
+#: intranet-tmpl/prog/en/modules/help/tools/viewlog.tt:11
+#: intranet-tmpl/prog/en/modules/help/tools/upload-cover-image.tt:43
+#: intranet-tmpl/prog/en/modules/help/tools/export.tt:62
+#: intranet-tmpl/prog/en/modules/help/tools/quotes-upload.tt:43
+#: intranet-tmpl/prog/en/modules/help/tools/quotes.tt:41
+#: intranet-tmpl/prog/en/modules/help/tools/picture-upload.tt:23
+#: intranet-tmpl/prog/en/modules/help/tools/koha-news.tt:25
+#: intranet-tmpl/prog/en/modules/help/tools/modborrowers.tt:17
+#: intranet-tmpl/prog/en/modules/help/tools/marc_modification_templates.tt:61
+#: intranet-tmpl/prog/en/modules/help/authorities/merge.tt:13
+#: intranet-tmpl/prog/en/modules/help/authorities/authorities-home.tt:17
+#: intranet-tmpl/prog/en/modules/help/authorities/authorities.tt:29
+#: intranet-tmpl/prog/en/modules/help/authorities/detail.tt:17
 #: intranet-tmpl/prog/en/modules/help/reports/manager.tt:11
-#: intranet-tmpl/prog/en/modules/help/reports/issues_avg_stats.tt:11
-#: intranet-tmpl/prog/en/modules/help/reports/borrowers_out.tt:11
+#: intranet-tmpl/prog/en/modules/help/reports/reports-home.tt:22
 #: intranet-tmpl/prog/en/modules/help/reports/reserves_stats.tt:13
-#: intranet-tmpl/prog/en/modules/help/reports/catalogue_out.tt:11
-#: intranet-tmpl/prog/en/modules/help/reports/catalogue_stats.tt:11
-#: intranet-tmpl/prog/en/modules/help/reports/bor_issues_top.tt:11
+#: intranet-tmpl/prog/en/modules/help/reports/cat_issues_top.tt:11
+#: intranet-tmpl/prog/en/modules/help/reports/issues_avg_stats.tt:11
+#: intranet-tmpl/prog/en/modules/help/reports/issues_stats.tt:22
+#: intranet-tmpl/prog/en/modules/help/reports/borrowers_stats.tt:11
+#: intranet-tmpl/prog/en/modules/help/reports/guided_reports.tt:198
+#: intranet-tmpl/prog/en/modules/help/reports/acquisitions_stats.tt:15
+#: intranet-tmpl/prog/en/modules/help/reports/dictionary.tt:21
 #: intranet-tmpl/prog/en/modules/help/reports/serials_stats.tt:11
 #: intranet-tmpl/prog/en/modules/help/reports/itemslost.tt:19
-#: intranet-tmpl/prog/en/modules/help/reports/guided_reports.tt:198
-#: intranet-tmpl/prog/en/modules/help/reports/reports-home.tt:22
-#: intranet-tmpl/prog/en/modules/help/reports/acquisitions_stats.tt:15
-#: intranet-tmpl/prog/en/modules/help/reports/borrowers_stats.tt:11
-#: intranet-tmpl/prog/en/modules/help/reports/dictionary.tt:21
-#: intranet-tmpl/prog/en/modules/help/reports/cat_issues_top.tt:11
-#: intranet-tmpl/prog/en/modules/help/patroncards/edit-batch.tt:11
-#: intranet-tmpl/prog/en/modules/help/patroncards/edit-layout.tt:34
-#: intranet-tmpl/prog/en/modules/help/patroncards/home.tt:20
-#: intranet-tmpl/prog/en/modules/help/patroncards/image-manage.tt:19
-#: intranet-tmpl/prog/en/modules/help/patroncards/edit-template.tt:28
+#: intranet-tmpl/prog/en/modules/help/reports/catalogue_stats.tt:11
+#: intranet-tmpl/prog/en/modules/help/reports/bor_issues_top.tt:11
+#: intranet-tmpl/prog/en/modules/help/reports/borrowers_out.tt:11
+#: intranet-tmpl/prog/en/modules/help/reports/catalogue_out.tt:11
+#: intranet-tmpl/prog/en/modules/help/virtualshelves/shelves.tt:70
+#: intranet-tmpl/prog/en/modules/help/course_reserves/add_items.tt:13
+#: intranet-tmpl/prog/en/modules/help/course_reserves/course-details.tt:9
+#: intranet-tmpl/prog/en/modules/help/course_reserves/course.tt:17
+#: intranet-tmpl/prog/en/modules/help/course_reserves/course-reserves.tt:19
+#: intranet-tmpl/prog/en/modules/help/circ/overdue.tt:14
+#: intranet-tmpl/prog/en/modules/help/circ/circulation.tt:152
+#: intranet-tmpl/prog/en/modules/help/circ/pendingreserves.tt:9
+#: intranet-tmpl/prog/en/modules/help/circ/offline.tt:35
+#: intranet-tmpl/prog/en/modules/help/circ/renew.tt:11
+#: intranet-tmpl/prog/en/modules/help/circ/waitingreserves.tt:9
+#: intranet-tmpl/prog/en/modules/help/circ/branchtransfers.tt:24
+#: intranet-tmpl/prog/en/modules/help/circ/returns.tt:77
+#: intranet-tmpl/prog/en/modules/help/circ/reserveratios.tt:7
+#: intranet-tmpl/prog/en/modules/help/circ/view_holdsqueue.tt:21
+#: intranet-tmpl/prog/en/modules/help/circ/transferstoreceive.tt:11
+#: intranet-tmpl/prog/en/modules/help/circ/selectbranchprinter.tt:11
+#: intranet-tmpl/prog/en/modules/help/circ/branchoverdues.tt:11
+#: intranet-tmpl/prog/en/modules/help/circ/circulation-home.tt:23
+#: intranet-tmpl/prog/en/modules/help/reserve/request.tt:63
+#: intranet-tmpl/prog/en/modules/help/about.tt:37
+#: intranet-tmpl/prog/en/modules/help/suggestion/suggestion.tt:41
+#: intranet-tmpl/prog/en/modules/help/plugins/plugins-home.tt:9
+#: intranet-tmpl/prog/en/modules/help/plugins/plugins-upload.tt:9
+#: intranet-tmpl/prog/en/modules/help/tags/list.tt:9
+#: intranet-tmpl/prog/en/modules/help/tags/review.tt:23
 #: intranet-tmpl/prog/en/modules/help/patroncards/edit-profile.tt:31
 #: intranet-tmpl/prog/en/modules/help/patroncards/manage.tt:19
-#: intranet-tmpl/prog/en/modules/help/reserve/request.tt:63
-#: intranet-tmpl/prog/en/modules/help/suggestion/suggestion.tt:41
-#: intranet-tmpl/prog/en/modules/help/labels/label-edit-template.tt:33
-#: intranet-tmpl/prog/en/modules/help/labels/label-edit-batch.tt:25
+#: intranet-tmpl/prog/en/modules/help/patroncards/edit-template.tt:28
+#: intranet-tmpl/prog/en/modules/help/patroncards/edit-batch.tt:11
+#: intranet-tmpl/prog/en/modules/help/patroncards/image-manage.tt:19
+#: intranet-tmpl/prog/en/modules/help/patroncards/home.tt:20
+#: intranet-tmpl/prog/en/modules/help/patroncards/edit-layout.tt:34
+#: intranet-tmpl/prog/en/modules/help/admin/koha2marclinks.tt:15
+#: intranet-tmpl/prog/en/modules/help/admin/itemtypes.tt:60
+#: intranet-tmpl/prog/en/modules/help/admin/smart-rules.tt:139
+#: intranet-tmpl/prog/en/modules/help/admin/admin-home.tt:33
+#: intranet-tmpl/prog/en/modules/help/admin/preferences.tt:36
+#: intranet-tmpl/prog/en/modules/help/admin/aqbudgets.tt:34
+#: intranet-tmpl/prog/en/modules/help/admin/systempreferences.tt:11
+#: intranet-tmpl/prog/en/modules/help/admin/categorie.tt:90
+#: intranet-tmpl/prog/en/modules/help/admin/aqbudgetperiods.tt:37
+#: intranet-tmpl/prog/en/modules/help/admin/checkmarc.tt:9
+#: intranet-tmpl/prog/en/modules/help/admin/transport-cost-matrix.tt:13
+#: intranet-tmpl/prog/en/modules/help/admin/z3950servers.tt:61
+#: intranet-tmpl/prog/en/modules/help/admin/authtypes.tt:9
+#: intranet-tmpl/prog/en/modules/help/admin/oai_set_mappings.tt:21
+#: intranet-tmpl/prog/en/modules/help/admin/didyoumean.tt:20
+#: intranet-tmpl/prog/en/modules/help/admin/auth_subfields_structure.tt:66
+#: intranet-tmpl/prog/en/modules/help/admin/cities.tt:21
+#: intranet-tmpl/prog/en/modules/help/admin/aqplan.tt:15
+#: intranet-tmpl/prog/en/modules/help/admin/fieldmapping.tt:23
+#: intranet-tmpl/prog/en/modules/help/admin/classsources.tt:56
+#: intranet-tmpl/prog/en/modules/help/admin/item_circulation_alerts.tt:22
+#: intranet-tmpl/prog/en/modules/help/admin/branches.tt:50
+#: intranet-tmpl/prog/en/modules/help/admin/currency.tt:13
+#: intranet-tmpl/prog/en/modules/help/admin/matching-rules.tt:49
+#: intranet-tmpl/prog/en/modules/help/admin/biblio_framework.tt:37
+#: intranet-tmpl/prog/en/modules/help/admin/auth_tag_structure.tt:22
+#: intranet-tmpl/prog/en/modules/help/admin/branch_transfer_limits.tt:19
+#: intranet-tmpl/prog/en/modules/help/admin/patron-attr-types.tt:73
+#: intranet-tmpl/prog/en/modules/help/admin/oai_sets.tt:32
+#: intranet-tmpl/prog/en/modules/help/admin/authorised_values.tt:95
+#: intranet-tmpl/prog/en/modules/help/admin/marctagstructure.tt:24
+#: intranet-tmpl/prog/en/modules/help/admin/marc_subfields_structure.tt:130
 #: intranet-tmpl/prog/en/modules/help/labels/label-edit-layout.tt:15
 #: intranet-tmpl/prog/en/modules/help/labels/spinelabel-home.tt:14
+#: intranet-tmpl/prog/en/modules/help/labels/label-edit-batch.tt:25
 #: intranet-tmpl/prog/en/modules/help/labels/label-home.tt:44
+#: intranet-tmpl/prog/en/modules/help/labels/label-edit-template.tt:33
 #: intranet-tmpl/prog/en/modules/help/labels/label-edit-profile.tt:31
-#: intranet-tmpl/prog/en/modules/help/course_reserves/course-details.tt:9
-#: intranet-tmpl/prog/en/modules/help/course_reserves/add_items.tt:13
-#: intranet-tmpl/prog/en/modules/help/course_reserves/course-reserves.tt:19
-#: intranet-tmpl/prog/en/modules/help/course_reserves/course.tt:17
-#: intranet-tmpl/prog/en/modules/help/about.tt:37
-#: intranet-tmpl/prog/en/modules/help/offline_circ/list.tt:23
+#: intranet-tmpl/prog/en/modules/help/members/member-password.tt:14
+#: intranet-tmpl/prog/en/modules/help/members/maninvoice.tt:17
+#: intranet-tmpl/prog/en/modules/help/members/notices.tt:9
+#: intranet-tmpl/prog/en/modules/help/members/mancredit.tt:14
+#: intranet-tmpl/prog/en/modules/help/members/member.tt:51
+#: intranet-tmpl/prog/en/modules/help/members/purchase-suggestions.tt:11
+#: intranet-tmpl/prog/en/modules/help/members/moremember.tt:126
+#: intranet-tmpl/prog/en/modules/help/members/pay.tt:60
+#: intranet-tmpl/prog/en/modules/help/members/member-flags.tt:485
+#: intranet-tmpl/prog/en/modules/help/members/statistics.tt:7
+#: intranet-tmpl/prog/en/modules/help/members/readingrec.tt:11
+#: intranet-tmpl/prog/en/modules/help/members/files.tt:11
+#: intranet-tmpl/prog/en/modules/help/members/paycollect.tt:60
+#: intranet-tmpl/prog/en/modules/help/members/memberentry.tt:89
+#: intranet-tmpl/prog/en/modules/help/members/members-home.tt:53
+#: intranet-tmpl/prog/en/modules/help/members/routing-lists.tt:9
+#: intranet-tmpl/prog/en/modules/help/members/boraccount.tt:22
+#: intranet-tmpl/prog/en/modules/help/members/members-update.tt:11
 #: intranet-tmpl/prog/en/modules/help/offline_circ/process_koc.tt:19
+#: intranet-tmpl/prog/en/modules/help/offline_circ/list.tt:23
+#: intranet-tmpl/prog/en/modules/help/cataloguing/additem.tt:77
+#: intranet-tmpl/prog/en/modules/help/cataloguing/addbooks.tt:33
+#: intranet-tmpl/prog/en/modules/help/cataloguing/moveitem.tt:13
+#: intranet-tmpl/prog/en/modules/help/cataloguing/linkitem.tt:30
+#: intranet-tmpl/prog/en/modules/help/cataloguing/addbiblio.tt:93
+#: intranet-tmpl/prog/en/modules/help/cataloguing/merge.tt:21
+#: intranet-tmpl/prog/en/modules/help/patron_lists/lists.tt:17
+#: intranet-tmpl/prog/en/modules/help/serials/serials-edit.tt:27
+#: intranet-tmpl/prog/en/modules/help/serials/serials-collection.tt:13
+#: intranet-tmpl/prog/en/modules/help/serials/subscription-detail.tt:9
+#: intranet-tmpl/prog/en/modules/help/serials/subscription-add.tt:86
+#: intranet-tmpl/prog/en/modules/help/serials/serials-home.tt:9
+#: intranet-tmpl/prog/en/modules/help/serials/claims.tt:15
+#: intranet-tmpl/prog/en/modules/help/serials/checkexpiration.tt:11
+#: intranet-tmpl/prog/en/modules/help/serials/subscription-numberpatterns.tt:11
+#: intranet-tmpl/prog/en/modules/help/serials/subscription-frequencies.tt:9
+#: intranet-tmpl/prog/en/modules/help/serials/routing.tt:21
+#: intranet-tmpl/prog/en/modules/help/acqui/newordersuggestion.tt:17
+#: intranet-tmpl/prog/en/modules/help/acqui/neworderbiblio.tt:12
+#: intranet-tmpl/prog/en/modules/help/acqui/orderreceive.tt:21
+#: intranet-tmpl/prog/en/modules/help/acqui/acqui-home.tt:13
+#: intranet-tmpl/prog/en/modules/help/acqui/invoice.tt:11
+#: intranet-tmpl/prog/en/modules/help/acqui/neworderempty.tt:11
+#: intranet-tmpl/prog/en/modules/help/acqui/lateorders.tt:19
+#: intranet-tmpl/prog/en/modules/help/acqui/supplier.tt:54
+#: intranet-tmpl/prog/en/modules/help/acqui/basket.tt:109
+#: intranet-tmpl/prog/en/modules/help/acqui/acqcontract.tt:19
+#: intranet-tmpl/prog/en/modules/help/acqui/uncertainprice.tt:7
+#: intranet-tmpl/prog/en/modules/help/acqui/invoices.tt:11
+#: intranet-tmpl/prog/en/modules/help/acqui/z3950_search.tt:17
+#: intranet-tmpl/prog/en/modules/help/acqui/histsearch.tt:17
+#: intranet-tmpl/prog/en/modules/help/acqui/basketheader.tt:21
+#: intranet-tmpl/prog/en/modules/help/acqui/parcels.tt:21
+#: intranet-tmpl/prog/en/modules/help/acqui/booksellers.tt:17
+#: intranet-tmpl/prog/en/modules/help/acqui/parcel.tt:21
+#: intranet-tmpl/prog/en/modules/help/acqui/basketgroup.tt:11
+#: intranet-tmpl/prog/en/modules/help/acqui/addorderiso2709.tt:22
+#: intranet-tmpl/prog/en/modules/help/catalogue/search.tt:81
+#: intranet-tmpl/prog/en/modules/help/catalogue/issuehistory.tt:9
+#: intranet-tmpl/prog/en/modules/help/catalogue/moredetail.tt:21
+#: intranet-tmpl/prog/en/modules/help/catalogue/detail.tt:7
+#: intranet-tmpl/prog/en/modules/help/nohelp.tt:5
+#: intranet-tmpl/prog/en/modules/help/reviews/reviewswaiting.tt:13
+#: intranet-tmpl/prog/en/modules/help/mainpage.tt:29
 #, c-format
 msgid "(online)."
 msgstr "(سەرهێڵە)"
@@ -960,12 +1023,12 @@ msgstr ""
 msgid "0 =&gt; OPAC Intranet Editor !Collapsed"
 msgstr "0 =&gt; OPAC هەرەسی چاککاری ناوخۆیی!"
 
-#: intranet-tmpl/prog/en/modules/help/tools/overduerules.tt:44
+#: intranet-tmpl/prog/en/modules/help/tools/overduerules.tt:45
 #, c-format
 msgid "06/27/2008 Eating fractions / 502326000022 McMillan, Bruce."
 msgstr "06/27/2008 Eating fractions / 502326000022 McMillan, Bruce."
 
-#: intranet-tmpl/prog/en/modules/help/tools/overduerules.tt:42
+#: intranet-tmpl/prog/en/modules/help/tools/overduerules.tt:43
 #, c-format
 msgid ""
 "07/08/2008 Creating drug-free schools and communities : 502326000054 Fox, C. "
@@ -1109,7 +1172,7 @@ msgstr "مفقود"
 msgid "4 =&gt; !OPAC Intranet Editor !Collapsed"
 msgstr "4 =&gt; !چاککاری ئینتانێتی ئۆپاک !هاتۆتەخوار"
 
-#: intranet-tmpl/prog/en/modules/help/tools/overduerules.tt:29
+#: intranet-tmpl/prog/en/modules/help/tools/overduerules.tt:30
 #, c-format
 msgid "410 Library Rd. "
 msgstr "410 رێگای کتێبخانە "
@@ -1232,8 +1295,8 @@ msgstr ""
 msgid "A basket with at least one uncertain price can't be closed."
 msgstr "السلة التي فيها سعر واحد غير محدد لا يمكن أن تغلق."
 
-#: intranet-tmpl/prog/en/modules/help/patroncards/edit-batch.tt:5
 #: intranet-tmpl/prog/en/modules/help/patroncards/manage.tt:17
+#: intranet-tmpl/prog/en/modules/help/patroncards/edit-batch.tt:5
 #, c-format
 msgid "A batch is a collection of patrons for whom you want to generate cards."
 msgstr ""
@@ -1260,8 +1323,8 @@ msgid ""
 "happen"
 msgstr "سيظهر لك سؤال تأكيدي لتأكد فيه أنه هذا ما تريد فعله حقا"
 
-#: intranet-tmpl/prog/en/modules/help/patroncards/edit-layout.tt:5
 #: intranet-tmpl/prog/en/modules/help/patroncards/manage.tt:5
+#: intranet-tmpl/prog/en/modules/help/patroncards/edit-layout.tt:5
 #, c-format
 msgid ""
 "A layout defines the text and images that will be printed on to the card and "
@@ -1276,6 +1339,23 @@ msgstr ""
 msgid ""
 "A layout is used to define the fields you want to appear on your labels."
 msgstr "يستخدم الشكل ليحدد لك الحقل الذي تريد أن يظهر على لصاقاتك."
+
+#: intranet-tmpl/prog/en/modules/help/reports/okm_reports.tt:18
+#, c-format
+msgid "A library is calculated as a bookboat if the branchcode ends in VE"
+msgstr ""
+
+#: intranet-tmpl/prog/en/modules/help/reports/okm_reports.tt:16
+#, c-format
+msgid "A library is calculated as a bookmobile if the branchcode ends in AU"
+msgstr ""
+
+#: intranet-tmpl/prog/en/modules/help/reports/okm_reports.tt:14
+#, c-format
+msgid ""
+"A library is calculated as a institutional libary if the name matches "
+"regexp /$\\w\\w\\w_LA\\w{1,3}^/ . Eg. JOE_LAKO, LIP_LASI, VAL_LAMA"
+msgstr ""
 
 #: intranet-tmpl/prog/en/modules/help/virtualshelves/shelves.tt:21
 #, c-format
@@ -1330,6 +1410,11 @@ msgid ""
 msgstr ""
 "يمكن إضافة صور للمستفيدين من خلال تصفح قسم 'إدارة صور المستفيدين' على "
 "جهازك . "
+
+#: intranet-tmpl/prog/en/modules/help/cataloguing/batchOverlay.tt:17
+#, c-format
+msgid "A permission \"tools => stage_marc_import\" is needed to use this tool."
+msgstr ""
 
 #: intranet-tmpl/prog/en/modules/help/virtualshelves/shelves.tt:14
 #: intranet-tmpl/prog/en/modules/help/virtualshelves/shelves.tt:29
@@ -1402,6 +1487,18 @@ msgid ""
 "cgi-bin/koha/svc/report?id=REPORTID"
 msgstr ""
 
+#: intranet-tmpl/prog/en/modules/help/cataloguing/batchOverlay.tt:13
+#, c-format
+msgid ""
+"A report is generated and possible errors are shown on the top of the page. "
+"You can click the report titles to open and close the verbose MARCXML "
+"difference display. On the right side of the report title you can find a "
+"difference-score. The bigger the number, the larger the difference between "
+"the old bibliographic record and the new merged record. This is a good "
+"indication of how much the record changed during merging. You can also "
+"directly open a MARC-editing view by clicking the report title biblionumbers."
+msgstr ""
+
 #: intranet-tmpl/prog/en/modules/help/serials/routing.tt:5
 #, c-format
 msgid ""
@@ -1413,6 +1510,11 @@ msgstr ""
 "الرفوف , وعندما تريد إعداد قائمة اشتراك بالدوريات يجب أن تتأكد من اختيار "
 "'قائمة التمرير' من منسدلة 'الإشعارات' ."
 
+#: intranet-tmpl/prog/en/modules/help/cataloguing/batchOverlay.tt:6
+#, c-format
+msgid "A short introduction to batch overlaying"
+msgstr ""
+
 #: intranet-tmpl/prog/en/modules/help/tools/manage-marc-import.tt:13
 #, c-format
 msgid ""
@@ -1420,8 +1522,8 @@ msgid ""
 "matching rules"
 msgstr "سوف يظهر ملخص لعملية الإستيراد مع خيار تغيير قواعد المطابقة"
 
-#: intranet-tmpl/prog/en/modules/help/labels/label-edit-template.tt:5
 #: intranet-tmpl/prog/en/modules/help/labels/label-home.tt:28
+#: intranet-tmpl/prog/en/modules/help/labels/label-edit-template.tt:5
 #, c-format
 msgid ""
 "A template is based on the label/card stock you are using. This might be "
@@ -1437,8 +1539,8 @@ msgstr ""
 "تحتاجها لتنصيب كوها، هذه المعلومات يمكن عمل نسخ احتياطية منها، وإذا لم يتم "
 "ذلك بمكن العثور عليها في موقع المزود."
 
-#: intranet-tmpl/prog/en/modules/help/patroncards/edit-template.tt:5
 #: intranet-tmpl/prog/en/modules/help/patroncards/manage.tt:13
+#: intranet-tmpl/prog/en/modules/help/patroncards/edit-template.tt:5
 #, c-format
 msgid ""
 "A template is the label/card stock you are using. This might be Avery 5160 "
@@ -1619,7 +1721,7 @@ msgstr "جدولة المهام للتشغيل ( الوصول إلى  أداة �
 msgid "Access to the Upload Local Cover Image Tool"
 msgstr "رفع صور غلاف محلية (الوصول ﻷداة رفع صور غلاف محلية)"
 
-#: intranet-tmpl/prog/en/modules/help/tools/overduerules.tt:34
+#: intranet-tmpl/prog/en/modules/help/tools/overduerules.tt:35
 #, c-format
 msgid ""
 "According to our records, at the time of this notice, you have items that "
@@ -1634,6 +1736,7 @@ msgstr ""
 msgid "Acquisition and/or suggestion management"
 msgstr "إدارة الاقتراح"
 
+#: intranet-tmpl/prog/en/modules/help/reports/okm_reports.tt:37
 #: intranet-tmpl/prog/en/modules/help/acqui/acqui-home.tt:3
 #, c-format
 msgid "Acquisitions"
@@ -1938,9 +2041,9 @@ msgid ""
 "After choosing to clone you will be presented with a confirmation message."
 msgstr "بعد الاختيار للنسخ ستُقدّم مع رسالة تأكيد."
 
+#: intranet-tmpl/prog/en/modules/help/acqui/orderreceive.tt:7
 #: intranet-tmpl/prog/en/modules/help/acqui/parcels.tt:7
 #: intranet-tmpl/prog/en/modules/help/acqui/parcel.tt:7
-#: intranet-tmpl/prog/en/modules/help/acqui/orderreceive.tt:7
 #, fuzzy, c-format
 msgid ""
 "After clicking 'Receive shipment' you will be asked to enter a vendor "
@@ -2132,6 +2235,16 @@ msgid ""
 "actions' on the right to process the actions."
 msgstr ""
 
+#: intranet-tmpl/prog/en/modules/help/cataloguing/batchOverlay.tt:51
+#, c-format
+msgid ""
+"After the parent record is overlayed, a new search for component parts "
+"begins. We search for records containing the same field 003 as the parent "
+"and which have the parents field 001 as their subfield 77Xw value, from the "
+"parent's external repository. These are confirmed component parts and are "
+"selected for importing."
+msgstr ""
+
 #: intranet-tmpl/prog/en/modules/help/circ/returns.tt:35
 #, c-format
 msgid ""
@@ -2151,6 +2264,13 @@ msgid ""
 "them on the course page."
 msgstr ""
 
+#: intranet-tmpl/prog/en/modules/help/reports/okm_reports.tt:51
+#, c-format
+msgid ""
+"All Items discarded during the given timeframe, except Serial Items, are "
+"counted as discards."
+msgstr ""
+
 #: intranet-tmpl/prog/en/modules/help/members/member-flags.tt:138
 #, c-format
 msgid "All circulation rights except the ability to override renewals"
@@ -2167,16 +2287,16 @@ msgstr ""
 "التي تتطلب الاشراف من قبل أمناء المكتبات. اذا كان هناك تعليقات تنتظر الاشراف "
 "سوف يدرجوا على لوحة الموظفين الرئيسية تحت علامة الأدوات"
 
-#: intranet-tmpl/prog/en/modules/help/members/files.tt:9
 #: intranet-tmpl/prog/en/modules/help/members/moremember.tt:63
+#: intranet-tmpl/prog/en/modules/help/members/files.tt:9
 #, c-format
 msgid ""
 "All files that are uploaded will appear above a form where additional files "
 "can be uploaded from."
 msgstr ""
 
-#: intranet-tmpl/prog/en/modules/help/members/paycollect.tt:50
 #: intranet-tmpl/prog/en/modules/help/members/pay.tt:50
+#: intranet-tmpl/prog/en/modules/help/members/paycollect.tt:50
 #, c-format
 msgid ""
 "All fines will be removed from outstanding fines, and displayed as written "
@@ -2288,6 +2408,16 @@ msgstr ""
 "يشمل أيضاً ملف نصي (*.TXT) مسمى إما datalink.txt أو idlink.txt يدرج العدد "
 "الببليوغرافي متبوعاً باسم الصورة لكل صورة واحدة بالسطر "
 
+#: intranet-tmpl/prog/en/modules/help/reports/okm_reports.tt:31
+#, c-format
+msgid ""
+"Alternate feature, currently disabled: An Item is counted as juvenile "
+"material if it is in the proper shelving locations. Shelving locations that "
+"constitute to the juveniles group are marked with the okm_juvenile.png-icon "
+"from the okm-icons set. These shelving location icons are repurposed for "
+"statistical purposes because they are not used anywhere."
+msgstr ""
+
 #: intranet-tmpl/prog/en/modules/help/tools/inventory.tt:11
 #, c-format
 msgid ""
@@ -2333,6 +2463,53 @@ msgstr ""
 msgid "An IP address is required if you have enabled AutoLocation"
 msgstr "عنوان الـ IP يُطلب اذا كان لديك موقع آلي ممكّن"
 
+#: intranet-tmpl/prog/en/modules/help/reports/okm_reports.tt:35
+#, c-format
+msgid ""
+"An Item is considered to be a musical recording, if it is in the ykl-class "
+"78."
+msgstr ""
+
+#: intranet-tmpl/prog/en/modules/help/reports/okm_reports.tt:38
+#, c-format
+msgid ""
+"An Item is considered to be acquired, if it has been ordered using the "
+"acquisitions module and received on the given timeframe."
+msgstr ""
+
+#: intranet-tmpl/prog/en/modules/help/reports/okm_reports.tt:33
+#, c-format
+msgid "An Item is considered to be fiction, if it is in ykl-classes 81 to 85."
+msgstr ""
+
+#: intranet-tmpl/prog/en/modules/help/reports/okm_reports.tt:22
+#, c-format
+msgid ""
+"An Item is counted as finnish language, if the first subfield 'a' of Field "
+"'084' is 'fin', or if the language is not given."
+msgstr ""
+
+#: intranet-tmpl/prog/en/modules/help/reports/okm_reports.tt:30
+#, c-format
+msgid ""
+"An Item is counted as juvenile material if it is in one of the following "
+"shelving locations: KUV,LAP,LAK,LVA,NUO,NUA,NUV"
+msgstr ""
+
+#: intranet-tmpl/prog/en/modules/help/reports/okm_reports.tt:26
+#, c-format
+msgid ""
+"An Item is counted as other language, if the first subfield 'a' of Field "
+"'084' is not 'fin' or 'swe', but is given."
+msgstr ""
+
+#: intranet-tmpl/prog/en/modules/help/reports/okm_reports.tt:24
+#, c-format
+msgid ""
+"An Item is counted as swedish language, if the first subfield 'a' of Field "
+"'084' is 'swe'."
+msgstr ""
+
 #: intranet-tmpl/prog/en/modules/help/members/memberentry.tt:51
 #, c-format
 msgid ""
@@ -2346,6 +2523,13 @@ msgstr ""
 #, fuzzy, c-format
 msgid "An example of using these tags in a notice template might be like:"
 msgstr "مثال على استخدام هذين الوسمين في قالب الملاحظة يمكن أن يكون مثل:"
+
+#: intranet-tmpl/prog/en/modules/help/reports/okm_reports.tt:42
+#, c-format
+msgid ""
+"An issue is counted if it hapened on the given timeframe and is not given "
+"for the following borrower categories: KIRJASTO, TILASTO, KAUKOLAINA."
+msgstr ""
 
 #: intranet-tmpl/prog/en/modules/help/cataloguing/linkitem.tt:3
 #, c-format
@@ -2376,6 +2560,14 @@ msgid ""
 "And the image will be listed with all of your others on the right hand side "
 "of the page."
 msgstr "والصورة سيتم ادراجها مع كل صورك الأخرى على الجانب الأيمن من الصفحة."
+
+#: intranet-tmpl/prog/en/modules/help/cataloguing/batchOverlay.tt:54
+#, c-format
+msgid ""
+"Another Matcher, component part Matcher makes sure that the selected "
+"component part records don't already exists in the database and thus are not "
+"imported twice (which could make a real mess)."
+msgstr ""
 
 #: intranet-tmpl/prog/en/modules/help/suggestion/suggestion.tt:23
 #, c-format
@@ -2675,8 +2867,8 @@ msgstr "تعديلات دفعة المواد"
 msgid "Batch modify items"
 msgstr "تعديل دفعة المواد"
 
-#: intranet-tmpl/prog/en/modules/help/patroncards/edit-batch.tt:3
 #: intranet-tmpl/prog/en/modules/help/patroncards/manage.tt:15
+#: intranet-tmpl/prog/en/modules/help/patroncards/edit-batch.tt:3
 #: intranet-tmpl/prog/en/modules/help/labels/label-edit-batch.tt:3
 #: intranet-tmpl/prog/en/modules/help/labels/label-home.tt:40
 #, c-format
@@ -2807,8 +2999,8 @@ msgstr ""
 msgid "Below is a summary of the various pieces of the advanced search limit: "
 msgstr "وفيما يلي موجز لأجزاء مختلفة من حدود بحث متقدم "
 
-#: intranet-tmpl/prog/en/modules/help/catalogue/moredetail.tt:19
 #: intranet-tmpl/prog/en/modules/help/catalogue/issuehistory.tt:7
+#: intranet-tmpl/prog/en/modules/help/catalogue/moredetail.tt:19
 #, c-format
 msgid ""
 "Below the 'History' heading is a link to 'View item's checkout history,' "
@@ -2865,6 +3057,16 @@ msgstr "أدنى صفحة مجدول المهام، يوجد قائمة بالت
 msgid "BiblioAddsAuthorities"
 msgstr "إضافة استنادات"
 
+#: intranet-tmpl/prog/en/modules/help/reports/okm_reports.tt:17
+#, c-format
+msgid "Bookboats"
+msgstr ""
+
+#: intranet-tmpl/prog/en/modules/help/reports/okm_reports.tt:15
+#, c-format
+msgid "Bookmobiles"
+msgstr ""
+
 #: intranet-tmpl/prog/en/modules/help/members/member-flags.tt:69
 #, fuzzy, c-format
 msgid "Borrow books"
@@ -2879,6 +3081,18 @@ msgstr "رقم المستعير. "
 #: intranet-tmpl/prog/en/modules/help/tools/quotes.tt:21
 #, c-format
 msgid "Both the 'Source' and the 'Text' fields "
+msgstr ""
+
+#: intranet-tmpl/prog/en/modules/help/reports/okm_reports.tt:11
+#, c-format
+msgid "Branch libraries"
+msgstr ""
+
+#: intranet-tmpl/prog/en/modules/help/reports/okm_reports.tt:12
+#, c-format
+msgid ""
+"Branch libraries are calculated by subtracting from the sum of libraries in "
+"the group, every other kind of library."
 msgstr ""
 
 #: intranet-tmpl/prog/en/modules/help/members/member-flags.tt:460
@@ -2963,6 +3177,13 @@ msgid ""
 msgstr ""
 "بالأساس المواد ستكون مصدرة, إذا كنت ترغب في تصدير المواد الببليوغرافية, تفحص "
 "مربع 'عدم تصدير المواد'"
+
+#: intranet-tmpl/prog/en/modules/help/reports/okm_reports.tt:10
+#, c-format
+msgid ""
+"By default there is only one main library in each statistical group and that "
+"cannot currently be changed."
+msgstr ""
 
 #: intranet-tmpl/prog/en/modules/help/circ/selectbranchprinter.tt:5
 #, c-format
@@ -3070,6 +3291,7 @@ msgstr "تساعد معاملات الفهرسة في تكوين وظيفة ال
 msgid "Catalog statistics"
 msgstr "إحصائيات الفهرس"
 
+#: intranet-tmpl/prog/en/modules/help/cataloguing/batchOverlay.tt:3
 #: intranet-tmpl/prog/en/modules/help/cataloguing/addbooks.tt:3
 #: intranet-tmpl/prog/en/modules/help/cataloguing/addbiblio.tt:3
 #, c-format
@@ -3225,8 +3447,8 @@ msgstr ""
 msgid "Check the expiration of a serial"
 msgstr "التحقق من انتهاء المسلسلات"
 
-#: intranet-tmpl/prog/en/modules/help/members/paycollect.tt:35
 #: intranet-tmpl/prog/en/modules/help/members/pay.tt:35
+#: intranet-tmpl/prog/en/modules/help/members/paycollect.tt:35
 #, c-format
 msgid ""
 "Check the selection boxes next to the fines you wish to pay, click \"Pay "
@@ -3764,32 +3986,37 @@ msgstr "مصادر التصنيف"
 msgid "Clear Patron Information"
 msgstr "امسح معلومات المستفيد"
 
-#: intranet-tmpl/prog/en/modules/help/members/paycollect.tt:13
-#: intranet-tmpl/prog/en/modules/help/members/paycollect.tt:21
-#: intranet-tmpl/prog/en/modules/help/members/paycollect.tt:29
-#: intranet-tmpl/prog/en/modules/help/members/paycollect.tt:37
 #: intranet-tmpl/prog/en/modules/help/members/pay.tt:13
 #: intranet-tmpl/prog/en/modules/help/members/pay.tt:21
 #: intranet-tmpl/prog/en/modules/help/members/pay.tt:29
 #: intranet-tmpl/prog/en/modules/help/members/pay.tt:37
+#: intranet-tmpl/prog/en/modules/help/members/paycollect.tt:13
+#: intranet-tmpl/prog/en/modules/help/members/paycollect.tt:21
+#: intranet-tmpl/prog/en/modules/help/members/paycollect.tt:29
+#: intranet-tmpl/prog/en/modules/help/members/paycollect.tt:37
 #, c-format
 msgid "Click \"Confirm\""
 msgstr "اضغط \"تأكيد\""
 
-#: intranet-tmpl/prog/en/modules/help/members/paycollect.tt:19
+#: intranet-tmpl/prog/en/modules/help/cataloguing/batchOverlay.tt:12
+#, c-format
+msgid "Click \"Overlay us!\" to start the overlaying process."
+msgstr ""
+
 #: intranet-tmpl/prog/en/modules/help/members/pay.tt:19
+#: intranet-tmpl/prog/en/modules/help/members/paycollect.tt:19
 #, c-format
 msgid "Click \"Pay\" next to the fine you want to partially pay"
 msgstr "اضغط على \"ادفع\" بجانب الغرامة التي تريد دفعها جزئيا"
 
-#: intranet-tmpl/prog/en/modules/help/members/paycollect.tt:11
 #: intranet-tmpl/prog/en/modules/help/members/pay.tt:11
+#: intranet-tmpl/prog/en/modules/help/members/paycollect.tt:11
 #, c-format
 msgid "Click \"Pay\" next to the fine you want to pay in full"
 msgstr "اضغط على \"ادفع\" بجانب الغرامة التي تريد دفعها بشكل كلي"
 
-#: intranet-tmpl/prog/en/modules/help/members/paycollect.tt:43
 #: intranet-tmpl/prog/en/modules/help/members/pay.tt:43
+#: intranet-tmpl/prog/en/modules/help/members/paycollect.tt:43
 #, c-format
 msgid "Click \"Writeoff\" next to the fine you wish to writeoff."
 msgstr "اضغط على \"الشطب\" بجانب الغرامة التي تريد ان تشطبها"
@@ -3915,9 +4142,9 @@ msgstr "اضغط 'ضبط إلى المسفيد' للبحث في نظامك عن 
 msgid "Click 'Stage for import'"
 msgstr "اضغط 'نظم للاستيراد'"
 
-#: intranet-tmpl/prog/en/modules/help/admin/biblio_framework.tt:22
-#: intranet-tmpl/prog/en/modules/help/circ/branchtransfers.tt:14
 #: intranet-tmpl/prog/en/modules/help/reports/itemslost.tt:15
+#: intranet-tmpl/prog/en/modules/help/circ/branchtransfers.tt:14
+#: intranet-tmpl/prog/en/modules/help/admin/biblio_framework.tt:22
 #, c-format
 msgid "Click 'Submit'"
 msgstr "اضغط 'إرسال'"
@@ -3985,14 +4212,14 @@ msgstr "النقر على رابط 'إضافة ضبط جديد'"
 msgid "Click on the title of the course you would like to add materials to."
 msgstr "انقر على التاريخ في النتيجة والذي ترغب في تطبيق الإغلاق فيه"
 
-#: intranet-tmpl/prog/en/modules/help/members/paycollect.tt:27
 #: intranet-tmpl/prog/en/modules/help/members/pay.tt:27
+#: intranet-tmpl/prog/en/modules/help/members/paycollect.tt:27
 #, c-format
 msgid "Click the \"Pay Amount\" button"
 msgstr "انقر على زر \"دفع المبلغ \""
 
-#: intranet-tmpl/prog/en/modules/help/members/paycollect.tt:49
 #: intranet-tmpl/prog/en/modules/help/members/pay.tt:49
+#: intranet-tmpl/prog/en/modules/help/members/paycollect.tt:49
 #, c-format
 msgid "Click the \"Writeoff All\" button"
 msgstr "انقر على زر \"شطب جميع\""
@@ -4165,8 +4392,8 @@ msgstr ""
 "النقر على الوصلة المؤدية إلى وحدة المستفيد ستجلب لك شاشة البحث/الاستعراض "
 "للمستفيدين. من هنا تستطيع أن تبحث عن مستفيد ما."
 
-#: intranet-tmpl/prog/en/modules/help/members/moremember.tt:51
 #: intranet-tmpl/prog/en/modules/help/members/notices.tt:7
+#: intranet-tmpl/prog/en/modules/help/members/moremember.tt:51
 #, c-format
 msgid ""
 "Clicking on the message title will expand the view to show you the full text "
@@ -4475,7 +4702,7 @@ msgstr "تاريخ الميلاد"
 msgid "Date should be entered using the calendar pop up"
 msgstr "يجب إدخال التاريخ باستخدام  التقويم المنبثق"
 
-#: intranet-tmpl/prog/en/modules/help/tools/overduerules.tt:32
+#: intranet-tmpl/prog/en/modules/help/tools/overduerules.tt:33
 #, c-format
 msgid "Dear Nicole Engard (23529000035726),"
 msgstr "العزيز Nicole Engard (23529000035726),"
@@ -4580,6 +4807,18 @@ msgid ""
 "borrower reading history)"
 msgstr ""
 "إحذف تاريخ إستعارات المستعيرين القدامى والمجهولين (حذف تاريخ قراءة مستعير)"
+
+#: intranet-tmpl/prog/en/modules/help/reports/okm_reports.tt:52
+#, fuzzy, c-format
+msgid "Deleted Items"
+msgstr "حذف دفعة المواد"
+
+#: intranet-tmpl/prog/en/modules/help/reports/okm_reports.tt:53
+#, c-format
+msgid ""
+"Deleted Items are not calculated to collections or acquisitions even if "
+"acquired during the timeframe, because no acquisitions data is preserved."
+msgstr ""
 
 #: intranet-tmpl/prog/en/modules/help/admin/itemtypes.tt:54
 #, c-format
@@ -4701,6 +4940,11 @@ msgstr "ديوى"
 msgid "Did you mean?"
 msgstr "هل تعنى:"
 
+#: intranet-tmpl/prog/en/modules/help/reports/okm_reports.tt:50
+#, c-format
+msgid "Discards"
+msgstr ""
+
 #: intranet-tmpl/prog/en/modules/help/admin/biblio_framework.tt:7
 #, c-format
 msgid ""
@@ -4735,8 +4979,8 @@ msgid ""
 "number to the item record if it's not already there."
 msgstr ""
 
-#: intranet-tmpl/prog/en/modules/help/catalogue/moredetail.tt:17
 #: intranet-tmpl/prog/en/modules/help/catalogue/issuehistory.tt:5
+#: intranet-tmpl/prog/en/modules/help/catalogue/moredetail.tt:17
 #, c-format
 msgid ""
 "Each bibliographic record keeps a circulation history (with or without the "
@@ -4783,16 +5027,25 @@ msgstr ""
 "كل مكتبة لديها رابط \"تعديل\" تصل إلى اليمين منه. فوق هذا الارتباط لتحرير / "
 "تغيير التفاصيل المرتبطة المكتبة في السؤال"
 
-#: intranet-tmpl/prog/en/modules/help/members/paycollect.tt:5
+#: intranet-tmpl/prog/en/modules/help/cataloguing/batchOverlay.tt:40
+#, c-format
+msgid ""
+"Each line in the text box represents a basic keyword query, it is actually "
+"equivalent to searching straight from the search toolbar. The point of these "
+"searches is to find the correct bibliographic records from the Koha database "
+"for automatic overlaying."
+msgstr ""
+
 #: intranet-tmpl/prog/en/modules/help/members/pay.tt:5
+#: intranet-tmpl/prog/en/modules/help/members/paycollect.tt:5
 #, c-format
 msgid ""
 "Each line item can be paid in full (or written off) using the 'Pay Fines' "
 "tab."
 msgstr "كل مادة يمكن أن تدفع بشكل كامل (أو تشطب) باستخدام تبويب 'دفع الغرامات'"
 
-#: intranet-tmpl/prog/en/modules/help/members/paycollect.tt:8
 #: intranet-tmpl/prog/en/modules/help/members/pay.tt:8
+#: intranet-tmpl/prog/en/modules/help/members/paycollect.tt:8
 #, c-format
 msgid "Each line item can be paid in full, partially paid, or written off."
 msgstr "كل مادة يمكن دفعها بشكل كامل ، جزئياً ، أو شطبها."
@@ -5013,8 +5266,8 @@ msgstr "إدخال عنوانا ووصفا للعطلة."
 msgid "Enter a plain text version of the category in the 'Description' field."
 msgstr "أدخل نسخة نص عادي من فئة في حقل \"الوصف\"."
 
-#: intranet-tmpl/prog/en/modules/help/members/paycollect.tt:36
 #: intranet-tmpl/prog/en/modules/help/members/pay.tt:36
+#: intranet-tmpl/prog/en/modules/help/members/paycollect.tt:36
 #, c-format
 msgid "Enter an amount to pay towards the fines."
 msgstr "إدخال مبلغ لدفع الغرامات."
@@ -5108,8 +5361,8 @@ msgstr ""
 msgid "Enter the MARC tag you want to match on in the 'Tag' field"
 msgstr "أدخل تاج مارك الذي تود أن تُطابقه في حقل 'التاج'"
 
-#: intranet-tmpl/prog/en/modules/help/members/paycollect.tt:28
 #: intranet-tmpl/prog/en/modules/help/members/pay.tt:28
+#: intranet-tmpl/prog/en/modules/help/members/paycollect.tt:28
 #, c-format
 msgid ""
 "Enter the amount you are collecting from the patron in \"Collect from Patron."
@@ -5118,8 +5371,8 @@ msgstr ""
 "إدخال المبلغ الذي يتم جمع من المستفيد في \"جمع من المستفيد\". يظهر مجموع كل "
 "الغرامات في \"إجمالي المبالغ غير المسددة\""
 
-#: intranet-tmpl/prog/en/modules/help/members/paycollect.tt:20
 #: intranet-tmpl/prog/en/modules/help/members/pay.tt:20
+#: intranet-tmpl/prog/en/modules/help/members/paycollect.tt:20
 #, c-format
 msgid ""
 "Enter the amount you are collecting from the patron in the \"Collect From "
@@ -5153,8 +5406,8 @@ msgstr ""
 msgid "Enter the field 942 and subfield c"
 msgstr ""
 
-#: intranet-tmpl/prog/en/modules/help/admin/marctagstructure.tt:9
 #: intranet-tmpl/prog/en/modules/help/admin/auth_tag_structure.tt:7
+#: intranet-tmpl/prog/en/modules/help/admin/marctagstructure.tt:9
 #, c-format
 msgid "Enter the information about your new tag:"
 msgstr "إدخال المعلومات عن الوسم الجديد:"
@@ -5370,6 +5623,11 @@ msgstr "إضافة سريعة للفهرسة"
 msgid "Fast cataloging"
 msgstr "الفهرسة السريعة"
 
+#: intranet-tmpl/prog/en/modules/help/reports/okm_reports.tt:32
+#, fuzzy, c-format
+msgid "Fiction"
+msgstr "fic:1 خيال"
+
 #: intranet-tmpl/prog/en/modules/help/members/moremember.tt:57
 #, fuzzy, c-format
 msgid "Files"
@@ -5430,6 +5688,13 @@ msgstr ""
 #, c-format
 msgid "Fill the mandatory fields 'setSpec' and 'setName'"
 msgstr "ملء الحقول الإجبارية 'setSpec' و 'setName'"
+
+#: intranet-tmpl/prog/en/modules/help/cataloguing/batchOverlay.tt:56
+#, c-format
+msgid ""
+"Finally a report is generated about the actions taken and for easy "
+"verification of correctness."
+msgstr ""
 
 #: intranet-tmpl/prog/en/modules/help/tools/export.tt:30
 #: intranet-tmpl/prog/en/modules/help/tools/export.tt:53
@@ -5517,6 +5782,11 @@ msgstr ""
 "أعثر على رقم التسجيلة بالنظر إلى نهاية الرابط في شريط العنوان عندما تكون في "
 "صفحة التفاصيل ، أو بالنقر على تبويبة مارك في صفحة التفاصيل داخل عميل الموظفين"
 
+#: intranet-tmpl/prog/en/modules/help/tools/overduerules.tt:22
+#, c-format
+msgid "Fine is the amount of money charged for sending the notification."
+msgstr ""
+
 #: intranet-tmpl/prog/en/modules/help/members/moremember.tt:24
 #, c-format
 msgid "Fines"
@@ -5527,6 +5797,11 @@ msgstr "غرامات"
 msgid "Fines will be charged based on your Circulation &amp; Fines Rules"
 msgstr ""
 "سيتم فرض غرامات مالية على أساس الإعارة &amp  وقواعد الغرامات الخاصة بها"
+
+#: intranet-tmpl/prog/en/modules/help/reports/okm_reports.tt:21
+#, c-format
+msgid "Finnish material"
+msgstr ""
 
 #: intranet-tmpl/prog/en/modules/help/members/mancredit.tt:8
 #, c-format
@@ -5896,8 +6171,8 @@ msgstr ""
 "للنموذج ، فإن النظام سيقوم بتقسيم المبلغ طبقاً لذلك, قد تضطر الى إجراء بعض "
 "التعديلات لتقسيم الطلبات لمزيد من الدقة"
 
-#: intranet-tmpl/prog/en/modules/help/members/moremember.tt:69
 #: intranet-tmpl/prog/en/modules/help/members/purchase-suggestions.tt:7
+#: intranet-tmpl/prog/en/modules/help/members/moremember.tt:69
 #, c-format
 msgid ""
 "From here you can see all suggestions made by the patron and their status, "
@@ -5905,8 +6180,8 @@ msgid ""
 "the 'New purchase suggestion' button at the top."
 msgstr ""
 
-#: intranet-tmpl/prog/en/modules/help/members/files.tt:7
 #: intranet-tmpl/prog/en/modules/help/members/moremember.tt:61
+#: intranet-tmpl/prog/en/modules/help/members/files.tt:7
 #, c-format
 msgid "From here you can upload files to attach to the patron record."
 msgstr ""
@@ -6023,8 +6298,8 @@ msgstr ""
 "من قائمة الحقول الفرعية تستطيع أن تنقر على 'حذف' على يسار كل منها لتحذف "
 "الحقول الفرعية"
 
-#: intranet-tmpl/prog/en/modules/help/cataloguing/merge.tt:7
 #: intranet-tmpl/prog/en/modules/help/virtualshelves/shelves.tt:58
+#: intranet-tmpl/prog/en/modules/help/cataloguing/merge.tt:7
 #, c-format
 msgid ""
 "From the list, check the two items you want to merge. If you choose more "
@@ -6131,8 +6406,8 @@ msgid ""
 "will be presented with the order form including a link to the suggestion "
 msgstr ""
 
-#: intranet-tmpl/prog/en/modules/help/acqui/z3950_search.tt:8
 #: intranet-tmpl/prog/en/modules/help/acqui/basket.tt:31
+#: intranet-tmpl/prog/en/modules/help/acqui/z3950_search.tt:8
 #, c-format
 msgid ""
 "From the results, click the Order link next to the item you want to purchase."
@@ -6190,8 +6465,8 @@ msgstr ""
 "تدخل المواد واحدة تلو الأخرى بداخل الصندوق أسفل أداة الرفع. عندما تكتمل "
 "عملية رفع ملفك أو قائمة باركوداتك يمكنك أن تنقر على 'استمر'."
 
-#: intranet-tmpl/prog/en/modules/help/acqui/z3950_search.tt:11
 #: intranet-tmpl/prog/en/modules/help/acqui/basket.tt:34
+#: intranet-tmpl/prog/en/modules/help/acqui/z3950_search.tt:11
 #, c-format
 msgid ""
 "From the warning, you can choose to order another copy on the existing bib "
@@ -6209,9 +6484,9 @@ msgid ""
 "you to choose the link relationship between the authorities."
 msgstr ""
 
+#: intranet-tmpl/prog/en/modules/help/acqui/orderreceive.tt:13
 #: intranet-tmpl/prog/en/modules/help/acqui/parcels.tt:13
 #: intranet-tmpl/prog/en/modules/help/acqui/parcel.tt:13
-#: intranet-tmpl/prog/en/modules/help/acqui/orderreceive.tt:13
 #, c-format
 msgid ""
 "From this form you can alter the cost information. You can also choose to "
@@ -6321,15 +6596,14 @@ msgstr "GREATER SUDBURY PUBLIC 216.223.90.51:210 INNOPAC"
 msgid "Generic"
 msgstr "عام"
 
-#: intranet-tmpl/prog/en/modules/help/admin/patron-attr-types.tt:8
 #: intranet-tmpl/prog/en/modules/help/tools/holidays.tt:13
 #: intranet-tmpl/prog/en/modules/help/tools/letter.tt:98
 #: intranet-tmpl/prog/en/modules/help/tools/letter.tt:246
+#: intranet-tmpl/prog/en/modules/help/admin/patron-attr-types.tt:8
 #, c-format
 msgid "Get there:"
 msgstr "الوصول إلى هناك:"
 
-#: intranet-tmpl/prog/en/modules/help/admin/patron-attr-types.tt:43
 #: intranet-tmpl/prog/en/modules/help/tools/holidays.tt:8
 #: intranet-tmpl/prog/en/modules/help/tools/letter.tt:109
 #: intranet-tmpl/prog/en/modules/help/tools/letter.tt:110
@@ -6347,6 +6621,7 @@ msgstr "الوصول إلى هناك:"
 #: intranet-tmpl/prog/en/modules/help/tools/letter.tt:218
 #: intranet-tmpl/prog/en/modules/help/tools/letter.tt:234
 #: intranet-tmpl/prog/en/modules/help/tools/letter.tt:235
+#: intranet-tmpl/prog/en/modules/help/admin/patron-attr-types.tt:43
 #, c-format
 msgid "Get there: "
 msgstr "الوصول إلى هناك: "
@@ -6357,6 +6632,11 @@ msgid ""
 "Get there: More &gt; Administration &gt; Global System Preferences &gt; Admin"
 msgstr ""
 "الوصول إلى هناك: المزيد &gt; الإدارة &gt; تفضيلات النظام العامة &gt; الإدارة"
+
+#: intranet-tmpl/prog/en/modules/help/reports/okm_reports.tt:56
+#, c-format
+msgid "Give me statistics, or give me death!"
+msgstr ""
 
 #: intranet-tmpl/prog/en/modules/help/admin/admin-home.tt:7
 #, c-format
@@ -6537,10 +6817,22 @@ msgstr "حجوزات للسحب"
 msgid "Holidays calendar"
 msgstr "العطل والتقويم"
 
+#: intranet-tmpl/prog/en/modules/help/cataloguing/batchOverlay.tt:38
+#, c-format
+msgid "How this all actually works?"
+msgstr ""
+
 #: intranet-tmpl/prog/en/modules/help/admin/fieldmapping.tt:13
 #, c-format
 msgid "However the subtitle for DVDs appears in 245$p"
 msgstr "على أية حال العنوان الفرعي لِ الـDVDs  يعرض في الحقل الفرعي 245$p"
+
+#: intranet-tmpl/prog/en/modules/help/reports/okm_reports.tt:38
+#, c-format
+msgid ""
+"However, if the acquisitions-module is not used, the Item is considered "
+"acquired if it has been added to the collection on the given timeframe."
+msgstr ""
 
 #: intranet-tmpl/prog/en/modules/help/mainpage.tt:2
 #, c-format
@@ -6820,8 +7112,8 @@ msgstr ""
 "يسار صندوق الإعارة مما يُسهل لأمين المكتبة الذي يُعير أن يعرف بوجود مواد أخرى "
 "يجب أن نعطيها للمستفيد."
 
-#: intranet-tmpl/prog/en/modules/help/members/moremember.tt:67
 #: intranet-tmpl/prog/en/modules/help/members/purchase-suggestions.tt:5
+#: intranet-tmpl/prog/en/modules/help/members/moremember.tt:67
 #, c-format
 msgid ""
 "If the patron has made any purchase suggestions you will see a purchase "
@@ -7105,8 +7397,8 @@ msgid ""
 msgstr ""
 "اذا اخترت عن غير قصد فهرس المستفيد الخطأ في البداية يمكنك اصلاح ذلك هنا"
 
-#: intranet-tmpl/prog/en/modules/help/members/paycollect.tt:53
 #: intranet-tmpl/prog/en/modules/help/members/pay.tt:53
+#: intranet-tmpl/prog/en/modules/help/members/paycollect.tt:53
 #, c-format
 msgid ""
 "If you accidentally mark and item as paid, you can reverse that line item by "
@@ -7254,7 +7546,7 @@ msgstr ""
 "اذا كنت تتلقى اصدارات عديدة في آن واحد, أو قد وضعت علامة على اصدارة كـ "
 "'متأحر' أو 'مفقود' هناك بإمكانك نقر زر 'انشاء التالي' أسفل قائمة الاصدارات."
 
-#: intranet-tmpl/prog/en/modules/help/tools/overduerules.tt:38
+#: intranet-tmpl/prog/en/modules/help/tools/overduerules.tt:39
 #, c-format
 msgid ""
 "If you believe you have returned the items below please call at and library "
@@ -7383,18 +7675,18 @@ msgstr ""
 "النموذج الذي يظهر سوف يسمح لك بإدخال كافة التفاصيل اللازمة فيما يتعلق "
 "بالتسجيلة الإستنادية الخاص بك."
 
-#: intranet-tmpl/prog/en/modules/help/reports/issues_stats.tt:7
 #: intranet-tmpl/prog/en/modules/help/reports/manager.tt:7
-#: intranet-tmpl/prog/en/modules/help/reports/issues_avg_stats.tt:7
-#: intranet-tmpl/prog/en/modules/help/reports/borrowers_out.tt:7
 #: intranet-tmpl/prog/en/modules/help/reports/reserves_stats.tt:9
-#: intranet-tmpl/prog/en/modules/help/reports/catalogue_out.tt:7
+#: intranet-tmpl/prog/en/modules/help/reports/cat_issues_top.tt:7
+#: intranet-tmpl/prog/en/modules/help/reports/issues_avg_stats.tt:7
+#: intranet-tmpl/prog/en/modules/help/reports/issues_stats.tt:7
+#: intranet-tmpl/prog/en/modules/help/reports/borrowers_stats.tt:7
+#: intranet-tmpl/prog/en/modules/help/reports/acquisitions_stats.tt:7
+#: intranet-tmpl/prog/en/modules/help/reports/serials_stats.tt:7
 #: intranet-tmpl/prog/en/modules/help/reports/catalogue_stats.tt:7
 #: intranet-tmpl/prog/en/modules/help/reports/bor_issues_top.tt:7
-#: intranet-tmpl/prog/en/modules/help/reports/serials_stats.tt:7
-#: intranet-tmpl/prog/en/modules/help/reports/acquisitions_stats.tt:7
-#: intranet-tmpl/prog/en/modules/help/reports/borrowers_stats.tt:7
-#: intranet-tmpl/prog/en/modules/help/reports/cat_issues_top.tt:7
+#: intranet-tmpl/prog/en/modules/help/reports/borrowers_out.tt:7
+#: intranet-tmpl/prog/en/modules/help/reports/catalogue_out.tt:7
 #, c-format
 msgid ""
 "If you choose to output to the browser your results will print to the screen."
@@ -7669,7 +7961,7 @@ msgid ""
 "another attribute value."
 msgstr ""
 
-#: intranet-tmpl/prog/en/modules/help/tools/overduerules.tt:36
+#: intranet-tmpl/prog/en/modules/help/tools/overduerules.tt:37
 #, c-format
 msgid ""
 "If you have registered a password with the library, you may use it with your "
@@ -7820,8 +8112,8 @@ msgstr ""
 "اذا كنت تخطط لكتابة اشعار أو قسيمة في HTML تحقق من مربع 'HTML Message', وإلا "
 "سيُنشئ المحتوى منص عادي"
 
-#: intranet-tmpl/prog/en/modules/help/members/files.tt:5
 #: intranet-tmpl/prog/en/modules/help/members/moremember.tt:59
+#: intranet-tmpl/prog/en/modules/help/members/files.tt:5
 #, c-format
 msgid ""
 "If you set the EnableBorrowerFiles preference to 'Do' the Files tab will be "
@@ -8458,8 +8750,8 @@ msgstr ""
 "هام: من أجل أن تُرسل اشعارات التأخير للمستفيدين، تحتاج لأن تُعيّن فئة المستفيد "
 "إلى طلب اشعارات التأخير."
 
-#: intranet-tmpl/prog/en/modules/help/cataloguing/merge.tt:19
 #: intranet-tmpl/prog/en/modules/help/virtualshelves/shelves.tt:68
+#: intranet-tmpl/prog/en/modules/help/cataloguing/merge.tt:19
 #, c-format
 msgid ""
 "Important: It is important to rebuild your zebra index immediately after "
@@ -9016,6 +9308,11 @@ msgstr ""
 "في نتائجك سترى كل الاشتراكات التي ستنتهي قبل التاريخ المُدخَل. من هناك يمكنك "
 "أن تختار لعرض الاشتراك أو لتجدده بنقرة واحدة."
 
+#: intranet-tmpl/prog/en/modules/help/reports/okm_reports.tt:13
+#, c-format
+msgid "Institutional libraries"
+msgstr ""
+
 #: intranet-tmpl/prog/en/modules/help/admin/marc_subfields_structure.tt:62
 #, fuzzy, c-format
 msgid "Intranet"
@@ -9047,6 +9344,18 @@ msgstr ""
 msgid "Is a url "
 msgstr "هو عنوان url "
 
+#: intranet-tmpl/prog/en/modules/help/reports/okm_reports.tt:41
+#, fuzzy, c-format
+msgid "Issues"
+msgstr "عدد"
+
+#: intranet-tmpl/prog/en/modules/help/reports/okm_reports.tt:42
+#, c-format
+msgid ""
+"Issues are direct check-outs or renewals for material from our collection, "
+"given to our civilian borrowers (not ILL's or internal library use)."
+msgstr ""
+
 #: intranet-tmpl/prog/en/modules/help/serials/serials-edit.tt:5
 #, c-format
 msgid ""
@@ -9057,6 +9366,16 @@ msgstr ""
 " من الممكن أن تعلَّم الأعداد على أنها مستلمة من عدة أماكن. للعثور على اشتراك ، "
 "استخدم مربع البحث في أعلى صفحة الدوريات لتبحث عن الدورية التي ترغب في استلام "
 "اعداداً لها"
+
+#: intranet-tmpl/prog/en/modules/help/reports/okm_reports.tt:53
+#, c-format
+msgid "Issues for deleted Items are calculated normally."
+msgstr ""
+
+#: intranet-tmpl/prog/en/modules/help/reports/okm_reports.tt:44
+#, c-format
+msgid "Issues for deleted items are included to the statistics as well."
+msgstr ""
 
 #: intranet-tmpl/prog/en/modules/help/serials/subscription-numberpatterns.tt:9
 #, c-format
@@ -9256,6 +9575,11 @@ msgstr ""
 msgid "Items with no checkouts"
 msgstr "مواد بدون إعارات"
 
+#: intranet-tmpl/prog/en/modules/help/reports/okm_reports.tt:29
+#, c-format
+msgid "Juvenile material"
+msgstr ""
+
 #: intranet-tmpl/prog/en/modules/help/admin/fieldmapping.tt:3
 #, c-format
 msgid "Keyword to MARC Mapping"
@@ -9291,8 +9615,8 @@ msgstr ""
 "كان لديك أعداد متأخرة . على يمين الصفحة الرئيسية للدوريات توجد وصلة إلى "
 "'المطالبات'"
 
-#: intranet-tmpl/prog/en/modules/help/members/moremember.tt:81
 #: intranet-tmpl/prog/en/modules/help/members/member-password.tt:8
+#: intranet-tmpl/prog/en/modules/help/members/moremember.tt:81
 #, c-format
 msgid ""
 "Koha cannot display existing passwords. Leave the field blank to leave "
@@ -9541,16 +9865,21 @@ msgstr ""
 msgid "Label Creator"
 msgstr "منشئ الملصقات"
 
-#: intranet-tmpl/prog/en/modules/help/patroncards/edit-layout.tt:3
+#: intranet-tmpl/prog/en/modules/help/reports/okm_reports.tt:20
+#, fuzzy, c-format
+msgid "Languages"
+msgstr "إدارة الصور"
+
 #: intranet-tmpl/prog/en/modules/help/patroncards/manage.tt:3
+#: intranet-tmpl/prog/en/modules/help/patroncards/edit-layout.tt:3
 #: intranet-tmpl/prog/en/modules/help/labels/label-edit-layout.tt:3
 #: intranet-tmpl/prog/en/modules/help/labels/label-home.tt:36
 #, c-format
 msgid "Layouts"
 msgstr "الأشكال"
 
-#: intranet-tmpl/prog/en/modules/help/members/moremember.tt:71
 #: intranet-tmpl/prog/en/modules/help/members/purchase-suggestions.tt:9
+#: intranet-tmpl/prog/en/modules/help/members/moremember.tt:71
 #, fuzzy, c-format
 msgid ""
 "Learn more about Purchase suggestions in the Acquisitions chapter of the "
@@ -9584,6 +9913,11 @@ msgstr "الطول: 0"
 #: intranet-tmpl/prog/en/modules/help/admin/branches.tt:3
 #, c-format
 msgid "Libraries &amp; Groups"
+msgstr "المكتبات &amp; المجموعات"
+
+#: intranet-tmpl/prog/en/modules/help/reports/okm_reports.tt:5
+#, fuzzy, c-format
+msgid "Libraries and library groups"
 msgstr "المكتبات &amp; المجموعات"
 
 #: intranet-tmpl/prog/en/modules/help/admin/item_circulation_alerts.tt:5
@@ -9627,6 +9961,21 @@ msgstr "مجموعات الممتلكات للمكتبة"
 #, c-format
 msgid "Library Transfer Limits"
 msgstr "حدود النقل بالمكتبة"
+
+#: intranet-tmpl/prog/en/modules/help/reports/okm_reports.tt:7
+#, c-format
+msgid ""
+"Library groups are defined in the \"Libraries and groups\"-page (admin/"
+"branches.pl)."
+msgstr ""
+
+#: intranet-tmpl/prog/en/modules/help/reports/okm_reports.tt:7
+#, c-format
+msgid ""
+"Library groups that are statistical OKM groups are named as &lt;"
+"group_code&gt;_OKM. For ex. JOE_OKM, VAL_OKM, JUU_OKM. Only libraries that "
+"are in the properly named statistical groups are included in the statistics."
+msgstr ""
 
 #: intranet-tmpl/prog/en/modules/help/tools/holidays.tt:28
 #, c-format
@@ -9788,6 +10137,11 @@ msgstr "إستيراد مارك"
 #, c-format
 msgid "MILTON PL cat.mpl.on.ca:210 horizon"
 msgstr "MILTON PL cat.mpl.on.ca:210 horizon"
+
+#: intranet-tmpl/prog/en/modules/help/reports/okm_reports.tt:9
+#, c-format
+msgid "Main libraries"
+msgstr ""
 
 #: intranet-tmpl/prog/en/modules/help/tools/picture-upload.tt:11
 #, c-format
@@ -10089,6 +10443,11 @@ msgstr ""
 msgid "Moving items"
 msgstr "نقل المواد"
 
+#: intranet-tmpl/prog/en/modules/help/reports/okm_reports.tt:34
+#, fuzzy, c-format
+msgid "Musical recording"
+msgstr "mus:j تسجيل موسيقي"
+
 #: intranet-tmpl/prog/en/modules/help/reports/guided_reports.tt:124
 #, fuzzy, c-format
 msgid "N = New card"
@@ -10238,7 +10597,7 @@ msgstr ""
 "دواتر دەتوانیت ئەوە هەڵبژێریت کە ئایە ئەم ڕووداوە ڕووداوێکی یەک جارەیە یاخود "
 "دووبارەبووەیە "
 
-#: intranet-tmpl/prog/en/modules/help/tools/overduerules.tt:22
+#: intranet-tmpl/prog/en/modules/help/tools/overduerules.tt:23
 #, c-format
 msgid ""
 "Next you can choose the delivery method for the overdue notice. You can "
@@ -10300,7 +10659,7 @@ msgstr ""
 msgid "Next, you can set up a Feed template"
 msgstr ""
 
-#: intranet-tmpl/prog/en/modules/help/tools/overduerules.tt:28
+#: intranet-tmpl/prog/en/modules/help/tools/overduerules.tt:29
 #, c-format
 msgid "Nicole Engard "
 msgstr "Nicole Engard "
@@ -10335,10 +10694,10 @@ msgstr "تێبینی"
 
 #: intranet-tmpl/prog/en/modules/help/tools/quotes-upload.tt:17
 #: intranet-tmpl/prog/en/modules/help/tools/quotes-upload.tt:38
+#: intranet-tmpl/prog/en/modules/help/reports/reserves_stats.tt:5
+#: intranet-tmpl/prog/en/modules/help/members/memberentry.tt:57
 #: intranet-tmpl/prog/en/modules/help/acqui/lateorders.tt:9
 #: intranet-tmpl/prog/en/modules/help/acqui/lateorders.tt:15
-#: intranet-tmpl/prog/en/modules/help/members/memberentry.tt:57
-#: intranet-tmpl/prog/en/modules/help/reports/reserves_stats.tt:5
 #, c-format
 msgid "Note:"
 msgstr "تێبینی :"
@@ -10401,6 +10760,11 @@ msgstr "کاری شێوەپێدانی نەخشەکان دەکات OAI-PMH"
 #, c-format
 msgid "ODUE (Overdue Notice) "
 msgstr "ODUE (تێبینی دواخراو) "
+
+#: intranet-tmpl/prog/en/modules/help/reports/okm_reports.tt:3
+#, c-format
+msgid "OKM annual reports"
+msgstr ""
 
 #: intranet-tmpl/prog/en/modules/help/admin/marc_subfields_structure.tt:61
 #, c-format
@@ -10600,8 +10964,8 @@ msgid ""
 "summary."
 msgstr "من هنا يمكنك أن تحرر أو تحذف المواد التي قمت بإضافتها."
 
-#: intranet-tmpl/prog/en/modules/help/members/paycollect.tt:55
 #: intranet-tmpl/prog/en/modules/help/members/pay.tt:55
+#: intranet-tmpl/prog/en/modules/help/members/paycollect.tt:55
 #, c-format
 msgid ""
 "Once clicked a new line item will be added to the account, showing the "
@@ -11219,9 +11583,9 @@ msgid ""
 "suggestions' page in the OPAC."
 msgstr ""
 
+#: intranet-tmpl/prog/en/modules/help/acqui/orderreceive.tt:5
 #: intranet-tmpl/prog/en/modules/help/acqui/parcels.tt:5
 #: intranet-tmpl/prog/en/modules/help/acqui/parcel.tt:5
-#: intranet-tmpl/prog/en/modules/help/acqui/orderreceive.tt:5
 #, c-format
 msgid ""
 "Orders can be received from the vendor information page or the vendor search "
@@ -11250,6 +11614,11 @@ msgid ""
 msgstr ""
 "خوێنەرە ڕێکخراوەیەکان ڕێکخراون. ڕێکخراوەکان دەتوانن ببنە کەفیلی خوێنەرە "
 "شارەزاکان."
+
+#: intranet-tmpl/prog/en/modules/help/reports/okm_reports.tt:25
+#, c-format
+msgid "Other language material"
+msgstr ""
 
 #: intranet-tmpl/prog/en/modules/help/admin/classsources.tt:20
 #, c-format
@@ -11475,8 +11844,8 @@ msgstr "إدارة توجيه القوائم"
 msgid "Patron search"
 msgstr "گەڕنی خوێنەر"
 
-#: intranet-tmpl/prog/en/modules/help/members/statistics.tt:3
 #: intranet-tmpl/prog/en/modules/help/reports/borrowers_stats.tt:3
+#: intranet-tmpl/prog/en/modules/help/members/statistics.tt:3
 #, fuzzy, c-format
 msgid "Patron statistics"
 msgstr "ئامارەکانی خوێنەران"
@@ -11551,32 +11920,32 @@ msgstr "خوێنەرانی ناو جۆری ستاف دەستیان دەگات ب
 msgid "Patrons:"
 msgstr "خوێنەران:"
 
-#: intranet-tmpl/prog/en/modules/help/members/paycollect.tt:33
 #: intranet-tmpl/prog/en/modules/help/members/pay.tt:33
+#: intranet-tmpl/prog/en/modules/help/members/paycollect.tt:33
 #, c-format
 msgid "Pay Selected fines "
 msgstr "سەرپێچیە دەستیشانکراوەکان بدە "
 
-#: intranet-tmpl/prog/en/modules/help/members/paycollect.tt:9
 #: intranet-tmpl/prog/en/modules/help/members/pay.tt:9
+#: intranet-tmpl/prog/en/modules/help/members/paycollect.tt:9
 #, c-format
 msgid "Pay a fine in full "
 msgstr "سەرپێچیەکە بە تەواوەتی بدە "
 
-#: intranet-tmpl/prog/en/modules/help/members/paycollect.tt:17
 #: intranet-tmpl/prog/en/modules/help/members/pay.tt:17
+#: intranet-tmpl/prog/en/modules/help/members/paycollect.tt:17
 #, c-format
 msgid "Pay a partial fine "
 msgstr "سەرپێچیەکی نیوەقیمەت بدە "
 
-#: intranet-tmpl/prog/en/modules/help/members/paycollect.tt:25
 #: intranet-tmpl/prog/en/modules/help/members/pay.tt:25
+#: intranet-tmpl/prog/en/modules/help/members/paycollect.tt:25
 #, c-format
 msgid "Pay an amount towards all fines "
 msgstr "بڕێک لە هەموو سەرپێچیەکان بدە "
 
-#: intranet-tmpl/prog/en/modules/help/members/paycollect.tt:3
 #: intranet-tmpl/prog/en/modules/help/members/pay.tt:3
+#: intranet-tmpl/prog/en/modules/help/members/paycollect.tt:3
 #, c-format
 msgid "Pay and Writeoff Fines"
 msgstr "سەرپێچیەکان بدە و بیان سڕەوە"
@@ -11608,7 +11977,7 @@ msgstr ""
 msgid "Perl modules"
 msgstr "یەکەکانی پێڕڵ"
 
-#: intranet-tmpl/prog/en/modules/help/tools/overduerules.tt:30
+#: intranet-tmpl/prog/en/modules/help/tools/overduerules.tt:31
 #, c-format
 msgid "Philadelphia, PA 19107"
 msgstr "فیلادلفیا, PA 19107"
@@ -11837,9 +12206,9 @@ msgstr "استلام السلاسل بقائمة الاشتراكات"
 msgid "Receiving Holds"
 msgstr "وەرگرتنی نۆرەبۆگرتنەکان"
 
+#: intranet-tmpl/prog/en/modules/help/acqui/orderreceive.tt:3
 #: intranet-tmpl/prog/en/modules/help/acqui/parcels.tt:3
 #: intranet-tmpl/prog/en/modules/help/acqui/parcel.tt:3
-#: intranet-tmpl/prog/en/modules/help/acqui/orderreceive.tt:3
 #, c-format
 msgid "Receiving Orders"
 msgstr "وەرگرتنی داواکاریەکان"
@@ -12024,8 +12393,8 @@ msgstr ""
 msgid "Routing"
 msgstr "ئاراستەکردن"
 
-#: intranet-tmpl/prog/en/modules/help/serials/routing.tt:3
 #: intranet-tmpl/prog/en/modules/help/members/moremember.tt:28
+#: intranet-tmpl/prog/en/modules/help/serials/routing.tt:3
 #, c-format
 msgid "Routing Lists"
 msgstr "لیستەکانی ئاراستەکردن"
@@ -12069,7 +12438,7 @@ msgstr ""
 msgid "Salutation is populated by the BorrowersTitles system preference"
 msgstr "التحية يتم ملؤها بواسطة تفضيل النظام BorrowersTitles ."
 
-#: intranet-tmpl/prog/en/modules/help/tools/overduerules.tt:26
+#: intranet-tmpl/prog/en/modules/help/tools/overduerules.tt:27
 #, c-format
 msgid "Sample Overdue Notice"
 msgstr "نموونەی ئاگاداری دواکەوتن"
@@ -12162,7 +12531,7 @@ msgstr "بحث الأنواع الفرعية في برنامج العميل"
 msgid "Searching:"
 msgstr "البحث:"
 
-#: intranet-tmpl/prog/en/modules/help/tools/overduerules.tt:23
+#: intranet-tmpl/prog/en/modules/help/tools/overduerules.tt:24
 #, c-format
 msgid "See a Sample Overdue Notice"
 msgstr "انظر عينة إشعار التأخير"
@@ -12213,12 +12582,12 @@ msgstr "انظر إلى التوثيق الكامل للإشعارات "
 msgid "See the full documentation for Anonymizing Patrons in the "
 msgstr "انظر إلى التوثيق الكامل للمستفيدين مجهولي الهوية "
 
-#: intranet-tmpl/prog/en/modules/help/admin/authtypes.tt:9
-#: intranet-tmpl/prog/en/modules/help/admin/auth_tag_structure.tt:22
-#: intranet-tmpl/prog/en/modules/help/admin/auth_subfields_structure.tt:66
 #: intranet-tmpl/prog/en/modules/help/authorities/authorities-home.tt:17
 #: intranet-tmpl/prog/en/modules/help/authorities/authorities.tt:29
 #: intranet-tmpl/prog/en/modules/help/authorities/detail.tt:17
+#: intranet-tmpl/prog/en/modules/help/admin/authtypes.tt:9
+#: intranet-tmpl/prog/en/modules/help/admin/auth_subfields_structure.tt:66
+#: intranet-tmpl/prog/en/modules/help/admin/auth_tag_structure.tt:22
 #, c-format
 msgid "See the full documentation for Authorities in the "
 msgstr "انظر إلى التوثيق الكامل للاستنادات في "
@@ -12525,13 +12894,13 @@ msgstr "انظر إلى التوثيق الكامل لمجموعات OAI في "
 msgid "See the full documentation for Offline Circulation in the "
 msgstr "انظر إلى التوثيق الكامل للإعارة في "
 
-#: intranet-tmpl/prog/en/modules/help/acqui/z3950_search.tt:17
-#: intranet-tmpl/prog/en/modules/help/acqui/neworderbiblio.tt:12
-#: intranet-tmpl/prog/en/modules/help/acqui/addorderiso2709.tt:22
-#: intranet-tmpl/prog/en/modules/help/acqui/basketheader.tt:21
-#: intranet-tmpl/prog/en/modules/help/acqui/neworderempty.tt:11
 #: intranet-tmpl/prog/en/modules/help/acqui/newordersuggestion.tt:17
+#: intranet-tmpl/prog/en/modules/help/acqui/neworderbiblio.tt:12
+#: intranet-tmpl/prog/en/modules/help/acqui/neworderempty.tt:11
 #: intranet-tmpl/prog/en/modules/help/acqui/basket.tt:109
+#: intranet-tmpl/prog/en/modules/help/acqui/z3950_search.tt:17
+#: intranet-tmpl/prog/en/modules/help/acqui/basketheader.tt:21
+#: intranet-tmpl/prog/en/modules/help/acqui/addorderiso2709.tt:22
 #, c-format
 msgid "See the full documentation for Ordering in the "
 msgstr "انظر إلى التوثيق الكامل للطلبات "
@@ -12591,8 +12960,8 @@ msgstr "انظر إلى التوثيق الكامل لصلاحيات المست�
 msgid "See the full documentation for Patron Search in the "
 msgstr "انظر إلى التوثيق الكامل لبحث المستفيد "
 
-#: intranet-tmpl/prog/en/modules/help/members/statistics.tt:7
 #: intranet-tmpl/prog/en/modules/help/reports/borrowers_stats.tt:11
+#: intranet-tmpl/prog/en/modules/help/members/statistics.tt:7
 #, c-format
 msgid "See the full documentation for Patron Statistics in the "
 msgstr "انظر إلى التوثيق الكامل لإحصاءات السمتفيد "
@@ -12602,8 +12971,8 @@ msgstr "انظر إلى التوثيق الكامل لإحصاءات السمت�
 msgid "See the full documentation for Patron routing lists in the "
 msgstr "انظر إلى التوثيق الكامل لقوائم التمرير "
 
-#: intranet-tmpl/prog/en/modules/help/members/paycollect.tt:60
 #: intranet-tmpl/prog/en/modules/help/members/pay.tt:60
+#: intranet-tmpl/prog/en/modules/help/members/paycollect.tt:60
 #, c-format
 msgid "See the full documentation for Paying Fines in the "
 msgstr "انظر إلى التوثيق الكامل للغرامات المدفوعة "
@@ -12618,9 +12987,9 @@ msgstr "انظر إلى التوثيق الكامل لمقترحات الشرا�
 msgid "See the full documentation for Quick Spine Label Creator in the "
 msgstr "انظر إلى التوثيق الكامل للمنشئ السريع للصاقات كعب الكتاب "
 
+#: intranet-tmpl/prog/en/modules/help/acqui/orderreceive.tt:21
 #: intranet-tmpl/prog/en/modules/help/acqui/parcels.tt:21
 #: intranet-tmpl/prog/en/modules/help/acqui/parcel.tt:21
-#: intranet-tmpl/prog/en/modules/help/acqui/orderreceive.tt:21
 #, c-format
 msgid "See the full documentation for Receiving Orders in the "
 msgstr "انظر إلى التوثيق الكامل لاستلام الطلبات في "
@@ -12675,9 +13044,9 @@ msgstr "انظر إلى التوثيق الكامل للمستفيدين الم�
 msgid "See the full documentation for Serials Statistics in the "
 msgstr "انظر إلى التوثيق الكامل لإحصاءات السلاسل "
 
-#: intranet-tmpl/prog/en/modules/help/serials/serials-home.tt:9
 #: intranet-tmpl/prog/en/modules/help/serials/serials-collection.tt:13
 #: intranet-tmpl/prog/en/modules/help/serials/subscription-detail.tt:9
+#: intranet-tmpl/prog/en/modules/help/serials/serials-home.tt:9
 #, c-format
 msgid "See the full documentation for Serials in the "
 msgstr "انظر إلى التوثيق الكامل للسلاسل "
@@ -12693,8 +13062,8 @@ msgstr "انظر إلى التوثيق الكامل لإعدادات مكتبت�
 msgid "See the full documentation for System Preferences in the "
 msgstr "انظر إلى التوثيق الكامل لتفضيلات النظام في "
 
-#: intranet-tmpl/prog/en/modules/help/tags/review.tt:23
 #: intranet-tmpl/prog/en/modules/help/tags/list.tt:9
+#: intranet-tmpl/prog/en/modules/help/tags/review.tt:23
 #, c-format
 msgid "See the full documentation for Tag Moderation in the "
 msgstr "انظر إلى التوثيق الكامل للأوسمة المعدلة "
@@ -12838,7 +13207,7 @@ msgid ""
 "See the full documentation for the Most Circulation Items report in the "
 msgstr "انظر إلى التوثيق الكامل تقرير المواد الأكثر إعارةً "
 
-#: intranet-tmpl/prog/en/modules/help/tools/overduerules.tt:48
+#: intranet-tmpl/prog/en/modules/help/tools/overduerules.tt:49
 #, c-format
 msgid ""
 "See the full documentation for the Overdue Notice/Status Triggers in the "
@@ -12849,8 +13218,8 @@ msgstr "انظر إلى التوثيق الكامل لإشعار التأخير/
 msgid "See the full documentation for the Patron Card Batches in the "
 msgstr "انظر إلى التوثيق الكامل لدفعات بطاقة المستفيد "
 
-#: intranet-tmpl/prog/en/modules/help/patroncards/home.tt:20
 #: intranet-tmpl/prog/en/modules/help/patroncards/manage.tt:19
+#: intranet-tmpl/prog/en/modules/help/patroncards/home.tt:20
 #, c-format
 msgid "See the full documentation for the Patron Card Creator in the "
 msgstr "انظر إلى التوثيق الكامل لمنشئ بطاقة المستفيد "
@@ -12976,6 +13345,7 @@ msgstr "إستلام الدورية"
 msgid "Serial Numbering Patterns"
 msgstr ""
 
+#: intranet-tmpl/prog/en/modules/help/reports/okm_reports.tt:47
 #: intranet-tmpl/prog/en/modules/help/admin/preferences.tt:31
 #: intranet-tmpl/prog/en/modules/help/serials/serials-home.tt:3
 #, c-format
@@ -12996,6 +13366,13 @@ msgstr "إستلام الدورية"
 #, fuzzy, c-format
 msgid "Serials statistics"
 msgstr "إحصائيات الدوريات"
+
+#: intranet-tmpl/prog/en/modules/help/reports/okm_reports.tt:48
+#, c-format
+msgid ""
+"Serials, itemtypes 'AL' & 'SL', are excluded from the collection, discards "
+"and acquisitions statistics. They are included in the total issues."
+msgstr ""
 
 #: intranet-tmpl/prog/en/modules/help/about.tt:7
 #, c-format
@@ -13044,8 +13421,8 @@ msgstr "تنصيب الرسائل"
 msgid "Setup"
 msgstr ""
 
-#: intranet-tmpl/prog/en/modules/help/cataloguing/merge.tt:13
 #: intranet-tmpl/prog/en/modules/help/virtualshelves/shelves.tt:64
+#: intranet-tmpl/prog/en/modules/help/cataloguing/merge.tt:13
 #, c-format
 msgid ""
 "Should you try to add a field that is not repeatable two times (like "
@@ -13062,7 +13439,17 @@ msgid ""
 msgstr ""
 "بكل بساطة ادخل رقم التسلسلي للمادة التي تريد أن تنقلها واضغط على 'اختر'"
 
-#: intranet-tmpl/prog/en/modules/help/tools/overduerules.tt:46
+#: intranet-tmpl/prog/en/modules/help/cataloguing/batchOverlay.tt:9
+#, c-format
+msgid ""
+"Simply read barcodes into the large white text area on the left. The barcode "
+"can be anything in the item you are holding, but it must be present in the "
+"MARC-record. Each row represents a separate overlaying action so separate "
+"barcodes with new lines. Actually this should happen automatically when you "
+"read a barcode."
+msgstr ""
+
+#: intranet-tmpl/prog/en/modules/help/tools/overduerules.tt:47
 #, c-format
 msgid "Sincerely, Library Staff"
 msgstr "مع خالص التقدير، موظفي المكتبة"
@@ -13179,6 +13566,11 @@ msgstr ""
 "مصدر التصنيف أو خطة الترفيف هي من فئات القيم الإستنادية ، والتي عُيِنَت إلى "
 "الحقل 942$2 في القوالب الببليوغرافية لكوها."
 
+#: intranet-tmpl/prog/en/modules/help/reports/okm_reports.tt:28
+#, fuzzy, c-format
+msgid "Special statistical markers"
+msgstr "إحصائيات الدوريات"
+
 #: intranet-tmpl/prog/en/modules/help/admin/categorie.tt:20
 #, c-format
 msgid "Staff "
@@ -13260,6 +13652,11 @@ msgstr "إحصائي "
 #, c-format
 msgid "Statistical = A patron type used solely for tracking in house usage "
 msgstr "إحصائي = هو فئة مستفيد يستخدم لمجرد تتبع مسار الاستخدام من المنزل "
+
+#: intranet-tmpl/prog/en/modules/help/reports/okm_reports.tt:6
+#, c-format
+msgid "Statistical OKM library groups"
+msgstr ""
 
 #: intranet-tmpl/prog/en/modules/help/reports/reports-home.tt:15
 #, c-format
@@ -13374,6 +13771,11 @@ msgstr "أهداف Z39.50 المقترحة"
 #, fuzzy, c-format
 msgid "Suggested Bibliographic Z39.50 Targets"
 msgstr "أهداف Z39.50 المقترحة"
+
+#: intranet-tmpl/prog/en/modules/help/reports/okm_reports.tt:23
+#, c-format
+msgid "Swedish material"
+msgstr ""
 
 #: intranet-tmpl/prog/en/modules/help/admin/preferences.tt:3
 #, c-format
@@ -13515,10 +13917,10 @@ msgstr ""
 "القالب سيتم ملؤه ما أن تكون قد اخترت القالب الذي سيتم تطبيقه على الملفات في "
 "التبويب نموذج تعديل القالب"
 
-#: intranet-tmpl/prog/en/modules/help/patroncards/edit-template.tt:3
 #: intranet-tmpl/prog/en/modules/help/patroncards/manage.tt:11
-#: intranet-tmpl/prog/en/modules/help/labels/label-edit-template.tt:3
+#: intranet-tmpl/prog/en/modules/help/patroncards/edit-template.tt:3
 #: intranet-tmpl/prog/en/modules/help/labels/label-home.tt:26
+#: intranet-tmpl/prog/en/modules/help/labels/label-edit-template.tt:3
 #, c-format
 msgid "Templates"
 msgstr "القوالب"
@@ -13538,6 +13940,17 @@ msgstr "النص ﻷمين المكتبة: "
 #, c-format
 msgid "The "
 msgstr "ال "
+
+#: intranet-tmpl/prog/en/modules/help/cataloguing/batchOverlay.tt:20
+#, c-format
+msgid ""
+"The \"Encoding level\" -report is used to find records still pending fully "
+"catalogued record overlay. The recommended levels are something less than 4. "
+"The acquisition records are of level 8 and the fully catalogued records are "
+"of level 4. The limit-input can be used to limit the returned results to "
+"make the report run faster. On large result sets the report might timeout "
+"the connection and fail. "
+msgstr ""
 
 #: intranet-tmpl/prog/en/modules/help/reports/guided_reports.tt:62
 #, c-format
@@ -14276,8 +14689,8 @@ msgstr ""
 "يتمنى المطورين من وحدة منشئ بطاقة المستفيد أن تجد هذه الأداة المفيدة للغاية. "
 "وأنت مدعو لتقديم أي طلبات تحسين فضلا عن أي خلل عبر Koha Project Bugzilla."
 
-#: intranet-tmpl/prog/en/modules/help/cataloguing/merge.tt:5
 #: intranet-tmpl/prog/en/modules/help/virtualshelves/shelves.tt:56
+#: intranet-tmpl/prog/en/modules/help/cataloguing/merge.tt:5
 #, c-format
 msgid ""
 "The easiest way to merge together duplicate bibliographic records is to add "
@@ -14315,16 +14728,16 @@ msgstr ""
 "الطريق النهائي لتلقي السلاسل هو من صفحة 'مجموعة السلاسل'. على الجانب الأيسر "
 "من الصفحة ملخص الإشتراك هناك قائمة مع وصلة الى 'مجموعة السلاسل'"
 
-#: intranet-tmpl/prog/en/modules/help/members/paycollect.tt:30
 #: intranet-tmpl/prog/en/modules/help/members/pay.tt:30
+#: intranet-tmpl/prog/en/modules/help/members/paycollect.tt:30
 #, c-format
 msgid ""
 "The fine totals will be updated with the payment applied to oldest fines "
 "first."
 msgstr "وسيتم تحديث مجاميع الغرامة مع دفع الغرامات المطبقة على الأقدم أولا."
 
-#: intranet-tmpl/prog/en/modules/help/members/paycollect.tt:38
 #: intranet-tmpl/prog/en/modules/help/members/pay.tt:38
+#: intranet-tmpl/prog/en/modules/help/members/paycollect.tt:38
 #, c-format
 msgid ""
 "The fine totals will be updated with the payment applied to the oldest "
@@ -14333,24 +14746,24 @@ msgstr ""
 "وسيتم تحديث مجاميع الغرامة مع دفع الغرامات المطبقة على الغرامات المحددة "
 "بالأقدم أولاً"
 
-#: intranet-tmpl/prog/en/modules/help/members/paycollect.tt:14
 #: intranet-tmpl/prog/en/modules/help/members/pay.tt:14
+#: intranet-tmpl/prog/en/modules/help/members/paycollect.tt:14
 #, c-format
 msgid ""
 "The fine will be removed from outstanding fines, and displayed as fully paid."
 msgstr ""
 "ستتم إزالة الغرامة من الغرامات الغير المسددة، وكما هو معروض مدفوعة بالكامل."
 
-#: intranet-tmpl/prog/en/modules/help/members/paycollect.tt:44
 #: intranet-tmpl/prog/en/modules/help/members/pay.tt:44
+#: intranet-tmpl/prog/en/modules/help/members/paycollect.tt:44
 #, c-format
 msgid ""
 "The fine will be removed from outstanding fines, and displayed as written "
 "off."
 msgstr "ستتم إزالة الغرامة من الغرامات الغير المسددة، وعرضها كما هو مكتوب."
 
-#: intranet-tmpl/prog/en/modules/help/members/paycollect.tt:22
 #: intranet-tmpl/prog/en/modules/help/members/pay.tt:22
+#: intranet-tmpl/prog/en/modules/help/members/paycollect.tt:22
 #, c-format
 msgid ""
 "The fine will be updated to show the original Amount, and the current Amount "
@@ -14362,7 +14775,7 @@ msgstr "وسيتم تحديث الغرامة لإظهار المبلغ الأص�
 msgid "The first section is for basic information about the vendor. "
 msgstr "القسم الأول من أجل المعلومات الأساسية حول الموّرد. "
 
-#: intranet-tmpl/prog/en/modules/help/tools/overduerules.tt:40
+#: intranet-tmpl/prog/en/modules/help/tools/overduerules.tt:41
 #, c-format
 msgid "The following item(s) are currently overdue:"
 msgstr "المواد (المادة) التالية هي حاليا المتأخرة:"
@@ -14395,8 +14808,8 @@ msgstr ""
 msgid "The form to edit the report will appear."
 msgstr "سيظهر نموذج تحرير المادة:"
 
-#: intranet-tmpl/prog/en/modules/help/members/paycollect.tt:12
 #: intranet-tmpl/prog/en/modules/help/members/pay.tt:12
+#: intranet-tmpl/prog/en/modules/help/members/paycollect.tt:12
 #, c-format
 msgid ""
 "The full amount of the fine will be populated for you in the \"Collect From "
@@ -14446,6 +14859,14 @@ msgid ""
 "007/02. Common values are:"
 msgstr ""
 "اسم الفهرس هو 'l-تنسيق' وهو فهرس موقعه 007/01 و 007/02. القيم العامة هي:"
+
+#: intranet-tmpl/prog/en/modules/help/reports/okm_reports.tt:43
+#, c-format
+msgid ""
+"The issue is counted for the library from where the issue was given. For "
+"renewals from the OPAC, the library is considered to be the Item's current "
+"holding branch."
+msgstr ""
 
 #: intranet-tmpl/prog/en/modules/help/cataloguing/additem.tt:7
 #, c-format
@@ -14641,6 +15062,14 @@ msgstr ""
 "الإعارة فإن كوها لا يمكنه العثور عليه، فإنه سيطالبك لاستخدام سريع الفهرسة "
 "لإضافة مادة إلى كوها وإعارتها."
 
+#: intranet-tmpl/prog/en/modules/help/cataloguing/batchOverlay.tt:48
+#, c-format
+msgid ""
+"The parent record overlaying is based on the preselected Matcher, which "
+"defines the (sub)fields to preserve from the old record. The Matcher can be "
+"easily configured from "
+msgstr ""
+
 #: intranet-tmpl/prog/en/modules/help/tools/letter.tt:232
 #, fuzzy, c-format
 msgid "The patron has requested to receive the checkout notice "
@@ -14684,8 +15113,8 @@ msgstr ""
 "الغرامات لا يعرض بيانات الغرامة ولكنه أيضاً يعرض رسوم العضوية، ورسوم الإيجار، "
 "والرسوم الاحتياطية وأية رسوم أخرى قد تكون لدى المستفيدين."
 
-#: intranet-tmpl/prog/en/modules/help/members/moremember.tt:49
 #: intranet-tmpl/prog/en/modules/help/members/notices.tt:5
+#: intranet-tmpl/prog/en/modules/help/members/moremember.tt:49
 #, c-format
 msgid ""
 "The patron's messaging preferences are set when adding or editing the "
@@ -14716,14 +15145,19 @@ msgid ""
 "saved."
 msgstr ""
 
+#: intranet-tmpl/prog/en/modules/help/reports/okm_reports.tt:60
+#, c-format
+msgid "The programmatic rules for statistical categorization"
+msgstr ""
+
 #: intranet-tmpl/prog/en/modules/help/tools/letter.tt:273
 #, c-format
 msgid "The quick slip only includes items that were checked out today"
 msgstr "القسيمة السريعة فقط تحتوي على المواد التي تم إعارتها اليوم"
 
+#: intranet-tmpl/prog/en/modules/help/acqui/orderreceive.tt:9
 #: intranet-tmpl/prog/en/modules/help/acqui/parcels.tt:9
 #: intranet-tmpl/prog/en/modules/help/acqui/parcel.tt:9
-#: intranet-tmpl/prog/en/modules/help/acqui/orderreceive.tt:9
 #, fuzzy, c-format
 msgid ""
 "The receive page will list all items still on order with the vendor "
@@ -14743,6 +15177,14 @@ msgstr ""
 #, c-format
 msgid "The record will open in the MARC editor"
 msgstr "فتح التسجيلة سوف يكون في تحرير المارك"
+
+#: intranet-tmpl/prog/en/modules/help/cataloguing/batchOverlay.tt:29
+#, c-format
+msgid ""
+"The record you are looking for doesn't exist in the Koha database (or you "
+"get too many results), try using a different query and test the results "
+"using basic keyword searching."
+msgstr ""
 
 #: intranet-tmpl/prog/en/modules/help/members/memberentry.tt:64
 #, c-format
@@ -14820,6 +15262,15 @@ msgstr ""
 "القسيمة أو الاستلام سوف يظهر المواد المعارة اليوم، فضلا عن المواد التي لا "
 "تزال معارة"
 
+#: intranet-tmpl/prog/en/modules/help/cataloguing/batchOverlay.tt:33
+#, c-format
+msgid ""
+"The standard identifier (EAN,ISBN,ISSN,...) is not correct. This is hard to "
+"fix, as the issue can be in our Koha database our in the external "
+"repository. Verify the standard identifier in our catalogue or try finding "
+"the record using title/author search."
+msgstr ""
+
 #: intranet-tmpl/prog/en/modules/help/suggestion/suggestion.tt:19
 #, c-format
 msgid ""
@@ -14893,6 +15344,15 @@ msgid ""
 "The vendor pull down only shows vendors with closed baskets that are late."
 msgstr ""
 "القائمة المنسدلة للموردين تظهر فقط الموردين ذوي السلال المغلقة التي تأخرت."
+
+#: intranet-tmpl/prog/en/modules/help/cataloguing/batchOverlay.tt:45
+#, c-format
+msgid ""
+"Then a search is performed on the external repository. Query is performed "
+"usually (in this order) EAN, ISBN or ISSN until a matching MARC record is "
+"found. If no record is found (or too many are found), then the cataloguer "
+"needs to take action to find the proper cataloguing resource."
+msgstr ""
 
 #: intranet-tmpl/prog/en/modules/help/reports/dictionary.tt:19
 #, c-format
@@ -15047,6 +15507,15 @@ msgstr ""
 "هذه القواعد فقط تذهب إلى موضع التنفيذ إذا تم تعيين UseBranchTransferLimits "
 "إلى تفضيل 'فرض'."
 
+#: intranet-tmpl/prog/en/modules/help/cataloguing/batchOverlay.tt:42
+#, c-format
+msgid ""
+"These searches should return only one result per row (query). From this "
+"result the cataloguing source(external repository) is decided based on the "
+"value in the field 003. Also the overlaying matcher and the possible "
+"component part matcher are decided based on preconfigured BatchOverlayRules."
+msgstr ""
+
 #: intranet-tmpl/prog/en/modules/help/tools/letter.tt:71
 #, fuzzy, c-format
 msgid ""
@@ -15117,8 +15586,8 @@ msgid ""
 "This flag can automatically be set with the Overdue/Notice StatusTriggers"
 msgstr "هذه الإشارة من الممكن أن تضبط بشكل تلقائي مع مطلق حالة إشعار/التأخير"
 
-#: intranet-tmpl/prog/en/modules/help/members/moremember.tt:82
 #: intranet-tmpl/prog/en/modules/help/members/member-password.tt:9
+#: intranet-tmpl/prog/en/modules/help/members/moremember.tt:82
 #, c-format
 msgid ""
 "This form can automatically generate a random password if you click the link "
@@ -15142,6 +15611,14 @@ msgstr ""
 msgid ""
 "This function allows for the selection and upload of a CSV file containing "
 "quotes."
+msgstr ""
+
+#: intranet-tmpl/prog/en/modules/help/reports/okm_reports.tt:57
+#, c-format
+msgid ""
+"This is a reference to a statement against foreign rule. A statement to "
+"resist being slowly bled dry by overseas bankers and monarchs. An equally "
+"valid quote during modern times."
 msgstr ""
 
 #: intranet-tmpl/prog/en/modules/help/circ/selectbranchprinter.tt:7
@@ -15628,6 +16105,13 @@ msgstr ""
 "LocalCoverImages و / أو تفضيلات OPACLocalCoverImages إلى 'عرض'. ويمكن تحميل "
 "الصور على دفعات، أو واحدا تلو الآخر."
 
+#: intranet-tmpl/prog/en/modules/help/cataloguing/batchOverlay.tt:8
+#, c-format
+msgid ""
+"This tools helps you to overlay large amounts of items quickly with the "
+"fully catalogued counterpart."
+msgstr ""
+
 #: intranet-tmpl/prog/en/modules/help/cataloguing/additem.tt:19
 #, c-format
 msgid ""
@@ -15715,10 +16199,10 @@ msgstr "يجب إدخال الوقت  مثل HH: MM  (2ساعة أرقام، أ�
 msgid "Tip"
 msgstr "نصيحة"
 
-#: intranet-tmpl/prog/en/modules/help/tools/marc_modification_templates.tt:51
 #: intranet-tmpl/prog/en/modules/help/tools/csv-profiles.tt:17
 #: intranet-tmpl/prog/en/modules/help/tools/csv-profiles.tt:32
 #: intranet-tmpl/prog/en/modules/help/tools/batchMod.tt:15
+#: intranet-tmpl/prog/en/modules/help/tools/marc_modification_templates.tt:51
 #: intranet-tmpl/prog/en/modules/help/suggestion/suggestion.tt:19
 #, c-format
 msgid "Tip:"
@@ -16519,9 +17003,9 @@ msgstr ""
 "لإعادة ترتيب أو حذف الحجوزات، يمكنك ببساطة الإختيار من القائمة المندسلة "
 "'الأولوية' أو النقر على الأسهم على يمين القائمة المندسلة للأولوية."
 
+#: intranet-tmpl/prog/en/modules/help/acqui/orderreceive.tt:11
 #: intranet-tmpl/prog/en/modules/help/acqui/parcels.tt:11
 #: intranet-tmpl/prog/en/modules/help/acqui/parcel.tt:11
-#: intranet-tmpl/prog/en/modules/help/acqui/orderreceive.tt:11
 #, c-format
 msgid ""
 "To receive a specific item, click the 'Receive' link to the right of the "
@@ -16639,6 +17123,13 @@ msgid "To set preferences for all libraries, keep the menu set to 'Default'"
 msgstr ""
 "لضبط التفضيلات لجميع المكتبات، والحفاظ على القائمة  من خلال التعيين "
 "على'افتراضي'"
+
+#: intranet-tmpl/prog/en/modules/help/reports/okm_reports.tt:31
+#, c-format
+msgid ""
+"To set the icons go to \"Authorized values\"-page (admin/authorised_values."
+"pl) and edit the LOC-category."
+msgstr ""
 
 #: intranet-tmpl/prog/en/modules/help/serials/subscription-add.tt:34
 #, c-format
@@ -16827,6 +17318,11 @@ msgstr ""
 msgid "Troubleshooting"
 msgstr "أستكشاف الخطأ و إصلاحه"
 
+#: intranet-tmpl/prog/en/modules/help/cataloguing/batchOverlay.tt:27
+#, c-format
+msgid "Typical error scenarios"
+msgstr ""
+
 #: intranet-tmpl/prog/en/modules/help/acqui/uncertainprice.tt:3
 #, c-format
 msgid "Uncertain prices"
@@ -17011,6 +17507,11 @@ msgstr "تستخدم لطباعة القسائم السريعة للإعارة"
 msgid "Using CSV Profiles"
 msgstr "إستخدام الملفات الخاصة بـCSV"
 
+#: intranet-tmpl/prog/en/modules/help/cataloguing/batchOverlay.tt:19
+#, c-format
+msgid "Using the \"Encoding level\" -report"
+msgstr ""
+
 #: intranet-tmpl/prog/en/modules/help/admin/fieldmapping.tt:11
 #, c-format
 msgid ""
@@ -17063,9 +17564,9 @@ msgid ""
 msgstr "باستخدام النموذج المعد لذلك اختر كيف ترغب بسرد الدوريات في نظامك."
 
 #: intranet-tmpl/prog/en/modules/help/reports/issues_stats.tt:5
-#: intranet-tmpl/prog/en/modules/help/reports/catalogue_stats.tt:5
-#: intranet-tmpl/prog/en/modules/help/reports/acquisitions_stats.tt:5
 #: intranet-tmpl/prog/en/modules/help/reports/borrowers_stats.tt:5
+#: intranet-tmpl/prog/en/modules/help/reports/acquisitions_stats.tt:5
+#: intranet-tmpl/prog/en/modules/help/reports/catalogue_stats.tt:5
 #, c-format
 msgid ""
 "Using the form provided, choose which value you would like to appear in the "
@@ -17074,8 +17575,8 @@ msgstr ""
 "باستخدام النموذج المعد لذلك ، اختر أي القيم التي ترغب أن تظهر في العمود ، "
 "وايها تود أن تظهر في الصف."
 
-#: intranet-tmpl/prog/en/modules/help/patroncards/edit-layout.tt:11
 #: intranet-tmpl/prog/en/modules/help/patroncards/edit-profile.tt:13
+#: intranet-tmpl/prog/en/modules/help/patroncards/edit-layout.tt:11
 #: intranet-tmpl/prog/en/modules/help/labels/label-edit-layout.tt:11
 #: intranet-tmpl/prog/en/modules/help/labels/label-edit-profile.tt:13
 #, c-format
@@ -17598,9 +18099,9 @@ msgstr ""
 "\"عرض\" يمكنك مسح المستفيد الحالي عن طريق النقر على علامة X أعلى يمين "
 "معلومات المستفيد لحذف المستفيد الحالي من الشاشة والبدء من جديد."
 
+#: intranet-tmpl/prog/en/modules/help/acqui/orderreceive.tt:17
 #: intranet-tmpl/prog/en/modules/help/acqui/parcels.tt:17
 #: intranet-tmpl/prog/en/modules/help/acqui/parcel.tt:17
-#: intranet-tmpl/prog/en/modules/help/acqui/orderreceive.tt:17
 #, fuzzy, c-format
 msgid ""
 "When you're finished receiving items you can navigate away from this page or "
@@ -17693,14 +18194,14 @@ msgstr ""
 msgid "Write news for the OPAC and staff interfaces"
 msgstr "قم بكتابة الأخبار للأوباك وواجهة العميل"
 
-#: intranet-tmpl/prog/en/modules/help/members/paycollect.tt:47
 #: intranet-tmpl/prog/en/modules/help/members/pay.tt:47
+#: intranet-tmpl/prog/en/modules/help/members/paycollect.tt:47
 #, c-format
 msgid "Writeoff All fines "
 msgstr "اشطب كل الغرامات "
 
-#: intranet-tmpl/prog/en/modules/help/members/paycollect.tt:41
 #: intranet-tmpl/prog/en/modules/help/members/pay.tt:41
+#: intranet-tmpl/prog/en/modules/help/members/paycollect.tt:41
 #, c-format
 msgid "Writeoff a single fine "
 msgstr "اشطب غرامة واحدة "
@@ -17751,17 +18252,17 @@ msgid ""
 "wildcard search."
 msgstr ""
 
-#: intranet-tmpl/prog/en/modules/help/reports/issues_stats.tt:9
 #: intranet-tmpl/prog/en/modules/help/reports/manager.tt:9
-#: intranet-tmpl/prog/en/modules/help/reports/issues_avg_stats.tt:9
-#: intranet-tmpl/prog/en/modules/help/reports/borrowers_out.tt:9
 #: intranet-tmpl/prog/en/modules/help/reports/reserves_stats.tt:11
-#: intranet-tmpl/prog/en/modules/help/reports/catalogue_out.tt:9
+#: intranet-tmpl/prog/en/modules/help/reports/cat_issues_top.tt:9
+#: intranet-tmpl/prog/en/modules/help/reports/issues_avg_stats.tt:9
+#: intranet-tmpl/prog/en/modules/help/reports/issues_stats.tt:9
+#: intranet-tmpl/prog/en/modules/help/reports/acquisitions_stats.tt:9
+#: intranet-tmpl/prog/en/modules/help/reports/serials_stats.tt:9
 #: intranet-tmpl/prog/en/modules/help/reports/catalogue_stats.tt:9
 #: intranet-tmpl/prog/en/modules/help/reports/bor_issues_top.tt:9
-#: intranet-tmpl/prog/en/modules/help/reports/serials_stats.tt:9
-#: intranet-tmpl/prog/en/modules/help/reports/acquisitions_stats.tt:9
-#: intranet-tmpl/prog/en/modules/help/reports/cat_issues_top.tt:9
+#: intranet-tmpl/prog/en/modules/help/reports/borrowers_out.tt:9
+#: intranet-tmpl/prog/en/modules/help/reports/catalogue_out.tt:9
 #, c-format
 msgid ""
 "You can also choose to export to a file that you can manipulate to your "
@@ -17826,9 +18327,9 @@ msgid ""
 "record and clicking Edit > Edit items in batch"
 msgstr ""
 
+#: intranet-tmpl/prog/en/modules/help/acqui/orderreceive.tt:15
 #: intranet-tmpl/prog/en/modules/help/acqui/parcels.tt:15
 #: intranet-tmpl/prog/en/modules/help/acqui/parcel.tt:15
-#: intranet-tmpl/prog/en/modules/help/acqui/orderreceive.tt:15
 #, c-format
 msgid ""
 "You can also make edits to the item record from this form by clicking the "
@@ -18078,6 +18579,14 @@ msgstr ""
 "لا تحتاج إلى استخدام التزويد لإضافة مواد إلى الفهرس الخاص بك.يستخدم التزويد "
 "فقط لتتبع الموردين و الإنفاق على الميزانيات الخاصة بك."
 
+#: intranet-tmpl/prog/en/modules/help/cataloguing/batchOverlay.tt:31
+#, c-format
+msgid ""
+"You have found the record from your Koha database, but not from the external "
+"repository. Try an alternate way of accessing the repository (eg. z39.50 "
+"search) and searching with title + author."
+msgstr ""
+
 #: intranet-tmpl/prog/en/modules/help/patroncards/edit-layout.tt:21
 #, c-format
 msgid ""
@@ -18117,9 +18626,9 @@ msgid ""
 "simply by pressing the &lt;Esc&gt; key."
 msgstr ""
 
+#: intranet-tmpl/prog/en/modules/help/acqui/orderreceive.tt:19
 #: intranet-tmpl/prog/en/modules/help/acqui/parcels.tt:19
 #: intranet-tmpl/prog/en/modules/help/acqui/parcel.tt:19
-#: intranet-tmpl/prog/en/modules/help/acqui/orderreceive.tt:19
 #, fuzzy, c-format
 msgid ""
 "You will also see that the item is received and/or cancelled if you view the "
@@ -18286,8 +18795,8 @@ msgstr ""
 "(الوجهة) ثم انتقل إلى التبويب الثاني لاختيار الحقول التي يجب أن تكون موجودة "
 "في التسجيلة النهائية (الوجهة)."
 
-#: intranet-tmpl/prog/en/modules/help/cataloguing/merge.tt:11
 #: intranet-tmpl/prog/en/modules/help/virtualshelves/shelves.tt:62
+#: intranet-tmpl/prog/en/modules/help/cataloguing/merge.tt:11
 #, c-format
 msgid ""
 "You will be presented with the MARC for both of the records (each accessible "
@@ -18955,6 +19464,11 @@ msgstr "fic:1 خيال"
 msgid "group_manage "
 msgstr "group_manage "
 
+#: intranet-tmpl/prog/en/modules/help/cataloguing/batchOverlay.tt:49
+#, c-format
+msgid "here"
+msgstr ""
+
 #: intranet-tmpl/prog/en/modules/help/admin/preferences.tt:19
 #, fuzzy, c-format
 msgid ""
@@ -19041,8 +19555,8 @@ msgstr ""
 msgid "http://irspy.indexdata.com"
 msgstr "http://irspy.indexdata.com"
 
-#: intranet-tmpl/prog/en/modules/help/offline_circ/list.tt:5
 #: intranet-tmpl/prog/en/modules/help/offline_circ/process_koc.tt:5
+#: intranet-tmpl/prog/en/modules/help/offline_circ/list.tt:5
 #, c-format
 msgid "http://kylehall.info/index.php/projects/koha/koha-offline-circulation/"
 msgstr ""
@@ -19062,11 +19576,21 @@ msgstr "http://wiki.koha-community.org/wiki/SQL_Reports_Library"
 msgid "https://addons.mozilla.org/en/firefox/addon/koct/"
 msgstr ""
 
+#: intranet-tmpl/prog/en/modules/help/reports/okm_reports.tt:57
+#, c-format
+msgid "https://en.wikipedia.org/wiki/Give_me_liberty%%2C_or_give_me_death!"
+msgstr ""
+
 #: intranet-tmpl/prog/en/modules/help/admin/marc_subfields_structure.tt:79
 #, c-format
 msgid "if checked, it means that the subfield is a url and can be clicked"
 msgstr ""
 "إذا ما تمَّ إختياره ، فهذا يعني أن الحقل الفرعي هو عنوان(URL) وقابل للنقر عليه"
+
+#: intranet-tmpl/prog/en/modules/help/cataloguing/batchOverlay.tt:49
+#, fuzzy, c-format
+msgid "if you have proper permissions."
+msgstr "اضبط الصلاحيات"
 
 #: intranet-tmpl/prog/en/modules/help/members/member-flags.tt:386
 #, c-format
@@ -19203,180 +19727,180 @@ msgstr "manage_staged_marc "
 msgid "management "
 msgstr "إدارة "
 
-#: intranet-tmpl/prog/en/modules/help/admin/didyoumean.tt:20
-#: intranet-tmpl/prog/en/modules/help/admin/admin-home.tt:33
-#: intranet-tmpl/prog/en/modules/help/admin/branches.tt:50
-#: intranet-tmpl/prog/en/modules/help/admin/z3950servers.tt:61
-#: intranet-tmpl/prog/en/modules/help/admin/authorised_values.tt:95
-#: intranet-tmpl/prog/en/modules/help/admin/smart-rules.tt:139
-#: intranet-tmpl/prog/en/modules/help/admin/marctagstructure.tt:24
-#: intranet-tmpl/prog/en/modules/help/admin/aqbudgetperiods.tt:37
-#: intranet-tmpl/prog/en/modules/help/admin/authtypes.tt:9
-#: intranet-tmpl/prog/en/modules/help/admin/classsources.tt:56
-#: intranet-tmpl/prog/en/modules/help/admin/aqbudgets.tt:34
-#: intranet-tmpl/prog/en/modules/help/admin/cities.tt:21
-#: intranet-tmpl/prog/en/modules/help/admin/aqplan.tt:15
-#: intranet-tmpl/prog/en/modules/help/admin/oai_set_mappings.tt:21
-#: intranet-tmpl/prog/en/modules/help/admin/branch_transfer_limits.tt:19
-#: intranet-tmpl/prog/en/modules/help/admin/itemtypes.tt:60
-#: intranet-tmpl/prog/en/modules/help/admin/patron-attr-types.tt:73
-#: intranet-tmpl/prog/en/modules/help/admin/auth_tag_structure.tt:22
-#: intranet-tmpl/prog/en/modules/help/admin/marc_subfields_structure.tt:130
-#: intranet-tmpl/prog/en/modules/help/admin/biblio_framework.tt:37
-#: intranet-tmpl/prog/en/modules/help/admin/item_circulation_alerts.tt:22
-#: intranet-tmpl/prog/en/modules/help/admin/transport-cost-matrix.tt:13
-#: intranet-tmpl/prog/en/modules/help/admin/categorie.tt:90
-#: intranet-tmpl/prog/en/modules/help/admin/preferences.tt:36
-#: intranet-tmpl/prog/en/modules/help/admin/koha2marclinks.tt:15
-#: intranet-tmpl/prog/en/modules/help/admin/oai_sets.tt:32
-#: intranet-tmpl/prog/en/modules/help/admin/fieldmapping.tt:23
-#: intranet-tmpl/prog/en/modules/help/admin/systempreferences.tt:11
-#: intranet-tmpl/prog/en/modules/help/admin/matching-rules.tt:49
-#: intranet-tmpl/prog/en/modules/help/admin/checkmarc.tt:9
-#: intranet-tmpl/prog/en/modules/help/admin/auth_subfields_structure.tt:66
-#: intranet-tmpl/prog/en/modules/help/admin/currency.tt:13
-#: intranet-tmpl/prog/en/modules/help/authorities/authorities-home.tt:17
-#: intranet-tmpl/prog/en/modules/help/authorities/authorities.tt:29
-#: intranet-tmpl/prog/en/modules/help/authorities/merge.tt:13
-#: intranet-tmpl/prog/en/modules/help/authorities/detail.tt:17
-#: intranet-tmpl/prog/en/modules/help/mainpage.tt:29
-#: intranet-tmpl/prog/en/modules/help/serials/serials-home.tt:9
-#: intranet-tmpl/prog/en/modules/help/serials/serials-collection.tt:13
-#: intranet-tmpl/prog/en/modules/help/serials/subscription-frequencies.tt:9
-#: intranet-tmpl/prog/en/modules/help/serials/checkexpiration.tt:11
-#: intranet-tmpl/prog/en/modules/help/serials/subscription-detail.tt:9
-#: intranet-tmpl/prog/en/modules/help/serials/subscription-numberpatterns.tt:11
-#: intranet-tmpl/prog/en/modules/help/serials/claims.tt:15
-#: intranet-tmpl/prog/en/modules/help/serials/routing.tt:21
-#: intranet-tmpl/prog/en/modules/help/serials/subscription-add.tt:86
-#: intranet-tmpl/prog/en/modules/help/serials/serials-edit.tt:27
-#: intranet-tmpl/prog/en/modules/help/cataloguing/merge.tt:21
-#: intranet-tmpl/prog/en/modules/help/cataloguing/moveitem.tt:13
-#: intranet-tmpl/prog/en/modules/help/cataloguing/linkitem.tt:30
-#: intranet-tmpl/prog/en/modules/help/cataloguing/addbooks.tt:33
-#: intranet-tmpl/prog/en/modules/help/cataloguing/addbiblio.tt:93
-#: intranet-tmpl/prog/en/modules/help/cataloguing/additem.tt:77
-#: intranet-tmpl/prog/en/modules/help/tools/marc_modification_templates.tt:61
-#: intranet-tmpl/prog/en/modules/help/tools/quotes-upload.tt:43
-#: intranet-tmpl/prog/en/modules/help/tools/manage-marc-import.tt:43
-#: intranet-tmpl/prog/en/modules/help/tools/csv-profiles.tt:55
-#: intranet-tmpl/prog/en/modules/help/tools/upload-cover-image.tt:43
-#: intranet-tmpl/prog/en/modules/help/tools/viewlog.tt:11
+#: intranet-tmpl/prog/en/modules/help/tools/overduerules.tt:49
 #: intranet-tmpl/prog/en/modules/help/tools/holidays.tt:68
-#: intranet-tmpl/prog/en/modules/help/tools/koha-news.tt:25
-#: intranet-tmpl/prog/en/modules/help/tools/picture-upload.tt:23
 #: intranet-tmpl/prog/en/modules/help/tools/import_borrowers.tt:58
-#: intranet-tmpl/prog/en/modules/help/tools/cleanborrowers.tt:24
+#: intranet-tmpl/prog/en/modules/help/tools/csv-profiles.tt:55
 #: intranet-tmpl/prog/en/modules/help/tools/tools-home.tt:7
 #: intranet-tmpl/prog/en/modules/help/tools/inventory.tt:19
-#: intranet-tmpl/prog/en/modules/help/tools/scheduler.tt:26
-#: intranet-tmpl/prog/en/modules/help/tools/overduerules.tt:48
-#: intranet-tmpl/prog/en/modules/help/tools/quotes.tt:41
-#: intranet-tmpl/prog/en/modules/help/tools/export.tt:62
-#: intranet-tmpl/prog/en/modules/help/tools/modborrowers.tt:17
 #: intranet-tmpl/prog/en/modules/help/tools/stage-marc-import.tt:30
+#: intranet-tmpl/prog/en/modules/help/tools/scheduler.tt:26
+#: intranet-tmpl/prog/en/modules/help/tools/manage-marc-import.tt:43
+#: intranet-tmpl/prog/en/modules/help/tools/cleanborrowers.tt:24
 #: intranet-tmpl/prog/en/modules/help/tools/letter.tt:296
-#: intranet-tmpl/prog/en/modules/help/reviews/reviewswaiting.tt:13
-#: intranet-tmpl/prog/en/modules/help/acqui/supplier.tt:54
-#: intranet-tmpl/prog/en/modules/help/acqui/basketgroup.tt:11
-#: intranet-tmpl/prog/en/modules/help/acqui/lateorders.tt:19
-#: intranet-tmpl/prog/en/modules/help/acqui/histsearch.tt:17
-#: intranet-tmpl/prog/en/modules/help/acqui/invoice.tt:11
-#: intranet-tmpl/prog/en/modules/help/acqui/uncertainprice.tt:7
-#: intranet-tmpl/prog/en/modules/help/acqui/parcels.tt:21
-#: intranet-tmpl/prog/en/modules/help/acqui/z3950_search.tt:17
-#: intranet-tmpl/prog/en/modules/help/acqui/neworderbiblio.tt:12
-#: intranet-tmpl/prog/en/modules/help/acqui/acqui-home.tt:13
-#: intranet-tmpl/prog/en/modules/help/acqui/addorderiso2709.tt:22
-#: intranet-tmpl/prog/en/modules/help/acqui/basketheader.tt:21
-#: intranet-tmpl/prog/en/modules/help/acqui/booksellers.tt:17
-#: intranet-tmpl/prog/en/modules/help/acqui/acqcontract.tt:19
-#: intranet-tmpl/prog/en/modules/help/acqui/invoices.tt:11
-#: intranet-tmpl/prog/en/modules/help/acqui/parcel.tt:21
-#: intranet-tmpl/prog/en/modules/help/acqui/neworderempty.tt:11
-#: intranet-tmpl/prog/en/modules/help/acqui/newordersuggestion.tt:17
-#: intranet-tmpl/prog/en/modules/help/acqui/basket.tt:109
-#: intranet-tmpl/prog/en/modules/help/acqui/orderreceive.tt:21
-#: intranet-tmpl/prog/en/modules/help/catalogue/moredetail.tt:21
-#: intranet-tmpl/prog/en/modules/help/catalogue/issuehistory.tt:9
-#: intranet-tmpl/prog/en/modules/help/catalogue/detail.tt:7
-#: intranet-tmpl/prog/en/modules/help/catalogue/search.tt:81
-#: intranet-tmpl/prog/en/modules/help/virtualshelves/shelves.tt:70
-#: intranet-tmpl/prog/en/modules/help/tags/review.tt:23
-#: intranet-tmpl/prog/en/modules/help/tags/list.tt:9
-#: intranet-tmpl/prog/en/modules/help/patron_lists/lists.tt:17
-#: intranet-tmpl/prog/en/modules/help/circ/renew.tt:11
-#: intranet-tmpl/prog/en/modules/help/circ/offline.tt:35
-#: intranet-tmpl/prog/en/modules/help/circ/transferstoreceive.tt:11
-#: intranet-tmpl/prog/en/modules/help/circ/returns.tt:77
-#: intranet-tmpl/prog/en/modules/help/circ/waitingreserves.tt:9
-#: intranet-tmpl/prog/en/modules/help/circ/selectbranchprinter.tt:11
-#: intranet-tmpl/prog/en/modules/help/circ/branchoverdues.tt:11
-#: intranet-tmpl/prog/en/modules/help/circ/branchtransfers.tt:24
-#: intranet-tmpl/prog/en/modules/help/circ/reserveratios.tt:7
-#: intranet-tmpl/prog/en/modules/help/circ/overdue.tt:14
-#: intranet-tmpl/prog/en/modules/help/circ/pendingreserves.tt:9
-#: intranet-tmpl/prog/en/modules/help/circ/view_holdsqueue.tt:21
-#: intranet-tmpl/prog/en/modules/help/circ/circulation-home.tt:23
-#: intranet-tmpl/prog/en/modules/help/circ/circulation.tt:152
-#: intranet-tmpl/prog/en/modules/help/plugins/plugins-home.tt:9
-#: intranet-tmpl/prog/en/modules/help/plugins/plugins-upload.tt:9
-#: intranet-tmpl/prog/en/modules/help/members/memberentry.tt:89
-#: intranet-tmpl/prog/en/modules/help/members/files.tt:11
-#: intranet-tmpl/prog/en/modules/help/members/moremember.tt:126
-#: intranet-tmpl/prog/en/modules/help/members/statistics.tt:7
-#: intranet-tmpl/prog/en/modules/help/members/readingrec.tt:11
-#: intranet-tmpl/prog/en/modules/help/members/routing-lists.tt:9
-#: intranet-tmpl/prog/en/modules/help/members/members-update.tt:11
-#: intranet-tmpl/prog/en/modules/help/members/member-flags.tt:485
-#: intranet-tmpl/prog/en/modules/help/members/member.tt:51
-#: intranet-tmpl/prog/en/modules/help/members/member-password.tt:14
-#: intranet-tmpl/prog/en/modules/help/members/purchase-suggestions.tt:11
-#: intranet-tmpl/prog/en/modules/help/members/maninvoice.tt:17
-#: intranet-tmpl/prog/en/modules/help/members/boraccount.tt:22
-#: intranet-tmpl/prog/en/modules/help/members/paycollect.tt:60
-#: intranet-tmpl/prog/en/modules/help/members/mancredit.tt:14
-#: intranet-tmpl/prog/en/modules/help/members/notices.tt:9
-#: intranet-tmpl/prog/en/modules/help/members/members-home.tt:53
-#: intranet-tmpl/prog/en/modules/help/members/pay.tt:60
-#: intranet-tmpl/prog/en/modules/help/reports/issues_stats.tt:22
+#: intranet-tmpl/prog/en/modules/help/tools/viewlog.tt:11
+#: intranet-tmpl/prog/en/modules/help/tools/upload-cover-image.tt:43
+#: intranet-tmpl/prog/en/modules/help/tools/export.tt:62
+#: intranet-tmpl/prog/en/modules/help/tools/quotes-upload.tt:43
+#: intranet-tmpl/prog/en/modules/help/tools/quotes.tt:41
+#: intranet-tmpl/prog/en/modules/help/tools/picture-upload.tt:23
+#: intranet-tmpl/prog/en/modules/help/tools/koha-news.tt:25
+#: intranet-tmpl/prog/en/modules/help/tools/modborrowers.tt:17
+#: intranet-tmpl/prog/en/modules/help/tools/marc_modification_templates.tt:61
+#: intranet-tmpl/prog/en/modules/help/authorities/merge.tt:13
+#: intranet-tmpl/prog/en/modules/help/authorities/authorities-home.tt:17
+#: intranet-tmpl/prog/en/modules/help/authorities/authorities.tt:29
+#: intranet-tmpl/prog/en/modules/help/authorities/detail.tt:17
 #: intranet-tmpl/prog/en/modules/help/reports/manager.tt:11
-#: intranet-tmpl/prog/en/modules/help/reports/issues_avg_stats.tt:11
-#: intranet-tmpl/prog/en/modules/help/reports/borrowers_out.tt:11
+#: intranet-tmpl/prog/en/modules/help/reports/reports-home.tt:22
 #: intranet-tmpl/prog/en/modules/help/reports/reserves_stats.tt:13
-#: intranet-tmpl/prog/en/modules/help/reports/catalogue_out.tt:11
-#: intranet-tmpl/prog/en/modules/help/reports/catalogue_stats.tt:11
-#: intranet-tmpl/prog/en/modules/help/reports/bor_issues_top.tt:11
+#: intranet-tmpl/prog/en/modules/help/reports/cat_issues_top.tt:11
+#: intranet-tmpl/prog/en/modules/help/reports/issues_avg_stats.tt:11
+#: intranet-tmpl/prog/en/modules/help/reports/issues_stats.tt:22
+#: intranet-tmpl/prog/en/modules/help/reports/borrowers_stats.tt:11
+#: intranet-tmpl/prog/en/modules/help/reports/guided_reports.tt:198
+#: intranet-tmpl/prog/en/modules/help/reports/acquisitions_stats.tt:15
+#: intranet-tmpl/prog/en/modules/help/reports/dictionary.tt:21
 #: intranet-tmpl/prog/en/modules/help/reports/serials_stats.tt:11
 #: intranet-tmpl/prog/en/modules/help/reports/itemslost.tt:19
-#: intranet-tmpl/prog/en/modules/help/reports/guided_reports.tt:198
-#: intranet-tmpl/prog/en/modules/help/reports/reports-home.tt:22
-#: intranet-tmpl/prog/en/modules/help/reports/acquisitions_stats.tt:15
-#: intranet-tmpl/prog/en/modules/help/reports/borrowers_stats.tt:11
-#: intranet-tmpl/prog/en/modules/help/reports/dictionary.tt:21
-#: intranet-tmpl/prog/en/modules/help/reports/cat_issues_top.tt:11
-#: intranet-tmpl/prog/en/modules/help/patroncards/edit-batch.tt:11
-#: intranet-tmpl/prog/en/modules/help/patroncards/edit-layout.tt:34
-#: intranet-tmpl/prog/en/modules/help/patroncards/home.tt:20
-#: intranet-tmpl/prog/en/modules/help/patroncards/image-manage.tt:19
-#: intranet-tmpl/prog/en/modules/help/patroncards/edit-template.tt:28
+#: intranet-tmpl/prog/en/modules/help/reports/catalogue_stats.tt:11
+#: intranet-tmpl/prog/en/modules/help/reports/bor_issues_top.tt:11
+#: intranet-tmpl/prog/en/modules/help/reports/borrowers_out.tt:11
+#: intranet-tmpl/prog/en/modules/help/reports/catalogue_out.tt:11
+#: intranet-tmpl/prog/en/modules/help/virtualshelves/shelves.tt:70
+#: intranet-tmpl/prog/en/modules/help/course_reserves/add_items.tt:13
+#: intranet-tmpl/prog/en/modules/help/course_reserves/course-details.tt:9
+#: intranet-tmpl/prog/en/modules/help/course_reserves/course.tt:17
+#: intranet-tmpl/prog/en/modules/help/course_reserves/course-reserves.tt:19
+#: intranet-tmpl/prog/en/modules/help/circ/overdue.tt:14
+#: intranet-tmpl/prog/en/modules/help/circ/circulation.tt:152
+#: intranet-tmpl/prog/en/modules/help/circ/pendingreserves.tt:9
+#: intranet-tmpl/prog/en/modules/help/circ/offline.tt:35
+#: intranet-tmpl/prog/en/modules/help/circ/renew.tt:11
+#: intranet-tmpl/prog/en/modules/help/circ/waitingreserves.tt:9
+#: intranet-tmpl/prog/en/modules/help/circ/branchtransfers.tt:24
+#: intranet-tmpl/prog/en/modules/help/circ/returns.tt:77
+#: intranet-tmpl/prog/en/modules/help/circ/reserveratios.tt:7
+#: intranet-tmpl/prog/en/modules/help/circ/view_holdsqueue.tt:21
+#: intranet-tmpl/prog/en/modules/help/circ/transferstoreceive.tt:11
+#: intranet-tmpl/prog/en/modules/help/circ/selectbranchprinter.tt:11
+#: intranet-tmpl/prog/en/modules/help/circ/branchoverdues.tt:11
+#: intranet-tmpl/prog/en/modules/help/circ/circulation-home.tt:23
+#: intranet-tmpl/prog/en/modules/help/reserve/request.tt:63
+#: intranet-tmpl/prog/en/modules/help/about.tt:37
+#: intranet-tmpl/prog/en/modules/help/suggestion/suggestion.tt:41
+#: intranet-tmpl/prog/en/modules/help/plugins/plugins-home.tt:9
+#: intranet-tmpl/prog/en/modules/help/plugins/plugins-upload.tt:9
+#: intranet-tmpl/prog/en/modules/help/tags/list.tt:9
+#: intranet-tmpl/prog/en/modules/help/tags/review.tt:23
 #: intranet-tmpl/prog/en/modules/help/patroncards/edit-profile.tt:31
 #: intranet-tmpl/prog/en/modules/help/patroncards/manage.tt:19
-#: intranet-tmpl/prog/en/modules/help/reserve/request.tt:63
-#: intranet-tmpl/prog/en/modules/help/suggestion/suggestion.tt:41
-#: intranet-tmpl/prog/en/modules/help/labels/label-edit-template.tt:33
-#: intranet-tmpl/prog/en/modules/help/labels/label-edit-batch.tt:25
+#: intranet-tmpl/prog/en/modules/help/patroncards/edit-template.tt:28
+#: intranet-tmpl/prog/en/modules/help/patroncards/edit-batch.tt:11
+#: intranet-tmpl/prog/en/modules/help/patroncards/image-manage.tt:19
+#: intranet-tmpl/prog/en/modules/help/patroncards/home.tt:20
+#: intranet-tmpl/prog/en/modules/help/patroncards/edit-layout.tt:34
+#: intranet-tmpl/prog/en/modules/help/admin/koha2marclinks.tt:15
+#: intranet-tmpl/prog/en/modules/help/admin/itemtypes.tt:60
+#: intranet-tmpl/prog/en/modules/help/admin/smart-rules.tt:139
+#: intranet-tmpl/prog/en/modules/help/admin/admin-home.tt:33
+#: intranet-tmpl/prog/en/modules/help/admin/preferences.tt:36
+#: intranet-tmpl/prog/en/modules/help/admin/aqbudgets.tt:34
+#: intranet-tmpl/prog/en/modules/help/admin/systempreferences.tt:11
+#: intranet-tmpl/prog/en/modules/help/admin/categorie.tt:90
+#: intranet-tmpl/prog/en/modules/help/admin/aqbudgetperiods.tt:37
+#: intranet-tmpl/prog/en/modules/help/admin/checkmarc.tt:9
+#: intranet-tmpl/prog/en/modules/help/admin/transport-cost-matrix.tt:13
+#: intranet-tmpl/prog/en/modules/help/admin/z3950servers.tt:61
+#: intranet-tmpl/prog/en/modules/help/admin/authtypes.tt:9
+#: intranet-tmpl/prog/en/modules/help/admin/oai_set_mappings.tt:21
+#: intranet-tmpl/prog/en/modules/help/admin/didyoumean.tt:20
+#: intranet-tmpl/prog/en/modules/help/admin/auth_subfields_structure.tt:66
+#: intranet-tmpl/prog/en/modules/help/admin/cities.tt:21
+#: intranet-tmpl/prog/en/modules/help/admin/aqplan.tt:15
+#: intranet-tmpl/prog/en/modules/help/admin/fieldmapping.tt:23
+#: intranet-tmpl/prog/en/modules/help/admin/classsources.tt:56
+#: intranet-tmpl/prog/en/modules/help/admin/item_circulation_alerts.tt:22
+#: intranet-tmpl/prog/en/modules/help/admin/branches.tt:50
+#: intranet-tmpl/prog/en/modules/help/admin/currency.tt:13
+#: intranet-tmpl/prog/en/modules/help/admin/matching-rules.tt:49
+#: intranet-tmpl/prog/en/modules/help/admin/biblio_framework.tt:37
+#: intranet-tmpl/prog/en/modules/help/admin/auth_tag_structure.tt:22
+#: intranet-tmpl/prog/en/modules/help/admin/branch_transfer_limits.tt:19
+#: intranet-tmpl/prog/en/modules/help/admin/patron-attr-types.tt:73
+#: intranet-tmpl/prog/en/modules/help/admin/oai_sets.tt:32
+#: intranet-tmpl/prog/en/modules/help/admin/authorised_values.tt:95
+#: intranet-tmpl/prog/en/modules/help/admin/marctagstructure.tt:24
+#: intranet-tmpl/prog/en/modules/help/admin/marc_subfields_structure.tt:130
 #: intranet-tmpl/prog/en/modules/help/labels/label-edit-layout.tt:15
 #: intranet-tmpl/prog/en/modules/help/labels/spinelabel-home.tt:14
+#: intranet-tmpl/prog/en/modules/help/labels/label-edit-batch.tt:25
 #: intranet-tmpl/prog/en/modules/help/labels/label-home.tt:44
+#: intranet-tmpl/prog/en/modules/help/labels/label-edit-template.tt:33
 #: intranet-tmpl/prog/en/modules/help/labels/label-edit-profile.tt:31
-#: intranet-tmpl/prog/en/modules/help/course_reserves/course-details.tt:9
-#: intranet-tmpl/prog/en/modules/help/course_reserves/add_items.tt:13
-#: intranet-tmpl/prog/en/modules/help/course_reserves/course-reserves.tt:19
-#: intranet-tmpl/prog/en/modules/help/course_reserves/course.tt:17
-#: intranet-tmpl/prog/en/modules/help/about.tt:37
-#: intranet-tmpl/prog/en/modules/help/offline_circ/list.tt:23
+#: intranet-tmpl/prog/en/modules/help/members/member-password.tt:14
+#: intranet-tmpl/prog/en/modules/help/members/maninvoice.tt:17
+#: intranet-tmpl/prog/en/modules/help/members/notices.tt:9
+#: intranet-tmpl/prog/en/modules/help/members/mancredit.tt:14
+#: intranet-tmpl/prog/en/modules/help/members/member.tt:51
+#: intranet-tmpl/prog/en/modules/help/members/purchase-suggestions.tt:11
+#: intranet-tmpl/prog/en/modules/help/members/moremember.tt:126
+#: intranet-tmpl/prog/en/modules/help/members/pay.tt:60
+#: intranet-tmpl/prog/en/modules/help/members/member-flags.tt:485
+#: intranet-tmpl/prog/en/modules/help/members/statistics.tt:7
+#: intranet-tmpl/prog/en/modules/help/members/readingrec.tt:11
+#: intranet-tmpl/prog/en/modules/help/members/files.tt:11
+#: intranet-tmpl/prog/en/modules/help/members/paycollect.tt:60
+#: intranet-tmpl/prog/en/modules/help/members/memberentry.tt:89
+#: intranet-tmpl/prog/en/modules/help/members/members-home.tt:53
+#: intranet-tmpl/prog/en/modules/help/members/routing-lists.tt:9
+#: intranet-tmpl/prog/en/modules/help/members/boraccount.tt:22
+#: intranet-tmpl/prog/en/modules/help/members/members-update.tt:11
 #: intranet-tmpl/prog/en/modules/help/offline_circ/process_koc.tt:19
+#: intranet-tmpl/prog/en/modules/help/offline_circ/list.tt:23
+#: intranet-tmpl/prog/en/modules/help/cataloguing/additem.tt:77
+#: intranet-tmpl/prog/en/modules/help/cataloguing/addbooks.tt:33
+#: intranet-tmpl/prog/en/modules/help/cataloguing/moveitem.tt:13
+#: intranet-tmpl/prog/en/modules/help/cataloguing/linkitem.tt:30
+#: intranet-tmpl/prog/en/modules/help/cataloguing/addbiblio.tt:93
+#: intranet-tmpl/prog/en/modules/help/cataloguing/merge.tt:21
+#: intranet-tmpl/prog/en/modules/help/patron_lists/lists.tt:17
+#: intranet-tmpl/prog/en/modules/help/serials/serials-edit.tt:27
+#: intranet-tmpl/prog/en/modules/help/serials/serials-collection.tt:13
+#: intranet-tmpl/prog/en/modules/help/serials/subscription-detail.tt:9
+#: intranet-tmpl/prog/en/modules/help/serials/subscription-add.tt:86
+#: intranet-tmpl/prog/en/modules/help/serials/serials-home.tt:9
+#: intranet-tmpl/prog/en/modules/help/serials/claims.tt:15
+#: intranet-tmpl/prog/en/modules/help/serials/checkexpiration.tt:11
+#: intranet-tmpl/prog/en/modules/help/serials/subscription-numberpatterns.tt:11
+#: intranet-tmpl/prog/en/modules/help/serials/subscription-frequencies.tt:9
+#: intranet-tmpl/prog/en/modules/help/serials/routing.tt:21
+#: intranet-tmpl/prog/en/modules/help/acqui/newordersuggestion.tt:17
+#: intranet-tmpl/prog/en/modules/help/acqui/neworderbiblio.tt:12
+#: intranet-tmpl/prog/en/modules/help/acqui/orderreceive.tt:21
+#: intranet-tmpl/prog/en/modules/help/acqui/acqui-home.tt:13
+#: intranet-tmpl/prog/en/modules/help/acqui/invoice.tt:11
+#: intranet-tmpl/prog/en/modules/help/acqui/neworderempty.tt:11
+#: intranet-tmpl/prog/en/modules/help/acqui/lateorders.tt:19
+#: intranet-tmpl/prog/en/modules/help/acqui/supplier.tt:54
+#: intranet-tmpl/prog/en/modules/help/acqui/basket.tt:109
+#: intranet-tmpl/prog/en/modules/help/acqui/acqcontract.tt:19
+#: intranet-tmpl/prog/en/modules/help/acqui/uncertainprice.tt:7
+#: intranet-tmpl/prog/en/modules/help/acqui/invoices.tt:11
+#: intranet-tmpl/prog/en/modules/help/acqui/z3950_search.tt:17
+#: intranet-tmpl/prog/en/modules/help/acqui/histsearch.tt:17
+#: intranet-tmpl/prog/en/modules/help/acqui/basketheader.tt:21
+#: intranet-tmpl/prog/en/modules/help/acqui/parcels.tt:21
+#: intranet-tmpl/prog/en/modules/help/acqui/booksellers.tt:17
+#: intranet-tmpl/prog/en/modules/help/acqui/parcel.tt:21
+#: intranet-tmpl/prog/en/modules/help/acqui/basketgroup.tt:11
+#: intranet-tmpl/prog/en/modules/help/acqui/addorderiso2709.tt:22
+#: intranet-tmpl/prog/en/modules/help/catalogue/search.tt:81
+#: intranet-tmpl/prog/en/modules/help/catalogue/issuehistory.tt:9
+#: intranet-tmpl/prog/en/modules/help/catalogue/moredetail.tt:21
+#: intranet-tmpl/prog/en/modules/help/catalogue/detail.tt:7
+#: intranet-tmpl/prog/en/modules/help/reviews/reviewswaiting.tt:13
+#: intranet-tmpl/prog/en/modules/help/mainpage.tt:29
 #, c-format
 msgid "manual"
 msgstr "كُتيّب"
