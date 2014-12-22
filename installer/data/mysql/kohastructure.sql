@@ -1840,10 +1840,13 @@ CREATE TABLE `reserveconstraints` (
 
 DROP TABLE IF EXISTS `okm_statistics`;
 CREATE TABLE `okm_statistics` (
-  `year` YEAR NOT NULL,
+  `id` int(11) NOT NULL auto_increment, -- primary key
+  `startdate` datetime default NULL,
+  `enddate` datetime default NULL,
+  `individualbranches` text default NULL, -- a comma separated list of branchcodes of grouping was not used
   `okm_serialized` LONGTEXT default NULL, -- the C4::OPLIB::OKM-object serialized.
   `timestamp` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
-  PRIMARY KEY (`year`)
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --

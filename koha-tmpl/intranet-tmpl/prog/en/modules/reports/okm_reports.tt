@@ -10,12 +10,14 @@
 <div id="breadcrumbs"><a href="/cgi-bin/koha/mainpage.pl">Home</a> &rsaquo; <a href="/cgi-bin/koha/reports/reports-home.pl">Reports</a> &rsaquo; OKM annual report</div>
 <div id="page" style="margin-left: 1em;">
 
-	<h1>OKM annual reports</h1>
+    <h1>OKM annual reports</h1>
     <h6>See help for instructions</h6>
 
-    <form method="POST" action="/cgi-bin/koha/reports/okm_reports.pl" id="run_OKM_form">
+    <form method="GET" action="/cgi-bin/koha/reports/okm_reports.pl" id="run_OKM_form">
         <input type="hidden" name="op" value="run"/>
-        Statistical year <input type="text" size="4" name="statisticalYear" value="[% thisYear %]" onchange='$("#mirrorStatisticalYear").val( $(this).val() )'/>
+        Statistical period:<br/>
+        Start <input type="text" id="startDate" name="startDate" size="10" value="[% startDate %]" />
+        End <input type="text" id="endDate" name="endDate" size="10" value="[% endDate %]" />
         <a onClick="$('#run_OKM_form').submit();" class="btn btn-small" id="run_OKM"><i style="background-position: -96px -120px" class="icon-plus"></i> Give me statistics, or give me death!</a>
     </form>
 
@@ -26,7 +28,7 @@
 
     <br/>
 
-    <form action="/cgi-bin/koha/reports/okm_reports.pl" method="post">
+    <form action="/cgi-bin/koha/reports/okm_reports.pl" method="GET">
         <fieldset class="action">
             <label for="format">Download the report: </label>
             <select name="format" id="format">
@@ -34,7 +36,7 @@
                 <option value="tab">Tab separated text</option>
                 <option value="ods">Open Document Spreadsheet</option>
             </select>
-            <input type="hidden" name="statisticalYear" id="mirrorStatisticalYear" value="[% thisYear %]" />
+            <input type="hidden" name="okm_statisticsId" id="mirrorStatisticalYear" value="[% okm_statisticsId %]" />
             <input type="hidden" name="op" value="export" />
             <input type="submit" name="submit" value="Download" />
         </fieldset>
@@ -43,5 +45,36 @@
     <h5>Quote of the day!</h5>
     [% quote %]
 
+    <br/>
+    <div id="available_reports">
+        <table>
+            <thead>
+                <tr>
+                    <th>Report ID</th>
+                    <th>Start date</th>
+                    <th>End date</th>
+                    <th>Individual branches</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                [% FOREACH okm_report IN ready_okm_reports %]
+                    <tr>
+                        <td>[% okm_report.id %]</td>
+                        <td>[% okm_report.startdate %]</td>
+                        <td>[% okm_report.enddate %]</td>
+                        <td>[% okm_report.individualbranches %]</td>
+                        <td><a href="/cgi-bin/koha/reports/okm_reports.pl?op=show&amp;okm_statisticsId=[% okm_report.id %]">Show</a></td>
+                    </tr>
+                [% END %]
+            </tbody>
+        </table>
+    </div>
+
 </div>
+
+<script type="text/javascript">
+    $("#startDate").datepicker({ maxDate: "-1D" });
+    $("#endDate").datepicker({ maxDate: "-1D" });
+</script>
 [% INCLUDE 'intranet-bottom.inc' %]

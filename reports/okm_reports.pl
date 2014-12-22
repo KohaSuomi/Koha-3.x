@@ -49,10 +49,12 @@ my $session = $cookie ? get_session($cookie->value) : undef;
 
 my $op = $input->param('op') || '';
 my $limit = $input->param('limit') || undef; #Integer but used as the SQL LIMIT -clause for testing
-my $thisYear = $input->param('statisticalYear') || (localtime(time))[5] + 1900;
+my $timeperiod = $input->param('startDate').' - '.$input->param('endDate');
+my $individualBranches = $input->param('individualBranches');
+my $okm_statisticsId = $input->param('okm_statisticsId');
 
-if ($op eq 'run') {
-    my $okm = C4::OPLIB::OKM::Retrieve( $thisYear );
+if ($op eq 'run' || $op eq 'show') {
+    my $okm = C4::OPLIB::OKM::Retrieve( $okm_statisticsId, $timeperiod, $individualBranches );
     my ($html, $csv, $errors);
     if ($okm) {
         $html = $okm->asHtml();
@@ -64,8 +66,10 @@ if ($op eq 'run') {
     $template->param('okm_report_html' => $html);
     $template->param('okm_report_csv' => $csv);
     $template->param('okm_report_errors' => $errors);
+    $template->param('okm_statisticsId' => $okm_statisticsId);
     #TODO, this feature doesn't work ATM and better rules for cross-examining statistics is needed. $template->param('okm_report_errors' => join('<br/>',@$errors)) if scalar(@$errors) > 0;
 }
+
 if ($op eq 'export') {
     my $error = export( $input->param('format') );
     if ($error eq 'reportUnavailable') {
@@ -76,9 +80,10 @@ if ($op eq 'export') {
 
 
 $template->param(
-    thisYear => $thisYear, #Get the current year
+    timeperiod => $timeperiod, #Get the current year
     branchCategories => keys C4::OPLIB::OKM::getOKMBranchCategories(),
     quote => getRandomQuote(),
+    ready_okm_reports => C4::OPLIB::OKM::RetrieveAll(),
 );
 
 
@@ -89,7 +94,7 @@ output_html_with_http_headers $input, $cookie, $template->output;
 sub export {
     my ($format) = @_;
 
-    my $okm = C4::OPLIB::OKM::Retrieve( $thisYear );
+    my $okm = C4::OPLIB::OKM::Retrieve( $okm_statisticsId );
     my ($csv, $errors);
     unless ($okm) {
         return 'reportUnavailable';
@@ -111,7 +116,7 @@ sub export {
 
     print $input->header(
         -type => $type,
-        -attachment=>"OKM_annual_statistics_$thisYear.$format"
+        -attachment=>"OKM_statistics_$okm_statisticsId.$format"
     );
     print $content;
 
