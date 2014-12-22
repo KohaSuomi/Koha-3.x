@@ -520,16 +520,9 @@ sub RemoveItemFromCollection {
                         WHERE itemnumber = ?"
     );
     $sth->execute($itemnumber) or return ( 0, 3, $sth->errstr() );
-
-    # KD-139: Transfer was not done - not considered an error here, but passed to template
-    # for use in usability stuff
-    if (!$dotransfer) {
-        return (1, 4, $messages);
-    }
-
     ModItem({ homebranch => $originbranchcode }, undef, $itemnumber);
 
-    return 1;
+    return (1, 4, $messages);
 }
 
 =head2  ReturnCollectionToOrigin
@@ -566,7 +559,7 @@ sub ReturnCollectionToOrigin {
             ($success, $errorcode, $errormessage) =
                 ReturnCollectionItemToOrigin($colId, $item->{'itemnumber'});
             if (!$success) {
-                push(@errormessages, $errormessage);
+                push(@errormessages, $item->{'itemnumber'} . ": " . $errormessage);
             }
         }
     }
@@ -603,6 +596,7 @@ the item's home branch when it was first added to the collection
 sub ReturnCollectionItemToOrigin {
     my ($colId, $itemnumber) = @_;
     my $originBranch = GetItemOriginBranch($itemnumber);
+    my @errorlist;
 
     ## Check for all neccessary parameters
     if (!$colId) {
@@ -639,23 +633,22 @@ sub ReturnCollectionItemToOrigin {
     }
     # Push all issues with the transfer into a list for template usage.
     if (!$dotransfer) {
-        my @errorlist;
         for my $message (keys %$messages) {
-            push(@errorlist, $message);
+            push(@errorlist, $itemnumber . ": " .  $message);
         }
-        return (0, 6, \@errorlist);
     }
 
     $sth = $dbh->prepare(q{
         UPDATE collections_tracking
         SET
-        transfer_branch = NULL
+        transfer_branch = NULL,
+        transferred = 0
         WHERE itemnumber = ?
     });
     $sth->execute($itemnumber) or return (0, 7, $sth->errstr);
     ModItem({ homebranch => $originBranch }, undef, $itemnumber);
 
-    return 1;
+    return (1, 6, \@errorlist);
 }
 
 =head2 TransferCollection
@@ -692,7 +685,7 @@ sub TransferCollection {
     my $problemItemCount = 0;
 
     for my $item (@$colItems) {
-	my $itemOriginBranch = GetItemOriginBranch($item->{'itemnumber'});
+        my $itemOriginBranch = GetItemOriginBranch($item->{'itemnumber'});
 		my $itemCurHomeBranch = $item->{'homebranch'};
         my ($dotransfer, $errorcode, $errormessage) = TransferCollectionItem($colId, $item->{'itemnumber'}, $colBranchcode);
         if (!$dotransfer) {
@@ -740,6 +733,7 @@ Transfers an item to another branch
 
 sub TransferCollectionItem {
     my ($colId, $itemnumber, $transferBranch) = @_;
+    my @errorlist;
 
     if (!$colId) {
         return (0, 1, "No collection id given");
@@ -777,11 +771,9 @@ sub TransferCollectionItem {
 
     # Push all issues with the transfer into a list for template usage.
     if (!$dotransfer) {
-        my @errorlist;
         for my $message (keys %$messages) {
             push(@errorlist, $message);
         }
-        return (0, 6, \@errorlist);
     }
     my $transferred = 1;
 
@@ -795,7 +787,7 @@ sub TransferCollectionItem {
     $sth->execute($transferBranch, $transferred, $itemnumber) or return (0, 7, $sth->errstr);
     ModItem({ homebranch => $transferBranch }, undef, $itemnumber);
 
-    return 1;
+    return (1, 6, \@errorlist);
 }
 
 
