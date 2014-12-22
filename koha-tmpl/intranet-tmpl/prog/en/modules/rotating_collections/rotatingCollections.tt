@@ -24,8 +24,8 @@
           var selectedCollectionDesc = this.getAttribute('data-coldesc');
           if (selectedCollectionId && selectedCollectionTitle) {
             $("#btn-remove-confirm").attr("data-colid", selectedCollectionId);
-            $("#modal-remove-body-message").text("Please confirm the removal of collection: " + selectedCollectionTitle);
-            $("#modal-remove-body-desc").text("Description: " + selectedCollectionDesc);
+            $("#modal-remove-body-message").text(_("Please confirm the removal of collection: ") + selectedCollectionTitle);
+            $("#modal-remove-body-desc").text(_("Description: ") + selectedCollectionDesc);
           }
         });
 
@@ -38,9 +38,21 @@
           if (selectedCollectionId && selectedCollectionTitle && selectedCollectionTransferTo) {
             $("#btn-transfer-confirm").attr("data-colid", selectedCollectionId);
             $("#btn-transfer-confirm").attr("data-transferto", selectedCollectionTransferTo);
-            $("#modal-transfer-body-message").text("Please confirm the transfer of collection \'"
-                                                    + selectedCollectionTitle + "\' to "
+            $("#modal-transfer-body-message").text(_("Please confirm the transfer of collection ")
+                                                    + selectedCollectionTitle + _(" to ")
                                                     + selectedCollectionTransferText);
+          }
+        });
+
+        // KD-139 Handle collection return clicks
+        $("body").on("click", "a[id^=return-col]", function() {
+          var selectedCollectionId = this.getAttribute('data-colid');
+          var selectedCollectionTitle = this.getAttribute('data-coltitle');
+          var selectedCollectionDesc = this.getAttribute('data-coldesc');
+          if (selectedCollectionId && selectedCollectionTitle) {
+            $("#btn-return-confirm").attr("data-colid", selectedCollectionId);
+            $("#modal-return-body-message").text(_("Please confirm the return of collection: ") + selectedCollectionTitle);
+            $("#modal-return-body-desc").text(_("Description: ") + selectedCollectionDesc);
           }
         });
 
@@ -68,6 +80,13 @@
           var colToRemove = this.getAttribute('data-colid');
           if (colToRemove) {
             removeCollection(colToRemove);
+          }
+        });
+
+        $("#btn-return-confirm").click(function() {
+          var colToReturn = this.getAttribute('data-colid');
+          if (colToReturn) {
+            returnCollection(colToReturn);
           }
         });
 
@@ -122,6 +141,21 @@
             colId: selectedCollectionId,
             toBranch: selectedCollectionTransferTo,
             transferAction: "collectionTransfer"
+          })
+          .done(function(response) {
+            var resultMsg = $(response).find("#alert-block");
+            $("#alert-block").html(resultMsg);
+            if ($("#alert-block").find('.alert-success')) {
+              reloadDataTable();
+            }
+        });
+      }
+
+      function returnCollection(selectedCollectionId) {
+        $.post("transferCollection.pl",
+          {
+            colId: selectedCollectionId,
+            transferAction: "collectionReturn"
           })
           .done(function(response) {
             var resultMsg = $(response).find("#alert-block");
@@ -211,15 +245,15 @@
           <table id="table-collections">
             <thead>
               <tr>
-                <th><strong>Title</strong></th>
+                <th><strong>Collection</strong></th>
                 <th>Description</strong></th>
                 <th>Owner</th>
                 <th>Items</th>
                 <th>Transferred</th>
-<!--                <th class="nosort">Manage collection</th>-->
-                <th class="nosort">Transfer collection</th>
-                <th class="nosort">Edit</th>
-                <th class="nosort">Delete</th>
+                <th class="nosort"></th>
+                <th class="nosort"></th>
+                <th class="nosort"></th>
+                <th class="nosort"></th>
               </tr>
             </thead>
             [% FOREACH collectionsLoo IN collectionsLoop %]
@@ -238,7 +272,6 @@
                       None transferred yet
                     [% END %]
                 </td>
-<!--                <td><a href="addItems.pl?colId=[% collectionsLoo.colId %]">Manage collection</a></td>-->
                 <td><a class="btn btn-small" id="transfer-col-[% collectionsLoo.colId %]" data-toggle="modal" href="#transferColModal" class="btn btn-small" data-colid="[% collectionsLoo.colId %]" data-coltitle="[% collectionsLoo.colTitle %]" data-coldesc="[% collectionsLoo.colDesc %]"><i class="icon-gift"></i> Transfer collection</a>
                 <select name="transfer-branch-[% collectionsLoo.colId %]" id="transfer-branch-[% collectionsLoo.colId %]">
                     [% FOREACH branch IN branchesLoop %]
@@ -250,6 +283,7 @@
                     [% END %]
                 </select></td>
                 <td><a class="btn btn-small" id="edit-col-[% collectionsLoo.colId %]" href="#editColModal" data-toggle="modal" data-coltitle="[% collectionsLoo.colTitle %]" data-colid="[% collectionsLoo.colId %]" data-coldesc="[% collectionsLoo.colDesc %]"><i class="icon-edit"></i> Edit</a></td>
+                <td><a class="btn btn-small" id="return-col-[% collectionsLoo.colId %]" href="#returnColModal" data-toggle="modal" data-coltitle="[% collectionsLoo.colTitle %]" data-colid="[% collectionsLoo.colId %]" data-coldesc="[% collectionsLoo.colDesc %]"><i class="icon-repeat"></i> Return</a></td>
                 <td><a class="btn btn-small" id="remove-col-[% collectionsLoo.colId %]" href="#removeColModal" data-toggle="modal" data-coltitle="[% collectionsLoo.colTitle %]" data-colid="[% collectionsLoo.colId %]" data-coldesc="[% collectionsLoo.colDesc %]"><i class="icon-remove"></i> Delete</a></td>
               </tr>
               </tr>
@@ -277,7 +311,7 @@
        <strong><p id="modal-remove-body-message"></p></strong>
        <p id="modal-remove-body-desc"></p>
        <p class="alert-info">
-        <strong>Note:</strong> any currently transferred items in the removed collection will be returned to their respective origin branch
+        Note: any currently transferred items in the removed collection will be returned to their respective origin branch
         via a branch transfer. Before deleting a collection, make sure that the collection is really no longer needed and that all items
         in it are good to go for a transfer back to their origin branch. If you're unsure about certain items in the collection, deal with
         those individually before deleting the collection.
@@ -286,6 +320,27 @@
     <div class="modal-footer">
         <button type="button" class="btn btn-primary" id="btn-remove-cancel" data-dismiss="modal">Cancel</button>
         <button type="submit" class="btn btn-default" id="btn-remove-confirm" data-colid="" data-dismiss="modal">Remove collection</button>
+    </div>
+</div>
+<!-- Modal for confirm collection return box-->
+<div class="modal hide" id="returnColModal" tabindex="-1" role="dialog" aria-labelledby="returnColModalLabel" aria-hidden="true">
+    <div class="modal-header">
+        <button type="button" class="closebtn" data-dismiss="modal" aria-hidden="true">×</button>
+        <h3 id="returnColModalHeader">Confirm collection return</h3>
+    </div>
+    <div class="modal-body">
+       <strong><p id="modal-return-body-message"></p></strong>
+       <p id="modal-return-body-desc"></p>
+       <p class="alert-info">
+        Note: any currently transferred items in the returned collection will be returned to their respective origin branch
+        via a branch transfer. Before returning a collection, make sure that all items
+        in the collection are good to go for a transfer back to their origin branch. If you're unsure about certain items in the collection, deal with
+        those individually before returning the collection.
+       </p>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-primary" id="btn-return-cancel" data-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-default" id="btn-return-confirm" data-colid="" data-dismiss="modal">Return collection</button>
     </div>
 </div>
 <!-- Modal for confirm transfer box-->
@@ -298,7 +353,7 @@
        <strong><p id="modal-transfer-body-message"></p></strong>
        <p id="modal-transfer-body-desc"></p>
        <p class="alert-info">
-        <strong>Note:</strong> any items in the collection currently not transferred to a branch will be transferred to the selected
+        Note: any items in the collection currently not transferred to a branch will be transferred to the selected
         destination branch via a branch transfer. This action transfers the whole collection to the same destination - if you need
         separate transfer destinations for individual items in the collection, open the collection and perform transfers on individual items.
        </p>

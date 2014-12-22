@@ -14,8 +14,10 @@
             var selectedItemTitle = this.getAttribute("data-title");
             if (selectedItemBarcode) {
               $("#barcode").val(selectedItemBarcode);
-              $("#modal-remove-body-message").text("Please confirm the removal of item with the barcode: " + selectedItemBarcode
-                                            + " and title: " + selectedItemTitle + " from the collection: " + "[% colTitle %]");
+              $("#modal-remove-body-message").text(_("Please confirm the removal of item with the barcode: ")
+                                            + selectedItemBarcode
+                                            + _(" and title: ") + selectedItemTitle
+                                            + _(" from the collection: ") + "[% colTitle %]");
               $("input[name^=removeItem]").prop('checked', true);
             }
           });
@@ -26,8 +28,8 @@
             var selectedItemOrigin = this.getAttribute("data-originbranch");
             if (selectedItemNumber && selectedItemTitle && selectedItemOrigin) {
               $("#btn-return-item-confirm").attr("data-itemnumber", selectedItemNumber)
-              $("#modal-return-body-message").text("Please confirm the return of the item '" + selectedItemTitle
-                                            + "' to  " + selectedItemOrigin);
+              $("#modal-return-body-message").text(_("Please confirm the return of the item '")
+                                            + selectedItemTitle + _("' to  ") + selectedItemOrigin);
             }
           });
 
@@ -35,7 +37,7 @@
             var selectedItemNumber = this.getAttribute("data-itemnumber");
             var selectedItemTitle = this.getAttribute("data-title");
             if (selectedItemNumber) {
-              $("#modal-transfer-item-body-message").text("Please select a transfer location for the item: " + selectedItemTitle);
+              $("#modal-transfer-item-body-message").text(_("Please select a transfer location for the item: ") + selectedItemTitle);
               $("#btn-transfer-item-confirm").attr("data-itemnumber", selectedItemNumber);
             }
           });
@@ -47,8 +49,8 @@
             var collectionTransferTo = $("select[id=transfer-branch]").val();
             if (collectionId && collectionTransferTo) {
               $("#btn-transfer-confirm").attr("data-transferto", collectionTransferTo);
-              $("#modal-transfer-body-message").text("Please confirm the transfer of collection \'"
-                                                      + collectionTitle + "\' to "
+              $("#modal-transfer-body-message").text(_("Please confirm the transfer of collection ")
+                                                      + collectionTitle + _(" to ")
                                                       + collectionTransferText);
             }
           });
@@ -255,9 +257,9 @@
                 <th>Home library</th>
                 <th>Current location</th>
                 <th>Transferred</th>
-                <th class="nosort">Transfer</th>
-                <th class="nosort">Return</th>
-                <th class="nosort">Remove</th>
+                <th class="nosort"></th>
+                <th class="nosort"></th>
+                <th class="nosort"></th>
               </tr>
             </thead>
             [% FOREACH collectionItemsLoo IN collectionItemsLoop %]
