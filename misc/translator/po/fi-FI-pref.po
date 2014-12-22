@@ -14,6 +14,10 @@ msgstr ""
 msgid "acquisitions.pref"
 msgstr "Kokoelmatoiminnot"
 
+# Acquisitions > Interfacing
+msgid "acquisitions.pref Interfacing"
+msgstr ""
+
 # Acquisitions > Policy
 msgid "acquisitions.pref Policy"
 msgstr "Asetukset"
@@ -136,6 +140,18 @@ msgstr ""
 
 # Acquisitions > Policy
 msgid "acquisitions.pref#UniqueItemFields# The following <a href='http://schema.koha-community.org/tables/items.html' target='blank'>database columns</a> should be unique in an item:"
+msgstr ""
+
+# Acquisitions > Interfacing
+msgid "acquisitions.pref#VaaraAcqVendorConfigurations# ."
+msgstr ""
+
+# Acquisitions > Interfacing
+msgid "acquisitions.pref#VaaraAcqVendorConfigurations# Define vendor integration rules:"
+msgstr ""
+
+# Acquisitions > Interfacing
+msgid "acquisitions.pref#VaaraAcqVendorConfigurations# This is a YAML-config."
 msgstr ""
 
 # Acquisitions > Policy
@@ -3625,6 +3641,10 @@ msgstr "olevaa kuvaa asiakaskäyttöliittymän tunnuskuvana (OPAC favicon) selai
 # OPAC > Policy
 msgid "opac.pref#OpacHiddenItems# Allows to define custom rules for hiding specific items at opac. See docs/opac/OpacHiddenItems.txt for more informations"
 msgstr "Määrittelee kohteiden piilottamissäännöt asiakasliittymästä. Lisätietoja: docs/opac/OpacHiddenItems.txt"
+
+# OPAC > Policy
+msgid "opac.pref#OpacHiddenItems# Vaara-Hack Alert! See KD-251 - Hiding Items from OPAC Searching"
+msgstr ""
 
 # OPAC > Appearance
 msgid "opac.pref#OpacHighlightedWords# Don't highlight"
