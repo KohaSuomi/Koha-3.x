@@ -13,16 +13,16 @@
     var osrlt = $("#osrlt").dataTable($.extend(true, {}, dataTablesDefaults, {
         [% IF ( routing && CAN_user_serials_routing ) %]
             "aoColumnDefs": [
-                { "aTargets": [ -1, -2, -3 ], "bSortable": false, "bSearchable": false },
+                { "aTargets": [ 0, -1, -2 ], "bSortable": false, "bSearchable": false },
             ],
         [% ELSE %]
             "aoColumnDefs": [
-                { "aTargets": [ -1, -2 ], "bSortable": false, "bSearchable": false },
+                { "aTargets": [ 0, -1 ], "bSortable": false, "bSearchable": false },
             ],
         [% END %]
         "aoColumns": [
-            null,{ "sType": "anti-the" },null,null,null,null,{ "sType": "title-string" }
-            [% IF ( routing && CAN_user_serials_routing ) %],null[% END %],null,null
+            null,null,{ "sType": "anti-the" },null,null,null,null,{ "sType": "title-string" }
+            [% IF ( routing && CAN_user_serials_routing ) %],null[% END %],null
         ],
         "sPaginationType": "four_button"
     } ) );
@@ -146,31 +146,31 @@
                 <table id="osrlt">
                   <thead>
                     <tr>
-                        <th>ISSN</th>
+                        <th>&nbsp;</th>
+                        <th>Library</th>
                         <th>Title</th>
                         <th> Notes </th>
-                        <th>Library</th>
                         <th>Location</th>
+                        <th>ISSN</th>
                         <th>Call number</th>
                         <th>Expiration date</th>
                         [% IF ( routing && CAN_user_serials_routing ) %]
                           <th>Routing list</th>
                         [% END %]
                         <th>&nbsp;</th>
-                        <th>&nbsp;</th>
                     </tr>
                   </thead>
                   <tfoot>
                     <tr>
-                      <td><input type="text" class="filter" data-column_num="0" placeholder="Search ISSN" /></td>
-                      <td><input type="text" class="filter" data-column_num="1" placeholder="Search title" /></td>
-                      <td><input type="text" class="filter" data-column_num="2" placeholder="Search notes" /></td>
-                      <td><input type="text" class="filter" data-column_num="3" placeholder="Search library" /></td>
-                      <td><input type="text" class="filter" data-column_num="4" placeholder="Search location" /></td>
-                      <td><input type="text" class="filter" data-column_num="5" placeholder="Search callnumber" /></td>
-                      <td><input type="text" class="filter" data-column_num="6" placeholder="Search expiration date" /></td>
-                      [% IF ( routing && CAN_user_serials_routing ) %]<td></td>[% END %]
                       <td></td>
+                      <td><input type="text" class="filter" data-column_num="1" placeholder="Search library" /></td>
+                      <td><input type="text" class="filter" data-column_num="2" placeholder="Search title" /></td>
+                      <td><input type="text" class="filter" data-column_num="3" placeholder="Search notes" /></td>
+                      <td><input type="text" class="filter" data-column_num="4" placeholder="Search location" /></td>
+                      <td><input type="text" class="filter" data-column_num="5" placeholder="Search ISSN" /></td>
+                      <td><input type="text" class="filter" data-column_num="6" placeholder="Search callnumber" /></td>
+                      <td><input type="text" class="filter" data-column_num="7" placeholder="Search expiration date" /></td>
+                      [% IF ( routing && CAN_user_serials_routing ) %]<td></td>[% END %]
                       <td></td>
                     </tr>
                   </tfoot>
@@ -179,8 +179,12 @@
                     [% UNLESS subscription.cannotdisplay %]
                       <tr>
                         <td>
-                        [% IF ( subscription.issn ) %][% subscription.issn %]
+                        [% IF ( CAN_user_serials_receive_serials ) %]
+                          <a href="/cgi-bin/koha/serials/serials-edit.pl?subscriptionid=[% subscription.subscriptionid %]&amp;serstatus=1,3,7">Serial receive</a>
                         [% END %]
+                        </td>
+                        <td>
+                          [% IF ( subscription.branchcode ) %][% Branches.GetName( subscription.branchcode ) %][% END %]
                         </td>
                         <td><a href="/cgi-bin/koha/serials/subscription-detail.pl?subscriptionid=[% subscription.subscriptionid %]" class="button" title="subscription detail">[% subscription.title |html %]</a>
                         </td>
@@ -188,10 +192,11 @@
                         [% IF ( subscription.internalnotes ) %]([% subscription.internalnotes %])[% END %]
                         </td>
                         <td>
-                          [% IF ( subscription.branchcode ) %][% Branches.GetName( subscription.branchcode ) %][% END %]
+                          [% IF ( subscription.location ) %][% AuthorisedValues.GetByCode( 'LOC', subscription.location ) %][% END %]
                         </td>
                         <td>
-                          [% IF ( subscription.location ) %][% AuthorisedValues.GetByCode( 'LOC', subscription.location ) %][% END %]
+                        [% IF ( subscription.issn ) %][% subscription.issn %]
+                        [% END %]
                         </td>
                         <td>
                           [% IF ( subscription.callnumber ) %][% subscription.callnumber %][% END %]
@@ -218,11 +223,6 @@
                         </td>
                         [% END %]
                         <td><a href="/cgi-bin/koha/serials/serials-collection.pl?subscriptionid=[% subscription.subscriptionid %]">Issue history</a>
-                        </td>
-                        <td>
-                        [% IF ( CAN_user_serials_receive_serials ) %]
-                          <a href="/cgi-bin/koha/serials/serials-edit.pl?subscriptionid=[% subscription.subscriptionid %]&amp;serstatus=1,3,7">Serial receive</a>
-                        [% END %]
                         </td>
                       </tr>
                       [% END %]
