@@ -22,6 +22,9 @@ use CGI qw/-utf8/;
 use C4::Auth qw/:DEFAULT get_session/;
 use C4::Output;
 use C4::OPLIB::OKM;
+
+use Koha::DateUtils;
+
 =head1 NAME
 
 okm_reports.pl
@@ -48,23 +51,15 @@ my $session = $cookie ? get_session($cookie->value) : undef;
 
 
 my $op = $input->param('op') || '';
-my $limit = $input->param('limit') || undef; #Integer but used as the SQL LIMIT -clause for testing
-my $timeperiod = $input->param('startDate').' - '.$input->param('endDate');
-my $individualBranches = $input->param('individualBranches');
 my $okm_statisticsId = $input->param('okm_statisticsId');
 
-if ($op eq 'run' || $op eq 'show') {
-    my $okm = C4::OPLIB::OKM::Retrieve( $okm_statisticsId, $timeperiod, $individualBranches );
+if ($op eq 'show') {
+    my $okm = C4::OPLIB::OKM::Retrieve( $okm_statisticsId );
     my ($html, $csv, $errors);
-    if ($okm) {
-        $html = $okm->asHtml();
-        #TODO this feature is incomplete $errors = $okm->verify();
+    unless ($okm) {
+        push @$errors, "Couldn't retrieve the given okm_report with koha.okm_statistics.id = $okm_statisticsId";
     }
-    else {
-        $errors = '<h4>OKM statistics not yet generated. Generate it with the misc/statistics/generateOKMAnnualStatistics.pl -script</h4>';
-    }
-    $template->param('okm_report_html' => $html);
-    $template->param('okm_report_csv' => $csv);
+    $template->param('okm' => $okm) if $okm;
     $template->param('okm_report_errors' => $errors);
     $template->param('okm_statisticsId' => $okm_statisticsId);
     #TODO, this feature doesn't work ATM and better rules for cross-examining statistics is needed. $template->param('okm_report_errors' => join('<br/>',@$errors)) if scalar(@$errors) > 0;
@@ -75,15 +70,17 @@ if ($op eq 'export') {
     if ($error eq 'reportUnavailable') {
         $template->param('okm_report_errors' => '<h4>OKM statistics not yet generated. Generate it with the misc/statistics/generateOKMAnnualStatistics.pl -script</h4>');
     }
-
 }
 
+if ($op eq 'delete') {
+    C4::OPLIB::OKM::Delete($okm_statisticsId);
+}
 
 $template->param(
-    timeperiod => $timeperiod, #Get the current year
+    okm_statisticsId => $okm_statisticsId,
     branchCategories => keys C4::OPLIB::OKM::getOKMBranchCategories(),
     quote => getRandomQuote(),
-    ready_okm_reports => C4::OPLIB::OKM::RetrieveAll(),
+    ready_okm_reports => prettifyOKM_reports(),
 );
 
 
@@ -123,6 +120,23 @@ sub export {
     exit;
 }
 
+sub prettifyOKM_reports {
+    my $okm_reports = C4::OPLIB::OKM::RetrieveAll();
+    foreach my $okm_report (@$okm_reports) {
+
+        #Standardize the dates
+        my $startdate = Koha::DateUtils::dt_from_string( $okm_report->{startdate}, 'iso' );
+        my $enddate   = Koha::DateUtils::dt_from_string( $okm_report->{enddate}, 'iso' );
+        $okm_report->{startdate} = Koha::DateUtils::output_pref({ dt => $startdate, dateonly => 1});
+        $okm_report->{enddate}   = Koha::DateUtils::output_pref({ dt => $enddate,   dateonly => 1});
+
+        #Find the selected report
+        if ($okm_report->{id} == $okm_statisticsId) {
+            $okm_report->{selected} = 1;
+        }
+    }
+    return $okm_reports;
+}
 
 ## These quotes are from https://www.goodreads.com/quotes/tag/statistics
 sub getRandomQuote {
