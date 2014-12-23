@@ -14,12 +14,38 @@ use C4::Branch;
 use C4::Items;
 use C4::OPLIB::OKMLibraryGroup;
 use C4::Context qw(dbh);
+use C4::Templates qw(gettemplate);
+
+
+=head new
+
+    my $okm = C4::OPLIB::OKM->new($timeperiod, $limit, $individualBranches, $biblioCache, $verbose);
+
+@PARAM4 String, a .csv-row with each element as a branchcode
+                'JOE_JOE,JOE_RAN,[...]'
+                or
+                '*' which means ALL BRANCHES. Then the function fetches all the branchcodes from DB.
+@PARAM5 HASH, An empty hash, or the populated biblioCache. If you want to save the biblioCache,
+              use this parameter to persist a reference to it.
+              If an empty hash, it will be populated.
+              If an populated hash, it will be used as is.
+              If undefined, the parameter is ignored.
+@PARAM7 String, Overrides the shelving locations considered to contain juvenile material. By Default this module
+                considers items as juvenile material if they are in shelving locations with an
+                koha.authorised_values.imageurl =~ /okm_juvenile/.
+                This parameter is a .csv-row with each element as a shelving location code
+                'LAP,NUO,NUOV,[...]'
+                or undef to preserve default operation
+
+=cut
 
 sub new {
-    my ($class, $timeperiod, $limit, $individualBranches) = @_;
+    my ($class, $timeperiod, $limit, $individualBranches, $biblioCache, $verbose, $juvenileShelvingLocations) = @_;
 
     my $self = {};
     bless($self, $class);
+
+    $self->{verbose} = $verbose if $verbose;
 
     my $libraryGroups;
     if ($individualBranches) {
@@ -30,6 +56,8 @@ sub new {
         $libraryGroups = $self->setLibraryGroups(  $self->getOKMBranchCategoriesAndBranches()  );
     }
 
+    $self->{juvenileShelvingLocations} = $self->createJuvenileShelvingLocations($juvenileShelvingLocations) if $juvenileShelvingLocations;
+
     my ($startDate, $endDate) = StandardizeTimeperiodParameter($timeperiod);
     $self->{startDate} = $startDate;
     $self->{startDateISO} = $startDate->iso8601();
@@ -37,7 +65,12 @@ sub new {
     $self->{endDateISO} = $endDate->iso8601();
     $self->{limit} = $limit; #Set the SQL LIMIT. Used in testing to generate statistics faster.
 
-    $self->buildBiblioCache($limit); #This will take some time.
+    if( scalar(keys(%$biblioCache)) > 5 ) {
+        $self->setBiblioCache($biblioCache);
+    }
+    else {
+        $self->buildBiblioCache($biblioCache, $limit); #This will take some time
+    }
 
     $self->createStatistics();
 
@@ -53,6 +86,7 @@ sub createStatistics {
 
     foreach my $groupcode (sort keys %$libraryGroups) {
         my $libraryGroup = $libraryGroups->{$groupcode};
+        print '    #'.DateTime->now()->iso8601()."# Starting $groupcode #\n" if $self->{verbose};
 
         $self->statisticsBranchCounts( $libraryGroup, 1);
 
@@ -83,7 +117,7 @@ sub _processItemsDataRow {
 
     my $biblio = $self->getCachedBiblio($row->{biblionumber});
     my $primaryLanguage = $biblio->{primaryLanguage};
-    my $isChildrensMaterial = IsItemChildrens($row);
+    my $isChildrensMaterial = $self->isItemChildrens($row);
     my $isFiction = $biblio->{isFiction};
     my $isMusicalRecording = $biblio->{isMusicalRecording};
     my $isAcquired = $self->isItemAcquired($row);
@@ -93,7 +127,7 @@ sub _processItemsDataRow {
     $stats->{collection}++;
     $stats->{acquisitions}++ if $isAcquired;
     $stats->{issues} += $row->{issues};
-    $stats->{expenditureAcquisitions} += $row->{price} if $row->{price};
+    $stats->{expenditureAcquisitions} += $row->{price} if $isAcquired && $row->{price};
 
     if ($itemtype eq 'KI') {
 
@@ -356,15 +390,51 @@ sub setLibraryGroups {
     return $self->{lib_groups};
 }
 
+=head createLibraryGroupsFromIndividualBranches
+
+    $okm->createLibraryGroupsFromIndividualBranches($individualBranches);
+
+@PARAM1 String, a .csv-row with each element as a branchcode
+                'JOE_JOE,JOE_RAN,[...]'
+                or
+                '*' which means ALL BRANCHES. Then the function fetches all the branchcodes from DB.
+@RETURNS a HASH of library monstrosity
+=cut
+
 sub createLibraryGroupsFromIndividualBranches {
     my ($self, $individualBranches) = @_;
-    my @iBranchcodes = split(',',$individualBranches);
+    my @iBranchcodes;
+
+    if ($individualBranches eq '*') {
+        @iBranchcodes = keys %{C4::Branch::GetBranches()};
+    }
+    else {
+        @iBranchcodes = split(',',$individualBranches);
+        for(my $i=0 ; $i<@iBranchcodes ; $i++) {
+            my $bc = $iBranchcodes[$i];
+            $bc =~ s/\s//g; #Trim all whitespace
+            $iBranchcodes[$i] = $bc;
+        }
+    }
 
     my $libraryGroups = {};
     foreach my $branchcode (@iBranchcodes) {
         $libraryGroups->{$branchcode}->{branches} = {$branchcode => 1};
     }
     return $libraryGroups;
+}
+
+sub createJuvenileShelvingLocations {
+    my ($self, $juvenileShelvingLocations) = @_;
+
+    my @locations = split(',',$juvenileShelvingLocations);
+    my %locations;
+    for(my $i=0 ; $i<@locations ; $i++) {
+        my $loc = $locations[$i];
+        $loc =~ s/\s//g; #Trim all whitespace
+        $locations{$loc} = 1;
+    }
+    return \%locations;
 }
 
 sub verify {
@@ -391,11 +461,9 @@ Returns an HTML table header and rows for each library group with statistical ca
 
 sub asHtml {
     my $self = shift;
-    my @sb;
-
-    my $a;
-
     my $libraryGroups = $self->getLibraryGroups();
+
+    my @sb;
 
     push @sb, '<table>';
     my $firstrun = 1;
@@ -573,24 +641,26 @@ sub FindMarcField {
     }
 }
 
-=head IsItemChildrens
-
-Static method
+=head isItemChildrens
 
     $row->{location} = 'LAP';
-    my $isChildrens = IsItemChildrens($row);
+    my $isChildrens = $okm->isItemChildrens($row);
     assert($isChildrens == 1);
 
 @PARAM1 hash, containing the koha.items.location as location-key
+@OVERRIDE can be overriden by the $juvenileShelvingLocations-parameter to the constructor!
 =cut
 
-sub IsItemChildrens {
-    my ($row) = @_;
-
+sub isItemChildrens {
+    my ($self, $row) = @_;
+    my $juvenileShelvingLocations = $self->{juvenileShelvingLocations};
     my $url = $row->{imageurl}; #Get the items.location -> authorised_values.imageurl
 
-    if ($url && $url =~ /okm_juvenile/) {
-        return 1;
+    if ($juvenileShelvingLocations && ref $juvenileShelvingLocations eq 'HASH') {
+        return 1 if $row->{location} && $juvenileShelvingLocations->{$row->{location}};
+    }
+    else {
+        return 1 if ($url && $url =~ /okm_juvenile/);
     }
     return 0;
 }
@@ -719,7 +789,6 @@ Generally you should just pass the parameters given to the OKM-object during ini
 @PARAM3 ISO8601 datetime, the end of the statistical reporting period.
 @PARAM4 Comma-separated String, list of branchcodes to run statistics of if using the librarygroups is not desired.
 =cut
-
 sub Retrieve {
     my ($okm_statisticsId, $timeperiod, $individualBranches) = @_;
 
@@ -751,7 +820,7 @@ sub _RetrieveByParams {
 }
 sub RetrieveAll {
     my $dbh = C4::Context->dbh();
-    my $sth = $dbh->prepare('SELECT * FROM okm_statistics');
+    my $sth = $dbh->prepare('SELECT * FROM okm_statistics ORDER BY enddate DESC');
     $sth->execute(  );
     return $sth->fetchall_arrayref({});
 }
@@ -760,6 +829,24 @@ sub _deserialize {
     my $VAR1;
     eval $serialized if $serialized;
     return $VAR1;
+}
+=head Delete
+
+    C4::OPLIB::OKM::Delete($id);
+
+@PARAM1 Long, The koha.okm_statistics.id of the statistical row to delete.
+@RETURNS DBI::Error if database errors, otherwise undef.
+=cut
+sub Delete {
+    my $id = shift;
+
+    my $dbh = C4::Context->dbh();
+    my $sth = $dbh->prepare('DELETE FROM okm_statistics WHERE id = ?');
+    $sth->execute( $id );
+    if ( $sth->err ) {
+        return $sth->err;
+    }
+    return undef;
 }
 
 =head getCachedBiblio
@@ -783,44 +870,67 @@ sub getCachedBiblio {
     unless ($cache->{$biblionumber}) {
         $self->{config}->{marcxmlCacheSize}++;
 
-        #if ($self->{config}->{marcxmlCacheSize} > $self->{config}->{maxCacheSize}) {
-        #    $self->{config}->{marcxmlCache} = {}; #Empty the hash, because slicing it would be tremendously slow.
-        #}
         $biblio = {};
         $marcxml = C4::Biblio::GetXmlBiblio($biblionumber);
-        calculateBiblioStatistics($biblio, $marcxml);
+        CalculateBiblioStatistics($biblio, $marcxml);
 
         $cache->{$biblionumber} = $biblio;
+
+        print '        #BiblioCache miss for bn:'.$biblionumber."\n" if $self->{verbose};
     }
 
     return $cache->{$biblionumber};
 }
 
 sub buildBiblioCache {
-    my ($self, $limit) = @_;
+    my ($self, $biblioCache, $limit) = @_;
 
-    $self->{biblioCache} = {};
+    if ($biblioCache) {
+        $self->{biblioCache} = $biblioCache;
+    }
+    else {
+        $self->{biblioCache} = {};
+    }
     my $cache = $self->{biblioCache};
 
+    my $offset = 0; my $chunk = 100000; my $biblios;
+    do {
+        $biblios = $self->_getBiblioChunk( $offset, $chunk );
+        #Gather the desired statistical markers from the biblio chunk
+        foreach my $b (@$biblios) {
+            my $biblio = {};
+            CalculateBiblioStatistics($biblio, $b->{marcxml});
+            $cache->{$b->{biblionumber}} = $biblio;
+        }
+        $offset += $chunk;
+    } while ((not($limit) || $offset < $limit) && scalar(@$biblios) > 0); #Continue while we get results and are not LIMITed
+}
+sub _getBiblioChunk {
+    my ($self, $offset, $limit) = @_;
+    print '    #Building biblioCache '.$offset.'-'.($offset+$limit)."\n" if $self->{verbose};
     my $dbh = C4::Context->dbh();
-    my $sql = "SELECT biblionumber, marcxml FROM biblioitems";
-    $sql .= " LIMIT $limit" if $limit;
+    my $sql = "SELECT biblionumber, marcxml FROM biblioitems LIMIT ? OFFSET ?";
     my $sth = $dbh->prepare($sql);
-    $sth->execute(  ); #This will take some time.....
+    $sth->execute( $limit, $offset ); #This will take some time.....
     my $biblios = $sth->fetchall_arrayref({});
-    foreach my $b (@$biblios) {
-        my $biblio = {};
-        calculateBiblioStatistics($biblio, $b->{marcxml});
-        $cache->{$b->{biblionumber}} = $biblio;
-    }
+    return $biblios;
+}
+sub getBiblioCache {
+    my ($self) = @_;
+    return $self->{biblioCache};
+}
+sub setBiblioCache {
+    my ($self, $biblioCache) = @_;
+    $self->{biblioCache} = $biblioCache;
 }
 sub releaseBiblioCache {
     my $self = shift;
 
+    #Make sure not to deep delete here, because this cache might be referenced from somewhere else.
     $self->{biblioCache} = {}; #We don't need to deep delete, since there are no circular references in the cache.
 }
 
-sub calculateBiblioStatistics {
+sub CalculateBiblioStatistics {
     my ($biblio, $marcxml) = @_;
 
     $biblio->{primaryLanguage} = FindMarcField('041','a', $marcxml);
@@ -834,6 +944,7 @@ sub calculateBiblioStatistics {
 
 @PARAM1 String, The timeperiod definition. Supported values are:
                 1. "YYYY-MM-DD - YYYY-MM-DD" (start to end, inclusive)
+                   "YYYY-MM-DDThh:mm:ss - YYYY-MM-DDThh:mm:ss" is also accepted, but only the YYYY-MM-DD-portion is used.
                 2. "YYYY" (desired year)
                 3. "MM" (desired month, of the current year)
                 4. "lastyear" (Calculates the whole last year)
@@ -846,16 +957,16 @@ sub StandardizeTimeperiodParameter {
 
     my ($startDate, $endDate);
 
-    if ($timeperiod =~ /^(\d\d\d\d)-(\d\d)-(\d\d) - (\d\d\d\d)-(\d\d)-(\d\d)$/) {
+    if ($timeperiod =~ /^(\d\d\d\d)-(\d\d)-(\d\d)([Tt ]\d\d:\d\d:\d\d)? - (\d\d\d\d)-(\d\d)-(\d\d)([Tt ]\d\d:\d\d:\d\d)?$/) {
         #Make sure the values are correct by casting them into a DateTime
         $startDate = DateTime->new(year => $1, month => $2, day => $3, time_zone => C4::Context->tz());
-        $endDate = DateTime->new(year => $4, month => $5, day => $6, time_zone => C4::Context->tz());
+        $endDate = DateTime->new(year => $5, month => $6, day => $7, time_zone => C4::Context->tz());
     }
     elsif ($timeperiod =~ /^(\d\d\d\d)$/) {
-        $startDate = DateTime->from_day_of_year(year => $1, day => 1, time_zone => C4::Context->tz());
+        $startDate = DateTime->from_day_of_year(year => $1, day_of_year => 1, time_zone => C4::Context->tz());
         $endDate = ($startDate->is_leap_year()) ?
-                            DateTime->from_day_of_year(year => $1, day => 366, time_zone => C4::Context->tz()) :
-                            DateTime->from_day_of_year(year => $1, day => 365, time_zone => C4::Context->tz());
+                            DateTime->from_day_of_year(year => $1, day_of_year => 366, time_zone => C4::Context->tz()) :
+                            DateTime->from_day_of_year(year => $1, day_of_year => 365, time_zone => C4::Context->tz());
     }
     elsif ($timeperiod =~ /^\d\d$/) {
         $startDate = DateTime->new( year => DateTime->now()->year(),
