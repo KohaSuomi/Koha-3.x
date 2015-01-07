@@ -95,15 +95,29 @@ sub _set_NULL_to__ {
 sub getShelvingLabelsMap {
     my $olms = shift;
     $olms = getMappings() unless $olms;
-    
+
     _set_NULL_to__($_) foreach @$olms;
-    
+
     my $map = {};
     foreach my $m (@$olms) {
         #Store to the map the code values, not the integer id's because this is a common referencing behaviour in Koha.
         $map->{ $m->{branchcode} }->{ $m->{location_value} }->{ $m->{itype} }->{ $m->{ccode_value} } = $m->{label};
     }
-    
+
+    return $map;
+}
+sub getReverseShelvingLabelsMap {
+    my $olms = shift;
+    $olms = getMappings() unless $olms;
+
+    _set_NULL_to__($_) foreach @$olms;
+
+    my $map = {};
+    foreach my $m (@$olms) {
+        #Store to the map the code values, not the integer id's because this is a common referencing behaviour in Koha.
+        $map->{ $m->{label} } = $m;
+    }
+
     return $map;
 }
 
