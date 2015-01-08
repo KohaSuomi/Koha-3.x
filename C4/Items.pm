@@ -928,6 +928,22 @@ sub GetItemLocation {
     return \%itemlocation;
 }
 
+=head GetRealItemLocations
+
+    my $locations = C4::Items::GetRealItemLocations($itemnumber);
+
+A convenience function of getting just the Item location and permanent_location
+@PARAM1, Long, the koha-items.itemnumber
+@RETURNS, Reference to Hash, with koha.items.location and permanent_location as hash keys.
+
+=cut
+sub GetRealItemLocations {
+    my $itemnumber = shift;
+    my $sth = C4::Context->dbh()->prepare('SELECT location, permanent_location FROM items WHERE itemnumber = ?');
+    $sth->execute($itemnumber);
+    return $sth->fetchrow_hashref();
+}
+
 =head2 GetLostItems
 
   $items = GetLostItems( $where, $orderby );
@@ -2038,7 +2054,15 @@ sub _do_column_fixes_for_mod {
         $item->{'withdrawn'} = 0;
     }
     if (exists $item->{'location'} && !exists $item->{'permanent_location'}) {
-        $item->{'permanent_location'} = $item->{'location'};
+        if ($item->{'location'} ne 'CART' && $item->{'location'} ne 'PROC') {
+            $item->{'permanent_location'} = $item->{'location'};
+        }
+        else {
+            #Preserve the old permanent_location in face of adversity!
+            #Don't let it fall to 'PROC' or 'CART'. Otherwise it will be forever lost!
+            my $locations = GetRealItemLocations( $item->{itemnumber} );
+            $item->{'permanent_location'} = $locations->{'permanent_location'};
+        }
     }
     if (exists $item->{'timestamp'}) {
         delete $item->{'timestamp'};
