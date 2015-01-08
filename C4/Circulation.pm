@@ -1960,7 +1960,7 @@ sub AddReturn {
     if ( $borrowernumber
       && $borrower->{'debarred'}
       && C4::Context->preference('AutoRemoveOverduesRestrictions')
-      && !HasOverdues( $borrowernumber )
+      && !C4::Members::HasOverdues( $borrowernumber )
       && @{ GetDebarments({ borrowernumber => $borrowernumber, type => 'OVERDUES' }) }
     ) {
         DelUniqueDebarment({ borrowernumber => $borrowernumber, type => 'OVERDUES' });
@@ -2774,7 +2774,7 @@ sub AddRenewal {
     my $borrower = C4::Members::GetMember( borrowernumber => $borrowernumber );
     if ( $borrowernumber
       && $borrower->{'debarred'}
-      && !HasOverdues( $borrowernumber )
+      && !C4::Members::HasOverdues( $borrowernumber )
       && @{ GetDebarments({ borrowernumber => $borrowernumber, type => 'OVERDUES' }) }
     ) {
         DelUniqueDebarment({ borrowernumber => $borrowernumber, type => 'OVERDUES' });
