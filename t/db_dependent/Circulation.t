@@ -16,6 +16,7 @@
 # along with Koha; if not, see <http://www.gnu.org/licenses>.
 
 use Modern::Perl;
+use utf8;
 
 use DateTime;
 use C4::Biblio;
@@ -25,7 +26,7 @@ use C4::Members;
 use C4::Reserves;
 use Koha::DateUtils;
 
-use Test::More tests => 49;
+use Test::More tests => 57;
 
 BEGIN {
     use_ok('C4::Circulation');
@@ -468,6 +469,112 @@ C4::Context->dbh->do("DELETE FROM accountlines");
 
 }
 
+##Preparing test Objects for the testReturnToShelvingCart() because none are available in this context.
+##The test can be easily moved to another context.
+#Create another record
+my $biblio = MARC::Record->new();
+$biblio->append_fields(
+    MARC::Field->new('100', ' ', ' ', a => 'The Anonymous'),
+    MARC::Field->new('245', ' ', ' ', a => 'Something is worng here')
+);
+my ($biblionumber, $biblioitemnumber, $itemnumber) = C4::Biblio::AddBiblio($biblio, '');
+$biblio = C4::Biblio::GetBiblio($biblionumber);
+#Create any circulable item
+($biblionumber, $biblioitemnumber, $itemnumber) = C4::Items::AddItem(
+    {
+        homebranch       => 'CPL',
+        holdingbranch    => 'CPL',
+        barcode          => 'SauliNiinistö',
+    },
+    $biblionumber
+);
+$item = C4::Items::GetItem($itemnumber);
+# Create a borrower
+my $borrowernumber = C4::Members::AddMember(
+    firstname =>  'Fridolyn',
+    surname => 'SOMERS',
+    categorycode => 'S',
+    branchcode => 'CPL',
+);
+$borrower = C4::Members::GetMember(borrowernumber => $borrowernumber);
+testReturnToShelvingCart($borrower, $item);
+
 $dbh->rollback;
 
 1;
+
+=head testReturnToShelvingCart
+
+    testReturnToShelvingCart($borrower, $item);
+
+    Runs 8 tests for the ReturnToShelvingCart-feature.
+
+@PARAM1, borrower-hash from koha.borrowers-table, can be any Borrower who can check-out/in
+@PARAM2, item-hash from koha-items-table, can be any Item which can be circulated
+
+=cut
+sub testReturnToShelvingCart {
+    my $borrower = shift; #Any borrower who can check-in-out will do.
+    my $item = shift; #Any Item that can be circulated will do.
+    my $originalIssues = C4::Circulation::GetIssues({borrowernumber => $borrower->{borrowernumber}});
+    my $originalReturnToShelvingCart = C4::Context->preference('ReturnToShelvingCart'); #Store the original preference so we can rollback changes
+    C4::Context->set_preference('ReturnToShelvingCart', 1) unless $originalReturnToShelvingCart; #Make sure it is 'Move'
+
+    #TEST1: Make sure the Item has an intelligible location and permanent_location
+    my $location = 'BOOK';
+    my $anotherLocation = 'SHELF';
+    C4::Items::ModItem({location => $location}, $item->{biblionumber}, $item->{itemnumber});
+    $item = C4::Items::GetItem($item->{itemnumber}); #Update the DB changes.
+    ok($item->{permanent_location} eq $location, "ReturnToShelvingCart: Setting a proper location succeeded.");
+
+    #TEST2: It makes no difference in which state the Item is, when it is returned, the location changes to 'CART'
+    C4::Circulation::AddReturn($item->{barcode}, $borrower->{branchcode});
+    $item = C4::Items::GetItem($item->{itemnumber}); #Update the DB changes.
+    ok($item->{permanent_location} eq $location && $item->{location} eq 'CART', "ReturnToShelvingCart: Item returned, location and permanent_location OK!");
+
+    #TEST3: Editing the Item didn't screw up the permanent_location
+    C4::Items::ModItem({price => 12}, $item->{biblionumber}, $item->{itemnumber});
+    $item = C4::Items::GetItem($item->{itemnumber}); #Update the DB changes.
+    ok($item->{permanent_location} eq $location && $item->{location} eq 'CART', "ReturnToShelvingCart: Minor modifying an Item doesn't overwrite permanent_location!");
+
+    #TEST4: Checking an Item out to test another possible state.
+    C4::Items::ModItem({location => $location}, $item->{biblionumber}, $item->{itemnumber}); #Reset the original location, as if the cart_to_Shelf.pl-script has been ran.
+    C4::Circulation::AddIssue($borrower, $item->{barcode});
+    my $issues = C4::Circulation::GetIssues({borrowernumber => $borrower->{borrowernumber}});
+    ok(  scalar(@$originalIssues)+1 == scalar(@$issues)  ,"ReturnToShelvingCart: Adding an Issue succeeded!"  );
+
+    #TEST5:
+    C4::Circulation::AddReturn($item->{barcode}, $borrower->{branchcode});
+    $item = C4::Items::GetItem($item->{itemnumber}); #Update the DB changes.
+    ok($item->{permanent_location} eq $location && $item->{location} eq 'CART', "ReturnToShelvingCart: Item returned again, location and permanent_location OK!");
+
+    #TEST6: Editing the Item without a permanent_location
+    #  (like when Editing the item using the staff clients editing view @ additem.pl?biblionumber=469263)
+    #  didn't screw up the permanent_location
+    delete $item->{permanent_location};
+    C4::Items::ModItem($item, $item->{biblionumber}, $item->{itemnumber});
+    $item = C4::Items::GetItem($item->{itemnumber}); #Update the DB changes.
+    ok($item->{permanent_location} eq $location && $item->{location} eq 'CART', "ReturnToShelvingCart: Modifying the whole Item doesn't overwrite permanent_location!");
+
+    #TEST7: Modifying only the permanent_location is an interesting option! So our Item is in 'CART', but we want to keep it there (hypothetically) and change the real location!
+    C4::Items::ModItem({permanent_location => $anotherLocation}, $item->{biblionumber}, $item->{itemnumber});
+    $item = C4::Items::GetItem($item->{itemnumber}); #Update the DB changes.
+    ok($item->{permanent_location} eq $anotherLocation && $item->{location} eq 'CART', "ReturnToShelvingCart: Modifying the permanent_location while the location is 'CART'.");
+
+    #TEST8: Adding an Item without a permanent_location defined... Justin Case
+    my $yetAnotherLocation = 'STAFF';
+    my ( $xyz4lol, $whysomany4, $addedItemnumber ) = C4::Items::AddItem(
+        {
+            location         => $yetAnotherLocation,
+            homebranch       => 'CPL',
+            holdingbranch    => 'MPL',
+            barcode          => 'Hölökyn kölökyn',
+            replacementprice => 16.00
+        },
+        $item->{biblionumber}
+    );
+    my $addedItem = C4::Items::GetItem($addedItemnumber);
+    ok($item->{permanent_location} eq $yetAnotherLocation && $item->{location} eq $yetAnotherLocation, "ReturnToShelvingCart: Adding a new Item with location also sets the permanent_location.");
+
+    C4::Context->set_preference('ReturnToShelvingCart', $originalReturnToShelvingCart) unless $originalReturnToShelvingCart; #Set it to the original value
+}
