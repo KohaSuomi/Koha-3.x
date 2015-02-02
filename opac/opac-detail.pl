@@ -601,6 +601,7 @@ if ( not $viewallitems and @items > $max_items_to_display ) {
         too_many_items => 1,
         items_count => scalar( @items ),
     );
+    $norequests = 0;
 } else {
   for my $itm (@items) {
     $itm->{holds_count} = $item_reserves{ $itm->{itemnumber} };
