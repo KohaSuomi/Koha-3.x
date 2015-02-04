@@ -1,6 +1,8 @@
 package C4::OPLIB::OKM;
 
 use Modern::Perl;
+#use open qw( :std :encoding(UTF-8) );
+#binmode( STDOUT, ":encoding(UTF-8)" );
 use Carp;
 
 use Data::Dumper;
@@ -24,7 +26,7 @@ use C4::Templates qw(gettemplate);
 @PARAM4 String, a .csv-row with each element as a branchcode
                 'JOE_JOE,JOE_RAN,[...]'
                 or
-                '*' which means ALL BRANCHES. Then the function fetches all the branchcodes from DB.
+                '_A' which means ALL BRANCHES. Then the function fetches all the branchcodes from DB.
 @PARAM5 HASH, An empty hash, or the populated biblioCache. If you want to save the biblioCache,
               use this parameter to persist a reference to it.
               If an empty hash, it will be populated.
@@ -90,9 +92,9 @@ sub createStatistics {
 
         $self->statisticsBranchCounts( $libraryGroup, 1);
 
-        my $sth = $self->fetchItemsDataMountain($libraryGroup);
-        while (my $row = $sth->fetchrow_hashref()) {
-            $self->_processItemsDataRow( $libraryGroup, $row );
+        my $itemBomb = $self->fetchItemsDataMountain($libraryGroup);
+        foreach my $itemnumber (sort {$a <=> $b} keys %$itemBomb) {
+            $self->_processItemsDataRow( $libraryGroup, $itemBomb->{$itemnumber} );
         }
 
         $self->statisticsSubscriptions( $libraryGroup );
@@ -115,116 +117,122 @@ sub _processItemsDataRow {
 
     my $stats = $libraryGroup->getStatistics();
 
+    my $deleted = $row->{deleted}; #These inlcude also Issues for Items outside of this libraryGroup.
     my $biblio = $self->getCachedBiblio($row->{biblionumber});
     my $primaryLanguage = $biblio->{primaryLanguage};
     my $isChildrensMaterial = $self->isItemChildrens($row);
     my $isFiction = $biblio->{isFiction};
     my $isMusicalRecording = $biblio->{isMusicalRecording};
-    my $isAcquired = $self->isItemAcquired($row);
+    my $isAcquired = (not($deleted)) ? $self->isItemAcquired($row) : undef; #If an Item is deleted, omit the acquisitions calculations because they wouldn't be accurate. Default to not acquired.
     my $itemtype = $row->{itype};
+    my $issues = $row->{issuesQuery}->{issues} || 0;
+    my $serial = ($itemtype eq 'AL' || $itemtype eq 'SL') ? 1 : 0;
 
     #Increase the collection for every Item found
-    $stats->{collection}++;
-    $stats->{acquisitions}++ if $isAcquired;
-    $stats->{issues} += $row->{issues};
-    $stats->{expenditureAcquisitions} += $row->{price} if $isAcquired && $row->{price};
+    $stats->{collection}++ if not($deleted) && not($serial);
+    $stats->{acquisitions}++ if $isAcquired && not($serial);
+    $stats->{issues} += $issues; #Serials are included in the cumulative issues.
+    $stats->{expenditureAcquisitions} += $row->{price} if $isAcquired && not($serial) && $row->{price};
 
     if ($itemtype eq 'KI') {
 
-        $stats->{collectionBooksTotal}++;
+        $stats->{collectionBooksTotal}++ if not($deleted);
         $stats->{acquisitionsBooksTotal}++ if $isAcquired;
         $stats->{expenditureAcquisitionsBooks} += $row->{price} if $isAcquired && $row->{price};
-        $stats->{issuesBooksTotal} += $row->{issues};
+        $stats->{issuesBooksTotal} += $issues;
 
         if ($primaryLanguage eq 'fin' || not(defined($primaryLanguage))) {
-            $stats->{collectionBooksFinnish}++;
+            $stats->{collectionBooksFinnish}++ if not($deleted);
             $stats->{acquisitionsBooksFinnish}++ if $isAcquired;
-            $stats->{issuesBooksFinnish} += $row->{issues};
+            $stats->{issuesBooksFinnish} += $issues;
         }
         elsif ($primaryLanguage eq 'swe') {
-            $stats->{collectionBooksSwedish}++;
+            $stats->{collectionBooksSwedish}++ if not($deleted);
             $stats->{acquisitionsBooksSwedish}++ if $isAcquired;
-            $stats->{issuesBooksSwedish} += $row->{issues};
+            $stats->{issuesBooksSwedish} += $issues;
         }
         else {
-            $stats->{collectionBooksOtherLanguage}++;
+            $stats->{collectionBooksOtherLanguage}++ if not($deleted);
             $stats->{acquisitionsBooksOtherLanguage}++ if $isAcquired;
-            $stats->{issuesBooksOtherLanguage} += $row->{issues};
+            $stats->{issuesBooksOtherLanguage} += $issues;
         }
 
         if ($isFiction) {
             if ($isChildrensMaterial) {
-                $stats->{collectionBooksFictionJuvenile}++;
-                $stats->{acquisitionsFictionJuvenile}++ if $isAcquired;
-                $stats->{issuesBooksFictionJuvenile} += $row->{issues};
+                $stats->{collectionBooksFictionJuvenile}++ if not($deleted);
+                $stats->{acquisitionsBooksFictionJuvenile}++ if $isAcquired;
+                $stats->{issuesBooksFictionJuvenile} += $issues;
             }
             else { #Adults fiction
-                $stats->{collectionBooksFictionAdult}++;
+                $stats->{collectionBooksFictionAdult}++ if not($deleted);
                 $stats->{acquisitionsBooksFictionAdult}++ if $isAcquired;
-                $stats->{issuesBooksFictionAdult} += $row->{issues};
+                $stats->{issuesBooksFictionAdult} += $issues;
             }
         }
         else { #Non-Fiction
             if ($isChildrensMaterial) {
-                $stats->{collectionBooksNonFictionJuvenile}++;
-                $stats->{acquisitionsNonFictionJuvenile}++ if $isAcquired;
-                $stats->{issuesBooksNonFictionJuvenile} += $row->{issues};
+                $stats->{collectionBooksNonFictionJuvenile}++ if not($deleted);
+                $stats->{acquisitionsBooksNonFictionJuvenile}++ if $isAcquired;
+                $stats->{issuesBooksNonFictionJuvenile} += $issues;
             }
             else { #Adults Non-fiction
-                $stats->{collectionBooksNonFictionAdult}++;
+                $stats->{collectionBooksNonFictionAdult}++ if not($deleted);
                 $stats->{acquisitionsBooksNonFictionAdult}++ if $isAcquired;
-                $stats->{issuesBooksNonFictionAdult} += $row->{issues};
+                $stats->{issuesBooksNonFictionAdult} += $issues;
             }
         }
     }
-    elsif ($itemtype eq 'NU' || $itemtype eq 'PA' || $itemtype eq 'NÄ') {
-        $stats->{collectionSheetMusicAndScores}++;
+    elsif ($itemtype eq 'NU' || $itemtype eq 'PA') {
+        $stats->{collectionSheetMusicAndScores}++ if not($deleted);
         $stats->{acquisitionsSheetMusicAndScores}++ if $isAcquired;
-        $stats->{issuesSheetMusicAndScores} += $row->{issues};
+        $stats->{issuesSheetMusicAndScores} += $issues;
     }
-    elsif ($itemtype eq 'KA' || $itemtype eq 'CD' || $itemtype eq 'MP' || $itemtype eq 'LE') {
+    elsif ($itemtype eq 'KA' || $itemtype eq 'CD' || $itemtype eq 'MP' || $itemtype eq 'LE' || $itemtype eq 'ÄT' || $itemtype eq 'NÄ') {
         if ($isMusicalRecording) {
-            $stats->{collectionMusicalRecordings}++;
+            $stats->{collectionMusicalRecordings}++ if not($deleted);
             $stats->{acquisitionsMusicalRecordings}++ if $isAcquired;
-            $stats->{issuesMusicalRecordings} += $row->{issues};
+            $stats->{issuesMusicalRecordings} += $issues;
         }
         else {
-            $stats->{collectionOtherRecordings}++;
+            $stats->{collectionOtherRecordings}++ if not($deleted);
             $stats->{acquisitionsOtherRecordings}++ if $isAcquired;
-            $stats->{issuesOtherRecordings} += $row->{issues};
+            $stats->{issuesOtherRecordings} += $issues;
         }
     }
     elsif ($itemtype eq 'VI') {
-        $stats->{collectionVideos}++;
+        $stats->{collectionVideos}++ if not($deleted);
         $stats->{acquisitionsVideos}++ if $isAcquired;
-        $stats->{issuesVideos} += $row->{issues};
+        $stats->{issuesVideos} += $issues;
     }
-    elsif ($itemtype eq 'CR' || $itemtype eq 'DR') {
-        $stats->{collectionCDROMs}++;
+    elsif ($itemtype eq 'CR' || $itemtype eq 'DR' || $itemtype eq 'KP') {
+        $stats->{collectionCDROMs}++ if not($deleted);
         $stats->{acquisitionsCDROMs}++ if $isAcquired;
-        $stats->{issuesCDROMs} += $row->{issues};
+        $stats->{issuesCDROMs} += $issues;
     }
     elsif ($itemtype eq 'BR' || $itemtype eq 'DV') {
-        $stats->{collectionDVDsAndBluRays}++;
+        $stats->{collectionDVDsAndBluRays}++ if not($deleted);
         $stats->{acquisitionsDVDsAndBluRays}++ if $isAcquired;
-        $stats->{issuesDVDsAndBluRays} += $row->{issues};
+        $stats->{issuesDVDsAndBluRays} += $issues;
     }
-    elsif ($itemtype ne 'AL' || $itemtype ne 'SL') { #Serials and magazines are collected from the subscriptions-table using statisticsSubscriptions()
-        $stats->{collectionOther}++;
-        $stats->{acquisitionsOther}++ if $isAcquired;
-        $stats->{issuesOther} += $row->{issues};
+    elsif ($serial || $itemtype eq 'DI' || $itemtype eq 'ES' || $itemtype eq 'KO' || $itemtype eq 'KR' || $itemtype eq 'MM' || $itemtype eq 'MO' || $itemtype eq 'SK' || $itemtype eq 'TY' || $itemtype eq 'MF' || $itemtype eq 'KU' || $itemtype eq 'MK' || $itemtype eq 'KÄ') {
+        $stats->{collectionOther}++ if not($deleted) && not($serial);
+        $stats->{acquisitionsOther}++ if $isAcquired && not($serial);
+        $stats->{issuesOther} += $issues;
+        #Serials and magazines are collected from the subscriptions-table using statisticsSubscriptions()
+        #Don't count them for the collection or acquisitions. Serials must be included in the cumulative Issues.
     }
     else {
-        carp "What is this! You shouldn't be here! There is something wrong with this items row containing this biblio:\n".$row->{biblionumber};
+        print "\nUnmapped itemtype \n'$itemtype'\n with this statistical row:\n".Data::Dumper::Dumper($row);
     }
 }
 
 =head fetchItemsDataMountain
 
-    my $sth = $okm->fetchDataMountain();
+    my $itemBomb = $okm->fetchDataMountain();
 
-Queries the DB for the required data elements and returns the DBI Statement to query for results.
-Collects both the acquisitions information and statistics information for the given year. These are further separated in the business layer.
+Queries the DB for the required data elements and returns a Hash $itemBomb.
+Collects the related acquisitions, collections and issues data for the given timeperiod.
+
 =cut
 
 sub fetchItemsDataMountain {
@@ -234,22 +242,96 @@ sub fetchItemsDataMountain {
     my $limit = $self->getLimit();
 
     my $dbh = C4::Context->dbh();
-    my $sth = $dbh->prepare(
-                "SELECT i.itemnumber, i.biblionumber, i.itype, i.location, i.price, ao.ordernumber, ao.datereceived, av.imageurl, i.dateaccessioned,
-                        SUM(
-                          IF(  s.type IN ('issue','renew') AND s.datetime BETWEEN ? AND ? AND
-                               (s.usercode = 'HENKILO' OR s.usercode = 'VIRKAILIJA' OR s.usercode = 'LAPSI' OR s.usercode = 'MUUKUINLAP' OR s.usercode = 'TAKAAJA' OR s.usercode = 'YHTEISO'),
-                            1,0
-                          )
-                        ) AS issues
+    #Get all the Items' informations for Items residing in the libraryGroup.
+    my $sthItems = $dbh->prepare(
+                "SELECT i.itemnumber, i.biblionumber, i.itype, i.location, i.price, ao.ordernumber, ao.datereceived, av.imageurl, i.dateaccessioned
                  FROM items i LEFT JOIN aqorders_items ai ON i.itemnumber = ai.itemnumber
                               LEFT JOIN aqorders ao ON ai.ordernumber = ao.ordernumber LEFT JOIN statistics s ON s.itemnumber = i.itemnumber
                               LEFT JOIN authorised_values av ON av.authorised_value = i.permanent_location
                  WHERE i.homebranch $in_libraryGroupBranches
                  GROUP BY i.itemnumber ORDER BY i.itemnumber $limit;");
-    $sth->execute(  $self->{startDateISO}, $self->{endDateISO}  ); #This will take some time.....
+#    $sth->execute(  $self->{startDateISO}, $self->{endDateISO}  ); #This will take some time.....
+    $sthItems->execute(  ); #This will take some time.....
+    my $itemBomb = $sthItems->fetchall_hashref('itemnumber');
 
-    return $sth;
+    #Get all the Deleted Items' informations. We need them for the statistical entries that have a deleted item.
+    my $sthDeleteditems = $dbh->prepare(
+                "SELECT i.itemnumber, i.biblionumber, i.itype, i.location, i.price, av.imageurl, i.dateaccessioned, 1 as deleted
+                 FROM deleteditems i
+                              LEFT JOIN authorised_values av ON av.authorised_value = i.permanent_location
+                 WHERE i.homebranch $in_libraryGroupBranches
+                 GROUP BY i.itemnumber ORDER BY i.itemnumber $limit;");
+#    $sth->execute(  $self->{startDateISO}, $self->{endDateISO}  ); #This will take some time.....
+    $sthDeleteditems->execute(  ); #This will take some time.....
+    my $deleteditemBomb = $sthDeleteditems->fetchall_hashref('itemnumber');
+
+    #Get all the Issues informations. We can have issues for other branches Items' which are not included in the $sthItems and $sthDeleteditems -queries.
+    #This means that Patrons can check-out Items whose homebranch is not in this libraryGroup, but whom are checked out/renewed from this libraryGroup.
+    my $sthIssues = $dbh->prepare(
+                "SELECT s.itemnumber, i.biblionumber, i.itype, i.location, COUNT(s.itemnumber) as issues
+                 FROM statistics s LEFT JOIN items i ON i.itemnumber = s.itemnumber
+                 WHERE s.branch $in_libraryGroupBranches
+                   AND s.type IN ('issue','renew')
+                   AND s.datetime BETWEEN ? AND ?".
+#                  "AND (s.usercode = 'HENKILO' OR s.usercode = 'VIRKAILIJA' OR s.usercode = 'LAPSI' OR s.usercode = 'MUUKUINLAP' OR s.usercode = 'TAKAAJA' OR s.usercode = 'YHTEISO')
+                   "AND (s.usercode != 'KIRJASTO' AND s.usercode != 'TILASTO' AND s.usercode != 'KAUKOLAINA')
+                 GROUP BY s.itemnumber ORDER BY s.itemnumber $limit;");
+    $sthIssues->execute(  $self->{startDateISO}, $self->{endDateISO}  ); #This will take some time.....
+    my $issuesBomb = $sthIssues->fetchall_hashref('itemnumber');
+    #Get the same stuff for possibly deleted Items.
+    my $sthDeleteditemsIssues = $dbh->prepare(
+                "SELECT s.itemnumber, i.biblionumber, i.itype, i.location, COUNT(s.itemnumber) as issues
+                 FROM statistics s LEFT JOIN deleteditems i ON i.itemnumber = s.itemnumber
+                 WHERE s.branch $in_libraryGroupBranches
+                   AND s.type IN ('issue','renew')
+                   AND s.datetime BETWEEN ? AND ?".
+#                  "AND (s.usercode = 'HENKILO' OR s.usercode = 'VIRKAILIJA' OR s.usercode = 'LAPSI' OR s.usercode = 'MUUKUINLAP' OR s.usercode = 'TAKAAJA' OR s.usercode = 'YHTEISO')
+                   "AND (s.usercode != 'KIRJASTO' AND s.usercode != 'TILASTO' AND s.usercode != 'KAUKOLAINA')
+                 GROUP BY s.itemnumber ORDER BY s.itemnumber $limit;");
+    $sthDeleteditemsIssues->execute(  $self->{startDateISO}, $self->{endDateISO}  ); #This will take some time.....
+    my $deleteditemsIssuesBomb = $sthDeleteditemsIssues->fetchall_hashref('itemnumber');
+
+    #Merge Issues to Items' informations.
+    foreach my $itemnumber (sort {$a <=> $b} (keys(%$issuesBomb))) {
+        my $it = $itemBomb->{$itemnumber};
+        my $id = $deleteditemBomb->{$itemnumber};
+        my $is = $issuesBomb->{$itemnumber};
+        my $di = $deleteditemsIssuesBomb->{$itemnumber};
+
+        unless ($it) {
+            unless ($id) {
+                if ($is && $is->{itype}) { #We have an Issue with a foreign Item
+                    print "OKM->fetchDataMountain(): Foreign Item found for Issues. Using itemnumber '$itemnumber'.\n" if $self->{verbose};
+                }
+                elsif ($di && $di->{itype}) { #We have an Issue with a foreign deleted Item
+                    $is = $di; #Use the deleted foreign Item's informations to categorize issues count.
+                    print "OKM->fetchDataMountain(): Deleted foreign Item found for Issues. Using itemnumber '$itemnumber'.\n" if $self->{verbose};
+                }
+                else {
+                    print "OKM->fetchDataMountain(): No Item or deleted Item found for Issues? Using itemnumber '$itemnumber'. Not inlcuding '".$is->{issues}."' issues to the statistics.\n";
+                    next();
+                }
+                #Store the Issue with partial Item statistical information. These are counted only as issues towards different itemtypes.
+                #Because these Items-data are not from the libraryGroup whose collection/acquisitions are being calculated.
+                $itemBomb->{$itemnumber} = $is;
+                $it = $is; #Consider this like any other deleted Item from now on, so don't include it to collection/acquisitions statistics, but make sure the itemtype is accessible properly.
+                $it->{deleted} = 1;
+                #Discard are calculated in statisticsDiscards() and this has nothing to do with that.
+            }
+            else {
+                $itemBomb->{$itemnumber} = $id; #Take the deleted Item from the dead and reuse it.
+                print "OKM->fetchDataMountain(): Issues for deleted Item? Using deleted itemnumber '$itemnumber'.\n" if $self->{verbose};
+            }
+        }
+        unless ($is) {
+            print "OKM->fetchDataMountain(): No Issues in issuesBomb? Using itemnumber '$itemnumber'. This should never happen, since we get these itemnumbers from this same issues Hash.\n";
+            next();
+        }
+
+        $it->{issuesQuery} = $is;
+    }
+
+    return $itemBomb;
 }
 =head getBranchCounts
 
@@ -331,7 +413,11 @@ sub statisticsDiscards {
     my $in_libraryGroupBranches = $libraryGroup->getBranchcodesINClause();
     my $limit = $self->getLimit();
     my $sth = $dbh->prepare(
-               "SELECT count(*) FROM deleteditems WHERE homebranch $in_libraryGroupBranches AND timestamp BETWEEN ? AND ? $limit;");
+               "SELECT count(*) FROM deleteditems
+                WHERE homebranch $in_libraryGroupBranches
+                  AND timestamp BETWEEN ? AND ?
+                  AND itype != 'SL' AND itype != 'AL'
+                  $limit;");
     $sth->execute( $self->{startDateISO}, $self->{endDateISO} );
     my $discards = $sth->fetchrow;
 
@@ -397,7 +483,7 @@ sub setLibraryGroups {
 @PARAM1 String, a .csv-row with each element as a branchcode
                 'JOE_JOE,JOE_RAN,[...]'
                 or
-                '*' which means ALL BRANCHES. Then the function fetches all the branchcodes from DB.
+                '_A' which means ALL BRANCHES. Then the function fetches all the branchcodes from DB.
 @RETURNS a HASH of library monstrosity
 =cut
 
@@ -405,7 +491,7 @@ sub createLibraryGroupsFromIndividualBranches {
     my ($self, $individualBranches) = @_;
     my @iBranchcodes;
 
-    if ($individualBranches eq '*') {
+    if ($individualBranches eq '_A') {
         @iBranchcodes = keys %{C4::Branch::GetBranches()};
     }
     else {
@@ -752,6 +838,10 @@ sub save {
     my $self = shift;
     my $dbh = C4::Context->dbh();
 
+    #Clean some cumbersome Entities which make serialization quite messy.
+    $self->{endDate} = undef; #Like DateTime-objects which serialize quite badly.
+    $self->{startDate} = undef;
+
     $Data::Dumper::Indent = 0;
     $Data::Dumper::Purity = 1;
     my $serialized_self = Data::Dumper::Dumper( $self );
@@ -800,7 +890,8 @@ sub Retrieve {
         my ($startDate, $endDate) = StandardizeTimeperiodParameter($timeperiod);
         $okm_serialized = _RetrieveByParams($startDate->iso8601(), $endDate->iso8601(), $individualBranches);
     }
-    return _deserialize($okm_serialized);
+    return _deserialize($okm_serialized) if $okm_serialized;
+    return undef;
 }
 sub _RetrieveById {
     my ($id) = @_;
@@ -828,7 +919,16 @@ sub _deserialize {
     my $serialized = shift;
     my $VAR1;
     eval $serialized if $serialized;
-    return $VAR1;
+
+    #Rebuild some cumbersome objects
+    if ($VAR1) {
+        my ($startDate, $endDate) = C4::OPLIB::OKM::StandardizeTimeperiodParameter($VAR1->{startDateISO}.' - '.$VAR1->{endDateISO});
+        $VAR1->{startDate} = $startDate;
+        $VAR1->{endDate} = $endDate;
+        return $VAR1;
+    }
+
+    return undef;
 }
 =head Delete
 
@@ -869,14 +969,15 @@ sub getCachedBiblio {
     my ($marcxml, $biblio);
     unless ($cache->{$biblionumber}) {
         $self->{config}->{marcxmlCacheSize}++;
+        print '        #BiblioCache miss for bn:'.$biblionumber."\n" if $self->{verbose};
 
         $biblio = {};
-        $marcxml = C4::Biblio::GetXmlBiblio($biblionumber);
-        CalculateBiblioStatistics($biblio, $marcxml);
-
         $cache->{$biblionumber} = $biblio;
+        $marcxml = C4::Biblio::GetXmlBiblio($biblionumber);
+        $marcxml = C4::Biblio::GetDeletedXmlBiblio($biblionumber) unless $marcxml;
 
-        print '        #BiblioCache miss for bn:'.$biblionumber."\n" if $self->{verbose};
+        CalculateBiblioStatistics($biblio, $marcxml) if $marcxml;
+        print '        #BiblioCache, no living or deleted MARCXML for bn:'.$biblionumber."\n" if $self->{verbose} && not($marcxml);
     }
 
     return $cache->{$biblionumber};

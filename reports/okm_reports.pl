@@ -76,9 +76,10 @@ if ($op eq 'delete') {
     C4::OPLIB::OKM::Delete($okm_statisticsId);
 }
 
+my @bc = keys C4::OPLIB::OKM::getOKMBranchCategories();
 $template->param(
     okm_statisticsId => $okm_statisticsId,
-    branchCategories => keys C4::OPLIB::OKM::getOKMBranchCategories(),
+    branchCategories => \@bc,
     quote => getRandomQuote(),
     ready_okm_reports => prettifyOKM_reports(),
 );
@@ -131,7 +132,7 @@ sub prettifyOKM_reports {
         $okm_report->{enddate}   = Koha::DateUtils::output_pref({ dt => $enddate,   dateonly => 1});
 
         #Find the selected report
-        if ($okm_report->{id} == $okm_statisticsId) {
+        if ($okm_statisticsId && $okm_report->{id} == $okm_statisticsId) {
             $okm_report->{selected} = 1;
         }
     }

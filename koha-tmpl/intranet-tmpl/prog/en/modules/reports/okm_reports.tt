@@ -57,7 +57,7 @@
                     <td>[% okm_report.enddate %]</td>
                     <td>
                         [% IF okm_report.individualbranches %]
-                            [% IF okm_report.individualbranches == '*'%]
+                            [% IF okm_report.individualbranches == '*' || okm_report.individualbranches == '_A' %]
                                 All branches
                             [% ELSE %]
                                 [% okm_report.individualbranches %]
