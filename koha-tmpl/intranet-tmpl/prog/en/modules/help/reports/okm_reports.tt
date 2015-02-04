@@ -40,10 +40,121 @@ However, if the acquisitions-module is not used, the Item is considered acquired
 <br/>
 <h4>Issues</h4>
 <p>Issues are direct check-outs or renewals for material from our collection, given to our civilian borrowers (not ILL's or internal library use).<br/>
-An issue is counted if it hapened on the given timeframe and was given to one of the following borrower categories: HENKILO, VIRKAILIJA, LAPSI, MUUKUINLAP, TAKAAJA or YHTEISO.</p>
-<br/><br/>
+An issue is counted if it hapened on the given timeframe and is not given for the following borrower categories: KIRJASTO, TILASTO, KAUKOLAINA.<br/>
+The issue is counted for the library from where the issue was given. For renewals from the OPAC, the library is considered to be the Item's current holding branch.<br/>
+Issues for deleted items are included to the statistics as well.</p>
+<br/>
+<h4>Serials</h4>
+<p>Serials, itemtypes 'AL' & 'SL', are excluded from the collection, discards and acquisitions statistics. They are included in the total issues.</p>
+<br/>
+<h4>Discards</h4>
+<p>All Items discarded during the given timeframe, except Serial Items, are counted as discards.</p>
+<h5>Deleted Items</h5>
+<p>Deleted Items are not calculated to collections or acquisitions even if acquired during the timeframe, because no acquisitions data is preserved.<br/>
+Issues for deleted Items are calculated normally.</p>
+<br/>
 <h5>Give me statistics, or give me death!</h5>
 <p>https://en.wikipedia.org/wiki/Give_me_liberty%2C_or_give_me_death!<br/>
 This is a reference to a statement against foreign rule. A statement to resist being slowly bled dry by overseas bankers and monarchs. An equally valid quote during modern times.</p>
+<br/>
+<h4>The programmatic rules for statistical categorization</h4>
+<pre>
+    #Increase the collection for every Item found
+    $stats->{collection}++ if not($deleted) && not($serial);
+    $stats->{acquisitions}++ if $isAcquired && not($serial);
+    $stats->{issues} += $issues; #Serials are included in the cumulative issues.
+    $stats->{expenditureAcquisitions} += $row->{price} if $isAcquired && not($serial) && $row->{price};
+
+    if ($itemtype eq 'KI') {
+
+        $stats->{collectionBooksTotal}++ if not($deleted);
+        $stats->{acquisitionsBooksTotal}++ if $isAcquired;
+        $stats->{expenditureAcquisitionsBooks} += $row->{price} if $isAcquired && $row->{price};
+        $stats->{issuesBooksTotal} += $issues;
+
+        if ($primaryLanguage eq 'fin' || not(defined($primaryLanguage))) {
+            $stats->{collectionBooksFinnish}++ if not($deleted);
+            $stats->{acquisitionsBooksFinnish}++ if $isAcquired;
+            $stats->{issuesBooksFinnish} += $issues;
+        }
+        elsif ($primaryLanguage eq 'swe') {
+            $stats->{collectionBooksSwedish}++ if not($deleted);
+            $stats->{acquisitionsBooksSwedish}++ if $isAcquired;
+            $stats->{issuesBooksSwedish} += $issues;
+        }
+        else {
+            $stats->{collectionBooksOtherLanguage}++ if not($deleted);
+            $stats->{acquisitionsBooksOtherLanguage}++ if $isAcquired;
+            $stats->{issuesBooksOtherLanguage} += $issues;
+        }
+
+        if ($isFiction) {
+            if ($isChildrensMaterial) {
+                $stats->{collectionBooksFictionJuvenile}++ if not($deleted);
+                $stats->{acquisitionsBooksFictionJuvenile}++ if $isAcquired;
+                $stats->{issuesBooksFictionJuvenile} += $issues;
+            }
+            else { #Adults fiction
+                $stats->{collectionBooksFictionAdult}++ if not($deleted);
+                $stats->{acquisitionsBooksFictionAdult}++ if $isAcquired;
+                $stats->{issuesBooksFictionAdult} += $issues;
+            }
+        }
+        else { #Non-Fiction
+            if ($isChildrensMaterial) {
+                $stats->{collectionBooksNonFictionJuvenile}++ if not($deleted);
+                $stats->{acquisitionsBooksNonFictionJuvenile}++ if $isAcquired;
+                $stats->{issuesBooksNonFictionJuvenile} += $issues;
+            }
+            else { #Adults Non-fiction
+                $stats->{collectionBooksNonFictionAdult}++ if not($deleted);
+                $stats->{acquisitionsBooksNonFictionAdult}++ if $isAcquired;
+                $stats->{issuesBooksNonFictionAdult} += $issues;
+            }
+        }
+    }
+    elsif ($itemtype eq 'NU' || $itemtype eq 'PA') {
+        $stats->{collectionSheetMusicAndScores}++ if not($deleted);
+        $stats->{acquisitionsSheetMusicAndScores}++ if $isAcquired;
+        $stats->{issuesSheetMusicAndScores} += $issues;
+    }
+    elsif ($itemtype eq 'KA' || $itemtype eq 'CD' || $itemtype eq 'MP' || $itemtype eq 'LE' || $itemtype eq 'ÄT' || $itemtype eq 'NÄ') {
+        if ($isMusicalRecording) {
+            $stats->{collectionMusicalRecordings}++ if not($deleted);
+            $stats->{acquisitionsMusicalRecordings}++ if $isAcquired;
+            $stats->{issuesMusicalRecordings} += $issues;
+        }
+        else {
+            $stats->{collectionOtherRecordings}++ if not($deleted);
+            $stats->{acquisitionsOtherRecordings}++ if $isAcquired;
+            $stats->{issuesOtherRecordings} += $issues;
+        }
+    }
+    elsif ($itemtype eq 'VI') {
+        $stats->{collectionVideos}++ if not($deleted);
+        $stats->{acquisitionsVideos}++ if $isAcquired;
+        $stats->{issuesVideos} += $issues;
+    }
+    elsif ($itemtype eq 'CR' || $itemtype eq 'DR' || $itemtype eq 'KP') {
+        $stats->{collectionCDROMs}++ if not($deleted);
+        $stats->{acquisitionsCDROMs}++ if $isAcquired;
+        $stats->{issuesCDROMs} += $issues;
+    }
+    elsif ($itemtype eq 'BR' || $itemtype eq 'DV') {
+        $stats->{collectionDVDsAndBluRays}++ if not($deleted);
+        $stats->{acquisitionsDVDsAndBluRays}++ if $isAcquired;
+        $stats->{issuesDVDsAndBluRays} += $issues;
+    }
+    elsif ($serial || $itemtype eq 'DI' || $itemtype eq 'ES' || $itemtype eq 'KO' || $itemtype eq 'KR' || $itemtype eq 'MM' || $itemtype eq 'MO' || $itemtype eq 'SK' || $itemtype eq 'TY' || $itemtype eq 'MF' || $itemtype eq 'KU' || $itemtype eq 'MK' || $itemtype eq 'KÄ') {
+        $stats->{collectionOther}++ if not($deleted);
+        $stats->{acquisitionsOther}++ if $isAcquired;
+        $stats->{issuesOther} += $issues;
+        #Serials and magazines are collected from the subscriptions-table using statisticsSubscriptions()
+        #Don't count them for the collection, acquisitions or issues. Serials must be included in the cumulative Issues.
+    }
+    else {
+        print "\nUnmapped itemtype \n'$itemtype'\n with this statistical row:\n".Data::Dumper::Dumper($row);
+    }
+</pre>
 
 [% INCLUDE 'help-bottom.inc' %]

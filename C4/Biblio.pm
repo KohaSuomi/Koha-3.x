@@ -1351,6 +1351,24 @@ sub GetXmlBiblio {
     return $marcxml;
 }
 
+=head2 GetDeletedXmlBiblio
+
+  my $marcxml = GetDeletedXmlBiblio($biblionumber);
+
+Returns deletedbiblioitems.marcxml of the biblionumber passed in parameter.
+The XML should only contain biblio information (item information is no longer stored in marcxml field)
+
+=cut
+
+sub GetDeletedXmlBiblio {
+    my ($delBiblionumber) = @_;
+    my $dbhDel            = C4::Context->dbh;
+    my $sthDel            = $dbhDel->prepare("SELECT marcxml FROM deletedbiblioitems WHERE biblionumber=? ");
+    $sthDel->execute($delBiblionumber);
+    my ($delmarcxml) = $sthDel->fetchrow;
+    return $delmarcxml;
+}
+
 =head2 GetCOinSBiblio
 
   my $coins = GetCOinSBiblio($record);

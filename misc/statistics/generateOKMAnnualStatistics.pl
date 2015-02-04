@@ -1,6 +1,8 @@
 #!/usr/bin/perl
 
 use Modern::Perl;
+use open qw( :std :encoding(UTF-8) );
+binmode( STDOUT, ":encoding(UTF-8)" );
 
 use Getopt::Long;
 
@@ -47,7 +49,7 @@ This script has the following parameters :
 
     -i --individual Individual branches. Instead of using the OKM library groups, we can generate
                     statistics for individual branches. This is a comma-separated list of branchcodes.
-                    If "-i '*'" is given, then all branches are accounted for.
+                    If "-i '_A'" is given, then all branches are accounted for.
                     USAGE: '-i JOE_JOE,JOE_LIP,JOE_RAN,JOE_KAR'
 
     --html          Print as an HTML table
@@ -78,7 +80,7 @@ EXAMPLES:
     #Generate monthly reports, using the bash 'date' to generate the previous month for OKM branchcategories
     ./generateOKMAnnualStatistics.pl --timeperiod $(($(date +%m)-1)) -r -v
     #For all branches
-    ./generateOKMAnnualStatistics.pl --timeperiod $(($(date +%m)-1)) --individual '*' -r -v
+    ./generateOKMAnnualStatistics.pl --timeperiod $(($(date +%m)-1)) --individual '_A' -r -v
 
 ENDUSAGE
 
@@ -103,7 +105,7 @@ sub generateStatistics {
     }
     if (not($okm)) {
         print "#Regenerating statistics. This will take some time!#\n";
-        $okm = C4::OPLIB::OKM->new( $timeperiod, $limit, $individualBranches, $verbose, $juvenileShelvingLocations );
+        $okm = C4::OPLIB::OKM->new( $timeperiod, $limit, $individualBranches, undef, $verbose, $juvenileShelvingLocations );
         $okm->save();
     }
 
@@ -124,7 +126,7 @@ sub rebuildAllStatistics {
 
     ##Calculate OKM statistics for all branches for given year.
     print '#'.DateTime->now()->iso8601().'# Building statistics for all branches, year '.$yearStart->year()." #\n";
-    my $okm = C4::OPLIB::OKM->new( $yearStart->year(), $limit, '*', $biblioCache, $verbose, $juvenileShelvingLocations );
+    my $okm = C4::OPLIB::OKM->new( $yearStart->year(), $limit, '_A', $biblioCache, $verbose, $juvenileShelvingLocations );
     $okm->save() if $okm;
 
     ##Calculate OKM statistics for OKM groups for given year.
@@ -141,7 +143,7 @@ sub rebuildAllStatistics {
                                                   );
         my $timeperiod = $startMonth->iso8601().' - '.$endMonth->iso8601();
         print '#'.DateTime->now()->iso8601().'# Building statistics for all branches, '.$startMonth->month_name()." #\n";
-        my $okm = C4::OPLIB::OKM->new( $timeperiod, $limit, '*', $biblioCache, $verbose, $juvenileShelvingLocations );
+        my $okm = C4::OPLIB::OKM->new( $timeperiod, $limit, '_A', $biblioCache, $verbose, $juvenileShelvingLocations );
         $okm->save() if $okm;
 
         $startMonth = $startMonth->add(months => 1);
