@@ -182,6 +182,7 @@ CREATE TABLE `biblioitems` ( -- information related to bibliographic records in 
   `agerestriction` varchar(255) default NULL, -- target audience/age restriction from the bib record (MARC21 521$a)
   `totalissues` int(10),
   `marcxml` longtext NOT NULL, -- full bibliographic MARC record in MARCXML
+  `datereceived` timestamp NULL, -- When the first Item for this Biblio is received. Updated only once when the first Item has been received.
   PRIMARY KEY  (`biblioitemnumber`),
   KEY `bibinoidx` (`biblioitemnumber`),
   KEY `bibnoidx` (`biblionumber`),
@@ -814,6 +815,7 @@ CREATE TABLE `deletedbiblioitems` ( -- information about bibliographic records t
   `agerestriction` varchar(255) default NULL, -- target audience/age restriction from the bib record (MARC21 521$a)
   `totalissues` int(10),
   `marcxml` longtext NOT NULL, -- full bibliographic MARC record in MARCXML
+  `datereceived` timestamp NULL, -- When the first Item for this Biblio is received. Updated only once when the first Item has been received.
   PRIMARY KEY  (`biblioitemnumber`),
   KEY `bibinoidx` (`biblioitemnumber`),
   KEY `bibnoidx` (`biblionumber`),
@@ -910,6 +912,7 @@ CREATE TABLE `deleteditems` (
   `biblioitemnumber` int(11) NOT NULL default 0, -- foreign key from the biblioitems table to link to item to additional information
   `barcode` varchar(20) default NULL, -- item barcode (MARC21 952$p)
   `dateaccessioned` date default NULL, -- date the item was acquired or added to Koha (MARC21 952$d)
+  `datereceived` timestamp NULL, -- When this Item was received.
   `booksellerid` mediumtext default NULL, -- where the item was purchased (MARC21 952$e)
   `homebranch` varchar(10) default NULL, -- foreign key from the branches table for the library that owns this item (MARC21 952$a)
   `price` decimal(8,2) default NULL, -- purchase price (MARC21 952$g)
@@ -1205,6 +1208,7 @@ CREATE TABLE `items` ( -- holdings/item information
   `biblioitemnumber` int(11) NOT NULL default 0, -- foreign key from the biblioitems table to link to item to additional information
   `barcode` varchar(20) default NULL, -- item barcode (MARC21 952$p)
   `dateaccessioned` date default NULL, -- date the item was acquired or added to Koha (MARC21 952$d)
+  `datereceived` timestamp NULL, -- When this Item was received.
   `booksellerid` mediumtext default NULL, -- where the item was purchased (MARC21 952$e)
   `homebranch` varchar(10) default NULL, -- foreign key from the branches table for the library that owns this item (MARC21 952$a)
   `price` decimal(8,2) default NULL, -- purchase price (MARC21 952$g)
