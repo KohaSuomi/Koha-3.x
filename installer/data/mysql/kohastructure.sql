@@ -182,6 +182,7 @@ CREATE TABLE `biblioitems` ( -- information related to bibliographic records in 
   `agerestriction` varchar(255) default NULL, -- target audience/age restriction from the bib record (MARC21 521$a)
   `totalissues` int(10),
   `marcxml` longtext NOT NULL, -- full bibliographic MARC record in MARCXML
+  `datereceived` timestamp NULL, -- When the first Item for this Biblio is received. Updated only once when the first Item has been received.
   PRIMARY KEY  (`biblioitemnumber`),
   KEY `bibinoidx` (`biblioitemnumber`),
   KEY `bibnoidx` (`biblionumber`),
@@ -814,6 +815,7 @@ CREATE TABLE `deletedbiblioitems` ( -- information about bibliographic records t
   `agerestriction` varchar(255) default NULL, -- target audience/age restriction from the bib record (MARC21 521$a)
   `totalissues` int(10),
   `marcxml` longtext NOT NULL, -- full bibliographic MARC record in MARCXML
+  `datereceived` timestamp NULL, -- When the first Item for this Biblio is received. Updated only once when the first Item has been received.
   PRIMARY KEY  (`biblioitemnumber`),
   KEY `bibinoidx` (`biblioitemnumber`),
   KEY `bibnoidx` (`biblionumber`),
