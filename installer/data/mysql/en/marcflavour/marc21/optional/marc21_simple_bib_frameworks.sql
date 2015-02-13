@@ -131,6 +131,7 @@ INSERT INTO `marc_tag_structure` (`tagfield`, `liblibrarian`, `libopac`, `repeat
 
 INSERT INTO `marc_subfield_structure` (`tagfield`, `tagsubfield`, `liblibrarian`, `libopac`, `repeatable`, `mandatory`, `kohafield`, `tab`, `authorised_value`, `authtypecode`, `value_builder`, `isurl`, `hidden`, `frameworkcode`, `seealso`, `link`, `defaultvalue`) VALUES
 		('942', '0', 'Koha issues (borrowed), all copies', 'Koha issues (borrowed), all copies', 0, 0, 'biblioitems.totalissues', 9, '', '', '', NULL, -5, 'BKS', '', '', NULL),
+                ('942', '1', 'First date received',                'First date received',                0, 0, 'biblioitems.datereceived',9, '', '', '', NULL, 0,  'BKS', '', '', NULL),
 		('942', '2', 'Source of classification or shelving scheme', 'Source of classification or shelving scheme', 0, 0, 'biblioitems.cn_source', 9, 'cn_source', '', '', NULL, 0, 'BKS', '', '', NULL),
 		('942', '6', 'Koha normalized classification for sorting', 'Koha normalized classification for sorting', 0, 0, 'biblioitems.cn_sort', -1, '', '', '', 0, 7, 'BKS', '', '', NULL),
 		('942', 'a', 'Institution code [OBSOLETE]', 'Institution code [OBSOLETE]', 0, 0, '', 9, '', '', '', NULL, -5, 'BKS', '', '', NULL),
@@ -189,6 +190,7 @@ INSERT INTO `marc_subfield_structure` (`tagfield`, `tagsubfield`, `liblibrarian`
 		('952', 'p', 'Barcode', 'Barcode', 0, 0, 'items.barcode', 10, '', '', 'barcode.pl', 0, 0, 'BKS', '', '', NULL),
 		('952', 'q', 'Checked out', 'Checked out', 0, 0, 'items.onloan', 10, '', '', '', NULL, -5, 'BKS', '', '', NULL),
 		('952', 'r', 'Date last seen', 'Date last seen', 0, 0, 'items.datelastseen', 10, '', '', '', NULL, -5, 'BKS', '', '', NULL),
+                ('952', 'R', 'Date received',  'Date received',  0, 0, 'items.datereceived', 10, '', '', '', NULL, 0,  'BKS', '', '', NULL),
             ('952', 's', 'Date last checked out', 'Date last checked out', 0, 0, 'items.datelastborrowed', 10, '', '', '', NULL, -5, 'BKS', '', '', NULL),
 		('952', 't', 'Copy number', 'Copy number', 0, 0, 'items.copynumber', 10, '', '', '', NULL, 0, 'BKS', '', '', NULL),
 		('952', 'u', 'Uniform Resource Identifier', 'Uniform Resource Identifier', 0, 0, 'items.uri', 10, '', '', '', 1, 0, 'BKS', '', '', NULL),
@@ -4138,6 +4140,7 @@ INSERT INTO `marc_tag_structure` (`tagfield`, `liblibrarian`, `libopac`, `repeat
 
 INSERT INTO `marc_subfield_structure` (`tagfield`, `tagsubfield`, `liblibrarian`, `libopac`, `repeatable`, `mandatory`, `kohafield`, `tab`, `authorised_value`, `authtypecode`, `value_builder`, `isurl`, `hidden`, `frameworkcode`, `seealso`, `link`, `defaultvalue`) VALUES
 		('942', '0', 'Koha issues (borrowed), all copies', 'Koha issues (borrowed), all copies', 0, 0, 'biblioitems.totalissues', 9, '', '', '', NULL, -5, 'CF', '', '', NULL),
+                ('942', '1', 'First date received',                'First date received',                0, 0, 'biblioitems.datereceived',9, '', '', '', NULL, 0,  'CF', '', '', NULL),
 		('942', '2', 'Source of classification or shelving scheme', 'Source of classification or shelving scheme', 0, 0, 'biblioitems.cn_source', 9, 'cn_source', '', '', NULL, 0, 'CF', '', '', NULL),
 		('942', '6', 'Koha normalized classification for sorting', 'Koha normalized classification for sorting', 0, 0, 'biblioitems.cn_sort', -1, '', '', '', 0, 7, 'CF', '', '', NULL),
 		('942', 'a', 'Institution code [OBSOLETE]', 'Institution code [OBSOLETE]', 0, 0, '', 9, '', '', '', NULL, -5, 'CF', '', '', NULL),
@@ -4196,6 +4199,7 @@ INSERT INTO `marc_subfield_structure` (`tagfield`, `tagsubfield`, `liblibrarian`
 		('952', 'p', 'Barcode', 'Barcode', 0, 0, 'items.barcode', 10, '', '', 'barcode.pl', 0, 0, 'CF', '', '', NULL),
 		('952', 'q', 'Checked out', 'Checked out', 0, 0, 'items.onloan', 10, '', '', '', NULL, -5, 'CF', '', '', NULL),
 		('952', 'r', 'Date last seen', 'Date last seen', 0, 0, 'items.datelastseen', 10, '', '', '', NULL, -5, 'CF', '', '', NULL),
+                ('952', 'R', 'Date received',  'Date received',  0, 0, 'items.datereceived', 10, '', '', '', NULL, 0,  'CF', '', '', NULL),
                ('952', 's', 'Date last checked out', 'Date last checked out', 0, 0, 'items.datelastborrowed', 10, '', '', '', NULL, -5, 'CF', '', '', NULL),
 		('952', 't', 'Copy number', 'Copy number', 0, 0, 'items.copynumber', 10, '', '', '', NULL, 0, 'CF', '', '', NULL),
 		('952', 'u', 'Uniform Resource Identifier', 'Uniform Resource Identifier', 0, 0, 'items.uri', 10, '', '', '', 1, 0, 'CF', '', '', NULL),
@@ -8146,6 +8150,7 @@ INSERT INTO `marc_tag_structure` (`tagfield`, `liblibrarian`, `libopac`, `repeat
 
 INSERT INTO `marc_subfield_structure` (`tagfield`, `tagsubfield`, `liblibrarian`, `libopac`, `repeatable`, `mandatory`, `kohafield`, `tab`, `authorised_value`, `authtypecode`, `value_builder`, `isurl`, `hidden`, `frameworkcode`, `seealso`, `link`, `defaultvalue`) VALUES
 		('942', '0', 'Koha issues (borrowed), all copies', 'Koha issues (borrowed), all copies', 0, 0, 'biblioitems.totalissues', 9, '', '', '', NULL, -5, 'SR', '', '', NULL),
+                ('942', '1', 'First date received',                'First date received',                0, 0, 'biblioitems.datereceived',9, '', '', '', NULL, 0,  'SR', '', '', NULL),
 		('942', '2', 'Source of classification or shelving scheme', 'Source of classification or shelving scheme', 0, 0, 'biblioitems.cn_source', 9, 'cn_source', '', '', NULL, 0, 'SR', '', '', NULL),
 		('942', '6', 'Koha normalized classification for sorting', 'Koha normalized classification for sorting', 0, 0, 'biblioitems.cn_sort', -1, '', '', '', 0, 7, 'SR', '', '', NULL),
 		('942', 'a', 'Institution code [OBSOLETE]', 'Institution code [OBSOLETE]', 0, 0, '', 9, '', '', '', NULL, -5, 'SR', '', '', NULL),
@@ -8204,6 +8209,7 @@ INSERT INTO `marc_subfield_structure` (`tagfield`, `tagsubfield`, `liblibrarian`
 		('952', 'p', 'Barcode', 'Barcode', 0, 0, 'items.barcode', 10, '', '', 'barcode.pl', 0, 0, 'SR', '', '', NULL),
 		('952', 'q', 'Checked out', 'Checked out', 0, 0, 'items.onloan', 10, '', '', '', NULL, -5, 'SR', '', '', NULL),
 		('952', 'r', 'Date last seen', 'Date last seen', 0, 0, 'items.datelastseen', 10, '', '', '', NULL, -5, 'SR', '', '', NULL),
+                ('952', 'R', 'Date received',  'Date received',  0, 0, 'items.datereceived', 10, '', '', '', NULL, 0,  'SR', '', '', NULL),
                ('952', 's', 'Date last checked out', 'Date last checked out', 0, 0, 'items.datelastborrowed', 10, '', '', '', NULL, -5, 'SR', '', '', NULL),
 		('952', 't', 'Copy number', 'Copy number', 0, 0, 'items.copynumber', 10, '', '', '', NULL, 0, 'SR', '', '', NULL),
 		('952', 'u', 'Uniform Resource Identifier', 'Uniform Resource Identifier', 0, 0, 'items.uri', 10, '', '', '', 1, 0, 'SR', '', '', NULL),
@@ -12153,6 +12159,7 @@ INSERT INTO `marc_tag_structure` (`tagfield`, `liblibrarian`, `libopac`, `repeat
 
 INSERT INTO `marc_subfield_structure` (`tagfield`, `tagsubfield`, `liblibrarian`, `libopac`, `repeatable`, `mandatory`, `kohafield`, `tab`, `authorised_value`, `authtypecode`, `value_builder`, `isurl`, `hidden`, `frameworkcode`, `seealso`, `link`, `defaultvalue`) VALUES
 		('942', '0', 'Koha issues (borrowed), all copies', 'Koha issues (borrowed), all copies', 0, 0, 'biblioitems.totalissues', 9, '', '', '', NULL, -5, 'VR', '', '', NULL),
+                ('942', '1', 'First date received',                'First date received',                0, 0, 'biblioitems.datereceived',9, '', '', '', NULL, 0,  'VR', '', '', NULL),
 		('942', '2', 'Source of classification or shelving scheme', 'Source of classification or shelving scheme', 0, 0, 'biblioitems.cn_source', 9, 'cn_source', '', '', NULL, 0, 'VR', '', '', NULL),
 		('942', '6', 'Koha normalized classification for sorting', 'Koha normalized classification for sorting', 0, 0, 'biblioitems.cn_sort', -1, '', '', '', 0, 7, 'VR', '', '', NULL),
 		('942', 'a', 'Institution code [OBSOLETE]', 'Institution code [OBSOLETE]', 0, 0, '', 9, '', '', '', NULL, -5, 'VR', '', '', NULL),
@@ -12211,6 +12218,7 @@ INSERT INTO `marc_subfield_structure` (`tagfield`, `tagsubfield`, `liblibrarian`
 		('952', 'p', 'Barcode', 'Barcode', 0, 0, 'items.barcode', 10, '', '', 'barcode.pl', 0, 0, 'VR', '', '', NULL),
 		('952', 'q', 'Checked out', 'Checked out', 0, 0, 'items.onloan', 10, '', '', '', NULL, -5, 'VR', '', '', NULL),
 		('952', 'r', 'Date last seen', 'Date last seen', 0, 0, 'items.datelastseen', 10, '', '', '', NULL, -5, 'VR', '', '', NULL),
+                ('952', 'R', 'Date received',  'Date received',  0, 0, 'items.datereceived', 10, '', '', '', NULL, 0,  'VR', '', '', NULL),
                ('952', 's', 'Date last checked out', 'Date last checked out', 0, 0, 'items.datelastborrowed', 10, '', '', '', NULL, -5, 'VR', '', '', NULL),
 		('952', 't', 'Copy number', 'Copy number', 0, 0, 'items.copynumber', 10, '', '', '', NULL, 0, 'VR', '', '', NULL),
 		('952', 'u', 'Uniform Resource Identifier', 'Uniform Resource Identifier', 0, 0, 'items.uri', 10, '', '', '', 1, 0, 'VR', '', '', NULL),
@@ -16159,6 +16167,7 @@ INSERT INTO `marc_tag_structure` (`tagfield`, `liblibrarian`, `libopac`, `repeat
 
 INSERT INTO `marc_subfield_structure` (`tagfield`, `tagsubfield`, `liblibrarian`, `libopac`, `repeatable`, `mandatory`, `kohafield`, `tab`, `authorised_value`, `authtypecode`, `value_builder`, `isurl`, `hidden`, `frameworkcode`, `seealso`, `link`, `defaultvalue`) VALUES
 		('942', '0', 'Koha issues (borrowed), all copies', 'Koha issues (borrowed), all copies', 0, 0, 'biblioitems.totalissues', 9, '', '', '', NULL, -5, 'AR', '', '', NULL),
+                ('942', '1', 'First date received',                'First date received',                0, 0, 'biblioitems.datereceived',9, '', '', '', NULL, 0,  'AR', '', '', NULL),
 		('942', '2', 'Source of classification or shelving scheme', 'Source of classification or shelving scheme', 0, 0, 'biblioitems.cn_source', 9, 'cn_source', '', '', NULL, 0, 'AR', '', '', NULL),
 		('942', '6', 'Koha normalized classification for sorting', 'Koha normalized classification for sorting', 0, 0, 'biblioitems.cn_sort', -1, '', '', '', 0, 7, 'AR', '', '', NULL),
 		('942', 'a', 'Institution code [OBSOLETE]', 'Institution code [OBSOLETE]', 0, 0, '', 9, '', '', '', NULL, -5, 'AR', '', '', NULL),
@@ -16217,6 +16226,7 @@ INSERT INTO `marc_subfield_structure` (`tagfield`, `tagsubfield`, `liblibrarian`
 		('952', 'p', 'Barcode', 'Barcode', 0, 0, 'items.barcode', 10, '', '', 'barcode.pl', 0, 0, 'AR', '', '', NULL),
 		('952', 'q', 'Checked out', 'Checked out', 0, 0, 'items.onloan', 10, '', '', '', NULL, -5, 'AR', '', '', NULL),
 		('952', 'r', 'Date last seen', 'Date last seen', 0, 0, 'items.datelastseen', 10, '', '', '', NULL, -5, 'AR', '', '', NULL),
+                ('952', 'R', 'Date received',  'Date received',  0, 0, 'items.datereceived', 10, '', '', '', NULL, 0,  'AR', '', '', NULL),
                ('952', 's', 'Date last checked out', 'Date last checked out', 0, 0, 'items.datelastborrowed', 10, '', '', '', NULL, -5, 'AR', '', '', NULL),
 		('952', 't', 'Copy number', 'Copy number', 0, 0, 'items.copynumber', 10, '', '', '', NULL, 0, 'AR', '', '', NULL),
 		('952', 'u', 'Uniform Resource Identifier', 'Uniform Resource Identifier', 0, 0, 'items.uri', 10, '', '', '', 1, 0, 'AR', '', '', NULL),
@@ -20164,6 +20174,7 @@ INSERT INTO `marc_tag_structure` (`tagfield`, `liblibrarian`, `libopac`, `repeat
 
 INSERT INTO `marc_subfield_structure` (`tagfield`, `tagsubfield`, `liblibrarian`, `libopac`, `repeatable`, `mandatory`, `kohafield`, `tab`, `authorised_value`, `authtypecode`, `value_builder`, `isurl`, `hidden`, `frameworkcode`, `seealso`, `link`, `defaultvalue`) VALUES
 		('942', '0', 'Koha issues (borrowed), all copies', 'Koha issues (borrowed), all copies', 0, 0, 'biblioitems.totalissues', 9, '', '', '', NULL, -5, 'KT', '', '', NULL),
+                ('942', '1', 'First date received',                'First date received',                0, 0, 'biblioitems.datereceived',9, '', '', '', NULL, 0,  'KT', '', '', NULL),
 		('942', '2', 'Source of classification or shelving scheme', 'Source of classification or shelving scheme', 0, 0, 'biblioitems.cn_source', 9, 'cn_source', '', '', NULL, 0, 'KT', '', '', NULL),
 		('942', '6', 'Koha normalized classification for sorting', 'Koha normalized classification for sorting', 0, 0, 'biblioitems.cn_sort', -1, '', '', '', 0, 7, 'KT', '', '', NULL),
 		('942', 'a', 'Institution code [OBSOLETE]', 'Institution code [OBSOLETE]', 0, 0, '', 9, '', '', '', NULL, -5, 'KT', '', '', NULL),
@@ -20222,6 +20233,7 @@ INSERT INTO `marc_subfield_structure` (`tagfield`, `tagsubfield`, `liblibrarian`
 		('952', 'p', 'Barcode', 'Barcode', 0, 0, 'items.barcode', 10, '', '', 'barcode.pl', 0, 0, 'KT', '', '', NULL),
 		('952', 'q', 'Checked out', 'Checked out', 0, 0, 'items.onloan', 10, '', '', '', NULL, -5, 'KT', '', '', NULL),
 		('952', 'r', 'Date last seen', 'Date last seen', 0, 0, 'items.datelastseen', 10, '', '', '', NULL, -5, 'KT', '', '', NULL),
+                ('952', 'R', 'Date received',  'Date received',  0, 0, 'items.datereceived', 10, '', '', '', NULL, 0,  'KT', '', '', NULL),
                ('952', 's', 'Date last checked out', 'Date last checked out', 0, 0, 'items.datelastborrowed', 10, '', '', '', NULL, -5, 'KT', '', '', NULL),
 		('952', 't', 'Copy number', 'Copy number', 0, 0, 'items.copynumber', 10, '', '', '', NULL, 0, 'KT', '', '', NULL),
 		('952', 'u', 'Uniform Resource Identifier', 'Uniform Resource Identifier', 0, 0, 'items.uri', 10, '', '', '', 1, 0, 'KT', '', '', NULL),
@@ -24170,6 +24182,7 @@ INSERT INTO `marc_tag_structure` (`tagfield`, `liblibrarian`, `libopac`, `repeat
 
 INSERT INTO `marc_subfield_structure` (`tagfield`, `tagsubfield`, `liblibrarian`, `libopac`, `repeatable`, `mandatory`, `kohafield`, `tab`, `authorised_value`, `authtypecode`, `value_builder`, `isurl`, `hidden`, `frameworkcode`, `seealso`, `link`, `defaultvalue`) VALUES
 		('942', '0', 'Koha issues (borrowed), all copies', 'Koha issues (borrowed), all copies', 0, 0, 'biblioitems.totalissues', 9, '', '', '', NULL, -5, 'IR', '', '', NULL),
+                ('942', '1', 'First date received',                'First date received',                0, 0, 'biblioitems.datereceived',9, '', '', '', NULL, 0,  'IR', '', '', NULL)
 		('942', '2', 'Source of classification or shelving scheme', 'Source of classification or shelving scheme', 0, 0, 'biblioitems.cn_source', 9, 'cn_source', '', '', NULL, 0, 'IR', '', '', NULL),
 		('942', '6', 'Koha normalized classification for sorting', 'Koha normalized classification for sorting', 0, 0, 'biblioitems.cn_sort', -1, '', '', '', 0, 7, 'IR', '', '', NULL),
 		('942', 'a', 'Institution code [OBSOLETE]', 'Institution code [OBSOLETE]', 0, 0, '', 9, '', '', '', NULL, -5, 'IR', '', '', NULL),
@@ -24228,6 +24241,7 @@ INSERT INTO `marc_subfield_structure` (`tagfield`, `tagsubfield`, `liblibrarian`
 		('952', 'p', 'Barcode', 'Barcode', 0, 0, 'items.barcode', 10, '', '', 'barcode.pl', 0, 0, 'IR', '', '', NULL),
 		('952', 'q', 'Checked out', 'Checked out', 0, 0, 'items.onloan', 10, '', '', '', NULL, -5, 'IR', '', '', NULL),
 		('952', 'r', 'Date last seen', 'Date last seen', 0, 0, 'items.datelastseen', 10, '', '', '', NULL, -5, 'IR', '', '', NULL),
+                ('952', 'R', 'Date received',  'Date received',  0, 0, 'items.datereceived', 10, '', '', '', NULL, 0,  'IR', '', '', NULL),
                ('952', 's', 'Date last checked out', 'Date last checked out', 0, 0, 'items.datelastborrowed', 10, '', '', '', NULL, -5, 'IR', '', '', NULL),
 		('952', 't', 'Copy number', 'Copy number', 0, 0, 'items.copynumber', 10, '', '', '', NULL, 0, 'IR', '', '', NULL),
 		('952', 'u', 'Uniform Resource Identifier', 'Uniform Resource Identifier', 0, 0, 'items.uri', 10, '', '', '', 1, 0, 'IR', '', '', NULL),
@@ -28174,6 +28188,7 @@ INSERT INTO `marc_tag_structure` (`tagfield`, `liblibrarian`, `libopac`, `repeat
 
 INSERT INTO `marc_subfield_structure` (`tagfield`, `tagsubfield`, `liblibrarian`, `libopac`, `repeatable`, `mandatory`, `kohafield`, `tab`, `authorised_value`, `authtypecode`, `value_builder`, `isurl`, `hidden`, `frameworkcode`, `seealso`, `link`, `defaultvalue`) VALUES
 		('942', '0', 'Koha issues (borrowed), all copies', 'Koha issues (borrowed), all copies', 0, 0, 'biblioitems.totalissues', 9, '', '', '', NULL, -5, 'SER', '', '', NULL),
+                ('942', '1', 'First date received',                'First date received',                0, 0, 'biblioitems.datereceived',9, '', '', '', NULL, 0,  'SER', '', '', NULL),
 		('942', '2', 'Source of classification or shelving scheme', 'Source of classification or shelving scheme', 0, 0, 'biblioitems.cn_source', 9, 'cn_source', '', '', NULL, 0, 'SER', '', '', NULL),
 		('942', '6', 'Koha normalized classification for sorting', 'Koha normalized classification for sorting', 0, 0, 'biblioitems.cn_sort', -1, '', '', '', 0, 7, 'SER', '', '', NULL),
 		('942', 'a', 'Institution code [OBSOLETE]', 'Institution code [OBSOLETE]', 0, 0, '', 9, '', '', '', NULL, -5, 'SER', '', '', NULL),
@@ -28232,6 +28247,7 @@ INSERT INTO `marc_subfield_structure` (`tagfield`, `tagsubfield`, `liblibrarian`
 		('952', 'p', 'Barcode', 'Barcode', 0, 0, 'items.barcode', 10, '', '', 'barcode.pl', 0, 0, 'SER', '', '', NULL),
 		('952', 'q', 'Checked out', 'Checked out', 0, 0, 'items.onloan', 10, '', '', '', NULL, -5, 'SER', '', '', NULL),
 		('952', 'r', 'Date last seen', 'Date last seen', 0, 0, 'items.datelastseen', 10, '', '', '', NULL, -5, 'SER', '', '', NULL),
+                ('952', 'R', 'Date received',  'Date received',  0, 0, 'items.datereceived', 10, '', '', '', NULL, 0,  'SER', '', '', NULL),
             ('952', 's', 'Date last checked out', 'Date last checked out', 0, 0, 'items.datelastborrowed', 10, '', '', '', NULL, -5, 'SER', '', '', NULL),
 		('952', 't', 'Copy number', 'Copy number', 0, 0, 'items.copynumber', 10, '', '', '', NULL, 0, 'SER', '', '', NULL),
 		('952', 'u', 'Uniform Resource Identifier', 'Uniform Resource Identifier', 0, 0, 'items.uri', 10, '', '', '', 1, 0, 'SER', '', '', NULL),
