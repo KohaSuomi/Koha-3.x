@@ -425,6 +425,12 @@ sub getRecords {
             elsif ( $sort eq "acqdate_dsc" ) {
                 $sort_by .= "1=32 >i ";
             }
+            elsif ( $sort eq "datereceived_asc" ) {
+                $sort_by .= "1=9015 <i ";
+            }
+            elsif ( $sort eq "datereceived_dsc" ) {
+                $sort_by .= "1=9015 >i ";
+            }
             elsif ( $sort eq "title_az" || $sort eq "title_asc" ) {
                 $sort_by .= "1=4 <i ";
             }
@@ -1043,6 +1049,8 @@ sub getIndexes{
                     'date-entered-on-file',
                     'Date-of-acquisition',
                     'Date-of-publication',
+                    'Date-of-receival',
+                    'datereceived',
                     'Dewey-classification',
                     'Dissertation-information',
                     'EAN',
