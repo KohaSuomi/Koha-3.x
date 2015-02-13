@@ -440,6 +440,8 @@ if ($op eq "additem") {
         unless ($exist_itemnumber) {
             my ( $oldbiblionumber, $oldbibnum, $oldbibitemnum ) = AddItemFromMarc( $record, $biblionumber );
             set_item_default_location($oldbibitemnum);
+            my $err = C4::Biblio::UpdateDatereceived($biblionumber);
+            push @errors, $err if $err;
 
             # Pushing the last created item cookie back
             if ($prefillitem && defined $record) {
@@ -814,6 +816,13 @@ if($itemrecord){
             }
     # and now we add fields that are empty
 
+##Populate datereceived for new Items present in our library.
+#Get the mapped MARC-fields for items.datereceived
+my ( $datereceivedFieldCode, $datereceivedSubfieldCode ) =
+            C4::Biblio::GetMarcFromKohaField( "items.datereceived", $frameworkcode );
+( $datereceivedFieldCode, $datereceivedSubfieldCode ) =
+            C4::Biblio::GetMarcFromKohaField( "items.datereceived", '' ) unless ($datereceivedFieldCode);
+
 # Using last created item if it exists
 
 $itemrecord = $cookieitemrecord if ($prefillitem and not $justaddeditem and $op ne "edititem");
@@ -828,6 +837,7 @@ foreach my $tag ( keys %{$tagslib}){
         my @values = (undef);
         @values = $itemrecord->field($tag)->subfield($subtag) if ($itemrecord && defined($itemrecord->field($tag)) && defined($itemrecord->field($tag)->subfield($subtag)));
         for my $value (@values){
+            $value = enforceDatereceived($tag, $subtag, $value);
             my $subfield_data = generate_subfield_form($tag, $subtag, $value, $tagslib, $tagslib->{$tag}->{$subtag}, $branches, $today_iso, $biblionumber, $temp, \@loop_data, $i, $itemrecord);
             push (@loop_data, $subfield_data);
             $i++;
@@ -883,3 +893,12 @@ foreach my $error (@errors) {
     $template->param($error => 1);
 }
 output_html_with_http_headers $input, $cookie, $template->output;
+
+sub enforceDatereceived {
+    my ($tag, $subtag, $value) = @_;
+    #Set the datereceived as now() if it is not defined, or it's not a timestamp.
+    if ($tag eq $datereceivedFieldCode && $subtag eq $datereceivedSubfieldCode && (not($value) || not($value =~ /^\d\d\d\d-\d\d-\d\d/))) {
+        $value = DateTime->now( time_zone => C4::Context->tz() )->iso8601();
+    }
+    return $value;
+}
