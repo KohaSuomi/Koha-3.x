@@ -499,6 +499,8 @@ sub get_template_and_user {
         }
     }
 
+    $template->param(currentYear => (localtime(time))[5]+1900);
+
     return ( $template, $borrowernumber, $cookie, $flags);
 }
 
