@@ -6661,6 +6661,14 @@ if ( CheckVersion($DBversion) ) {
    SetVersion ($DBversion);
 }
 
+$DBversion = "3.19.00.XXX";
+if ( CheckVersion($DBversion) ) {
+   $dbh->do("ALTER TABLE issues ADD COLUMN issue_id int(12) NOT NULL auto_increment FIRST, ADD CONSTRAINT PRIMARY KEY (issue_id);");
+   $dbh->do("ALTER TABLE old_issues ADD COLUMN issue_id int(12) NOT NULL FIRST, ADD CONSTRAINT PRIMARY KEY (issue_id);");
+   print "Upgrade to $DBversion done (Bug 13743 - Primary key for issues-table)\n";
+   SetVersion ($DBversion);
+}
+
 $DBversion = "3.11.00.108";
 if ( CheckVersion($DBversion) ) {
     $dbh->do("ALTER TABLE action_logs CHANGE timestamp timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP;");
