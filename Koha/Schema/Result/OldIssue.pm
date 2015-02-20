@@ -1,8 +1,13 @@
-use utf8;
 package Koha::Schema::Result::OldIssue;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
+
+use strict;
+use warnings;
+
+use base 'DBIx::Class::Core';
+
 
 =head1 NAME
 
@@ -10,18 +15,15 @@ Koha::Schema::Result::OldIssue
 
 =cut
 
-use strict;
-use warnings;
-
-use base 'DBIx::Class::Core';
-
-=head1 TABLE: C<old_issues>
-
-=cut
-
 __PACKAGE__->table("old_issues");
 
 =head1 ACCESSORS
+
+=head2 issue_id
+
+  data_type: 'integer'
+  is_auto_increment: 1
+  is_nullable: 0
 
 =head2 borrowernumber
 
@@ -92,6 +94,8 @@ __PACKAGE__->table("old_issues");
 =cut
 
 __PACKAGE__->add_columns(
+  "issue_id",
+  { data_type => "integer", is_auto_increment => 1, is_nullable => 0 },
   "borrowernumber",
   { data_type => "integer", is_foreign_key => 1, is_nullable => 1 },
   "itemnumber",
@@ -136,6 +140,7 @@ __PACKAGE__->add_columns(
     is_nullable => 1,
   },
 );
+__PACKAGE__->set_primary_key("issue_id");
 
 =head1 RELATIONS
 
@@ -180,8 +185,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07025 @ 2013-10-14 20:56:21
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:uPOxNROoMMRZ0qZsXsxEjA
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2015-05-27 17:40:17
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:h0D2/zFRVggQW583f27hyg
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration
