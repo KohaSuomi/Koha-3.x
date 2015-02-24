@@ -1,21 +1,17 @@
-use utf8;
 package Koha::Schema::Result::MessageQueue;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
-
-=head1 NAME
-
-Koha::Schema::Result::MessageQueue
-
-=cut
 
 use strict;
 use warnings;
 
 use base 'DBIx::Class::Core';
 
-=head1 TABLE: C<message_queue>
+
+=head1 NAME
+
+Koha::Schema::Result::MessageQueue
 
 =cut
 
@@ -130,6 +126,7 @@ __PACKAGE__->add_columns(
   "content_type",
   { data_type => "text", is_nullable => 1 },
 );
+__PACKAGE__->set_primary_key("message_id");
 
 =head1 RELATIONS
 
@@ -168,9 +165,24 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
+=head2 message_queue_items
 
-# Created by DBIx::Class::Schema::Loader v0.07025 @ 2013-10-14 20:56:21
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:+gmGYPCtwCYKHAzfd9xByQ
+Type: has_many
+
+Related object: L<Koha::Schema::Result::MessageQueueItem>
+
+=cut
+
+__PACKAGE__->has_many(
+  "message_queue_items",
+  "Koha::Schema::Result::MessageQueueItem",
+  { "foreign.message_id" => "self.message_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2015-04-08 14:55:05
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:c2JKpV7dmeq7l8uJKVxDGA
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration
