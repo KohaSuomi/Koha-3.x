@@ -82,8 +82,8 @@ if ($op eq 'save') {
     my @names=$input->param();
     my $sth_search = $dbh->prepare("SELECT count(*) AS total FROM overduerules WHERE branchcode=? AND categorycode=?");
 
-    my $sth_insert = $dbh->prepare("INSERT INTO overduerules (branchcode,categorycode, delay1,letter1,debarred1, delay2,letter2,debarred2, delay3,letter3,debarred3) VALUES (?,?,?,?,?,?,?,?,?,?,?)");
-    my $sth_update=$dbh->prepare("UPDATE overduerules SET delay1=?, letter1=?, debarred1=?, delay2=?, letter2=?, debarred2=?, delay3=?, letter3=?, debarred3=? WHERE branchcode=? AND categorycode=?");
+    my $sth_insert = $dbh->prepare("INSERT INTO overduerules (branchcode,categorycode, delay1,letter1,debarred1,fine1, delay2,letter2,debarred2,fine2, delay3,letter3,debarred3,fine3) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
+    my $sth_update=$dbh->prepare("UPDATE overduerules SET delay1=?, letter1=?, debarred1=?, fine1=?, delay2=?, letter2=?, debarred2=?, fine2=?, delay3=?, letter3=?, debarred3=?, fine3=? WHERE branchcode=? AND categorycode=?");
     my $sth_delete=$dbh->prepare("DELETE FROM overduerules WHERE branchcode=? AND categorycode=?");
     my $sth_insert_mtt = $dbh->prepare("
         INSERT INTO overduerules_transport_types(
@@ -99,7 +99,7 @@ if ($op eq 'save') {
 
     foreach my $key (@names){
             # ISSUES
-            if ($key =~ /(delay|letter|debarred)([1-3])-(.*)/) {
+            if ($key =~ /(delay|letter|debarred|fine)([1-3])-(.*)/) {
                     my $type = $1; # data type
                     my $num = $2; # From 1 to 3
                     my $bor = $3; # borrower category
@@ -158,12 +158,15 @@ if ($op eq 'save') {
                             ($temphash{$bor}->{"delay1"}?$temphash{$bor}->{"delay1"}:undef),
                             ($temphash{$bor}->{"letter1"}?$temphash{$bor}->{"letter1"}:""),
                             ($temphash{$bor}->{"debarred1"}?$temphash{$bor}->{"debarred1"}:0),
+                            ($temphash{$bor}->{"fine1"}?$temphash{$bor}->{"fine1"}:0),
                             ($temphash{$bor}->{"delay2"}?$temphash{$bor}->{"delay2"}:undef),
                             ($temphash{$bor}->{"letter2"}?$temphash{$bor}->{"letter2"}:""),
                             ($temphash{$bor}->{"debarred2"}?$temphash{$bor}->{"debarred2"}:0),
+                            ($temphash{$bor}->{"fine2"}?$temphash{$bor}->{"fine2"}:0),
                             ($temphash{$bor}->{"delay3"}?$temphash{$bor}->{"delay3"}:undef),
                             ($temphash{$bor}->{"letter3"}?$temphash{$bor}->{"letter3"}:""),
                             ($temphash{$bor}->{"debarred3"}?$temphash{$bor}->{"debarred3"}:0),
+                            ($temphash{$bor}->{"fine3"}?$temphash{$bor}->{"fine3"}:0),
                             $branch ,$bor
                             );
                     } else {
@@ -171,12 +174,15 @@ if ($op eq 'save') {
                             ($temphash{$bor}->{"delay1"}?$temphash{$bor}->{"delay1"}:0),
                             ($temphash{$bor}->{"letter1"}?$temphash{$bor}->{"letter1"}:""),
                             ($temphash{$bor}->{"debarred1"}?$temphash{$bor}->{"debarred1"}:0),
+                            ($temphash{$bor}->{"fine1"}?$temphash{$bor}->{"fine1"}:0),
                             ($temphash{$bor}->{"delay2"}?$temphash{$bor}->{"delay2"}:0),
                             ($temphash{$bor}->{"letter2"}?$temphash{$bor}->{"letter2"}:""),
                             ($temphash{$bor}->{"debarred2"}?$temphash{$bor}->{"debarred2"}:0),
+                            ($temphash{$bor}->{"fine2"}?$temphash{$bor}->{"fine2"}:0),
                             ($temphash{$bor}->{"delay3"}?$temphash{$bor}->{"delay3"}:0),
                             ($temphash{$bor}->{"letter3"}?$temphash{$bor}->{"letter3"}:""),
-                            ($temphash{$bor}->{"debarred3"}?$temphash{$bor}->{"debarred3"}:0)
+                            ($temphash{$bor}->{"debarred3"}?$temphash{$bor}->{"debarred3"}:0),
+                            ($temphash{$bor}->{"fine3"}?$temphash{$bor}->{"fine3"}:0),
                             );
                     }
 
@@ -222,6 +228,7 @@ for my $data (@categories) {
             );
             $row{delay}=$temphash{$data->{'categorycode'}}->{"delay$i"};
             $row{debarred}=$temphash{$data->{'categorycode'}}->{"debarred$i"};
+            $row{fine}=$temphash{$data->{'categorycode'}}->{"fine$i"};
             if ($countletters){
                 my @letterloop;
                 foreach my $thisletter (sort { $letters->{$a} cmp $letters->{$b} } keys %$letters) {
@@ -288,6 +295,7 @@ for my $data (@categories) {
             }
             if ($dat->{"delay$i"}){$row{delay}=$dat->{"delay$i"};}
             if ($dat->{"debarred$i"}){$row{debarred}=$dat->{"debarred$i"};}
+            if ($dat->{"fine$i"}){$row{fine}=$dat->{"fine$i"};}
             my @selected_mtts = @{ GetOverdueMessageTransportTypes( $branch, $data->{'categorycode'}, $i) };
             my @mtts;
             for my $mtt ( @$message_transport_types ) {
