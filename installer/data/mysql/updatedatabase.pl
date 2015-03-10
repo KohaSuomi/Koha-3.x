@@ -8677,6 +8677,16 @@ if ( CheckVersion($DBversion) ) {
     SetVersion($DBversion);
 }
 
+$DBversion = "3.19.00.XXX";
+if ( CheckVersion($DBversion) ) {
+    $dbh->do("ALTER TABLE overduerules ADD COLUMN fine1 float NOT NULL DEFAULT 0 AFTER debarred1;");
+    $dbh->do("ALTER TABLE overduerules ADD COLUMN fine2 float NOT NULL DEFAULT 0 AFTER debarred2;");
+    $dbh->do("ALTER TABLE overduerules ADD COLUMN fine3 float NOT NULL DEFAULT 0 AFTER debarred3;");
+
+    print "Upgrade to $DBversion done (Bug 13816 - Add Overdue letter fine to the overduerules)\n";
+    SetVersion ($DBversion);
+}
+
 $DBversion = "3.15.00.051";
 if ( CheckVersion($DBversion) ) {
     print "Upgrade to $DBversion done (Koha 3.16 beta)\n";
