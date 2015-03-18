@@ -1056,6 +1056,7 @@ sub getIndexes{
                     'EAN',
                     'Enc-level',
                     'extent',
+                    'Edition',
                     'fic',
                     'fiction',
                     'Form-subdivision',
