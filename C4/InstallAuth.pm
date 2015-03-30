@@ -50,7 +50,7 @@ InstallAuth - Authenticates Koha users for Install process
                              query           => $query,
 			     type            => "opac",
 			     authnotrequired => 1,
-			     flagsrequired   => {borrow => 1},
+			     flagsrequired   => {acquisition => 1},
 			  });
 
   output_html_with_http_headers $query, $cookie, $template->output;
@@ -85,7 +85,7 @@ InstallAuth - Authenticates Koha users for Install process
                              query           => $query,
 			     type            => "opac",
 			     authnotrequired => 1,
-			     flagsrequired   => {borrow => 1},
+			     flagsrequired   => {acquisition => 1},
 			  });
 
     This call passes the C<query>, C<flagsrequired> and C<authnotrequired>
@@ -140,7 +140,6 @@ sub get_template_and_user {
             $template->param( CAN_user_borrowers        => 1 );
             $template->param( CAN_user_permission       => 1 );
             $template->param( CAN_user_reserveforothers => 1 );
-            $template->param( CAN_user_borrow           => 1 );
             $template->param( CAN_user_editcatalogue    => 1 );
             $template->param( CAN_user_updatecharges    => 1 );
             $template->param( CAN_user_acquisition      => 1 );

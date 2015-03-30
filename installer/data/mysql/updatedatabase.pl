@@ -8338,6 +8338,15 @@ if (CheckVersion($DBversion)) {
 }
 
 $DBversion = "3.15.00.028";
+if ( CheckVersion($DBversion) ) {
+    $dbh->do(q|
+        DELETE FROM userflags WHERE bit=7;
+    |);
+    print "Upgrade to $DBversion done (Bug 7976 - Remove the 'borrow' permission)\n";
+    SetVersion($DBversion);
+}
+
+$DBversion = "3.15.00.028";
 if(CheckVersion($DBversion)) {
     $dbh->do(q{
         ALTER TABLE issuingrules ADD norenewalbefore int(4) default NULL AFTER renewalperiod

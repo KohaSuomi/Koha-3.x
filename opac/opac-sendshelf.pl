@@ -42,7 +42,6 @@ my ( $template, $borrowernumber, $cookie ) = get_template_and_user (
         query           => $query,
         type            => "opac",
         authnotrequired => 0,
-        flagsrequired   => { borrow => 1 },
     }
 );
 
@@ -68,7 +67,6 @@ if ( $email ) {
             query           => $query,
             type            => "opac",
             authnotrequired => 1,
-            flagsrequired   => { borrow => 1 },
         }
     );
 
