@@ -639,6 +639,14 @@ sub _parseletter {
 
     }
 
+    if ($table eq 'issues' && $letter->{content}) {
+        #Only transform date for ISO timestamps to avoid duplicate transformations.
+        $values->{'date_due'} = output_pref({ dt => dt_from_string( $values->{'date_due'} ), dateonly => 1 })
+                        if $values->{'date_due'} =~ /^\d\d\d\d-\d\d-\d\d/;
+        $values->{'issuedate'} = output_pref({ dt => dt_from_string( $values->{'issuedate'} ), dateonly => 1 })
+                        if $values->{'issuedate'} =~ /^\d\d\d\d-\d\d-\d\d/;
+    }
+
     if ($letter->{content} && $letter->{content} =~ /<<today>>/) {
         my $todaysdate = output_pref( DateTime->now() );
         $letter->{content} =~ s/<<today>>/$todaysdate/go;
