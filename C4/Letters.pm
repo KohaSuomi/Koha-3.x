@@ -438,6 +438,8 @@ sub SendAlerts {
           taking remaining << >> tokensr; not recommended
         - a hashref token => @tables - replaces <token> << >> << >> </token>
           subtemplate for each @tables row; table is a hashref as above
+      _repeatPageChange => {items => 7, separator => "10\n31"}
+          Adds the separator-String after 7 repeat elements have been processed.
       want_librarian => boolean,  if set to true triggers librarian details
         substitution from the userenv
     Return value:
@@ -460,6 +462,7 @@ sub GetPreparedLetter {
     my $tables = $params{tables};
     my $substitute = $params{substitute};
     my $repeat = $params{repeat};
+    my $repeatPageChange = $params{_repeatPageChange};# => {items => 7, separator => "10\n31"}
     $tables || $substitute || $repeat
       or carp( "ERROR: nothing to substitute - both 'tables' and 'substitute' are empty" ),
          return;
@@ -497,11 +500,17 @@ sub GetPreparedLetter {
         while ( my ($tag, $tag_tables) = each %$repeat_enclosing_tags ) {
             if ( $letter->{content} =~ m!<$tag>(.*)</$tag>!s ) {
                 my $subcontent = $1;
-                my @lines = map {
+                my @lines;
+                #Iterate all instances the repeatable tag, eg. <item>(.*?)</item>, matches and populate placeholders.
+                for(my $i=0 ; $i<@$tag_tables ; $i++) {
+                    #Add a page separator if enough $tags has been processed, and this $tag is not the last $tag.
+                    push @lines, $repeatPageChange->{separator} if ($repeatPageChange && $i > 0
+                                                                    && $i % $repeatPageChange->{items} == 0
+                                                                    && $i < scalar(@$tag_tables));
                     my %subletter = ( title => '', content => $subcontent );
-                    _substitute_tables( \%subletter, $_ );
-                    $subletter{content};
-                } @$tag_tables;
+                    _substitute_tables( \%subletter, $tag_tables->[$i] );
+                    push @lines, $subletter{content};
+                }
                 $letter->{content} =~ s!<$tag>.*</$tag>!join( "\n", @lines )!se;
             }
         }
