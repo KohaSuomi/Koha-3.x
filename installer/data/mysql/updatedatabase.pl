@@ -6709,6 +6709,14 @@ if ( CheckVersion($DBversion) ) {
    SetVersion ($DBversion);
 }
 
+$DBversion = "3.16.00.XXX";
+if ( CheckVersion($DBversion) ) {
+   $dbh->do("INSERT INTO systempreferences (variable,value,options,explanation,type)
+             VALUES('VaaraAcqVendorConfigurations','','70|10','Define vendor integration rules:','Textarea');");
+   print "Upgrade to VAARA (KD-51: Acquisition integration) done!\n";
+   SetVersion ($DBversion);
+}
+
 $DBversion = "3.11.00.110";
 if ( CheckVersion($DBversion) ) {
     $dbh->do("ALTER TABLE pending_offline_operations CHANGE barcode barcode VARCHAR( 20 ) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL");

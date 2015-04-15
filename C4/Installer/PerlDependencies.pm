@@ -497,6 +497,11 @@ our $PERL_DEPS = {
         'required' => '1',
         'min_ver'  => '0.71'
     },
+    'YAML::XS' => {
+        'usage'    => 'Core',
+        'required' => '0.59',
+        'min_ver'  => '0.59'
+    },
     'Time::HiRes' => {
         'usage'    => 'Core',
         'required' => '1',
