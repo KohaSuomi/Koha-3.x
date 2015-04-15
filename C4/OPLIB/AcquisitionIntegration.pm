@@ -1,6 +1,6 @@
 package C4::OPLIB::AcquisitionIntegration;
 
-# Copyright 2014 Vaara-kirjastot
+# Copyright 2015 Vaara-kirjastot
 #
 # This file is part of Koha.
 #
@@ -20,8 +20,18 @@ package C4::OPLIB::AcquisitionIntegration;
 use Modern::Perl;
 
 use POSIX qw/strftime/;
+use YAML::XS;
 
 use Net::FTP;
+use Scalar::Util qw( blessed );
+use Try::Tiny;
+use Koha::Exception::NoSystemPreference;
+use Koha::Exception::BadSystemPreference;
+use Koha::Exception::ConnectionFailed;
+use Koha::Exception::LoginFailed;
+use Koha::Exception::UnknownProtocol;
+use Koha::FTP;
+
 use C4::Bookseller qw/GetBookSellerFromId/;
 use C4::Budgets qw/ConvertCurrency/;
 use C4::Acquisition qw/GetOrders GetBasketsByBasketgroup GetBasketgroup GetBasket ModBasketgroup/;
@@ -173,7 +183,12 @@ sub sendCsvToKirjavalitys {
     close $CSV;
 
     ##Send it away!
-    my $ftpcon = connectToKirjavalitys($errorsBuilder);
+    my $ftpcon;
+    try {
+        $ftpcon = connectToKirjavalitys();
+    } catch {
+        push @$errorsBuilder, $_->error();
+    };
     if ($ftpcon) {
         if (! $ftpcon->cwd('/Order') ) {
             push @$errorsBuilder, "Cannot change to the Order folder with Kirjavälitys' ftp server: $@";
@@ -267,80 +282,85 @@ sub getSubfieldFromMARCXML {
 
 =head connectToKirjavalitys
 
-    my $ftpcon = connectToKirjavalitys();
-    my $ftpcon = connectToKirjavalitys( [$errorsBuilder] );
+    try {
+        my $ftpcon = connectToKirjavalitys();
+    } catch {
+        warn $_->to_string();
+    }
 
-@PARAM1, Array of Strings, OPTIONAL, the StringBuilder for error notifications to be propagated to the UI.
-@RETURNS Net::FTP, if connection succeeded. If $errorsBuilder is given, returns undef and saves errors to the builder, else kills the proces.
+@RETURNS Net::FTP, if connection succeeded.
+@THROWS Koha::Exception::BadSystemPreference;
+        Koha::Exception::ConnectionFailed;
+        Koha::Exception::LoginFailed;
+        Koha::Exception::NoSystemPreference;
+        Koha::Exception::UnknownProtocol;
 =cut
 
 sub connectToKirjavalitys {
-    my $errorsBuilder = shift;
+    return connectProvider('Kirjavalitys');
+}
 
-    my $ftpcon = Net::FTP->new(Host => '194.136.81.40',
-                         Passive => 1,
-                         Port => 125,
-                         Timeout => 10);
-    unless ($ftpcon) {
-        my $ermsg = "Cannot connect to Kirjavälitys ftp server: $@";
-        die $ermsg unless $errorsBuilder;
-        push @$errorsBuilder, $ermsg;
-        return undef;
-    }
+sub connectProvider {
+    my ($configKey) = @_;
 
-    if ($ftpcon->login('joensuu','jns2KV37')){
-        return $ftpcon;
+    my $configVendor = getVendorConfig($configKey);
+    if ($configVendor->{protocol}) {
+        if ($configVendor->{protocol} =~ m/ftp/) {
+            return Koha::FTP::connect($configVendor, $configKey);
+        }
+        else {
+            Koha::Exception::UnknownProtocol->throw( error =>
+                "connectFtp():> Connecting to '$configKey', Unknown protocol ".$configVendor->{protocol});
+        }
     }
     else {
-        my $ermsg = "Cannot login to Kirjavälitys ftp server: $@";
-        die $ermsg unless $errorsBuilder;
-        push @$errorsBuilder, $ermsg;
-        return undef;
+        Koha::Exception::UnknownProtocol->throw( error =>
+            "connectFtp():> Connecting to '$configKey', 'protocol' not defined. You must set the 'VaaraAcqVendorConfigurations'-syspref protocol to something nice, like protocol: \"passive ftp\"");
     }
-    return undef;
+
 }
 
 sub connectToBTJselectionLists {
-    my $errorsBuilder = shift;
-
-    my $ftpcon = Net::FTP->new(Host => 'ftp.btj.fi',
-                         Timeout => 10);
-    unless ($ftpcon) {
-        my $ermsg = "Cannot connect to BTJ's selection lists ftp server: $@";
-        die $ermsg unless $errorsBuilder;
-        push @$errorsBuilder, $ermsg;
-        return undef;
-    }
-
-    if ($ftpcon->login('aabbttjj','uleisuog')){
-        return $ftpcon;
-    }
-    else {
-        my $ermsg = "Cannot login to BTJ's selection lists ftp server: $@";
-        die $ermsg unless $errorsBuilder;
-        push @$errorsBuilder, $ermsg;
-    }
+    return connectProvider('BTJSelectionLists');
 }
 sub connectToBTJbiblios {
-    my $errorsBuilder = shift;
+    return connectProvider('BTJBiblios');
+}
 
-    my $ftpcon = Net::FTP->new(Host => 'ftp.btj.fi',
-                         Timeout => 10);
-    unless ($ftpcon) {
-        my $ermsg = "Cannot connect to BTJ's bibliographic ftp server: $@";
-        die $ermsg unless $errorsBuilder;
-        push @$errorsBuilder, $ermsg;
-        return undef;
-    }
+sub getVendorConfig {
+    my ($configKey) = @_;
 
-    if ($ftpcon->login('allfons','flyttl@da')){
-        return $ftpcon;
-    }
-    else {
-        my $ermsg = "Cannot login to BTJ's bibliographic ftp server: $@";
-        die $ermsg unless $errorsBuilder;
-        push @$errorsBuilder, $ermsg;
-    }
+    my $configSyspref = C4::Context->preference('VaaraAcqVendorConfigurations');
+    Koha::Exception::NoSystemPreference->throw( error => 'AcquisitionIntegration::connectProvider():> "VaaraAcqVendorConfigurations"-systempreference not set.' ) unless $configSyspref;
+    my $config = YAML::XS::Load(
+                        Encode::encode(
+                            'UTF-8',
+                            $configSyspref,
+                            Encode::FB_CROAK
+                        )
+                    );
+    my $configVendor = $config->{$configKey};
+    Koha::Exception::BadSystemPreference->throw(
+            syspref => 'VaaraAcqVendorConfigurations',
+            error => join("\n",
+                "connectFtp():> Connecting to '$configKey', ",
+                "Couldn't load the YAML config from syspref VaaraAcqVendorConfigurations",
+                'It should look like this:',
+                '--- ',
+                "$configKey: ",
+                '    host: 10.11.12.13',
+                '    port: 21',
+                '    orderDirectory: /Order',
+                '    password: __lol__',
+                '    protocol: passive ftp',
+                '    selectionListConfirmationDirectory: /marcarkisto',
+                '    selectionListDirectory: /',
+                '    selectionListEncoding: utf8',
+                '    selectionListFormat: marcxml',
+                '    username: valivalimies',
+            ),
+    ) unless $configVendor;
+    return $configVendor;
 }
 
 return "happy happy joy joy";

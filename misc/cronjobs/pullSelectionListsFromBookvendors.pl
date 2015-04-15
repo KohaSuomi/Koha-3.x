@@ -11,11 +11,27 @@ use POSIX qw/strftime/;
 use DateTime;
 use Date::Calc;
 use Data::Dumper;
+use Carp;
 
 use C4::OPLIB::AcquisitionIntegration;
-use Getopt::Long;
+use C4::OPLIB::SelectionListProcessor;
+use C4::ImportBatch;
 
-my ($kv_selects, $btj_selects, $btj_biblios, $verbose, $help);
+use Getopt::Long;
+use Try::Tiny;
+use Scalar::Util qw(blessed);
+use File::Basename;
+
+use Koha::Exception::DuplicateObject;
+use Koha::Exception::RemoteInvocation;
+use Koha::Exception::BadEncoding;
+use Koha::Exception::SystemCall;
+
+binmode( STDOUT, ":utf8" );
+binmode( STDERR, ":utf8" );
+
+my ($kv_selects, $btj_selects, $btj_biblios, $help);
+my $verbose = 0;
 
 GetOptions(
     'kv-selects'  => \$kv_selects,
@@ -45,7 +61,7 @@ This script takes the following parameters :
 
     --verbose | v       verbose. An integer, 1 for slightly verbose, 2 for largely verbose!
 ";
-
+my $ftp = C4::OPLIB::AcquisitionIntegration::connectToKirjavalitys();
 if ( $help ) {
     print $usage;
 }
@@ -56,6 +72,7 @@ unless ( $kv_selects || $btj_selects || $btj_biblios ) {
 
 my $listdirectory = '/tmp/'; #Where to store selection lists
 my $stagedFileVerificationDuration_days = 700; #Stop looking for selection lists older than this when staging MARC for the Koha reservoir
+                                               #Be aware that the Koha cleanup_database.pl -script also removes the imported lists.
 my $importedSelectionlists = getImportedSelectionlists();
 
 my $now = DateTime->now();
@@ -63,6 +80,13 @@ my $year = strftime( '%Y', localtime() );
 
 
 my $errors = []; #Collect all the errors here!
+
+#We don't throw a warning for these files if they are present in the FTP server root directory.
+my $kvFtpExceptionFiles = { 'marcarkisto' => 1,
+                            'Order' => 1,
+                            'tmp' => 1,
+                          };
+
 
 
 ##Starting subroutine definitions##
@@ -77,11 +101,12 @@ sub forKirjavalitys {
     my $kvenn_selectionlist_filenames = [];
     my $kvulk_selectionlist_filenames = [];
 
-    getAllKirjavalitysSelectionlists($kvenn_selectionlist_filenames, $kvulk_selectionlist_filenames);
-    my $marc_encoding = 'utf8';
+    my $vendorConfig = C4::OPLIB::AcquisitionIntegration::getVendorConfig('Kirjavalitys');
 
-    processKirjavalitysSelectionlistType($marc_encoding, $kvenn_selectionlist_filenames, 'ennakot');
-    processKirjavalitysSelectionlistType($marc_encoding, $kvulk_selectionlist_filenames, 'ulkomaiset');
+    getAllKirjavalitysSelectionlists($kvenn_selectionlist_filenames, $kvulk_selectionlist_filenames);
+
+    processKirjavalitysSelectionlistType($vendorConfig, $kvenn_selectionlist_filenames, 'ennakot');
+    processKirjavalitysSelectionlistType($vendorConfig, $kvulk_selectionlist_filenames, 'ulkomaiset');
 
     if (scalar @$errors) {
         print "\nFOLLOWING ERRORS WERE FOUND!\n".
@@ -90,51 +115,50 @@ sub forKirjavalitys {
     }
 }
 sub processKirjavalitysSelectionlistType {
-    my ($marc_encoding, $selectionlists, $listType) = @_;
+    my ($vendorConfig, $selectionListBatches, $listType) = @_;
 
-    my $ftpcon = C4::OPLIB::AcquisitionIntegration::connectToKirjavalitys();
+    my $ftp = Koha::FTP->new( C4::OPLIB::AcquisitionIntegration::connectToKirjavalitys() );
+    my $selectionListProcessor = C4::OPLIB::SelectionListProcessor->new({listType => $listType});
 
-    my $firstrun = 1;
-    for(my $i = 0 ; $i < scalar @$selectionlists ; $i++) {
-        my $selectionlist = $selectionlists->[$i];
+    for(my $i = 0 ; $i < scalar @$selectionListBatches ; $i++) {
+        try {
+            my $selectionListBatch = $selectionListBatches->[$i];
 
-        if (isSelectionListImported( $selectionlist )) {
-            print "Selection list $selectionlist already imported.\n" if $verbose;
-            next; #Don't try to reimport a selection list!
-        }
-        print "Importing $selectionlist\n" if $verbose > 1;
+            print "Importing $selectionListBatch\n" if $verbose > 1;
 
-        $selectionlist =~ /(\d{8})\./;
-        my $ymd = $1;
+            $selectionListBatch =~ /(\d{8})\./;
+            my $ymd = $1;
 
-        my $error = getKirjavalitysSelectionlist($listdirectory, $selectionlist, $ftpcon);
-        if ($error) {
-            #Store the error for today only!
-            push @$errors, $error if $firstrun;
-            $firstrun = 0 if $firstrun;
-            next();
-        }
+            $ftp->getFtpFile($listdirectory, $selectionListBatch);
 
-        $error = stageKirjavalitysSelectionlist($listdirectory, $selectionlist, $marc_encoding, $listType, $ymd);
-        if ($error) {
-            #If we cannot stage a file for some reason, we must store the error!
-            push @$errors, $error;
-            $firstrun = 0 if $firstrun;
-            next();
-        }
+            verifyCharacterEncoding($listdirectory, $selectionListBatch, $vendorConfig->{selectionListEncoding});
 
-        $error = deleteKirjavalitysSelectionlist($listdirectory, $selectionlist, $ftpcon);
-        if ($error) {
-            #If we cannot delete the selection list, we must report!
-            push @$errors, $error;
-            $firstrun = 0 if $firstrun;
-            next();
-        }
+            ##Split the incoming selection list to sub selection lists based on the 971$d
+            my $selectionLists = $selectionListProcessor->splitToSubSelectionListsFromFile({
+                                                        file => $listdirectory.$selectionListBatch,
+                                                        encoding => $vendorConfig->{selectionListEncoding},
+                                                        singleList => $selectionListBatch,
+                                                        format => $vendorConfig->{selectionListFormat},
+                                                    });
 
-        $firstrun = 0 if $firstrun;
+            stageSelectionlists($selectionLists, $vendorConfig->{selectionListEncoding}, $listType, $ymd);
+
+            moveKirjavalitysSelectionListBatch($listdirectory.$selectionListBatch, 'marcarkisto', $ftp);
+
+        } catch {
+            if (blessed($_)) {
+                warn $_->error()."\n";
+                push @$errors, $_->error();
+#                next(); #Perl bug here. next() doesn't point to the foreach loop here but possibly to something internal to Try::Tiny.
+                 #Thus we get the "Exiting subroutine via next" -warning. Because there are no actions after the catch-statement,
+                 #this doesn't really hurt here, but just a remnder for anyone brave enough to venture further here.
+            }
+            else { die "Exception not caught by try-catch:> ".$_;}
+        };
     }
-    $ftpcon->quit();
+    $ftp->quit();
 }
+
 sub getAllKirjavalitysSelectionlists {
     my ($kvenn_selectionlist_filenames, $kvulk_selectionlist_filenames) = @_;
 
@@ -142,12 +166,17 @@ sub getAllKirjavalitysSelectionlists {
 
     my $ftpfiles = $ftpcon->ls();
     foreach my $file (@$ftpfiles) {
-        if ($file =~ /^kvmarcxmlenn\d+/) {
+        if ($file =~ /^kvmarcxmlenn\d{8}\.xml/) {
             print "Kirjavalitys: Found file: $file\n" if $verbose;
             push @$kvenn_selectionlist_filenames, $file;
-        }elsif ($file =~ /^kvmarcxmlulk\d+/) {
+        }elsif ($file =~ /^kvmarcxmlulk\d{8}\.xml/) {
             print "Kirjavalitys: Found file: $file\n" if $verbose;
             push @$kvulk_selectionlist_filenames, $file;
+        }elsif ($kvFtpExceptionFiles->{$file}) {
+            #We have a list of files that are allowed to be in the KV ftp directory and we won't warn about.
+        }
+        else {
+            print "Kirjavalitys: Unknown file in ftp-server '$file'\n";
         }
     }
     $ftpcon->close();
@@ -155,47 +184,97 @@ sub getAllKirjavalitysSelectionlists {
     @$kvenn_selectionlist_filenames = sort @$kvenn_selectionlist_filenames;
     @$kvulk_selectionlist_filenames = sort @$kvulk_selectionlist_filenames;
 }
-sub getKirjavalitysSelectionlist {
-    my ($directory, $filename, $ftpcon) = @_;
 
-    ##getKirjavalitysSelectionlist to /tmp
-    if($ftpcon->get($filename, $directory.$filename)) {
-        return 0; #Great! no errors!
-    }else {
-        return "Cannot fetch the selection list $filename from Kirjavälitys' ftp server: ".$ftpcon->message;
-    }
+=head stageSelectionlist
+@THROWS Koha::Exception::SystemCall
+=cut
+
+sub stageSelectionlist {
+    my ($selectionList, $encoding, $listType) = @_;
+
+    my ($batch_id, $num_valid_records, $num_items, @import_errors) =
+        C4::ImportBatch::BatchStageMarcRecords('biblio', $encoding, $selectionList->getMarcRecords(), $selectionList->getIdentifier(), undef, $selectionList->getDescription(), '', 0, 0, 100, undef);
+    print join("\n",
+    "MARC record staging report for selection list ".$selectionList->getIdentifier(),
+    "------------------------------------",
+    "Number of input records:    ".scalar(@{$selectionList->getMarcRecords()}),
+    "Number of valid records:    $num_valid_records",
+    "------------------------------------",
+    ((scalar(@import_errors)) ? (
+    "Errors",
+    "@import_errors",
+    "",)
+    :
+    "",
+    )
+    );
 }
-sub stageKirjavalitysSelectionlist {
-    my ($directory, $filename, $encoding, $listType, $ymd) = @_;
-    $ymd =~ s/(\d\d\d\d)(\d\d)(\d\d)/$1.$2.$3/;
+
+=head stageFromFileSelectionlist
+
+This function is used to import the btj full bibliographic records.
+@THROWS Koha::Exception::SystemCall
+=cut
+
+sub stageFromFileSelectionlist {
+    my ($filePath, $comment, $encoding) = @_;
+
     ##Push the Kirjavälitys selection list to staged records batches.
     my @args = ($ENV{KOHA_PATH}.'/misc/stage_file.pl',
-                '--file '.$directory.$filename,
+                '--file '.$filePath,
                 '--encoding '.$encoding,
                 '--match 1',
-                '--comment "Kirjavälitys '.$ymd.' '.$listType.' valintalista"');
+                '--comment "'.$comment.'"',
+                '--format ISO2709');
 
-    system("@args") == 0 or return "system @args failed: $?";
+    system("@args") == 0 or Koha::Exception::SystemCall->throw(error => "system @args failed: $?");
     return 0; #No errors wooee!
 }
-##Delete the selection list to acknowledge the reception.
-sub deleteKirjavalitysSelectionlist {
-    my ($directory, $filename, $ftpcon) = @_;
-    my $error = '';
 
-    if ($ftpcon->delete($filename)) {
-        #Great!
-    }else {
-        $error .= "Cannot delete the selection list $filename from Kirjavälitys' ftp server: ".$ftpcon->message;
+sub stageSelectionlists {
+    my ($selectionLists, $encoding, $listType, $ymd) = @_;
+
+    my $errors = '';
+    while( my ($newName, $sl) =  each %$selectionLists) {
+        try {
+            #We directly stage these selection lists so we can better control their descriptions and content and get nicer output.
+            isSelectionListImported( $sl->getIdentifier() );
+            stageSelectionlist($sl, $encoding, $listType);
+        } catch {
+            if (blessed($_)){
+                if ($_->isa('Koha::Exception::SystemCall')) {
+                    warn $_->error()."\n";
+                    $errors .= $_->error()."\n";
+                }
+                else {
+                    $_->rethrow();
+                }
+            }
+            else {
+                die $_;
+            }
+        };
     }
-    if (-e $directory.$filename) {
-        my $cmd = "rm $directory$filename";
-        system( $cmd ) == 0 or $error .= "system $cmd failed: $?";
-    }else {
-        $error .= "The selection list $directory$filename doesn't exist even if it has been successfully staged?"
-    }
-    return $error if length $error > 1;
+    Koha::Exception::SystemCall->throw(error => $errors) if $errors && length $errors > 0;
 }
+
+=head moveKirjavalitysSelectionListBatch
+Aknowledge the reception by moving the selectionListBatches to marcarkisto-directory
+=cut
+
+sub moveKirjavalitysSelectionListBatch {
+    my ($filePath, $targetDirectory, $ftp) = @_;
+    my($fileName, $dirs, $suffix) = File::Basename::fileparse( $filePath );
+
+    my $currentDir = $ftp->getCurrentFtpDirectory();
+    $ftp->changeFtpDirectory($targetDirectory, $ftp);
+    $ftp->putFtpFile($filePath, $ftp);
+    $ftp->changeFtpDirectory($currentDir, $ftp);
+    $ftp->deleteFtpFile($fileName, $ftp);
+}
+
+
+
 
 
 
@@ -213,12 +292,12 @@ sub forBTJ {
     my $ma_selectionlist_filenames = [];
     my $mk_selectionlist_filenames = [];
 
+    my $vendorConfig = C4::OPLIB::AcquisitionIntegration::getVendorConfig('BTJSelectionLists');
+
     getAllBTJSelectionlists($ma_selectionlist_filenames, $mk_selectionlist_filenames);
 
-    my $marc_encoding = 'MARC-8';
-
-    processBTJSelectionlistType($marc_encoding, $ma_selectionlist_filenames, 'av-aineisto');
-    processBTJSelectionlistType($marc_encoding, $mk_selectionlist_filenames, 'kirja-aineisto');
+    processBTJSelectionlistType($vendorConfig, $ma_selectionlist_filenames, 'av-aineisto');
+    processBTJSelectionlistType($vendorConfig, $mk_selectionlist_filenames, 'kirja-aineisto');
 
     if (scalar @$errors) {
         print "\nFOLLOWING ERRORS WERE FOUND!\n".
@@ -227,50 +306,53 @@ sub forBTJ {
     }
 }
 sub processBTJSelectionlistType {
-    my ($marc_encoding, $selectionlists, $listType) = @_;
+    my ($vendorConfig, $selectionListBatches, $listType) = @_;
 
-    my $ftpcon = C4::OPLIB::AcquisitionIntegration::connectToBTJselectionLists();
+    my $ftp = Koha::FTP->new( C4::OPLIB::AcquisitionIntegration::connectToBTJselectionLists() );
+    my $selectionListProcessor = C4::OPLIB::SelectionListProcessor->new({listType => $listType});
 
-    my $firstrun = 1;
-    for(my $i = 0 ; $i < scalar @$selectionlists ; $i++) {
-        my $selectionlist = $selectionlists->[$i];
+    for(my $i = 0 ; $i < scalar @$selectionListBatches ; $i++) {
+        try {
+            my $selectionListBatch = $selectionListBatches->[$i];
 
-        if (isSelectionListImported( $selectionlist )) {
-            print "Selection list $selectionlist already imported.\n" if $verbose;
-            next; #Don't try to reimport a selection list!
-        }
-        print "Importing $selectionlist\n" if $verbose > 1;
+            print "Importing $selectionListBatch\n" if $verbose > 1;
 
-        $selectionlist =~ /(\d{4})/;
-        my $md = $1;
+            $selectionListBatch =~ /(\d{4})/;
+            my $md = $1;
 
-        my $error = getBTJSelectionlist($listdirectory, $selectionlist, $ftpcon);
-        if ($error) {
-            #Store the error for today only!
-            push @$errors, $error if $firstrun;
-            $firstrun = 0 if $firstrun;
-            next();
-        }
+            $ftp->getFtpFile($listdirectory, $selectionListBatch);
 
-        $error = stageBTJSelectionlist($listdirectory, $selectionlist, $marc_encoding, $listType, $md);
-        if ($error) {
-            #If we cannot stage a file for some reason, we must store the error!
-            push @$errors, $error;
-            $firstrun = 0 if $firstrun;
-            next();
-        }
-        #WITH BTJ we don't delete items like we do with Kirjavälitys
-        #$error = deleteBTJSelectionlist($listdirectory, $selectionlist, $ftpcon);
-        #if ($error) {
-        #    #If we cannot delete the selection list, we must report!
-        #    push @$errors, $error;
-        #    $firstrun = 0 if $firstrun;
-        #    next();
-        #}
+            verifyCharacterEncoding($listdirectory, $selectionListBatch, $vendorConfig->{selectionListEncoding});
 
-        $firstrun = 0 if $firstrun;
+            ##Split the incoming selection list to sub selection lists based on the 971$d
+            my $selectionLists = $selectionListProcessor->splitToSubSelectionListsFromFile({
+                                                        file => $listdirectory.$selectionListBatch,
+                                                        encoding => $vendorConfig->{selectionListEncoding},
+                                                        singleList => $selectionListBatch,
+                                                        format => $vendorConfig->{selectionListFormat},
+                                                    });
+
+            stageSelectionlists($selectionLists, $vendorConfig->{selectionListEncoding}, $listType, $md);
+
+        } catch {
+            if (blessed($_)) {
+                if ($_->isa('Koha::Exception::DuplicateObject')) {
+                    #print $_->error()."\n";
+                    #It is normal for BTJ to find the same selection lists again and again,
+                    #because they keep the selection lists from the past month.
+                }
+                else {
+                    warn $_->error()."\n";
+                    push @$errors, $_->error();
+                }
+#                next(); #Perl bug here. next() doesn't point to the foreach loop here but possibly to something internal to Try::Tiny.
+                 #Thus we get the "Exiting subroutine via next" -warning. Because there are no actions after the catch-statement,
+                 #this doesn't really hurt here, but just a remnder for anyone brave enough to venture further here.
+            }
+            else { die "Exception not caught by try-catch:> ".$_;}
+        };
     }
-    $ftpcon->quit();
+    $ftp->quit();
 }
 sub getAllBTJSelectionlists {
     my ($ma_selectionlist_filenames, $mk_selectionlist_filenames) = @_;
@@ -287,10 +369,10 @@ sub getAllBTJSelectionlists {
             if ( $difference_days >= 0 && #If the year changes there is trouble, because during subtraction year is always the same
                  $difference_days < $stagedFileVerificationDuration_days) { #if selection list is too old, skip trying to stage it.
 
-                if ($file =~ /ma$/) {
+                if ($file =~ /xa$/) {
                     print "BTJ: Found file: $file\n" if $verbose;
                     push @$ma_selectionlist_filenames, $file;
-                }elsif ($file =~ /mk$/) {
+                }elsif ($file =~ /xk$/) {
                     print "BTJ: Found file: $file\n" if $verbose;
                     push @$mk_selectionlist_filenames, $file;
                 }
@@ -305,50 +387,6 @@ sub getAllBTJSelectionlists {
     @$ma_selectionlist_filenames = sort @$ma_selectionlist_filenames;
     @$mk_selectionlist_filenames = sort @$mk_selectionlist_filenames;
 }
-sub getBTJSelectionlist {
-    my ($directory, $filename, $ftpcon) = @_;
-
-    ##getKirjavalitysSelectionlist to /tmp
-    if($ftpcon->get($filename, $directory.$filename)) {
-        return 0; # No errors! yay!
-    }else {
-        return "Cannot fetch the selection list $filename from BTJ's ftp server: ".$ftpcon->message;
-    }
-}
-sub stageBTJSelectionlist {
-    my ($directory, $filename, $encoding, $listType, $ymd) = @_;
-    $ymd =~ s/(\d\d)(\d\d)/$year.$1.$2/;
-
-    ##Push the Kirjavälitys selection list to staged records batches.
-    my @args = ($ENV{KOHA_PATH}.'/misc/stage_file.pl',
-                '--file '.$directory.$filename,
-                '--encoding '.$encoding,
-                '--match 1',
-                '--comment "BTJ '.$ymd.' '.$listType.' valintalista"');
-
-    system("@args") == 0 or return "system @args failed: $?";
-    return 0; #No errors wooee!
-}
-##Delete the selection list to acknowledge the reception.
-=head Don't really delete BTJ's selection lists from the ftp! This is onl for kirjavälitys and code is preserved for later use.
-sub deleteBTJSelectionlist {
-    my ($directory, $filename, $ftpcon) = @_;
-    my $error = '';
-
-    if ($ftpcon->delete($filename)) {
-        #Great!
-    }else {
-        $error .= "Cannot delete the selection list $filename from BTJ's ftp server: ".$ftpcon->message;
-    }
-    if (-e $directory.$filename) {
-        my $cmd = "rm $directory$filename";
-        system( $cmd ) == 0 or $error .= "system $cmd failed: $?";
-    }else {
-        $error .= "The selection list $directory$filename doesn't exist even if it has been successfully staged?"
-    }
-    return $error if length $error > 1;
-}
-=cut
 
 sub forBTJBiblios {
     print "Starting BTJ biblios\n" if $verbose;
@@ -357,12 +395,12 @@ sub forBTJBiblios {
     my $ma_selectionlist_filenames = [];
     my $mk_selectionlist_filenames = [];
 
+    my $vendorConfig = C4::OPLIB::AcquisitionIntegration::getVendorConfig('BTJBiblios');
+
     getAllBTJBibliolists($ma_selectionlist_filenames, $mk_selectionlist_filenames);
 
-    my $marc_encoding = 'MARC-8';
-
-    processBTJBibliolistType($marc_encoding, $ma_selectionlist_filenames, 'av-aineisto');
-    processBTJBibliolistType($marc_encoding, $mk_selectionlist_filenames, 'kirja-aineisto');
+    processBTJBibliolistType($vendorConfig, $ma_selectionlist_filenames, 'av-aineisto');
+    processBTJBibliolistType($vendorConfig, $mk_selectionlist_filenames, 'kirja-aineisto');
 
     if (scalar @$errors) {
         print "\nFOLLOWING ERRORS WERE FOUND!\n".
@@ -371,59 +409,48 @@ sub forBTJBiblios {
     }
 }
 sub processBTJBibliolistType {
-    my ($marc_encoding, $selectionlists, $listType) = @_;
+    my ($vendorConfig, $bibliosBatches, $listType) = @_;
 
-    my $ftpcon = C4::OPLIB::AcquisitionIntegration::connectToBTJbiblios();
+    my $ftp = Koha::FTP->new( C4::OPLIB::AcquisitionIntegration::connectToBTJbiblios() );
 
-    my $firstrun = 1;
-    for(my $i = 0 ; $i < scalar @$selectionlists ; $i++) {
-        my $selectionlist = $selectionlists->[$i];
+    for(my $i = 0 ; $i < scalar @$bibliosBatches ; $i++) {
+        try {
+            my $bibliosBatch = $bibliosBatches->[$i];
 
-        if (isSelectionListImported( $selectionlist )) {
-            next; #Don't try to reimport a selection list!
-        }
+            isSelectionListImported( $bibliosBatch );
 
-        $selectionlist =~ /(\d{4})/;
-        my $md = $1;
+            $bibliosBatch =~ /(\d{4})/;
+            my $md = $1;
 
-        my $error = getBTJSelectionlist($listdirectory, $selectionlist, $ftpcon);
-        if ($error) {
-            #Store the error for today only!
-            push @$errors, $error if $firstrun;
-            $firstrun = 0 if $firstrun;
-            next();
-        }
+            $ftp->getFtpFile($listdirectory, $bibliosBatch);
 
-        $error = stageBTJSelectionlist($listdirectory, $selectionlist, $marc_encoding, $listType, $md);
-        if ($error) {
-            #If we cannot stage a file for some reason, we must store the error!
-            push @$errors, $error;
-            $firstrun = 0 if $firstrun;
-            next();
-        }
-
-
-        #WITH BTJ we don't delete items like we do with Kirjavälitys
-        #$error = deleteBTJSelectionlist($listdirectory, $selectionlist, $ftpcon);
-        #if ($error) {
-        #    #If we cannot delete the selection list, we must report!
-        #    push @$errors, $error;
-        #    $firstrun = 0 if $firstrun;
-        #    next();
-        #}
-
-        $firstrun = 0 if $firstrun;
+            stageFromFileSelectionlist($listdirectory.$bibliosBatch, 'List type '.$listType, $vendorConfig->{biblioEncoding});
+        } catch {
+            if (blessed($_)) {
+                if ($_->isa('Koha::Exception::DuplicateObject')) {
+                    #It is normal for BTJ to find the same selection lists again and again,
+                    #because they keep the selection lists from the past month.
+                }
+                else {
+                    warn $_->error()."\n";
+                    push @$errors, $_->error();
+                }
+#                next(); #Perl bug here. next() doesn't point to the foreach loop here but possibly to something internal to Try::Tiny.
+                 #Thus we get the "Exiting subroutine via next" -warning. Because there are no actions after the catch-statement,
+                 #this doesn't really hurt here, but just a remnder for anyone brave enough to venture further here.
+            }
+            else { die "Exception not caught by try-catch:> ".$_;}
+        };
     }
 
     #Always check and try to commit files, if previous errors!
     my $error = commitStagedFiles('B\d\d\d\dm[ak]');
     if ($error) {
         push @$errors, $error;
-        $firstrun = 0 if $firstrun;
         next();
     }
 
-    $ftpcon->quit();
+    $ftp->quit();
 }
 sub getAllBTJBibliolists {
     my ($ma_selectionlist_filenames, $mk_selectionlist_filenames) = @_;
@@ -488,13 +515,17 @@ sub getImportedSelectionlists {
     return $fns;
 }
 sub isSelectionListImported {
-    my $filename = lc( shift );
+    my $selectionlist = lc( shift );
 
-    if (exists $importedSelectionlists->{$filename}) {
-        return 1;
+    if (exists $importedSelectionlists->{$selectionlist}) {
+        Koha::Exception::DuplicateObject->throw(error => "Selection list $selectionlist already imported.")
     }
-    return 0;
 }
+
+=head commitStagedFiles
+Warning, this function actually pushes the imported batch into the live DB instead of the reservoir.
+=cut
+
 sub commitStagedFiles {
     my ($matching_regexp) = @_;
     my $errors = '';
@@ -522,4 +553,17 @@ sub commitStagedFiles {
     }
 
     return $errors;
+}
+
+sub verifyCharacterEncoding {
+    my ($listdirectory, $selectionlist, $marc_encoding) = @_;
+    ##Inspect the character encoding of the selection list
+    my $fileType = `file -bi $listdirectory$selectionlist`;
+    chomp $fileType;
+    if (  not($fileType =~ /utf-?8/i) && not($fileType =~ /us-?ascii/i)  ) {
+        Koha::Exception::BadEncoding->throw(error => "Selection list '$selectionlist' is of type '$fileType', expected '$marc_encoding'");
+    }
+    elsif ( $verbose > 1 ) {
+        print "Filetype $fileType\n";
+    }
 }

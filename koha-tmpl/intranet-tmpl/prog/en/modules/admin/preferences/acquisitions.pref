@@ -61,3 +61,11 @@ Acquisitions:
                   "pdfformat::layout3pagesfr": French 3-page
                   "pdfformat::layout2pagesde": German 2-page
             - layout when printing basket groups.
+    Interfacing:
+        -
+            - "Define vendor integration rules:"
+            - "This is a YAML-config."
+            - "."
+            - pref: VaaraAcqVendorConfigurations
+              type: textarea
+              class: code

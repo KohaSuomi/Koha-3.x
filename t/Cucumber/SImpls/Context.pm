@@ -19,6 +19,9 @@ package SImpls::Context;
 
 use Modern::Perl;
 use Carp;
+use Test::More;
+
+use File::Slurp;
 
 use C4::Context;
 
