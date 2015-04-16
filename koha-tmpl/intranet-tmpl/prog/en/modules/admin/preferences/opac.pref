@@ -519,6 +519,7 @@ OPAC:
             - pref: OpacHiddenItems
               type: textarea
               class: code
+            - "Vaara-Hack Alert! See KD-251 - Hiding Items from OPAC Searching"
             - Allows to define custom rules for hiding specific items at opac. See docs/opac/OpacHiddenItems.txt for more informations
         -
             - pref: OpacAllowPublicListCreation
