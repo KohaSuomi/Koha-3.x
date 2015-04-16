@@ -78,7 +78,8 @@ my @hiddenitems;
 if (scalar @all_items >= 1) {
     push @hiddenitems, GetHiddenItemnumbers(@all_items);
 
-    if (scalar @hiddenitems == scalar @all_items ) {
+    if ( 0 ) { #Why kill because there were no Items to display??
+#    if (scalar @hiddenitems == scalar @all_items ) {
         print $query->redirect("/cgi-bin/koha/errors/404.pl"); # escape early
         exit;
     }
