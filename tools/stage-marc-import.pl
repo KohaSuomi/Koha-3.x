@@ -58,6 +58,7 @@ my $item_action = $input->param('item_action');
 my $comments = $input->param('comments');
 my $record_type = $input->param('record_type');
 my $encoding = $input->param('encoding');
+my $format = $input->param('format') || 'ISO2709';
 my $marc_modification_template = $input->param('marc_modification_template_id');
 
 my ($template, $loggedinuser, $cookie)
@@ -80,21 +81,14 @@ if ($completedJobID) {
     $template->param(map { $_ => $results->{$_} } keys %{ $results });
 } elsif ($fileID) {
     my $uploaded_file = C4::UploadedFile->fetch($sessionID, $fileID);
-    my $fh = $uploaded_file->fh();
-	my $marcrecord='';
-    $/ = "\035";
-	while (<$fh>) {
-        s/^\s+//;
-        s/\s+$//;
-		$marcrecord.=$_;
-	}
+    my ($errors, $marcrecords) = C4::ImportBatch::RecordsFromISO2709File($uploaded_file->filename(), $record_type, $encoding);
 
     my $filename = $uploaded_file->name();
     my $job = undef;
     my $staging_callback = sub { };
     my $matching_callback = sub { };
     if ($runinbackground) {
-        my $job_size = () = $marcrecord =~ /\035/g;
+        my $job_size = scalar(@$marcrecords);
         # if we're matching, job size is doubled
         $job_size *= 2 if ($matcher_id ne "");
         $job = C4::BackgroundJob->new($sessionID, $filename, $ENV{'SCRIPT_NAME'}, $job_size);
@@ -134,7 +128,7 @@ if ($completedJobID) {
     }
 
     # FIXME branch code
-    my ($batch_id, $num_valid, $num_items, @import_errors) = BatchStageMarcRecords($record_type, $encoding, $marcrecord, $filename, $marc_modification_template, $comments, '', $parse_items, 0, 50, staging_progress_callback($job, $dbh));
+    my ($batch_id, $num_valid, $num_items, @import_errors) = BatchStageMarcRecords($record_type, $encoding, $marcrecords, $filename, $marc_modification_template, $comments, '', $parse_items, 0, 50, staging_progress_callback($job, $dbh));
 
     $dbh->commit();
 
