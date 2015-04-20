@@ -185,7 +185,13 @@
                             <input type="hidden" name="[% cur.currency %]" value="[% cur.rate %]" />
                         [% END %]
 
+                        [% lastSelectionListName = '' %]
                         [% FOREACH biblio IN biblio_list %]
+                        [% IF lastSelectionListName != biblio.selectionListName %]
+                            <h3>[% biblio.selectionListName %]</h3>
+                            <hr/>
+                            [% lastSelectionListName = biblio.selectionListName %]
+                        [% END %]
                         <fieldset class="biblio unselected rows" style="float:none;">
                           <legend [% IF biblio.match_biblionumber %]class="matched_orderline"[% END %]>
                             <label [% IF biblio.match_biblionumber %]title="[% biblio.availabilityMap %]"[% END %] for="record_[% biblio.import_record_id %]" style="width:auto;">

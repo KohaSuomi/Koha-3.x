@@ -385,13 +385,14 @@ sub import_biblios_list {
         );
         my ( $marcblob, $encoding ) = GetImportRecordMarc( $biblio->{'import_record_id'} );
         my $marcrecord = MARC::Record->new_from_usmarc($marcblob) || die "couldn't translate marc information";
-        my $infos = get_infos_syspref($marcrecord, ['price', 'quantity', 'budget_code', 'discount', 'sort1', 'sort2']);
+        my $infos = get_infos_syspref($marcrecord, ['price', 'quantity', 'budget_code', 'discount', 'sort1', 'sort2', 'selectionListName']);
         my $price = $infos->{price};
         my $quantity = $infos->{quantity};
         my $budget_code = $infos->{budget_code};
         my $discount = $infos->{discount};
         my $sort1 = $infos->{sort1};
         my $sort2 = $infos->{sort2};
+        my $selectionListName = $infos->{selectionListName};
         my $budget_id;
         if($budget_code) {
             my $biblio_budget = GetBudgetByCode($budget_code);
@@ -405,12 +406,14 @@ sub import_biblios_list {
         $cellrecord{discount} = $discount || '';
         $cellrecord{sort1} = $sort1 || '';
         $cellrecord{sort2} = $sort2 || '';
+        $cellrecord{selectionListName} = $selectionListName || '';
 
         get_matched_cellrecord_items( \%cellrecord );
 
 
         push @list, \%cellrecord;
     }
+    @list = sort {$a->{selectionListName} cmp $b->{selectionListName}} @list;
     my $num_records = $batch->{'num_records'};
     my $overlay_action = GetImportBatchOverlayAction($import_batch_id);
     my $nomatch_action = GetImportBatchNoMatchAction($import_batch_id);
