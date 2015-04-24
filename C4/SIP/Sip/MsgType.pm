@@ -352,10 +352,38 @@ sub _initialize {
 	return($self);
 }
 
+sub vaara_rescue_dead_db_connection {
+    ##The DB connection can abruptly die without any explanation. Try to find a new one.
+    ##There must be some kind of a bug in the $dbh->{'mysql_auto_reconnect'} -param not working after a long delay.
+    ##Make sure we have a DBI-connection before proceeding.
+    ##
+    eval {
+        my $dbh = C4::Context->dbh();
+        $dbh->{RaiseError} = 1;
+        my $sth = $dbh->prepare("SELECT cardnumber FROM borrowers LIMIT 1;");
+        $sth->execute();
+        my $h = $sth->fetchall_hashref('cardnumber');
+        $dbh->do("SELECT 1 FROM borrowers LIMIT 1;");
+        syslog("LOG_DEBUG", "Vaara-check, DB connection is alive");
+    };
+    if ($@) {
+        syslog("LOG_WARNING", "Eval found: $@");
+        syslog("LOG_WARNING", "Vaara-rescue! Saving a broken connection!");
+        my $dbh3 = C4::Context::_new_dbh();
+        $C4::Context::context->{dbh} = $dbh3;
+        my $dbh = C4::Context->dbh();
+        $dbh->{RaiseError} = 1;
+        $dbh->do("SELECT 1 FROM borrowers LIMIT 1;");
+        syslog("LOG_WARNING", "Vaara did it again!");
+    }
+}
+
 sub handle {
     my ($msg, $server, $req) = @_;
     my $config = $server->{config};
     my $self;
+
+    vaara_rescue_dead_db_connection();
 
     #
     # What's the field delimiter for variable length fields?
