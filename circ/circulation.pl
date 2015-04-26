@@ -150,6 +150,8 @@ if ( $barcode ) {
     }
 }
 
+C4::Circulation::VaaraHackKillPielinenFromAccessingDuplicateItemBarcodes($barcode);
+
 my ($datedue,$invalidduedate);
 
 my $duedatespec_allow = C4::Context->preference('SpecifyDueDate');

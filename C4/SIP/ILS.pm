@@ -132,7 +132,16 @@ sub checkout {
     $circ = new ILS::Transaction::Checkout;
     # BEGIN TRANSACTION
     $circ->patron($patron = new ILS::Patron $patron_id);
+require C4::Circulation;
+eval {
+C4::Circulation::VaaraHackKillPielinenFromAccessingDuplicateItemBarcodes($item_id);
+};
+if ($@) {
+    $item = undef;
+}
+else {
     $circ->item($item = new ILS::Item $item_id);
+}
 
     if (!$patron) {
 		$circ->screen_msg("Invalid Patron");
@@ -178,7 +187,16 @@ sub checkin {
 
     $circ = new ILS::Transaction::Checkin;
     # BEGIN TRANSACTION
+require C4::Circulation;
+eval {
+C4::Circulation::VaaraHackKillPielinenFromAccessingDuplicateItemBarcodes($item_id);
+};
+if ($@) {
+    $item = undef;
+}
+else {
     $circ->item($item = new ILS::Item $item_id);
+}
 
     if ($item) {
         $circ->do_checkin($current_loc, $return_date);
@@ -191,7 +209,7 @@ sub checkin {
 	$circ->ok($item && $item->{patron});
 
 	if (!defined($item->{patron})) {
-		$circ->screen_msg("Item not checked out");
+#		$circ->screen_msg("Item not checked out");
 	} else {
 		if ($circ->ok) {
 			$circ->patron($patron = new ILS::Patron $item->{patron});

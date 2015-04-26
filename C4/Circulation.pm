@@ -1625,6 +1625,54 @@ sub GetBranchItemRule {
     return $result;
 }
 
+
+sub VaaraHackKillPielinenFromAccessingDuplicateItemBarcodes {
+    my ($barcode) = @_;    
+    return unless $barcode;
+    my $branch = C4::Context->userenv->{'branch'};
+
+#We decided that all branches participate in the duplicate cleaning process.
+#    unless ($branch eq 'ILO_ILO' ||
+#        $branch eq 'ILO_ILOAU' ||
+#        $branch eq 'ILO_LUK' ||
+#        $branch eq 'LIE_LAKO' ||
+#        $branch eq 'LIE_LIE' ||
+#        $branch eq 'LIE_LIEAU' ||
+#        $branch eq 'NUR_NUR' ||
+#        $branch eq 'NUR_NURAU'
+#        ) {
+#        return; #Dont warn others since this issue is encapsulated to Pielinen
+#    }
+
+    my $dbh = C4::Context->dbh();
+    my $sth = $dbh->prepare("SELECT * FROM items WHERE barcode = ?");
+    $sth->execute($barcode.'_TUPLA');
+    my $result = $sth->fetchrow_hashref();
+    if ($result->{barcode} eq $barcode.'_TUPLA') {
+
+        die Encode::decode_utf8("RAKAS VIRKAILIJA\nTÄLLÄ NITEELLÄ ON VAARALLINEN TUPLAVIIVAKOODI VAARA-KIRJASTOISSA\n".
+            "Tämän niteen oikea viivakoodi on Kohassa tällä hetkellä '".$barcode."_TUPLA' tai '$barcode'\n".
+            "Tämän niteen viivakoodi on pakko tarroittaa uudelleen, ennenkuin nide voidaan vapauttaa takaisin kiertoon.\n\n".
+            "Tämä johtuu siitä että Vaara-kirjastoissa ja Pielisen kirjastoissa on käytetty osittain päällekäisia viivakoodeja.\n\n".
+            "---------------------------------------------------------------------------------\n".
+            "::Jos pitelemäsi nide löytää OIKEAN luettelointitietueen omalla viivakoodillaan::\n".
+            "---------------------------------------------------------------------------------\n".
+            "Tällöin käsittelemäsi nide tulee uudelleentarroittaa, SEKÄ tuplaviivakoodin _TUPLA-lisämääre poistaa.\n".
+            "Tuplaviivakoodin poistaminen tapahtuu hakemalla luettelointihausta niteen viivakoodilla ja lisäämällä sen perään kirjaimet '_TUPLA'\n".
+            "  esim. Käsittelemäsi viivakoodi '951016388000101' uudelleentarroitetaan, ja tuplaviivakoodi muutetaan normaaliksi hakemalla\n".
+            "  hakusanalla '951016388000101_TUPLA', sekä muokkaamalla löytyneen niteen tiedoista\n".
+            "  viivakoodi '951016388000101_TUPLA', viivakoodiksi '951016388000101'\n".
+            "  MUISTATHAN varmasti muuttaa myös alkuperäisen uudelleentarroitetun niteen viivakoodin Kohaan\n\n".
+            "---------------------------------------------------------------------------------\n".
+            "::Jos pitelemäsi nide löytää VÄÄRÄN luettelointitietueen omalla viivakoodillaan::\n".
+            "---------------------------------------------------------------------------------\n".
+            "Tällöin käsittelemäsi nide tulee uudelleentarroittaa\n".
+            "Oikean nidetietueen löydät Kohasta lisäämällä kirjaimet '_TUPLA' viivakoodin perään\n\n"
+        );
+    }
+}
+
+
 =head2 AddReturn
 
   ($doreturn, $messages, $iteminformation, $borrower) =

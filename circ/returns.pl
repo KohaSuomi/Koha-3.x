@@ -107,7 +107,7 @@ foreach ( $query->param ) {
     # decode barcode    ## Didn't we already decode them before passing them back last time??
     $barcode =~ s/^\s*|\s*$//g; # remove leading/trailing whitespace
     $barcode = barcodedecode($barcode) if(C4::Context->preference('itemBarcodeInputFilter'));
-
+C4::Circulation::VaaraHackKillPielinenFromAccessingDuplicateItemBarcodes($barcode);
     ######################
     #Are these lines still useful ?
     $returneditems{$counter}    = $barcode;
@@ -235,6 +235,7 @@ if ($canceltransfer){
 if ($barcode) {
     $barcode =~ s/^\s*|\s*$//g; # remove leading/trailing whitespace
     $barcode = barcodedecode($barcode) if C4::Context->preference('itemBarcodeInputFilter');
+C4::Circulation::VaaraHackKillPielinenFromAccessingDuplicateItemBarcodes($barcode);
     $itemnumber = GetItemnumberFromBarcode($barcode);
 
     if ( C4::Context->preference("InProcessingToShelvingCart") ) {
