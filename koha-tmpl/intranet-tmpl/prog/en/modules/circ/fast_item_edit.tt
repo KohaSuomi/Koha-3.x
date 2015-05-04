@@ -1,0 +1,85 @@
+[% USE Koha %]
+[% USE KohaDates %]
+[% USE EncodeUTF8 %]
+
+[% INCLUDE 'doc-head-open.inc' %]
+
+<title>Koha &rsaquo; Circulation &rsaquo; Fast Item Edit</title>
+
+[% INCLUDE 'doc-head-close.inc' %]
+
+</head>
+
+<body>
+
+[% INCLUDE 'header.inc' %]
+[% INCLUDE 'circ-search.inc' %]
+
+<div id="breadcrumbs"><a href="/cgi-bin/koha/mainpage.pl">Home</a> &rsaquo; <a href="/cgi-bin/koha/circ/circulation-home.pl">Circulation</a> &rsaquo; Fast Item Edit</div>
+
+<div id="doc" class="yui-t7">
+    <div id="bd">
+
+        [% FOREACH error IN errors %]
+        <div class="error">
+            [% IF error == "NO_ITEM" %]
+                The given barcode <b>[% barcode %]</b> doesn't match any Item.
+            [% ELSIF error == "PLACEHOLDER_FOR_MORE_ERROR_DEFINITIONS" %]
+                A new kind of error
+            [% ELSE %]
+                Unknown error [% error %]
+            [% END %]
+        </div>
+        [% END %][%# EO [% FOREACH error IN errors %]
+
+        [% FOREACH action IN actions %]
+        <div class="dialog message">
+            [% IF action == "REBARCODE" %]
+                Rebarcoding <b>[% oldBarcode %]</b> to <b>[% newBarcode %]</b> succeeded.
+            [% ELSIF action == "PLACEHOLDER_FOR_MORE_ACTION_DEFINITIONS" %]
+                A new kind of action
+            [% ELSE %]
+                Unknown action [% action %]
+            [% END %]
+        </div>
+        [% END %][%# EO [% FOREACH error IN errors %]
+
+            <div class="yui-g">
+                <form method="post" action="/cgi-bin/koha/circ/fast_item_edit.pl" autocomplete="off" >
+                    <div class="yui-u first">
+                        <fieldset>
+                            <legend>Choose your Item</legend>
+                            <label for="barcode">Enter item barcode: </label>
+                            <input name="barcode" id="barcode" size="14" class="focus" value="[% barcode %]"/>
+                            <input type="submit" class="submit" value="Submit" />
+                            [% IF biblio %]
+                                <br /><br />
+                                <div>[% biblio.title %] - [% biblio.author %] (C) [% biblio.copyrightdate %]</div>
+                            [% END %]
+                        </fieldset>
+                    </div>
+                </form>
+            </div>
+
+        [% IF !errors && barcode %]
+            <div class="yui-g">
+
+                <form method="post" action="/cgi-bin/koha/circ/fast_item_edit.pl" autocomplete="off" >
+                    <input type="hidden" name="barcode" id="barcode" value="[% barcode %]"/>
+
+                    <div class="yui-u first">
+                        <fieldset>
+                            <legend>Rebarcode</legend>
+                            <label for="barcode">Enter the new barcode: </label>
+                            <input name="newBarcode" id="newBarcode" size="14" class="focus"/>
+                            <input type="submit" class="submit" value="Submit" />
+                        </fieldset>
+                    </div>
+                </form>
+            </div>
+        [% END %][%# EO [% UNLESS errors %]
+    </div>
+
+<div>
+
+[% INCLUDE 'intranet-bottom.inc' %]

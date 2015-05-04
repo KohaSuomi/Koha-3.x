@@ -20,6 +20,7 @@
         <li><a href="/cgi-bin/koha/circ/circulation.pl">Check out</a></li>
         <li><a href="/cgi-bin/koha/circ/returns.pl">Check in</a></li>
         <li><a href="/cgi-bin/koha/circ/renew.pl">Renew</a></li>
+        <li><a href="/cgi-bin/koha/circ/fast_item_edit.pl">Fast Item Edit</a></li>
     [% IF ( display_transfer ) %]
 		<li><a href="/cgi-bin/koha/circ/branchtransfers.pl">Transfer</a></li>
     [% END %]
