@@ -59,6 +59,11 @@ our $PERL_DEPS = {
         'required' => '1',
         'min_ver'  => '0.21'
     },
+    'Log::Log4perl' => {
+        'usage'    => 'Core',
+        'required' => '1',
+        'min_ver'  => '1.29',
+    },
     'Data::Walk' => {
         'usage'    => 'Core',
         'required' => '1',
