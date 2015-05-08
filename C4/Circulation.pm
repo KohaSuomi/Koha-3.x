@@ -45,6 +45,7 @@ use C4::Overdues qw(CalcFine UpdateFine);
 use C4::RotatingCollections;
 use Algorithm::CheckDigits;
 
+use Koha::FloatingMatrix;
 use Data::Dumper;
 use Koha::DateUtils;
 use Koha::Calendar;
@@ -2014,15 +2015,23 @@ sub AddReturn {
         DelUniqueDebarment({ borrowernumber => $borrowernumber, type => 'OVERDUES' });
     }
 
+    my $floatingType = Koha::FloatingMatrix::CheckFloating($item, $branch, $hbr);
     # FIXME: make this comment intelligible.
     #adding message if holdingbranch is non equal a userenv branch to return the document to homebranch
     #we check, if we don't have reserv or transfert for this document, if not, return it to homebranch .
 
-    if (($doreturn or $messages->{'NotIssued'}) and !$resfound and ($branch ne $hbr) and not $messages->{'WrongTransfer'}){
-        if ( C4::Context->preference("AutomaticItemReturn"    ) or
-            (C4::Context->preference("UseBranchTransferLimits") and
-             ! IsBranchTransferAllowed($branch, $hbr, $item->{C4::Context->preference("BranchTransferLimitsType")} )
-           )) {
+    if (($doreturn or $messages->{'NotIssued'})
+        and !$resfound and ($branch ne $hbr)
+        and not($messages->{'WrongTransfer'})
+        && (not($floatingType) || $floatingType eq 'POSSIBLE') ){
+        if ( not($floatingType && $floatingType eq 'POSSIBLE') and #If floatingType is POSSIBLE, we prompt for transfer but not autoinitiate it.
+              (
+               C4::Context->preference("AutomaticItemReturn"    ) or
+                (C4::Context->preference("UseBranchTransferLimits") and
+                 ! IsBranchTransferAllowed($branch, $hbr, $item->{C4::Context->preference("BranchTransferLimitsType")} )
+                )
+              )
+           ) {
             $debug and warn sprintf "about to call ModItemTransfer(%s, %s, %s)", $item->{'itemnumber'},$branch, $hbr;
             $debug and warn "item: " . Dumper($item);
             ModItemTransfer($item->{'itemnumber'}, $branch, $hbr);
@@ -2032,7 +2041,6 @@ sub AddReturn {
             $messages->{'NeedsTransfer'} = 1;   # TODO: instead of 1, specify branchcode that the transfer SHOULD go to, $item->{homebranch}
         }
     }
-
     return ( $doreturn, $messages, $issue, $borrower );
 }
 
