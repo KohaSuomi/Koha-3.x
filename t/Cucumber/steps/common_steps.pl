@@ -41,4 +41,5 @@ When qr/all scenarios are executed, tear down database changes./, sub {
     SImpls::SystemPreferences::rollbackSystemPreferences($C);
     SImpls::Overdues::OverdueCalendar::deleteAllOverdueCalendarRules($C);
     SImpls::Overdues::OverdueRulesMap::deleteAllOverdueRules($C);
+    SImpls::FloatingMatrix::deleteAllFloatingMatrixRules($C);
 };
