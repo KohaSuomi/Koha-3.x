@@ -3095,6 +3095,44 @@ sub GetTransfersFromTo {
     return (@gettransfers);
 }
 
+=head2 GetAllPendingTransfers
+
+    C4::Circulation::GetAllPendingTransfers();
+
+@RETURNS Reference to ARRAY of HASHes,
+            All rows in the koha.branchtransfers-table that have not arrived yet.
+            Warning, the amount of rows returned in production can be in the thousands.
+=cut
+
+sub GetAllPendingTransfers {
+    my $dbh = C4::Context->dbh;
+
+    my $query = 'SELECT * FROM branchtransfers WHERE datearrived IS NULL';
+    my $sth = $dbh->prepare($query);
+    $sth->execute();
+    my $pendingTransfers = $sth->fetchall_arrayref({});
+    return $pendingTransfers;
+}
+
+=head2 GetAllTransfers
+
+    C4::Circulation::GetAllTransfers();
+
+@RETURNS Reference to ARRAY of HASHes,
+            All rows in the koha.branchtransfers-table.
+            Warning, the amount of rows returned in production can be in the millions.
+=cut
+
+sub GetAllTransfers {
+    my $dbh = C4::Context->dbh;
+
+    my $query = 'SELECT * FROM branchtransfers';
+    my $sth = $dbh->prepare($query);
+    $sth->execute();
+    my $transfers = $sth->fetchall_arrayref({});
+    return $transfers;
+}
+
 =head2 DeleteTransfer
 
   &DeleteTransfer($itemnumber);

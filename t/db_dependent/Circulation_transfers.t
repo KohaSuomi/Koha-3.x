@@ -9,7 +9,7 @@ use C4::Circulation;
 use Koha::DateUtils;
 use DateTime::Duration;
 
-use Test::More tests => 19;
+use Test::More tests => 20;
 use Test::Deep;
 
 BEGIN {
@@ -121,6 +121,13 @@ ModItemTransfer(
 );
 
 #Begin Tests
+#Test GetAllTransfers()
+my $allTransfers = C4::Circulation::GetAllTransfers();
+ok(($allTransfers && scalar(@$allTransfers) == 2), "GetAllTransfers() returns all transfers :)");
+#Test GetAllPendingTransfers()
+my $pendingTransfers = C4::Circulation::GetAllPendingTransfers();
+ok(($pendingTransfers && scalar(@$pendingTransfers) == 2), "GetAllPendingTransfers() returns all pending transfers :)");
+
 #Test CreateBranchTransferLimit
 is(
     CreateBranchTransferLimit(
