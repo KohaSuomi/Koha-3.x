@@ -8711,6 +8711,13 @@ if ( C4::Context->preference("Version") < TransformToNum($DBversion) ) {
     SetVersion($DBversion);
 }
 
+$DBversion = "3.99.00.XXX";
+if ( CheckVersion($DBversion) ) {
+    $dbh->do("ALTER TABLE branchtransfers ADD COLUMN branchtransfer_id int(12) NOT NULL auto_increment FIRST, ADD CONSTRAINT PRIMARY KEY (branchtransfer_id);");
+    print "Upgrade to $DBversion done (Bug 14187 - branchtransfer needs a primary key (id) for DBIx and common sense.)\n";
+    SetVersion ($DBversion);
+}
+
 $DBversion = "3.15.00.050";
 if ( CheckVersion($DBversion) ) {
     $dbh->do("
