@@ -21,8 +21,6 @@ use Modern::Perl;
 use Test::More;
 use Test::BDD::Cucumber::StepFile;
 
-
-
 When qr/all scenarios are executed, tear down database changes./, sub {
     my $C = shift;
     #Forcibly make a new schema, because the existing schema might get timeout and cause this tear down step to fail.
@@ -41,4 +39,6 @@ When qr/all scenarios are executed, tear down database changes./, sub {
     SImpls::MessageQueues::deleteAllMessageQueues($C);
     SImpls::LetterTemplates::deleteLetterTemplates($C);
     SImpls::SystemPreferences::rollbackSystemPreferences($C);
+    SImpls::Overdues::OverdueCalendar::deleteAllOverdueCalendarRules($C);
+    SImpls::Overdues::OverdueRulesMap::deleteAllOverdueRules($C);
 };
