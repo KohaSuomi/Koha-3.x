@@ -1,0 +1,60 @@
+ +--<>--<>--<>--<>-<>--<>--<>--<>--+
+<> Writing Cucumber tests for Koha <>
+ +--<>--<>--<>--<>-<>--<>--<>--<>--+
+
++---
+| Cucumber tests are split into 4 different types of files: )==>
++---
+
+1. Feature definitions, features/*/*.feature
+    These are the user stories which trigger the Cucumber steps.
+
+2. step-definitions, steps/*_steps.pl
+    These files define the Cucumber steps and depend only on the step implementations to mimize coupling.
+
+3. step implementations, SImpls/*/*.pm
+    These files implement the steps defined in steps-folder, which are not using browser tests. This is all
+    back-end stuff, like cronjobs, basic CRUD for features, etc.
+
+4. Page Objects, POs/*/*.pm
+    These files implement the browser based steps which test interface functionality.
+
+
++---
+| Tests are structured into the following organization: )==>
++---
+
+Step-files can be easily moved around so for now we can just put them in the steps-folder.
+    t/Cucumber/steps/borrower_steps.pl
+    t/Cucumber/steps/borrower_rest_steps.pl
+    t/Cucumber/steps/borrower_po_steps.pl
+    t/Cucumber/steps/issue_steps.pl
+    t/Cucumber/steps/biblio_rest_steps.pl
+
+A Cucumber best-practice is to separate code from the step definitions, and with the step
+implementations we mimick the Koha module hierarchy.
+    t/Cucumber/SImpls/Borrowers/Borrowers.pm
+    t/Cucumber/SImpls/Borrowers/MessagePreferences.pm
+    t/Cucumber/SImpls/FloatingMatrix/FloatingMatrix.pm
+
+To test the web pages, we should use a Page Object Pattern, in which each page, like
+members/memberentry.pl gets it's own matching object to abstract the HTML elements under
+object methods. Thus writing tests is much easier and features are encapsulated better. So it
+is easier to maintain interface tests when change happens.
+Here we mimic the Koha-controllers hierarchy with the goal of each Page Object matching a Koha controller,
+like members/memberentry.pl
+    t/Cucumber/POs/Borrowers/MemberEntry.pm
+    t/Cucumber/POs/Borrowers/Member.pm
+    t/Cucumber/POs/Borrowers/PrintSlip.pm
+    t/Cucumber/POs/Biblios/AddBiblio.pm
+        (we can put REST tests object first like "POs/Borrowers/RESTv1.pm" as an alternative)
+    t/Cucumber/POs/REST/v1/Biblios.pm
+    t/Cucumber/POs/REST/v1/Borrowers.pm
+
+Feature definitions are easily movable to another hierarchy, so we just for now gather them
+under top-level modules.
+    t/Cucumber/features/Overdues/calendarCRUD.feature
+    t/Cucumber/features/Overdues/printProviderLimbo.feature
+    t/Cucumber/features/Borrowers/borrowersCRUD.feature
+    t/Cucumber/features/FloatingMatrix/floatingMatrixCRUD.feature
+    t/Cucumber/features/FloatingMatrix/floatingMatrix.feature
