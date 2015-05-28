@@ -1613,6 +1613,10 @@ sub NormalizeISBN {
         elsif ( $format eq 'ISBN-13' ) {
             $isbn = $isbn->as_isbn13();
         }
+        unless ($isbn) { #If we cannot force the ISBN to another type, atleast prevent Koha from crashing by recovering some ISBN.
+            $isbn = Business::ISBN->new($string); #If we fail to force the ISBN to the given format, revert to the format we can infer.
+            warn "C4::Koha::NormalizeISBN():> Couldn't change ISBN '$string' to type '$format'. Using the inferred type '".$isbn->type()."' instead.";
+        }
 
         if ($strip_hyphens) {
             $string = $isbn->as_string( [] );
