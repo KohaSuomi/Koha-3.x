@@ -1,0 +1,63 @@
+<acsconfig xmlns="http://openncip.org/acs-config/1.0/">
+<!-- above address gets nothing, it's just a namespace -->
+  <error-detect enabled="true" />
+
+<!--
+  Set Net::Server::PreFork runtime parameters 
+  syslog_ident will identify SIP2 Koha server entries in syslog
+  For OpenSolaris, add: syslog_logsock=stream
+-->
+
+  <server-params
+    log_file='Sys::Syslog'
+    syslog_ident='koha_sip_aino'
+    syslog_facility='local4'
+    max_servers='1'
+    min_servers='1'
+    max_spare_servers='0'
+    min_spare_servers='0'
+  />
+
+  <listeners>
+<!-- vestigial HTTP, never implemented: just use the OPAC!
+        <service
+      port="0:8080/tcp"
+      transport="http"
+      protocol="NCIP/1.0" />
+
+    <service
+      port="*:8023/tcp"
+      transport="telnet"
+      protocol="SIP/2.00"
+      timeout="60" />
+-->
+<!-- IN 3.16.x protocol is SIP/2.00, we have 2.10?
+     Host kohasipserver is defined in /etc/hosts and points to the current containers defined SIPserver,
+     this makes migrating these configurations to various containers easier. -->
+    <service
+      port="10.110.249.16:6004/tcp"
+      transport="RAW" 
+      protocol="SIP/2.00"
+      timeout="60" />
+  </listeners>
+
+  <accounts>
+    <login id="aino"  password="aaaa"       delimiter="|" error-detect="enabled" institution="JOE_JOE" terminator="CR" encoding="utf8" />
+  </accounts>
+
+<!--
+Institution tags are for enabled branches.  There needs to be one
+institution stanza for each institution named in the accounts above.
+The implementation attribute is actually used to find the code to run,
+in our case "ILS".
+-->
+
+<institutions>
+    <institution id="JOE_JOE" implementation="ILS" parms="">
+          <policy checkin="true" renewal="true" checkout="true"
+                  status_update="false" offline="false"
+                  timeout="25"
+                  retries="5" />
+    </institution>
+</institutions>
+</acsconfig>
