@@ -42,9 +42,9 @@ sub moveAFileToAnotherFtpDirectory {
 
         my $currentDir = $ftp->getCurrentFtpDirectory();
         $ftp->changeFtpDirectory($targetDirectory, $ftp);
-        $ftp->putFtpFile($filePath, $ftp);
+        $ftp->put($filePath, $ftp);
         $ftp->changeFtpDirectory($currentDir, $ftp);
-        $ftp->deleteFtpFile($fileName, $ftp);
+        $ftp->delete($fileName, $ftp);
 
     } catch {
         if (blessed($_)){
@@ -136,18 +136,23 @@ sub quit {
     $self->{_connection}->quit() if blessed($self->{_connection}) && $self->{_connection}->isa('Net::FTP');
 }
 
-=head getFtpFile
+=head get
+
+    $ftp->get( $REMOTE_FILE [, $LOCAL_FILE [, $WHERE]] );
+
+A wrapper for the Net::FTP::get() -function
+
 @THROWS Koha::Exception::RemoteInvocation
 =cut
 
-sub getFtpFile {
-    my ($self, $directory, $filename) = @_;
+sub get {
+    my ($self, $REMOTE_FILE, $LOCAL_FILE, $WHERE) = @_;
     my $ftpcon = $self->getConnection();
 
-    if ($ftpcon->get($filename, $directory.$filename)) {
+    if ($ftpcon->get($REMOTE_FILE, $LOCAL_FILE, $WHERE)) {
         return 0; #Great! no errors!
     } else {
-        Koha::Exception::RemoteInvocation->throw(error => "Koha::FTP:> Cannot get '$filename' from ftp server '".$self->{connectionId}."': ".$ftpcon->message);
+        Koha::Exception::RemoteInvocation->throw(error => "Koha::FTP:> Something wrong get:ting '$REMOTE_FILE' from ftp server '".$self->{connectionId}."': ".$ftpcon->message);
     }
 }
 
@@ -166,18 +171,23 @@ sub listFtpDirectory {
     }
 }
 
-=head putFtpFile
+=head put
+
+    $ftp->put( $LOCAL_FILE [, $REMOTE_FILE ] );
+
+A wrapper for the Net::FTP::put() -function
+
 @THROWS Koha::Exception::RemoteInvocation
 =cut
 
-sub putFtpFile {
-    my ($self, $filePath) = @_;
+sub put {
+    my ($self, $LOCAL_FILE, $REMOTE_FILE) = @_;
     my $ftpcon = $self->getConnection();
 
-    if ($ftpcon->put($filePath)) {
+    if ($ftpcon->put($LOCAL_FILE, $REMOTE_FILE)) {
         return 0; #Great! no errors!
     } else {
-        Koha::Exception::RemoteInvocation->throw(error => "Koha::FTP:> Cannot put the file '$filePath' to ftp server '".$self->{connectionId}."': ".$ftpcon->message);
+        Koha::Exception::RemoteInvocation->throw(error => "Koha::FTP:> Cannot put the file '$LOCAL_FILE' to ftp server '".$self->{connectionId}."': ".$ftpcon->message);
     }
 }
 
@@ -211,18 +221,23 @@ sub getCurrentFtpDirectory {
     }
 }
 
-=head deleteFtpFile
+=head delete
+
+    $ftp->delete( $FILENAME );
+
+A wrapper for the Net::FTP::delete() -function
+
 @THROWS Koha::Exception::RemoteInvocation
 =cut
 
-sub deleteFtpFile {
-    my ($self, $filename) = @_;
+sub delete {
+    my ($self, $FILENAME) = @_;
     my $ftpcon = $self->getConnection();
 
-    if ($ftpcon->delete($filename)) {
+    if ($ftpcon->delete($FILENAME)) {
         return 0; #Great! no errors!
     } else {
-        Koha::Exception::RemoteInvocation->throw(error => "Koha::FTP:> Cannot delete the file '$filename' from ftp server '".$self->{connectionId}."': ".$ftpcon->message);
+        Koha::Exception::RemoteInvocation->throw(error => "Koha::FTP:> Cannot delete the file '$FILENAME' from ftp server '".$self->{connectionId}."': ".$ftpcon->message);
     }
 }
 
