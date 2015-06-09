@@ -26,6 +26,7 @@ use Koha::Exception::DuplicateObject;
 use Koha::Exception::RemoteInvocation;
 use Koha::Exception::BadEncoding;
 use Koha::Exception::SystemCall;
+use Koha::Exception::File;
 
 binmode( STDOUT, ":utf8" );
 binmode( STDERR, ":utf8" );
@@ -129,7 +130,7 @@ sub processKirjavalitysSelectionlistType {
             $selectionListBatch =~ /(\d{8})\./;
             my $ymd = $1;
 
-            $ftp->getFtpFile($listdirectory, $selectionListBatch);
+            $ftp->get($selectionListBatch, $listdirectory.$selectionListBatch);
 
             verifyCharacterEncoding($listdirectory, $selectionListBatch, $vendorConfig->{selectionListEncoding});
 
@@ -267,10 +268,10 @@ sub moveKirjavalitysSelectionListBatch {
     my($fileName, $dirs, $suffix) = File::Basename::fileparse( $filePath );
 
     my $currentDir = $ftp->getCurrentFtpDirectory();
-    $ftp->changeFtpDirectory($targetDirectory, $ftp);
-    $ftp->putFtpFile($filePath, $ftp);
-    $ftp->changeFtpDirectory($currentDir, $ftp);
-    $ftp->deleteFtpFile($fileName, $ftp);
+    $ftp->changeFtpDirectory($targetDirectory);
+    $ftp->put($filePath);
+    $ftp->changeFtpDirectory($currentDir);
+    $ftp->delete($fileName);
 }
 
 
@@ -320,7 +321,7 @@ sub processBTJSelectionlistType {
             $selectionListBatch =~ /(\d{4})/;
             my $md = $1;
 
-            $ftp->getFtpFile($listdirectory, $selectionListBatch);
+            $ftp->get($selectionListBatch, $listdirectory.$selectionListBatch);
 
             verifyCharacterEncoding($listdirectory, $selectionListBatch, $vendorConfig->{selectionListEncoding});
 
@@ -417,14 +418,21 @@ sub processBTJBibliolistType {
         try {
             my $bibliosBatch = $bibliosBatches->[$i];
 
-            isSelectionListImported( $bibliosBatch );
+            ##Inject a year into the batch filename when receiving it, so it won't get confused with same named Biblio batches from last year.
+            my $localBatchFileName;
+            unless ($bibliosBatch =~ /^(B)(\d\d\d\d)(\D+)$/) {
+                Koha::Exception::File->throw(error => "processBTJBibliolistType():> Couldn't parse the Biblios Batch filename '$bibliosBatch' using regexp ".'/^(B)(\d\d\d\d)(\D+)$/'.". Cannot inject the year to the filename :(");
+            }
+            $localBatchFileName = "${year}_$1$2$3";
+
+            isSelectionListImported( $localBatchFileName );
 
             $bibliosBatch =~ /(\d{4})/;
             my $md = $1;
 
-            $ftp->getFtpFile($listdirectory, $bibliosBatch);
+            $ftp->get($bibliosBatch, $listdirectory.$localBatchFileName);
 
-            stageFromFileSelectionlist($listdirectory.$bibliosBatch, 'List type '.$listType, $vendorConfig->{biblioEncoding});
+            stageFromFileSelectionlist($listdirectory.$localBatchFileName, 'List type '.$listType, $vendorConfig->{biblioEncoding});
         } catch {
             if (blessed($_)) {
                 if ($_->isa('Koha::Exception::DuplicateObject')) {
