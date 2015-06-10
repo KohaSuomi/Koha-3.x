@@ -21,6 +21,8 @@ use Modern::Perl;
 use Test::More;
 use Test::BDD::Cucumber::StepFile;
 
+use Koha::Database;
+
 use SImpls::MessageQueues;
 
 Given qr/a bunch of message_queue-rows using letter code '(.*?)' and message_transport_type '(.*?)' based on the given Borrowers, Biblios, Items and Issues/, sub {
@@ -28,6 +30,13 @@ Given qr/a bunch of message_queue-rows using letter code '(.*?)' and message_tra
     my $letterCode = $1;
     my $messageTransportType = $2;
     SImpls::MessageQueues::addMessageQueues($C, $letterCode, $messageTransportType);
+};
+
+#Eg set all message_queue-rows to 'status' = 'sent'
+Given qr/all message_queue-rows have '(.+?)' as '(.+?)'/, sub {
+    my $schema = Koha::Database->new()->schema();
+    my $rs = $schema->resultset('MessageQueue')->search({});
+    $rs->update( {$1 => $2} );
 };
 
 Then qr/I have the following enqueued message queue items/, sub {
