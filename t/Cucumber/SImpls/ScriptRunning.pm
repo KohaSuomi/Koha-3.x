@@ -21,10 +21,13 @@ use Modern::Perl;
 use Carp;
 use Test::More;
 
+use SImpls::FileUtils;
+
 sub runScript {
     my $C = shift;
     my $scriptPath = $C->matches()->[0];
-    $scriptPath =~ s/\$KOHA_PATH/$ENV{KOHA_PATH}/gsm;
+    my ($file, $dir) = SImpls::FileUtils::findFileFromKoha($C, $scriptPath);
+    $scriptPath = $dir.$file;
     my $params = $C->data();
 
     my @args = ($scriptPath);

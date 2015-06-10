@@ -44,6 +44,32 @@ sub checkRegexpInsideFiles {
     }
 }
 
+=head findFileFromKoha
+
+    FileUtils::findFileFromKoha('fines.pl');
+
+Finds the given file by name using the find-utility from the $KOHA_PATH-directory.
+@RETURNS String, absolute path to the directory where the file is.
+=cut
+
+sub findFileFromKoha {
+    my ($C, $filename) = @_;
+
+    open(FH, "find /$ENV{KOHA_PATH}/ -iname '$filename' |") or die "FileUtils::findFileFromKoha():> Couldn't find file '$filename' because:\n".$!;
+    while (my $filename = <FH>) {
+        chomp $filename;
+        if ($filename =~ /(blib|etc)/) {
+            next();
+        }
+        ok((-f $filename && -r $filename), "$filename exists and is readable");
+        $C->{stash}->{scenario}->{file} = $filename;
+        my ($file, $dir) = File::Basename::fileparse($filename);
+        return ($file, $dir);
+    }
+    #If we reach this, we know we haven't found the file we are looking for. So fail this test!
+    ok((1 == 0), "Found file '$filename' from '$ENV{KOHA_PATH}' with read permission!")
+}
+
 sub findFile {
     my $C = shift;
     my $file = $1;
