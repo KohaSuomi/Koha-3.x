@@ -53,14 +53,14 @@ Feature: To use the new Overdues module, we need to get the Items out of old
    | Me and your mother       | Jaakko Kurikka | 1961                 | 9519671581       | BK                   |
    | How I met your mother    | Martti Kurikka | 1962                 | 9519671582       | VM                   |
   And a set of Items
-   | barcode     | homebranch | holdingbranch | price | replacementprice | itype | biblioisbn |
-   | 167Nabe0001 | CPL        | CPL           | 0.50  | 0.50             | BK    | 9519671580 |
-   | 167Nabe0002 | CPL        | FFL           | 3.50  | 3.50             | BK    | 9519671581 |
-   | 167Nabe0003 | CPL        | FFL           | 4.50  | 4.50             | VM    | 9519671582 |
-   | 267Nabe0004 | FFL        | FFL           | 5.50  | 5.50             | VM    | 9519671582 |
-   | 267Nabe0005 | FFL        | FFL           | 6.50  | 6.50             | BK    | 9519671580 |
-   | 267Nabe0006 | FFL        | FFL           | 7.50  | 7.50             | BK    | 9519671580 |
-   | 267Nabe0007 | FFL        | CPL           | 8.50  | 8.50             | BK    | 9519671582 |
+   | barcode     | homebranch | holdingbranch | price | replacementprice | itype | biblioisbn | itemcallnumber |
+   | 167Nabe0001 | CPL        | CPL           | 0.50  | 0.50             | BK    | 9519671580 | PK 84.2        |
+   | 167Nabe0002 | CPL        | FFL           | 3.50  | 3.50             | BK    | 9519671581 | JK 84.2        |
+   | 167Nabe0003 | CPL        | FFL           | 4.50  | 4.50             | VM    | 9519671582 | MK 84.2        |
+   | 267Nabe0004 | FFL        | FFL           | 5.50  | 5.50             | VM    | 9519671582 | MK 84.2        |
+   | 267Nabe0005 | FFL        | FFL           | 6.50  | 6.50             | BK    | 9519671580 | PK 84.2        |
+   | 267Nabe0006 | FFL        | FFL           | 7.50  | 7.50             | BK    | 9519671580 | PK 84.2        |
+   | 267Nabe0007 | FFL        | CPL           | 8.50  | 8.50             | BK    | 9519671582 | MK 84.2        |
   And a set of overdue Issues, checked out from the Items' current holdingbranch
    | cardnumber  | barcode     | daysOverdue |
    | 167Azel0001 | 167Nabe0001 | 9           |
@@ -74,37 +74,38 @@ Feature: To use the new Overdues module, we need to get the Items out of old
   Given a bunch of message_queue-rows using letter code 'ODUE1' and message_transport_type 'print' based on the given Borrowers, Biblios, Items and Issues
   Given a bunch of message_queue-rows using letter code 'ODUE2' and message_transport_type 'print' based on the given Borrowers, Biblios, Items and Issues
   Given a bunch of message_queue-rows using letter code 'ODUE3' and message_transport_type 'sms' based on the given Borrowers, Biblios, Items and Issues
+  Given all message_queue-rows have 'status' as 'sent'
   When I've ran the overdue letters migrator with the Item finding regexp 'Barcode: (.+?)(?:$|\\s|[.,])'
   Then I have the following enqueued message queue items
-   | cardnumber  | barcode     | branch   | lettercode | letternumber | status   | transport_type |
-   | 167Azel0001 | 167Nabe0001 | CPL      | ODUE1      | 1            | pending  | email          |
-   | 167Azel0001 | 167Nabe0002 | FFL      | ODUE1      | 1            | pending  | email          |
-   | 167Azel0002 | 167Nabe0003 | FFL      | ODUE1      | 1            | pending  | email          |
-   | 167Azel0002 | 267Nabe0004 | FFL      | ODUE1      | 1            | pending  | email          |
-   | 167Azel0002 | 267Nabe0005 | FFL      | ODUE1      | 1            | pending  | email          |
-   | 267Azel0003 | 267Nabe0006 | FFL      | ODUE1      | 1            | pending  | email          |
-   | 267Azel0003 | 267Nabe0007 | CPL      | ODUE1      | 1            | pending  | email          |
-   | 167Azel0001 | 167Nabe0001 | CPL      | ODUE1      | 1            | pending  | print          |
-   | 167Azel0001 | 167Nabe0002 | FFL      | ODUE1      | 1            | pending  | print          |
-   | 167Azel0002 | 167Nabe0003 | FFL      | ODUE1      | 1            | pending  | print          |
-   | 167Azel0002 | 267Nabe0004 | FFL      | ODUE1      | 1            | pending  | print          |
-   | 167Azel0002 | 267Nabe0005 | FFL      | ODUE1      | 1            | pending  | print          |
-   | 267Azel0003 | 267Nabe0006 | FFL      | ODUE1      | 1            | pending  | print          |
-   | 267Azel0003 | 267Nabe0007 | CPL      | ODUE1      | 1            | pending  | print          |
-   | 167Azel0001 | 167Nabe0001 | CPL      | ODUE2      | 2            | pending  | print          |
-   | 167Azel0001 | 167Nabe0002 | FFL      | ODUE2      | 2            | pending  | print          |
-   | 167Azel0002 | 167Nabe0003 | FFL      | ODUE2      | 2            | pending  | print          |
-   | 167Azel0002 | 267Nabe0004 | FFL      | ODUE2      | 2            | pending  | print          |
-   | 167Azel0002 | 267Nabe0005 | FFL      | ODUE2      | 2            | pending  | print          |
-   | 267Azel0003 | 267Nabe0006 | FFL      | ODUE2      | 2            | pending  | print          |
-   | 267Azel0003 | 267Nabe0007 | CPL      | ODUE2      | 2            | pending  | print          |
-   | 167Azel0001 | 167Nabe0001 | CPL      | ODUE3      | 3            | pending  | sms            |
-   | 167Azel0001 | 167Nabe0002 | FFL      | ODUE3      | 3            | pending  | sms            |
-   | 167Azel0002 | 167Nabe0003 | FFL      | ODUE3      | 3            | pending  | sms            |
-   | 167Azel0002 | 267Nabe0004 | FFL      | ODUE3      | 3            | pending  | sms            |
-   | 167Azel0002 | 267Nabe0005 | FFL      | ODUE3      | 3            | pending  | sms            |
-   | 267Azel0003 | 267Nabe0006 | FFL      | ODUE3      | 3            | pending  | sms            |
-   | 267Azel0003 | 267Nabe0007 | CPL      | ODUE3      | 3            | pending  | sms            |
+   | cardnumber  | barcode     | branch   | lettercode | letternumber | status | transport_type |
+   | 167Azel0001 | 167Nabe0001 | CPL      | ODUE1      | 1            | sent   | email          |
+   | 167Azel0001 | 167Nabe0002 | FFL      | ODUE1      | 1            | sent   | email          |
+   | 167Azel0002 | 167Nabe0003 | FFL      | ODUE1      | 1            | sent   | email          |
+   | 167Azel0002 | 267Nabe0004 | FFL      | ODUE1      | 1            | sent   | email          |
+   | 167Azel0002 | 267Nabe0005 | FFL      | ODUE1      | 1            | sent   | email          |
+   | 267Azel0003 | 267Nabe0006 | FFL      | ODUE1      | 1            | sent   | email          |
+   | 267Azel0003 | 267Nabe0007 | CPL      | ODUE1      | 1            | sent   | email          |
+   | 167Azel0001 | 167Nabe0001 | CPL      | ODUE1      | 1            | sent   | print          |
+   | 167Azel0001 | 167Nabe0002 | FFL      | ODUE1      | 1            | sent   | print          |
+   | 167Azel0002 | 167Nabe0003 | FFL      | ODUE1      | 1            | sent   | print          |
+   | 167Azel0002 | 267Nabe0004 | FFL      | ODUE1      | 1            | sent   | print          |
+   | 167Azel0002 | 267Nabe0005 | FFL      | ODUE1      | 1            | sent   | print          |
+   | 267Azel0003 | 267Nabe0006 | FFL      | ODUE1      | 1            | sent   | print          |
+   | 267Azel0003 | 267Nabe0007 | CPL      | ODUE1      | 1            | sent   | print          |
+   | 167Azel0001 | 167Nabe0001 | CPL      | ODUE2      | 2            | sent   | print          |
+   | 167Azel0001 | 167Nabe0002 | FFL      | ODUE2      | 2            | sent   | print          |
+   | 167Azel0002 | 167Nabe0003 | FFL      | ODUE2      | 2            | sent   | print          |
+   | 167Azel0002 | 267Nabe0004 | FFL      | ODUE2      | 2            | sent   | print          |
+   | 167Azel0002 | 267Nabe0005 | FFL      | ODUE2      | 2            | sent   | print          |
+   | 267Azel0003 | 267Nabe0006 | FFL      | ODUE2      | 2            | sent   | print          |
+   | 267Azel0003 | 267Nabe0007 | CPL      | ODUE2      | 2            | sent   | print          |
+   | 167Azel0001 | 167Nabe0001 | CPL      | ODUE3      | 3            | sent   | sms            |
+   | 167Azel0001 | 167Nabe0002 | FFL      | ODUE3      | 3            | sent   | sms            |
+   | 167Azel0002 | 167Nabe0003 | FFL      | ODUE3      | 3            | sent   | sms            |
+   | 167Azel0002 | 267Nabe0004 | FFL      | ODUE3      | 3            | sent   | sms            |
+   | 167Azel0002 | 267Nabe0005 | FFL      | ODUE3      | 3            | sent   | sms            |
+   | 267Azel0003 | 267Nabe0006 | FFL      | ODUE3      | 3            | sent   | sms            |
+   | 267Azel0003 | 267Nabe0007 | CPL      | ODUE3      | 3            | sent   | sms            |
 
  Scenario: Tear down any database additions from this feature
    When all scenarios are executed, tear down database changes.
