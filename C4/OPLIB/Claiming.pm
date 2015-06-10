@@ -626,21 +626,17 @@ sub setItemClaimed {
 }
 
 
-
-
 sub getOverduefee {
     my ($itemnumber, $borrowernumber) = @_;
 
     my $dbh        = C4::Context->dbh;
 	my $sth = $dbh->prepare(
-			"SELECT amountoutstanding FROM accountlines WHERE borrowernumber=? AND itemnumber=? AND accounttype='FU'"
+			"SELECT SUM(amountoutstanding) AS sum FROM accountlines WHERE borrowernumber=? AND itemnumber=? AND accounttype='FU'"
           );
 	$sth->execute( $borrowernumber, $itemnumber );
 
-    while ( my $data = $sth->fetchrow_hashref ) {
-		return $data->{amountoutstanding};
-	}
-    return 0;
+    my $data = $sth->fetchrow_hashref();
+    return $data->{sum} ? $data->{sum} : 0;
 }
 
 ##Branches are repeatedly loaded in various parts of this code. Better to cache them .
