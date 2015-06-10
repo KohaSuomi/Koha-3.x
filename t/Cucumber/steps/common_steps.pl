@@ -37,6 +37,7 @@ When qr/all scenarios are executed, tear down database changes./, sub {
     SImpls::Accountlines::deleteAllFines($C);
     SImpls::Biblios::deleteBiblios($C);
     SImpls::MessageQueues::deleteAllMessageQueues($C);
+    %C4::Letters::letter = (); #Invalidate this GOD-awful cache
     SImpls::LetterTemplates::deleteLetterTemplates($C);
     SImpls::SystemPreferences::rollbackSystemPreferences($C);
     SImpls::Overdues::OverdueCalendar::deleteAllOverdueCalendarRules($C);
