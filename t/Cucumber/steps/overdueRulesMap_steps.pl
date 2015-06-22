@@ -31,6 +31,10 @@ Given qr/a set of overduerules/, sub {
     SImpls::Overdues::OverdueRulesMap::addOverdueRules(@_);
 };
 
+Given qr/there are no previous overduerules/, sub {
+    SImpls::Overdues::OverdueRulesMap::deleteAllOverdueRules( @_ );
+};
+
 When qr/I've updated the following overduerules/, sub {
     SImpls::Overdues::OverdueRulesMap::addOverdueRules( @_ );
 };
@@ -43,8 +47,16 @@ When qr/I've deleted the following overduerules, then I cannot find them./, sub 
     SImpls::Overdues::OverdueRulesMap::When_I_ve_deleted_overduerules_then_cannot_find_them(  @_  );
 };
 
+When qr/I request the last overdue rules in '(scalar|list)'-context/, sub {
+    SImpls::Overdues::OverdueRulesMap::getLastOverdueRules( shift, $1 );
+};
+
 Then qr/I should find the rules from the OverdueRulesMap-object./, sub {
     SImpls::Overdues::OverdueRulesMap::Find_the_overduerules_from_overdueRulesMap( @_ );
+};
+
+Then qr/I get the following last overduerules/, sub {
+    SImpls::Overdues::OverdueRulesMap::Then_get_following_last_overduerules( @_ );
 };
 
 Then qr/I cannot find any overduerules/, sub {

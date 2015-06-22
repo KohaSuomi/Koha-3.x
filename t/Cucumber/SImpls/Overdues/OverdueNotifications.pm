@@ -82,7 +82,7 @@ sub gather_overdue_notifications_with_parameters {
         }
         $params->{_repeatPageChange} = $repeatPageChange;
     }
-    
+
     my $controller = Koha::Overdues::Controller->new($params);
     $controller->gatherOverdueNotifications(undef, undef);
 }

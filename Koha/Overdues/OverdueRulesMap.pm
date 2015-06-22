@@ -185,6 +185,66 @@ sub getLetterCodes {
     return [keys %letterCodes];
 }
 
+=head getLastOverdueRules
+
+    my $overdueRules = $orm->getLastOverdueRules();
+
+Returns the Koha::Overdues::OverdueRule-objects that have the biggest sending
+delay (koha.overduerules.delay*).
+@RETURNS Arrayref of references to a Koha::Overdues::OverdueRule-objects
+         all sharing the same biggest delay.
+
+=cut
+
+sub getLastOverdueRules {
+    my ($orm) = @_;
+
+    #Check for cache.
+    if ($orm->{lastOverdueRules}) {
+        return $orm->{lastOverdueRules};
+    }
+
+    #Find all the OverdueRules sharing the biggest delay.
+    my $maxDelay = 0;
+    my $lastOverdueRules = [];
+    foreach my $branchCode (keys %{$orm->{map}}) {
+        my $branchRules = $orm->{map}->{$branchCode};
+        foreach my $borrowerCategory (keys %$branchRules) {
+            my $borCatRules = $branchRules->{$borrowerCategory};
+            foreach my $letterNumber (keys %$borCatRules) {
+                my $overdueRule = $borCatRules->{$letterNumber};
+                next unless (blessed($overdueRule)); #we are expecting an OverdueRule
+
+                if ($overdueRule->{delay} > $maxDelay) {
+                    $maxDelay = $overdueRule->{delay};
+                    $lastOverdueRules = [$overdueRule];
+                }
+                elsif ($overdueRule->{delay} == $maxDelay) {
+                    push @$lastOverdueRules, $overdueRule;
+                }
+            }
+        }
+    }
+    $orm->{lastOverdueRules} = $lastOverdueRules;
+    return $lastOverdueRules;
+}
+
+=head getLastOverdueRuleDelay
+
+@RETURNS Integer, how big is the biggest delay for all the overdue rules?
+         or undef.
+
+=cut
+
+sub getLastOverdueRuleDelay {
+    my ($orm) = @_;
+
+    #lookback defaults to the biggest available delay in the overduerules-table.
+    my $lastOverdueRules = $orm->getLastOverdueRules();
+    my $lastOverdueRule = $lastOverdueRules->[0] if $lastOverdueRules;
+    return $lastOverdueRule->{delay} if $lastOverdueRule;
+}
+
 =head getBorrowerCategories
 
     my $letters = $orm->getBorrowerCategories();
@@ -558,18 +618,7 @@ sub store {
             carp "Unsupported database access operation '$operation'!";
         }
     }
-=head
-    foreach my $branchCode (sort keys %{$orm->{map}}) {
-        my $branchLevel = $orm->{map}->{$branchCode};
-        foreach my $borCat (sort keys %$branchLevel) { #borcat == borrower category
-            my $borCatLevel = $branchLevel->{$borCat};
 
-            $orm->_storeOverduerules($branchCode, $borCat, $borCatLevel);
-
-            $orm->_storeOverduerules_transport_types($branchCode, $borCat, $borCatLevel);
-        }
-    }
-=cut
     my $cache = Koha::Cache->get_instance();
     $cache->set_in_cache('overdueRulesMap', $orm, {expiry => 300});
 }
@@ -682,7 +731,10 @@ To write the changes to DB, use $orm->store().
 sub _pushToModificationBuffer {
     my ($orm, $tuple) = @_;
     push @{$orm->{modBuffer}}, $tuple;
-    delete $orm->{letterCodes}; #Delete the precalculated letterCodes-cache
+
+    #Delete the precalculated caches
+    delete $orm->{letterCodes};
+    delete $orm->{lastOverdueRules};
     return undef;
 }
 =head _consumeModificationBuffer

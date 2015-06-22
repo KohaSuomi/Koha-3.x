@@ -132,6 +132,15 @@ sub When_I_ve_deleted_overduerules_then_cannot_find_them {
     }
 }
 
+sub getLastOverdueRules {
+    my ($C, $context) = @_;
+    my $S = $C->{stash}->{scenario};
+
+    my $orm = Koha::Overdues::OverdueRulesMap->new();
+    my $overduerule = $orm->getLastOverdueRules();
+    $S->{lastOverdueRules} = $overduerule;
+}
+
 sub Find_the_overduerules_from_overdueRulesMap {
     my ($C) = shift;
     my $S = $C->{stash}->{scenario};
@@ -145,6 +154,41 @@ sub Find_the_overduerules_from_overdueRulesMap {
 
         last unless is_deeply($oldOverdueRule, $newOverdueRule, "We got what we put");
         last unless isa_ok($newOverdueRule, 'Koha::Overdues::OverdueRule');
+    }
+}
+
+=head Then_get_following_last_overduerules
+
+Compares a $C->data() -Array of Hashes of OverdueRule-object elements
+against a Scenario stash of Array of OverdueRule-objects.
+
+=cut
+
+sub Then_get_following_last_overduerules {
+    my ($C) = shift;
+    my $S = $C->{stash}->{scenario};
+    my $expectedOverdueRules = _hashifyDataArray( $C->data() );
+    my $gotOverdueRules = _hashifyDataArray( $S->{lastOverdueRules} );
+
+    ##Iterate through the expected OverdueRules Hash containing Hash-representations of expected OverdueRules.
+    while( my ($eKey, $eorHash) = each %{$expectedOverdueRules}) {
+        my $matchFound; #Check if we found a match for this expectation?
+
+        #Cast the expected Hash to a proper OverdueRule-object for comparison.
+        #Hashify the given message transpor types String
+        my %otts = map {my $a = $_; $a =~ s/\s//g; $a => 1;} split(',',$eorHash->{messageTransportTypes}) if $eorHash->{messageTransportTypes}; #Make a HASH out of the comma-separated list of types and remove whitespace.
+        $eorHash->{messageTransportTypes} = \%otts;
+        my ($eor, $error) = Koha::Overdues::OverdueRule->new($eorHash);
+
+        #Iterate each result we got from getLastOverdueRules(), and if the keys match, deeply compare them.
+        while( my ($gKey, $gor) = each %{$gotOverdueRules}) {
+            unless ($eKey eq $gKey) {
+                next();
+            }
+            last unless is_deeply($gor, $eor, "We got what we put");
+            last unless isa_ok($gor, 'Koha::Overdues::OverdueRule');
+            $matchFound++;
+        }
     }
 }
 

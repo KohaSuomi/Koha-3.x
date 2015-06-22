@@ -83,7 +83,23 @@ sub search {
 sub getPendingAndFailedOverdueLetters {
     my ($self, $overdueLetterNumbers) = @_;
 
-    my @messageQueues = $self->search({ '-or' => [status => 'pending', status => 'failed']});
+    #Query to filter out only Overdue Notifications
+    my $orm = Koha::Overdues::OverdueRulesMap->new();
+    my $letterCodes = $orm->getLetterCodes();
+
+    my @messageQueues = $self->_resultset()->search(
+                    {   '-and' => [ letter_code => {'-in' => $letterCodes},
+                                    "message_queue_items.letternumber" => { '-in' => $overdueLetterNumbers },
+                                    '-or' => [  status => 'pending',
+                                                status => 'failed',
+                                             ],
+                                  ],
+                    },
+                    {   join => 'message_queue_items',
+                        group_by => 'message_id',
+                    }
+                );
+    @messageQueues = $self->_wrap(@messageQueues);
     return \@messageQueues;
 }
 

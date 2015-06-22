@@ -27,7 +27,7 @@ use Koha::Overdues::Builder;
 use Koha::Overdues::Calendar; #TODO: HACK TO ENABLE CALENDAR DAYS
 
 my $help;
-my $verbose;
+my $verbose = 0;
 my @letterNumbers;
 my @borrowerCategories;
 my $mergeNotificationBranches;
@@ -63,8 +63,13 @@ GetOptions(
 my $usage = <<USAGE;
 
 
+  --verbose               Defaults to 0, minimal output.
+                          1, some results
+                          2, detailed results
+                          3, SQL dumps
+
   --lookback              How many days in the past to look for overdue Issues? Defaults to
-                              --lookback 60.
+                          the biggest delay in koha.overduerules.delay* + 30 days.
                           This is a limit to prevent re-enqueuing very old overdue notifications
                           which have already been sent, but subsequently deleted by the
                           cleanup_database.pl -script.
@@ -129,8 +134,10 @@ EXAMPLES:
 
   Also it is important to preserve the message_queue-entries as long as it takes to perform the complete
   overdue notification + claiming cycle, so we don't start sending first overdue notification again.
-  Eg. if overdue notifications are sent for Issues overdue 21-, 42- and 70-days,
-      Then the cleanup_database.pl -script's --zebraqueue parameter needs to be over 49. 70 is a safe bet.
+  Eg. if overdue notifications are sent for Issues overdue 21-, 42- and 70-days, where 70-days is the last notification.
+      Then the cleanup_database.pl -script's --mail parameter needs to be over 70. 120 is a safe bet,
+          giving you 50 days to fix any emerging issues before messaging gets out of sync.
+      At Vaara-kirjastot, the message_queue-table is < 100MB when the cleaning delay is 120 days.
 
 
   ./overduemessages.pl --populate '^Barcode:\\s*(.*?)\$'
@@ -141,19 +148,20 @@ EXAMPLES:
   use this to delete empty and pending overdue notifications.
   ./overduemessages.pl --populate '^ 1Nide:\\s*(.*?)\$' --populateDelete
 
-  To migrate from a system state where overdue nitifications haven't been sent in 5+ months,
+  To migrate from a system state where overdue notifications haven't been sent in 5+ months,
   you can use these commands:
   ./overduemessages.pl --collect --letternumbers 1 2 --mergenotificationbranches 1 --verbose 1
                        --lookback 180 --notnotforloan 6
                        --pagechangeitems 8 --pagechangeseparator "10\\n31"
 
+
   To operate this script daily at Vaara-kirjastot,
   First gather the overdue notifications and merge them to a default branch.
   ./overduemessages.pl --collect --letternumbers 1 2 --mergenotificationbranches
-                       --pagechangeitems 8 --pagechangeseparator "10\\n31"
+                       --pagechangeitems 8 --pagechangeseparator "10\\n31" --lookback 120
   Then gather all claim notifications to their respective branches.
   ./overduemessages.pl --collect --letternumbers 3
-                       --pagechangeitems 8 --pagechangeseparator "10\\n31"
+                       --pagechangeitems 8 --pagechangeseparator "10\\n31" --lookback 120
   Secondly send only letter numbers 1 and 2.
   Letternumber 3 is the Claim letter and that is done manually using the Claiming module.
   ./overduemessages.pl --send --letternumbers 1 2

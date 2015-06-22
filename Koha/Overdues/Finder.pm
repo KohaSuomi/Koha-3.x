@@ -32,15 +32,15 @@ sub new {
     $self = {} unless ref $self eq 'HASH';
     bless $self, $class;
 
+    $self->{overduerules} = Koha::Overdues::OverdueRulesMap->new();
     $self->{verbose} = (defined $self->{verbose}) ? $self->{verbose} : 1;
-    $self->{lookback} = $self->{lookback} || 29;
+    $self->{lookback} = $self->{lookback} || $self->{overduerules}->getLastOverdueRuleDelay()+30;
     $self->{notNotForLoan} = $self->{notNotForLoan} || undef;
     $self->{availableBranches} = $self->{availableBranches} || undef;
     $self->{letterNumbers} = $self->{letterNumbers} || undef;
     $self->{borrowerCategories} = $self->{borrowerCategories} || undef;
     $self->{sortBy} = $self->{sortBy} || 'borrowernumber';
     $self->{sortByAlt} = $self->{sortByAlt} || 'borrowernumber';
-    $self->{overduerules} = Koha::Overdues::OverdueRulesMap->new();
     $self->{now} = DateTime->now(  time_zone => C4::Context->tz()  );
 
     return $self;
@@ -113,7 +113,7 @@ sub findNewOverdues {
     if (ref($overdues) eq 'ARRAY' && scalar(@$overdues) > 0 && $self->{verbose}) {
         print "Found ".scalar(@$overdues)." Overdue Issues for $branchCode, $borrowerCategory, $letterNumber, with due date <= ".$lateDate->iso8601()."\n";
     }
-    if ($self->{verbose} > 1) {
+    if ($self->{verbose} > 2) {
         foreach my $param (@$params) {
             $sql =~ s/\?/'$param'/;
         }
