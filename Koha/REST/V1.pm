@@ -68,6 +68,9 @@ sub startup {
         }
     );
 
+    # Force charset=utf8 in Content-Type header for JSON responses
+    $self->types->type(json => 'application/json; charset=utf8');
+
     $self->plugin(Swagger2 => {
         route => $route,
         url => $self->home->rel_file("api/v1/swagger.json"),
