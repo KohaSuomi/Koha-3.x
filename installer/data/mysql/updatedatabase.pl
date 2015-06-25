@@ -8938,8 +8938,8 @@ if ( CheckVersion($DBversion) ) {
 $DBversion = "3.16.00.XXX";
 if (CheckVersion($DBversion)) {
     $dbh->do(q{
-        ALTER TABLE collections_tracking add date_added DATETIME
-        ALTER TABLE collections_tracking add timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        ALTER TABLE collections_tracking add date_added DATETIME;
+        ALTER TABLE collections_tracking add timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
     });
 
     print "Upgrade to $DBversion done\n";
