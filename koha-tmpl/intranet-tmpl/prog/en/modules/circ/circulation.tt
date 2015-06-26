@@ -602,6 +602,11 @@ No patron matched <span class="ex">[% message %]</span>
                     Checkouts are <span class="circ-hlt">BLOCKED</span> because fine balance is <span class="circ-hlt">OVER THE LIMIT</span>.
                 [% END %]
             <a href="/cgi-bin/koha/members/pay.pl?borrowernumber=[% borrowernumber %]">Make payment</a></li>
+				[% IF CAN_user_circulate_force_checkout %]
+					<span class="override_debarment">
+						<a href="/cgi-bin/koha/circ/circulation.pl?forceallow=1&amp;borrowernumber=[% borrowernumber %]" class="btn btn-small">Override restriction temporarily</a>
+					</span>
+				[% END %]
 			[% END %]
 
         	[% IF ( credits ) %]
