@@ -131,5 +131,17 @@ __PAZPAR2_TOGGLE_XML_POST__
     <font type="HBO">/usr/share/fonts/truetype/ttf-dejavu/DejaVuSans-BoldOblique.ttf</font>
  </ttf>
 
+ <testservers>
+    <opac>
+        <base_url>__WEBSERVER_IP__:__WEBSERVER_PORT__</base_url>
+    </opac>
+    <staff>
+        <base_url>__WEBSERVER_IP__:__WEBSERVER_PORT_LIBRARIAN__</base_url>
+    </staff>
+    <rest>
+        <base_url>http://localhost:444</base_url>
+    </rest>
+ </testservers>
+
 </config>
 </yazgfs>
