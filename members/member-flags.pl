@@ -14,7 +14,9 @@ use C4::Context;
 use C4::Members;
 use C4::Branch;
 use C4::Members::Attributes qw(GetBorrowerAttributes);
-#use C4::Acquisitions;
+use Koha::Auth::PermissionManager;
+
+use Koha::Exception::BadParameter;
 
 use C4::Output;
 
@@ -35,121 +37,43 @@ my ($template, $loggedinuser, $cookie)
 				debug => 1,
 				});
 
-
+my $permissionManager = Koha::Auth::PermissionManager->new();
 my %member2;
 $member2{'borrowernumber'}=$member;
 
 if ($input->param('newflags')) {
     my $dbh=C4::Context->dbh();
 
+	#Cast CGI-params into a permissions HASH.
     my @perms = $input->param('flag');
-    my %all_module_perms = ();
     my %sub_perms = ();
     foreach my $perm (@perms) {
-        if ($perm !~ /:/) {
-            $all_module_perms{$perm} = 1;
+                if ($perm eq 'superlibrarian') {
+                    $sub_perms{superlibrarian}->{superlibrarian} = 1;
+                }
+        elsif ($perm !~ /:/) {
+            #DEPRECATED, GUI still sends the module flags here even though they have been removed from the DB.
         } else {
             my ($module, $sub_perm) = split /:/, $perm, 2;
-            push @{ $sub_perms{$module} }, $sub_perm;
+            $sub_perms{$module}->{$sub_perm} = 1;
         }
     }
 
-    # construct flags
-    my $module_flags = 0;
-    my $sth=$dbh->prepare("SELECT bit,flag FROM userflags ORDER BY bit");
-    $sth->execute();
-    while (my ($bit, $flag) = $sth->fetchrow_array) {
-        if (exists $all_module_perms{$flag}) {
-            $module_flags += 2**$bit;
-        }
-    }
-    
-    $sth = $dbh->prepare("UPDATE borrowers SET flags=? WHERE borrowernumber=?");
-    $sth->execute($module_flags, $member);
-    
-    # deal with subpermissions
-    $sth = $dbh->prepare("DELETE FROM user_permissions WHERE borrowernumber = ?");
-    $sth->execute($member); 
-    $sth = $dbh->prepare("INSERT INTO user_permissions (borrowernumber, module_bit, code)
-                        SELECT ?, bit, ?
-                        FROM userflags
-                        WHERE flag = ?");
-    foreach my $module (keys %sub_perms) {
-        next if exists $all_module_perms{$module};
-        foreach my $sub_perm (@{ $sub_perms{$module} }) {
-            $sth->execute($member, $sub_perm, $module);
-        }
-    }
-    
+    $permissionManager->revokeAllPermissions($member);
+    $permissionManager->grantPermissions($member, \%sub_perms);
+
     print $input->redirect("/cgi-bin/koha/members/moremember.pl?borrowernumber=$member");
 } else {
-#     my ($bor,$flags,$accessflags)=GetMemberDetails($member,'');
-    my $flags = $bor->{'flags'};
-    my $accessflags = $bor->{'authflags'};
-    my $dbh=C4::Context->dbh();
-    my $all_perms  = get_all_subpermissions();
-    my $user_perms = get_user_subpermissions($bor->{'userid'});
-    my $sth=$dbh->prepare("SELECT bit,flag,flagdesc FROM userflags ORDER BY bit");
-    $sth->execute;
+    my $all_perms  = $permissionManager->listKohaPermissionsAsHASH();
+    my $user_perms = $permissionManager->getBorrowerPermissions($member);
+
+    $all_perms = markBorrowerGrantedPermissions($all_perms, $user_perms);
+
     my @loop;
-    while (my ($bit, $flag, $flagdesc) = $sth->fetchrow) {
-	    my $checked='';
-	    if ($accessflags->{$flag}) {
-	        $checked= 1;
-	    }
-
-	    my %row = ( bit => $bit,
-		    flag => $flag,
-		    checked => $checked,
-		    flagdesc => $flagdesc );
-
-        my @sub_perm_loop = ();
-        my $expand_parent = 0;
-        if ($checked) {
-            if (exists $all_perms->{$flag}) {
-                $expand_parent = 1;
-                foreach my $sub_perm (sort keys %{ $all_perms->{$flag} }) {
-                    push @sub_perm_loop, {
-                        id => "${flag}_$sub_perm",
-                        perm => "$flag:$sub_perm",
-                        code => $sub_perm,
-                        description => $all_perms->{$flag}->{$sub_perm},
-                        checked => 1
-                    };
-                }
-            }
-        } else {
-            if (exists $user_perms->{$flag}) {
-                $expand_parent = 1;
-                # put selected ones first
-                foreach my $sub_perm (sort keys %{ $user_perms->{$flag} }) {
-                    push @sub_perm_loop, {
-                        id => "${flag}_$sub_perm",
-                        perm => "$flag:$sub_perm",
-                        code => $sub_perm,
-                        description => $all_perms->{$flag}->{$sub_perm},
-                        checked => 1
-                    };
-                }
-            }
-            # then ones not selected
-            if (exists $all_perms->{$flag}) {
-                foreach my $sub_perm (sort keys %{ $all_perms->{$flag} }) {
-                    push @sub_perm_loop, {
-                        id => "${flag}_$sub_perm",
-                        perm => "$flag:$sub_perm",
-                        code => $sub_perm,
-                        description => $all_perms->{$flag}->{$sub_perm},
-                        checked => 0
-                    } unless exists $user_perms->{$flag} and exists $user_perms->{$flag}->{$sub_perm};
-                }
-            }
-        }
-        $row{expand} = $expand_parent;
-        if ($#sub_perm_loop > -1) {
-            $row{sub_perm_loop} = \@sub_perm_loop;
-        }
-	    push @loop, \%row;
+    #Make sure the superlibrarian module is always on top.
+    push @loop, preparePermissionModuleForDisplay($all_perms, 'superlibrarian');
+    foreach my $module (sort(keys(%$all_perms))) {
+        push @loop, preparePermissionModuleForDisplay($all_perms, $module) unless $module eq 'superlibrarian';
     }
 
     if ( $bor->{'category_type'} eq 'C') {
@@ -197,4 +121,76 @@ $template->param(
 
     output_html_with_http_headers $input, $cookie, $template->output;
 
+}
+
+=head markBorrowerGrantedPermissions
+
+Adds a 'checked'-value for all subpermissions in the all-Koha-Permissions-list
+that the current borrower has been granted.
+@PARAM1 HASHRef of all Koha permissions and modules.
+@PARAM1 ARRAYRef of all the granted Koha::Auth::BorrowerPermission-objects.
+@RETURNS @PARAM1, slightly checked.
+=cut
+
+sub markBorrowerGrantedPermissions {
+	my ($all_perms, $user_perms) = @_;
+
+	foreach my $borrowerPermission (@$user_perms) {
+		my $module = $borrowerPermission->getPermissionModule->module;
+		my $code   = $borrowerPermission->getPermission->code;
+		$all_perms->{$module}->{permissions}->{$code}->{checked} = 1;
+	}
+	return $all_perms;
+}
+
+=head checkIfAllModulePermissionsGranted
+
+@RETURNS Boolean, 1 if all permissions granted.
+=cut
+
+sub checkIfAllModulePermissionsGranted {
+	my ($moduleHash) = @_;
+	foreach my $code (keys(%{$moduleHash->{permissions}})) {
+		unless ($moduleHash->{permissions}->{$code}->{checked}) {
+			return 0;
+		}
+	}
+	return 1;
+}
+
+sub preparePermissionModuleForDisplay {
+	my ($all_perms, $module) = @_;
+
+	my $moduleHash = $all_perms->{$module};
+	my $checked = checkIfAllModulePermissionsGranted($moduleHash);
+
+	my %row = (
+		bit => $module,
+		flag => $module,
+		checked => $checked,
+		flagdesc => $moduleHash->{description} );
+
+	my @sub_perm_loop = ();
+	my $expand_parent = 0;
+
+	if ($module ne 'superlibrarian') {
+		foreach my $sub_perm (sort keys %{ $all_perms->{$module}->{permissions} }) {
+			my $sub_perm_checked = $all_perms->{$module}->{permissions}->{$sub_perm}->{checked};
+			$expand_parent = 1 if $sub_perm_checked;
+
+			push @sub_perm_loop, {
+				id => "${module}_$sub_perm",
+				perm => "$module:$sub_perm",
+				code => $sub_perm,
+				description => $all_perms->{$module}->{permissions}->{$sub_perm}->{description},
+				checked => $sub_perm_checked || 0,
+			};
+		}
+
+		$row{expand} = $expand_parent;
+		if ($#sub_perm_loop > -1) {
+			$row{sub_perm_loop} = \@sub_perm_loop;
+		}
+	}
+	return \%row;
 }

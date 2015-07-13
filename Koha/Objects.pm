@@ -213,6 +213,8 @@ sub find {
 
     my $result = $self->_resultset()->find($id);
 
+    return unless $result;
+
     my $object = $self->object_class()->_new_from_dbic( $result );
 
     return $object;

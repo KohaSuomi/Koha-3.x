@@ -368,17 +368,8 @@ sub GetMemberDetails {
     $borrower->{'amountoutstanding'} = $amount;
     # FIXME - patronflags calls GetMemberAccountRecords... just have patronflags return $amount
     my $flags = patronflags( $borrower);
-    my $accessflagshash;
 
-    $sth = $dbh->prepare("select bit,flag from userflags");
-    $sth->execute;
-    while ( my ( $bit, $flag ) = $sth->fetchrow ) {
-        if ( $borrower->{'flags'} && $borrower->{'flags'} & 2**$bit ) {
-            $accessflagshash->{$flag} = 1;
-        }
-    }
-    $borrower->{'flags'}     = $flags;
-    $borrower->{'authflags'} = $accessflagshash;
+    $borrower->{'flags'}     = $flags; #Is this the flags-column? @DEPRECATED!
 
     # For the purposes of making templates easier, we'll define a
     # 'showname' which is the alternate form the user's first name if 

@@ -52,8 +52,9 @@ __PACKAGE__->table("borrowers");
 
 =head2 othernames
 
-  data_type: 'mediumtext'
+  data_type: 'varchar'
   is_nullable: 1
+  size: 50
 
 =head2 initials
 
@@ -299,11 +300,6 @@ __PACKAGE__->table("borrowers");
   is_nullable: 1
   size: 60
 
-=head2 flags
-
-  data_type: 'integer'
-  is_nullable: 1
-
 =head2 userid
 
   data_type: 'varchar'
@@ -411,7 +407,7 @@ __PACKAGE__->add_columns(
   "title",
   { data_type => "mediumtext", is_nullable => 1 },
   "othernames",
-  { data_type => "mediumtext", is_nullable => 1 },
+  { data_type => "varchar", is_nullable => 1, size => 50 },
   "initials",
   { data_type => "text", is_nullable => 1 },
   "streetnumber",
@@ -512,8 +508,6 @@ __PACKAGE__->add_columns(
   { data_type => "varchar", is_nullable => 1, size => 1 },
   "password",
   { data_type => "varchar", is_nullable => 1, size => 60 },
-  "flags",
-  { data_type => "integer", is_nullable => 1 },
   "userid",
   { data_type => "varchar", is_nullable => 1, size => 75 },
   "opacnote",
@@ -573,6 +567,18 @@ __PACKAGE__->set_primary_key("borrowernumber");
 =cut
 
 __PACKAGE__->add_unique_constraint("cardnumber", ["cardnumber"]);
+
+=head2 C<othernames_4>
+
+=over 4
+
+=item * L</othernames>
+
+=back
+
+=cut
+
+__PACKAGE__->add_unique_constraint("othernames_4", ["othernames"]);
 
 =head1 RELATIONS
 
@@ -696,6 +702,21 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 borrower_permissions
+
+Type: has_many
+
+Related object: L<Koha::Schema::Result::BorrowerPermission>
+
+=cut
+
+__PACKAGE__->has_many(
+  "borrower_permissions",
+  "Koha::Schema::Result::BorrowerPermission",
+  { "foreign.borrowernumber" => "self.borrowernumber" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 branchcode
 
 Type: belongs_to
@@ -708,7 +729,7 @@ __PACKAGE__->belongs_to(
   "branchcode",
   "Koha::Schema::Result::Branch",
   { branchcode => "branchcode" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "RESTRICT", on_update => "RESTRICT" },
 );
 
 =head2 categorycode
@@ -723,7 +744,7 @@ __PACKAGE__->belongs_to(
   "categorycode",
   "Koha::Schema::Result::Category",
   { categorycode => "categorycode" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "RESTRICT", on_update => "RESTRICT" },
 );
 
 =head2 course_instructors
@@ -981,21 +1002,6 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 user_permissions
-
-Type: has_many
-
-Related object: L<Koha::Schema::Result::UserPermission>
-
-=cut
-
-__PACKAGE__->has_many(
-  "user_permissions",
-  "Koha::Schema::Result::UserPermission",
-  { "foreign.borrowernumber" => "self.borrowernumber" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
 =head2 virtualshelfcontents
 
 Type: has_many
@@ -1072,8 +1078,8 @@ Composing rels: L</course_instructors> -> course
 __PACKAGE__->many_to_many("courses", "course_instructors", "course");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07025 @ 2013-10-31 16:31:19
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:z4kW3xYX1CyrwvGdZu32nA
+# Created by DBIx::Class::Schema::Loader v0.07039 @ 2015-08-03 18:53:48
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:a4IdGCjpl3ict8cgApff5g
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

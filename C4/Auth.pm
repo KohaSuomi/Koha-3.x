@@ -23,6 +23,8 @@ use Digest::MD5 qw(md5_base64);
 use JSON qw/encode_json/;
 use URI::Escape;
 use CGI::Session;
+use Scalar::Util qw(blessed);
+use Try::Tiny;
 
 require Exporter;
 use C4::Context;
@@ -195,7 +197,7 @@ sub get_template_and_user {
         # We are going to use the $flags returned by checkauth
         # to create the template's parameters that will indicate
         # which menus the user can access.
-        if ( $flags && $flags->{superlibrarian}==1 ) {
+        if ( $flags && $flags->{superlibrarian} ) {
             $template->param( CAN_user_circulate        => 1 );
             $template->param( CAN_user_catalogue        => 1 );
             $template->param( CAN_user_parameters       => 1 );
@@ -222,11 +224,7 @@ sub get_template_and_user {
 
         if ( $flags ) {
             foreach my $module (keys %$all_perms) {
-                if ( $flags->{$module} == 1) {
-                    foreach my $subperm (keys %{ $all_perms->{$module} }) {
-                        $template->param( "CAN_user_${module}_${subperm}" => 1 );
-                    }
-                } elsif ( ref($flags->{$module}) ) {
+                if ( ref($flags->{$module}) ) {
                     foreach my $subperm (keys %{ $flags->{$module} } ) {
                         $template->param( "CAN_user_${module}_${subperm}" => 1 );
                     }
@@ -887,7 +885,7 @@ sub checkauth {
 
                 if ( $return == 1 ) {
                     my $select = "
-                    SELECT borrowernumber, firstname, surname, flags, borrowers.branchcode,
+                    SELECT borrowernumber, firstname, surname, borrowers.branchcode,
                     branches.branchname    as branchname,
                     branches.branchprinter as branchprinter,
                     email
@@ -910,7 +908,7 @@ sub checkauth {
                         }
                     }
                     if ($sth->rows) {
-                        ($borrowernumber, $firstname, $surname, $userflags,
+                        ($borrowernumber, $firstname, $surname,
                             $branchcode, $branchname, $branchprinter, $emailaddress) = $sth->fetchrow;
                         $debug and print STDERR "AUTH_3 results: " .
                         "$cardnumber,$borrowernumber,$userid,$firstname,$surname,$userflags,$branchcode,$emailaddress\n";
@@ -1578,35 +1576,35 @@ sub checkpw_internal {
 
     my $sth =
       $dbh->prepare(
-"select password,cardnumber,borrowernumber,userid,firstname,surname,branchcode,flags from borrowers where userid=?"
+"select password,cardnumber,borrowernumber,userid,firstname,surname,branchcode from borrowers where userid=?"
       );
     $sth->execute($userid);
     if ( $sth->rows ) {
         my ( $stored_hash, $cardnumber, $borrowernumber, $userid, $firstname,
-            $surname, $branchcode, $flags )
+            $surname, $branchcode )
           = $sth->fetchrow;
 
         if ( checkpw_hash($password, $stored_hash) ) {
 
             C4::Context->set_userenv( "$borrowernumber", $userid, $cardnumber,
-                $firstname, $surname, $branchcode, $flags );
+                $firstname, $surname, $branchcode );
             return 1, $cardnumber, $userid;
         }
     }
     $sth =
       $dbh->prepare(
-"select password,cardnumber,borrowernumber,userid, firstname,surname,branchcode,flags from borrowers where cardnumber=?"
+"select password,cardnumber,borrowernumber,userid, firstname,surname,branchcode from borrowers where cardnumber=?"
       );
     $sth->execute($userid);
     if ( $sth->rows ) {
         my ( $stored_hash, $cardnumber, $borrowernumber, $userid, $firstname,
-            $surname, $branchcode, $flags )
+            $surname, $branchcode )
           = $sth->fetchrow;
 
         if ( checkpw_hash($password, $stored_hash) ) {
 
             C4::Context->set_userenv( $borrowernumber, $userid, $cardnumber,
-                $firstname, $surname, $branchcode, $flags );
+                $firstname, $surname, $branchcode );
             return 1, $cardnumber, $userid;
         }
     }
@@ -1638,6 +1636,7 @@ sub checkpw_hash {
 }
 
 =head2 getuserflags
+@DEPRECATED, USE THE Koha::Auth::PermissionManager
 
     my $authflags = getuserflags($flags, $userid, [$dbh]);
 
@@ -1650,6 +1649,7 @@ C<$authflags> is a hashref of permissions
 =cut
 
 sub getuserflags {
+    #@DEPRECATED, USE THE Koha::Auth::PermissionManager
     my $flags   = shift;
     my $userid  = shift;
     my $dbh     = @_ ? shift : C4::Context->dbh;
@@ -1661,6 +1661,9 @@ sub getuserflags {
         no warnings 'numeric';
         $flags += 0;
     }
+    return get_user_subpermissions($userid);
+
+    #@DEPRECATED, USE THE Koha::Auth::PermissionManager
     my $sth = $dbh->prepare("SELECT bit, flag, defaulton FROM userflags");
     $sth->execute;
 
@@ -1683,7 +1686,7 @@ sub getuserflags {
 }
 
 =head2 get_user_subpermissions
-
+@DEPRECATED, USE THE Koha::Auth::PermissionManager
   $user_perm_hashref = get_user_subpermissions($userid);
 
 Given the userid (note, not the borrowernumber) of a staff user,
@@ -1708,21 +1711,17 @@ necessary to check borrowers.flags.
 =cut
 
 sub get_user_subpermissions {
+    #@DEPRECATED, USE THE Koha::Auth::PermissionManager
     my $userid = shift;
 
-    my $dbh = C4::Context->dbh;
-    my $sth = $dbh->prepare("SELECT flag, user_permissions.code
-                             FROM user_permissions
-                             JOIN permissions USING (module_bit, code)
-                             JOIN userflags ON (module_bit = bit)
-                             JOIN borrowers USING (borrowernumber)
-                             WHERE userid = ?");
-    $sth->execute($userid);
-
+    use Koha::Auth::PermissionManager;
+    my $permissionManager = Koha::Auth::PermissionManager->new();
+    my $borrowerPermissions = $permissionManager->getBorrowerPermissions($userid); #Prefetch all related tables.
     my $user_perms = {};
-    while (my $perm = $sth->fetchrow_hashref) {
-        $user_perms->{$perm->{'flag'}}->{$perm->{'code'}} = 1;
+    foreach my $perm ( @$borrowerPermissions ) {
+        $user_perms->{ $perm->getPermissionModule->module }->{ $perm->getPermission->code } = 1;
     }
+
     return $user_perms;
 }
 
@@ -1739,6 +1738,20 @@ of the subpermission.
 =cut
 
 sub get_all_subpermissions {
+    #@DEPRECATED, USE THE Koha::Auth::PermissionManager
+    use Koha::Auth::PermissionManager;
+    my $permissionManager = Koha::Auth::PermissionManager->new();
+    my $all_permissions = $permissionManager->listKohaPermissionsAsHASH();
+    foreach my $module ( keys %$all_permissions ) {
+        my $permissionModule = $all_permissions->{$module};
+        foreach my $code (keys %{$permissionModule->{permissions}}) {
+            my $permission = $permissionModule->{permissions}->{$code};
+            $all_permissions->{$module}->{$code} = $permission->{'description'};
+        }
+    }
+    return $all_permissions;
+
+    #@DEPRECATED, USE THE Koha::Auth::PermissionManager
     my $dbh = C4::Context->dbh;
     my $sth = $dbh->prepare("SELECT flag, code, description
                              FROM permissions
@@ -1753,6 +1766,7 @@ sub get_all_subpermissions {
 }
 
 =head2 haspermission
+@DEPRECATED, USE THE Koha::Auth::PermissionManager
 
   $flags = ($userid, $flagsrequired);
 
@@ -1764,11 +1778,15 @@ Returns member's flags or 0 if a permission is not met.
 =cut
 
 sub haspermission {
+    #@DEPRECATED, USE THE Koha::Auth::PermissionManager
     my ($userid, $flagsrequired) = @_;
-    my $sth = C4::Context->dbh->prepare("SELECT flags FROM borrowers WHERE userid=?");
-    $sth->execute($userid);
-    my $row = $sth->fetchrow();
-    my $flags = getuserflags($row, $userid);
+
+    my $flags = getuserflags( undef, $userid );
+    #Sanitate 1 to * because we no longer have 1's from the koha.borrowers.flags.
+    foreach my $module (%$flagsrequired) {
+        $flagsrequired->{$module} = '*' if $flagsrequired->{$module} && $flagsrequired->{$module} eq '1';
+    }
+
     if ( $userid eq C4::Context->config('user') ) {
         # Super User Account from /etc/koha.conf
         $flags->{'superlibrarian'} = 1;
@@ -1783,7 +1801,7 @@ sub haspermission {
     foreach my $module ( keys %$flagsrequired ) {
         my $subperm = $flagsrequired->{$module};
         if ($subperm eq '*') {
-            return 0 unless ( $flags->{$module} == 1 or ref($flags->{$module}) );
+            return 0 unless ( ref( $flags->{$module} ) );
         } else {
             return 0 unless ( $flags->{$module} == 1 or
                                 ( ref($flags->{$module}) and

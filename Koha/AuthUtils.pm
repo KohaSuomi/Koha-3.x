@@ -163,7 +163,6 @@ sub _createTemporarySuperuser {
                        firstname  => $superuserName,
                        surname    => $superuserName,
                        branchcode => 'NO_LIBRARY_SET',
-                       flags      => 1,
                        email      => C4::Context->preference('KohaAdminEmailAddress')
                     });
     return $borrower;

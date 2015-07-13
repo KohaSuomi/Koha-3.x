@@ -9,23 +9,23 @@
         $("#permissionstree").treeview({animated: "fast", collapsed: true});
 
         // Enforce Superlibrarian Privilege Mutual Exclusivity
-        if($('input[id="flag-0"]:checked').length){
+        if($('input[id="flag-superlibrarian"]:checked').length){
             if ($('input[name="flag"]:checked').length > 1){
                 alert('Inconsistency Detected!\n\nThe superlibrarian privilege is mutually exclusive of other privileges, as it includes them all.\n\nThis patron\'s privileges will now be reset to include only superlibrarian.');
             }
 
             $('input[name="flag"]').each(function() {
-                if($(this).attr('id') != "flag-0"){
+                if($(this).attr('id') != "flag-superlibrarian"){
                     $(this).attr('disabled', 'disabled');
                     $(this).removeAttr('checked', 'checked');
                 }
             });
         }
 
-        $('input#flag-0').click(function() {
-            if($('input[id="flag-0"]:checked').length){
+        $('input#flag-superlibrarian').click(function() {
+            if($('input[id="flag-superlibrarian"]:checked').length){
                 $('input[name="flag"]').each(function() {
-                    if($(this).attr('id') != "flag-0"){
+                    if($(this).attr('id') != "flag-superlibrarian"){
                         $(this).attr('disabled', 'disabled');
                         $(this).removeAttr('checked', 'checked');
                     }
@@ -121,9 +121,9 @@
         <!-- <li class="folder-close">One level down<ul> -->
     [% FOREACH loo IN loop %]
         [% IF ( loo.expand ) %]
-        <li class="open">
+        <li class="[% loo.flag %] open">
         [% ELSE %]
-        <li>
+        <li class="[% loo.flag %]">
         [% END %]
 			[% IF ( loo.checked ) %]
 			   <input type="checkbox" id="flag-[% loo.bit %]" name="flag" value="[% loo.flag %]" checked="checked" onclick="toggleChildren(this)" />

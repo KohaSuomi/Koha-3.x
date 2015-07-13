@@ -115,7 +115,7 @@ my $supportedPageObjects = {
     "members/moremember.pl" =>
     {   package     => "t::lib::Page::Members::Moremember",
         urlEndpoint => "members/moremember.pl",
-        status      => "not implemented",
+        status      => "OK",
         params      => ["borrowernumber"],
     },
     "members/statistics.pl" =>
@@ -127,7 +127,7 @@ my $supportedPageObjects = {
     "members/member-flags.pl" =>
     {   package     => "t::lib::Page::Members::MemberFlags",
         urlEndpoint => "members/member-flags.pl",
-        status      => "not implemented",
+        status      => "OK",
         params      => ["borrowernumber"],
     },
     "catalogue/detail.pl" =>
@@ -142,6 +142,11 @@ my $supportedPageObjects = {
     "opac/opac-main.pl" =>
     {   package     => "t::lib::Page::Opac::OpacMain",
         urlEndpoint => "opac/opac-main.pl",
+        status      => "OK",
+    },
+    "opac/opac-search.pl" =>
+    {   package     => "t::lib::Page::Opac::OpacSearch",
+        urlEndpoint => "opac/opac-search.pl",
         status      => "OK",
     },
 };
