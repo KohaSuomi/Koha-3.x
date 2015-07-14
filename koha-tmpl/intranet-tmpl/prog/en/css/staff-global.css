@@ -126,6 +126,10 @@ em strong {
 	font-style : italic;
 }
 
+input, textarea {
+    padding : 2px 4px;
+}
+
 .subfield-label {
     font-style : italic;
 }
