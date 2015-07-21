@@ -426,18 +426,6 @@ $(document).ready(function() {
                     { "mDataProp": "branchname" },
                     { "mDataProp": "itemcallnumber" },
                     {
-                        "mDataProp": function ( oObj ) {
-                            if ( ! oObj.charge ) oObj.charge = 0;
-                            return parseFloat(oObj.charge).toFixed(2);
-                        }
-                    },
-                    {
-                        "mDataProp": function ( oObj ) {
-                            if ( ! oObj.price ) oObj.price = 0;
-                            return parseFloat(oObj.price).toFixed(2);
-                        }
-                    },
-                    {
                         "mDataProp": function( oObj ) {
                             return "<a href='/cgi-bin/koha/members/moremember.pl?borrowernumber=" + oObj.borrowernumber + "'>"
                                  + oObj.borrower.firstname + " " + oObj.borrower.surname + " (" + oObj.borrower.cardnumber + ")</a>"
