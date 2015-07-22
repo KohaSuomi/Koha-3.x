@@ -54,6 +54,11 @@ our $PERL_DEPS = {
         'required' => '1',
         'min_ver'  => '0.21'
     },
+    'Data::Walk' => {
+        'usage'    => 'Core',
+        'required' => '1',
+        'min_ver'  => '1.00'
+    },
     'DBI' => {
         'usage'    => 'Core',
         'required' => '1',
@@ -571,6 +576,11 @@ our $PERL_DEPS = {
         'usage'    => 'Core',
         'required' => '1',
         'min_ver'  => '0.09',
+    },
+    'DateTime::Format::HTTP' => {
+        'usage'    => 'REST API',
+        'required' => '1',
+        'min_ver'  => '0.42',
     },
     'Template::Plugin::HtmlToText' => {
         'usage'    => 'Core',
