@@ -871,15 +871,24 @@ sub dbh
     my $sth;
 
     unless ( $params->{new} ) {
-        if ( defined($context->{db_driver}) && $context->{db_driver} eq 'mysql' && $context->{"dbh"} ) {
-            return $context->{"dbh"};
-        } elsif ( defined($context->{"dbh"}) && $context->{"dbh"}->ping() ) {
-            return $context->{"dbh"};
+        if (defined($context->{"dbh"})) {
+            #If there has been more than 4 minutes since we got a fresh and working DBI-connection, make sure it is still alive
+            #The mysql_auto_reconnect, parameter doesn't seem to work properly in all environments.
+            if ($context->{"dbhCreatedTimestamp"} < (time()-240)) {
+                if ($context->{"dbh"}->ping() eq '0') {
+                    return $context->{"dbh"};
+                    $context->{"dbhCreatedTimestamp"} = time(); #I hope we now really have a working connection, since ping() is occasionally iffy.
+                }
+            }
+            else {
+                return $context->{"dbh"};
+            }
         }
     }
 
     # No database handle or it died . Create one.
     $context->{"dbh"} = &_new_dbh();
+    $context->{"dbhCreatedTimestamp"} = time();
 
     return $context->{"dbh"};
 }
