@@ -21,6 +21,8 @@ use Modern::Perl;
 use Crypt::Eksblowfish::Bcrypt qw(bcrypt en_base64);
 use Fcntl qw/O_RDONLY/; # O_RDONLY is used in generate_salt
 
+use Koha::Borrower;
+
 use base 'Exporter';
 
 our $VERSION = '1.01';
@@ -130,6 +132,43 @@ sub generate_salt {
     close SOURCE;
     return $string;
 }
+
+=head checkKohaSuperuserFromUserid
+See checkKohaSuperuser(), with only the "user identifier"-@PARAM.
+@THROWS nothing.
+=cut
+
+sub checkKohaSuperuserFromUserid {
+    my ($userid) = @_;
+
+    if ( $userid && $userid eq C4::Context->config('user') ) {
+        return _createTemporarySuperuser();
+    }
+}
+
+=head _createTemporarySuperuser
+
+Create a temporary superuser which should be instantiated only to the environment
+and then discarded. So do not ->store() it!
+@RETURN Koha::Borrower
+=cut
+
+sub _createTemporarySuperuser {
+    my $borrower = Koha::Borrower->new();
+
+    my $superuserName = C4::Context->config('user');
+    $borrower->set({borrowernumber => 0,
+                       userid     => $superuserName,
+                       cardnumber => $superuserName,
+                       firstname  => $superuserName,
+                       surname    => $superuserName,
+                       branchcode => 'NO_LIBRARY_SET',
+                       flags      => 1,
+                       email      => C4::Context->preference('KohaAdminEmailAddress')
+                    });
+    return $borrower;
+}
+
 1;
 
 __END__
