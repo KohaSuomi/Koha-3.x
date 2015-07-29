@@ -432,6 +432,26 @@ __PACKAGE__->has_many(
 # Created by DBIx::Class::Schema::Loader v0.07025 @ 2013-10-30 02:42:01
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:JoTdms86n/xfPo8YUnDHUQ
 
+=head2 biblio
+
+Type: belongs_to
+
+Related object: L<Koha::Schema::Result::Biblio>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "biblio",
+  "Koha::Schema::Result::Biblio",
+  { biblionumber => "biblionumber" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "SET NULL",
+    on_update     => "CASCADE",
+  },
+);
+
 
 # You can replace this text with custom content, and it will be preserved on regeneration
 1;
