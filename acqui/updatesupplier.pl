@@ -56,7 +56,7 @@ use CGI;
 
 my $input=new CGI;
 my ($template, $loggedinuser, $cookie) = get_template_and_user(
-	{   template_name   => "",
+	{   template_name   => "acqui/updatesupplier.tt",
 		query           => $input,
 		type            => "intranet",
 		authnotrequired => 0,
