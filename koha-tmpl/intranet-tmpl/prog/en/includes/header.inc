@@ -36,10 +36,31 @@
                     [% END %]
                     <li><a href="/cgi-bin/koha/about.pl">About Koha</a></li>
                 </ul>
-            <li>
-                <a href="http://renki.pohjoiskarjala.net:8090/pages/viewpage.action?pageId=29917189&fullname=[% loggedinusername %]&email=[% emailaddress %]" >Tee ilmoitus ylläpidolle</a>
+            [% IF redmineSSOUrl %]
+             <li>
+                <a href="javascript:void(0);" id="redmine-link" >Report an issue to Kohasuomi</a>
+                <form target="_blank" id="redmine-login" name="redmine-login" method="POST" action="[% redmineSSOUrl %]" style="display: none;">
+                    <input id="redmine-sso-login" name="username" value="" />
+                    <input id="redmine-sso-password" name="password" value="[% sessionID %]" />
+                </form>
+                <script type="text/javascript">
+                    $(function () {
+                        var sessionid = "[% sessionID %]";
+                        $("#redmine-link").click(function() {
+                            if (sessionid.length === 0) {
+                                alert(_("Reload the page and click the link again."));
+                            }
+                            else {
+                                $("input[id=redmine-sso-login]").val("[% loggedinusername %]" + "@" + "[% LibraryName %]")
+                                var redminePassField = $("input[id=redmine-sso-password]")
+                                redminePassField.val("[% sessionID %]" + "@" + document.location.host)
+                                $("#redmine-login").submit();
+                            }
+                        });
+                    });
+                </script>
             </li>
-            </li>
+            [% END %]
         </ul>
         <ul class="nav pull-right">
             <li class="dropdown">

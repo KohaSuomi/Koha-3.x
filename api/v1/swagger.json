@@ -77,6 +77,41 @@
           { "multi_key_auth": [] }
         ]
       }
+    },
+    "/auth/session": {
+      "get": {
+        "x-mojo-controller": "Koha::REST::V1::Auth",
+        "x-koha-permission": {
+          "auth": "get_session"
+        },
+        "operationId": "getSession",
+        "tags": ["auth"],
+        "parameters": [
+          {
+            "$ref": "#/parameters/session"
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "A borrower with SSO-relevant fields",
+            "schema": {
+              "$ref": "#/definitions/session"
+            }
+          },
+          "404": {
+            "description": "Session not found",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          }
+        },
+        "security": [
+          { "multi_key_auth": [] }
+        ]
+      }
     }
   },
   "definitions": {
@@ -96,6 +131,30 @@
           "description": "borrower's first name"
         }
       }
+    },
+    "session": {
+      "type": "object",
+      "properties": {
+        "email": {
+          "description": "borrower's primary email address"
+        },
+        "lastname": {
+          "description": "borrower's last name"
+        },
+        "firstname": {
+          "description": "borrower's first name"
+        }
+      }
+    },
+    "testedSession": {
+      "type": "object",
+      "properties": {
+        "sessionid": {
+          "description": "The Koha sessionid to be tested",
+          "type": "string"
+        }
+      },
+      "required": ["sessionid"]
     },
     "borrowernumber": {
       "description": "Borrower internal identifier"
@@ -117,6 +176,15 @@
       "description": "Internal borrower identifier",
       "required": "true",
       "type": "integer"
+    },
+    "session": {
+      "name": "session",
+      "description": "The CGISESSID Cookie used to authenticate a session",
+      "in": "body",
+      "required": "true",
+      "schema" : {
+        "$ref": "#/definitions/testedSession"
+      }
     }
   },
   "securityDefinitions": {

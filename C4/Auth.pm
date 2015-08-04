@@ -287,7 +287,7 @@ sub get_template_and_user {
     else {    # if this is an anonymous session, setup to display public lists...
 
         $template->param( sessionID        => $sessionID );
-        
+
         my ($total, $pubshelves) = C4::VirtualShelves::GetSomeShelfNames(undef, 'MASTHEAD');
         $template->param(
             pubshelves     => $total->{pubtotal},
@@ -327,6 +327,7 @@ sub get_template_and_user {
             loggedinpersona              => C4::Context->userenv?C4::Context->userenv->{"persona"}:undef,
             TagsEnabled                  => C4::Context->preference("TagsEnabled"),
             hide_marc                    => C4::Context->preference("hide_marc"),
+            redmineSSOUrl                => C4::Context->config('redmine_sso_url'),
             item_level_itypes            => C4::Context->preference('item-level_itypes'),
             patronimages                 => C4::Context->preference("patronimages"),
             singleBranchMode             => C4::Context->preference("singleBranchMode"),
