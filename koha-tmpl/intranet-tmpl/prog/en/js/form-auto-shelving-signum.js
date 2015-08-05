@@ -47,7 +47,6 @@ function getShelvingLocForm( fieldCCode, fieldHomebranch, fieldPermLocation, fie
         var shelvingLoc = fieldPermLocation.val();
         var itype       = fieldItype.val();
         var ccode       = fieldCCode.val();
-
         //Initialize the itemcallnumber/spine label components
         var fullLoc     = "";
         var callNumber  = "";
@@ -113,5 +112,5 @@ function getShelvingLocForm( fieldCCode, fieldHomebranch, fieldPermLocation, fie
             return 0; // Do not mess with existing user-defined shelving locations
         }
 
-        fieldSignum.val(  fullLoc + " " + callNumber + " " + mainHeading  );
+        fieldSignum.val( fullLoc + " " + callNumber + " " + mainHeading );
 } // getShelvingLocForm

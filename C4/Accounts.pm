@@ -410,9 +410,11 @@ should be the empty string.
 # 		'M' = Sundry
 # 		'L' = Lost Item
 #
+# LUMME #103
+# Added branchcode for billing interfaces
 
 sub manualinvoice {
-    my ( $borrowernumber, $itemnum, $desc, $type, $amount, $note ) = @_;
+    my ( $borrowernumber, $itemnum, $desc, $type, $amount, $note, $branchcode ) = @_;
     my $manager_id = 0;
     $manager_id = C4::Context->userenv->{'number'} if C4::Context->userenv;
     my $dbh      = C4::Context->dbh;
@@ -429,21 +431,20 @@ sub manualinvoice {
     {
         $notifyid = 1;
     }
-
     if ( $itemnum ) {
         $desc .= ' ' . $itemnum;
         my $sth = $dbh->prepare(
             'INSERT INTO  accountlines
-                        (borrowernumber, accountno, date, amount, description, accounttype, amountoutstanding, itemnumber,notify_id, note, manager_id)
-        VALUES (?, ?, now(), ?,?, ?,?,?,?,?,?)');
-     $sth->execute($borrowernumber, $accountno, $amount, $desc, $type, $amountleft, $itemnum,$notifyid, $note, $manager_id) || return $sth->errstr;
+                        (borrowernumber, accountno, date, amount, description, accounttype, amountoutstanding, itemnumber,notify_id, note, manager_id, branchcode)
+        VALUES (?, ?, now(), ?,?, ?,?,?,?,?,?,?)');
+     $sth->execute($borrowernumber, $accountno, $amount, $desc, $type, $amountleft, $itemnum,$notifyid, $note, $manager_id, $branchcode) || return $sth->errstr;
   } else {
     my $sth=$dbh->prepare("INSERT INTO  accountlines
-            (borrowernumber, accountno, date, amount, description, accounttype, amountoutstanding,notify_id, note, manager_id)
-            VALUES (?, ?, now(), ?, ?, ?, ?,?,?,?)"
+            (borrowernumber, accountno, date, amount, description, accounttype, amountoutstanding,notify_id, note, manager_id, branchcode)
+            VALUES (?, ?, now(), ?, ?, ?, ?,?,?,?,?)"
         );
         $sth->execute( $borrowernumber, $accountno, $amount, $desc, $type,
-            $amountleft, $notifyid, $note, $manager_id );
+            $amountleft, $notifyid, $note, $manager_id, $branchcode );
     }
 
     if ( C4::Context->preference("FinesLog") ) {
@@ -459,6 +460,7 @@ sub manualinvoice {
             note              => $note,
             itemnumber        => $itemnum,
             manager_id        => $manager_id,
+            branchcode        => $branchcode
         }));
     }
 

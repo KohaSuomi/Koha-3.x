@@ -143,6 +143,7 @@ tinyMCE.init({
             </select></li>
 			-->
         <li><label for="branchnotes">Notes: </label><input type="text" name="branchnotes" id="branchnotes" size="80" value="[% branchnotes |html %]" /></li>
+        <li><label for="accountbilling">Billing interface: </label><input type="text" name="accountbilling" id="accountbilling" size="15" value="[% accountbilling |html %]" /></li>
         </ol>
         </fieldset>
         <fieldset class="action"><input type="submit" value="Submit" /> <a class="cancel" href="/cgi-bin/koha/admin/branches.pl">Cancel</a></fieldset>

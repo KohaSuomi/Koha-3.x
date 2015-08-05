@@ -42,6 +42,19 @@ $(document).ready(function(){
 	<fieldset class="rows">
 	<legend>Manual invoice</legend>
 	<ol>
+    <li>
+    <label for="type">Branch: </label>
+        <select name="branch" id="branch">
+          <option value=""></option>
+            [% FOREACH branchloo IN branchloop %]
+                [% IF ( branchloo.selected ) %]
+                    <option value="[% branchloo.value %]" selected="selected">[% branchloo.branchname %]</option>
+                [% ELSE %]
+                    <option value="[% branchloo.value %]" >[% branchloo.branchname %]</option>
+                [% END %]
+            [% END %]
+        </select>
+      </li>
       <li>
 <script type="text/javascript">
 var type_fees = new Array();
@@ -69,7 +82,9 @@ type_fees['[% invoice_types_loo.authorised_value %]'] = "[% invoice_types_loo.li
 	<li><label for="barcode">Barcode: </label><input type="text" name="barcode" id="barcode" /></li>
 	<li><label for="desc">Description: </label><input type="text" name="desc" id="desc" size="50" /></li>
     <li><label for="note">Note: </label><input type="text" name="note" size="50" id="note" /></li>
-	<li><label for="amount">Amount: </label><input type="text" name="amount" id="amount" /> Example: 5.00</li>
+  <li>Write amount or choose replacement price</li>
+	<li><label for="amount">Amount: </label><input type="text" name="amount" id="amount" /> Example: 5.00 </li>
+  <li><label for="price">Replacement price of item:</label><input type="checkbox" name="price" id="price"></li>
 	</ol></fieldset>
 <fieldset class="action"><input type="submit" name="add" value="Save" /> <a class="cancel" href="/cgi-bin/koha/members/boraccount.pl?borrowernumber=[% borrowernumber %]">Cancel</a></fieldset>
 </form>

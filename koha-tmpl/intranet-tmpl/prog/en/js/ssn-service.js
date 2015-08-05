@@ -9,7 +9,7 @@ $("input[id=ssn_submit]").click(function( event ) {
 
     $.ajax({
         type: "POST",
-        url: "https://turva.vaarakirjastot.fi/ssn/addssn?ajax=1",
+        url: "https://turva.lummekirjastot.fi/ssn/addssn?ajax=1",
         dataType: 'json',
         data: { ssn: ssn_value, username: ssn_username, password: ssn_password }
     })
@@ -20,7 +20,7 @@ $("input[id=ssn_submit]").click(function( event ) {
 
         //Make sure the SSN-key is removed if a failed attempt is made after a value is fetched
         $(ssnkey_container).val( '' );
-
+        console.log(msg);
         if (msg.msg) {
 
             $(notification_container).html(msg.msg).addClass('dialog alert');

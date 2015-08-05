@@ -88,6 +88,9 @@ foreach my $accountline ( @{$accts}) {
         $accountline->{payment} = 1;
         $reverse_col = 1;
     }
+    if ($accountline->{branchcode} ne ''){
+        $accountline->{billing} = 1;
+    }
 }
 
 $template->param( adultborrower => 1 ) if ( $data->{'category_type'} eq 'A' );

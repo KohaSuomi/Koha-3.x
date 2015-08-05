@@ -297,7 +297,7 @@ sub editcatform {
 	}
     $innertemplate->param(categorytype => \@cats);
 }
-
+# LUMME #103
 sub branchinfotable {
 
 # makes the html for a table of branch info from reference to an array of hashs.
@@ -341,7 +341,7 @@ sub branchinfotable {
             'branchcity', 'branchstate', 'branchcountry',
             'branchphone', 'branchfax',
             'branchemail', 'branchurl', 'opac_info',
-            'branchip',       'branchprinter', 'branchnotes'
+            'branchip',       'branchprinter', 'branchnotes', 'accountbilling'
           )
         {
             $row{$field} = $branch->{$field};
@@ -386,7 +386,7 @@ sub branchinfotable {
     );
 
 }
-
+# LUMME #103
 sub _branch_to_template {
     my ($data, $template) = @_;
     $template->param( 
@@ -405,7 +405,8 @@ sub _branch_to_template {
          branchurl      => $data->{'branchurl'},
          opac_info      => $data->{'opac_info'},
          branchip       => $data->{'branchip'},
-         branchnotes    => $data->{'branchnotes'}, 
+         branchnotes    => $data->{'branchnotes'},
+         accountbilling => $data->{'accountbilling'} 
     );
 }
 

@@ -48,14 +48,24 @@ if ($add){
         #  print $input->header;
         my $barcode=$input->param('barcode');
         my $itemnum;
+        my $amount;
+        my $item;
         if ($barcode) {
             $itemnum = GetItemnumberFromBarcode($barcode);
         }
         my $desc=$input->param('desc');
-        my $amount=$input->param('amount');
+        if ($input->param('price') && $barcode) {
+            $item = GetItem($itemnum);
+            $amount=$item->{'replacementprice'};
+        } else {
+            $amount=$input->param('amount');
+        }
+        
         my $type=$input->param('type');
         my $note    = $input->param('note');
-        my $error   = manualinvoice( $borrowernumber, $itemnum, $desc, $type, $amount, $note );
+        # LUMME #103
+        my $branchcode  = $input->param('branch');
+        my $error   = manualinvoice( $borrowernumber, $itemnum, $desc, $type, $amount, $note, $branchcode );
         if ($error) {
             my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
                 {   template_name   => "members/maninvoice.tmpl",
@@ -96,6 +106,8 @@ if ($add){
     push @invoice_types, $row;
   }
   $template->param( invoice_types_loop => \@invoice_types );
+  # LUMME #103
+  $template->param( branchloop => GetBranchesLoop);
 
     if ( $data->{'category_type'} eq 'C') {
         my  ( $catcodes, $labels ) =  GetborCatFromCatType( 'A', 'WHERE category_type = ?' );
