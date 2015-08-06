@@ -91,6 +91,7 @@ foreach my $accountline ( @{$accts}) {
     if ($accountline->{branchcode} ne ''){
         $accountline->{billing} = 1;
     }
+    $accountline->{branchname} = GetBranchName($accountline->{branchcode});
 }
 
 $template->param( adultborrower => 1 ) if ( $data->{'category_type'} eq 'A' );

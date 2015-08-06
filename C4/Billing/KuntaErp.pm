@@ -23,6 +23,7 @@ use XML::LibXML;
 use XML::Compile::Schema;
 use C4::Members;
 use C4::Accounts;
+use Data::Dumper;
 
 use vars qw($VERSION @ISA @EXPORT);
 
@@ -40,38 +41,30 @@ BEGIN {
 
 =head SendXMLData
 
-    my $added = C4::Billing::KuntaErp::SendXMLData($params);
+    my $added = C4::Billing::KuntaErp::SendXMLData($borrowernumber, $dir, @accounts);
 
-@PARAM1 Hash of koha.aqbookseller, the bookseller for whom to find the proper interface code.
-@RETURNS String, the interface code to tell which interface to use.
-                 Can be 'KV' or 'BTJ' or undef if no interface defined.
+@PARAMS $borrowernumber, $dir, @accounts
+@RETURNS A true value.
 =cut
 
 sub SendXMLData {
 
-	my ($borrowernumber, $accountlines_id) = @_;
+	my ($borrowernumber, $dir, @accountlines) = @_;
 
 	#get borrower details
 	my $member = GetMember( 'borrowernumber' => $borrowernumber );
 
-	#get account details
-	my ( $total, $accts, $numaccts ) = GetMemberAccountRecords($borrowernumber);
-	my $totalcredit;
-	if ( $total <= 0 ) {
-    	$totalcredit = 1;
-	}
-
-	my $xsd = '/home/ubuntu/xml/ORDERS05.ZORDERS5.xsd';
+	my $xsd = $dir.'ORDERS05.ZORDERS5.xsd';
 
 	my $schema = XML::Compile::Schema->new($xsd);
+
+	my $hash = MLI_Hash($member, @accountlines);
 
 	my $write  = $schema->compile(WRITER => 'ZORDERS5');
 
 	my $dom = XML::LibXML::Document->new( '1.0', 'UTF-8' );
 
-	my $hash = Hash($member, $accts);
-
-	my $xml = $write->($dom, $hash);
+    my $xml = $write->($dom, $hash);
 
 	$dom->setDocumentElement($xml);
 
@@ -84,41 +77,47 @@ sub SendXMLData {
 	return 1;
 }
 
-sub Hash {
+sub MLI_Hash {
 
-	my ($member, $accts) = @_;
-	my $data = {
-      		IDOC => [
+	my ($member, @accountlines) = @_;
+
+	my $data = {IDOC => []};
+	foreach my $accountline (@accountlines){
+		#get account details
+		my $accts = GetAccountlineDetails($accountline);
+		my $hash =
       			{
-      				BEGIN => '1',
+      				BEGIN => 1,
       				EDI_DC40 => 
       				{
-      					SEGMENT => '1',
-      					DIRECT => '1',
+      					SEGMENT => 1,
+      					DIRECT => 1,
       					SNDPOR => $member->{'surname'},
       					SNDPRT => "",
       					SNDPRN => "",
-      					RCVPOR => sprintf( "%.2f", $accts->[1]{'amount'} ),
+      					RCVPOR => $accts->{'amount'},
       					RCVPRN => "",
       				},
       				E1EDK01 => {
-      					SEGMENT => '1',
+      					SEGMENT => "1",
       				},
       				E1EDK14 => {
-      					SEGMENT => '1',
+      					SEGMENT => "1",
       				},
       				E1EDPT1 => {
-      					SEGMENT => '1',
+      					SEGMENT => "1",
       					E1EDPT2 =>{
-      						SEGMENT => '1',
-      						TDLINE => 'hep',
+      						SEGMENT => "1",
+      						TDLINE => "hep",
       					}
       				},
-      			}
-      		]
-      	};
+      			};
+      	push (@{$data->{IDOC}}, $hash);
+
+	}
 
     return ($data);
+	
 }
 
 END { }    # module clean-up code here (global destructor)

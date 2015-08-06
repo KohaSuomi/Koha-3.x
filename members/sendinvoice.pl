@@ -32,10 +32,12 @@ use C4::Auth;
 use C4::Output;
 use C4::Dates qw/format_date/;
 use CGI;
+use C4::Context;
 use C4::Members;
 use C4::Branch;
 use C4::Accounts;
 use C4::Billing::KuntaErp;
+use Data::Dumper;
 
 my $input = new CGI;
 
@@ -49,21 +51,37 @@ my ($template, $loggedinuser, $cookie)
                             });
 
 my $branchcode = $input->param('branchcode');
-my $borrowernumber  = $input->param('borrowernumber');
+my $borrowernumber;
 my $accountlines_id = $input->param('accountlines_id');
+my @accountlines = $input->param('accountlines[]');
 
-my $branch = GetBranchDetail($branchcode);
+my $kuntaErp = 0;
 my $added = 0;
+my @accounts;
 
-if ($branch->{'accountbilling'} eq 'KuntaErp') {
+my $dir = C4::Context->config('intrahtdocs') . '/prog/' . $template->{lang} . '/data/';
 
-	$added = SendXMLData($borrowernumber, $accountlines_id);
+foreach my $accountline ( @accountlines ) {
+	#warn Dumper $accountline;
+	my $data = GetAccountlineDetails($accountline);
+	#warn Dumper $data->{'branchcode'};
+	my $branch = GetBranchDetail($data->{'branchcode'});
 
-  	if ($added) {
-  		print $input->redirect("/cgi-bin/koha/members/boraccount.pl?borrowernumber=$borrowernumber&sentinvoice=1");
-  	}
+	if ($branch->{'accountbilling'} eq 'KuntaErp') {
+		#warn $data->{'accountlines_id'};
+		$borrowernumber = $data->{'borrowernumber'};
+		push @accounts, $data->{'accountlines_id'};
+		$kuntaErp = 1;
+	}
+}
 
-	
+if ($kuntaErp) {
+	$added = SendXMLData($borrowernumber, $dir, @accounts);
+	print $input->header('text/html');
+	print $added;
+
+
 } else {
-	print $input->redirect("/cgi-bin/koha/members/boraccount.pl?borrowernumber=$borrowernumber");
-}	
+	print $input->header('text/html');
+	print $added;
+}

@@ -49,6 +49,7 @@ BEGIN {
                 &makepartialpayment
                 &recordpayment_selectaccts
                 &WriteOffFee
+                &GetAccountlineDetails
 	);
 }
 
@@ -799,6 +800,25 @@ sub WriteOffFee {
     }
 
     UpdateStats( $branch, 'writeoff', $amount, q{}, q{}, q{}, $borrowernumber );
+
+}
+
+=head2 GetAccountlineDetails
+
+  GetAccountlineDetails($accountline_id);
+
+=cut
+
+sub GetAccountlineDetails {
+    my ($accountlines_id) = @_;
+
+    my $dbh = C4::Context->dbh;
+
+    my $sth = $dbh->prepare('SELECT * FROM accountlines WHERE accountlines_id = ?');
+    $sth->execute( $accountlines_id );
+    my $data = $sth->fetchrow_hashref;
+
+    return ($data);
 
 }
 

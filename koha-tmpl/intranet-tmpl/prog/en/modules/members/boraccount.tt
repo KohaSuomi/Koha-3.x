@@ -29,6 +29,7 @@
 <table>
   <tr>
   	<th>Date</th>
+    <th>Branch</th>
     <th>Description of charges</th>
     <th>Note</th>
     <th>Amount</th>
@@ -45,6 +46,7 @@
 
    [% IF ( loop.odd ) %]<tr>[% ELSE %]<tr class="highlight">[% END %]
       <td>[% account.date %]</td>
+      <td>[% account.branchname %]</td>
       <td>
         [% SWITCH account.accounttype %]
           [% CASE 'Pay' %]Payment, thanks
@@ -88,13 +90,11 @@
 		<a target="_blank" href="printinvoice.pl?action=print&amp;accountlines_id=[% account.accountlines_id %]&amp;borrowernumber=[% account.borrowernumber %]">Print</a>
 	[% END %]
       </td>
-  [% IF ( account.billing && !account.payment) %]
       <td>
-        <a href="sendinvoice.pl?branchcode=[% account.branchcode %]&amp;accountlines_id=[% account.accountlines_id %]&amp;borrowernumber=[% account.borrowernumber %]">Send</a>
-      </td>
-  [% ELSE %]
-    <td></td>
+  [% IF ( !account.payment ) %]
+      <input type="checkbox" name="selectedfine" id="[% account.accountlines_id %]">
   [% END %]
+    </td>
     </tr>
 
   [% END %]
@@ -103,18 +103,23 @@
     <td colspan="4">Total due</td>
     [% IF ( totalcredit ) %]
       [% IF ( reverse_col ) %]
-        <td colspan="3" class="credit">
+        <td colspan="4" class="credit">
       [% ELSE %]
         <td colspan="2" class="credit">
       [% END %]
     [% ELSE %]
       [% IF ( reverse_col ) %]
-        <td colspan="3" class="debit">
+        <td colspan="4" class="debit">
       [% ELSE %]
         <td colspan="3" class="credit">
       [% END %]
     [% END %]
     [% total %]</td>
+    [% IF ( account.billing && !account.payment) %]
+      <td>
+        <a href="#" id="sendinvoiceBtn">Send</a>
+      </td>
+    [% END %]
   </tr>
   </tfoot>
 </table>
@@ -128,3 +133,5 @@
 </div>
 </div>
 [% INCLUDE 'intranet-bottom.inc' %]
+
+<script type="text/javascript" src="[% themelang %]/js/sendinvoice.js"></script>

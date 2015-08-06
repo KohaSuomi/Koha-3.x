@@ -54,6 +54,7 @@ if ($add){
             $itemnum = GetItemnumberFromBarcode($barcode);
         }
         my $desc=$input->param('desc');
+        # LUMME #103
         if ($input->param('price') && $barcode) {
             $item = GetItem($itemnum);
             $amount=$item->{'replacementprice'};
