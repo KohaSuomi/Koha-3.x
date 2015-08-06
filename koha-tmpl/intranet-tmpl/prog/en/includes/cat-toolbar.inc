@@ -27,7 +27,7 @@
 	function addToShelf() {	window.open('/cgi-bin/koha/virtualshelves/addbybiblionumber.pl?biblionumber=[% biblionumber %]','Add_to_virtualshelf','width=500,height=400,toolbar=false,scrollbars=yes');
 	}
     function printBiblio() {window.print(); }
-[% IF ( CAN_user_editcatalogue_edit_catalogue ) %]
+[% IF ( CAN_user_editcatalogue_edit_catalogue or CAN_user_editcatalogue_delete_catalogue ) %]
     function confirm_deletion() {
         var count = [% count %];
         var holdcount = [% holdcount %];
@@ -60,11 +60,33 @@
             if ( count > 0 || holdcount > 0 ){
                 return false;
             } else {
-                window.location="/cgi-bin/koha/cataloguing/addbiblio.pl?op=delete&amp;biblionumber=[% biblionumber %]";
+                deleteBiblio([% biblionumber %]);
             }
 	} else {
             return false;
 	}
+    }
+    function deleteBiblio (biblionumber) {
+        $.ajax({
+            "cache": false,
+            "headers": {},
+            "method": "delete",
+            "type":"delete",
+            "url": "/api/v1/biblios/"+biblionumber,
+            "dataType": "json",
+            "success": function (data, textStatus, jqXHR) {
+                window.location="/cgi-bin/koha/catalogue/search.pl";
+            },
+            "error": function (jqXHR, textStatus, errorThrown) {
+                var errorObject = $.parseJSON( jqXHR.responseText );
+                if (!errorObject || !errorObject.error) {
+                    alert(jqXHR.responseText);
+                }
+                else {
+                    alert(errorObject.error);
+                }
+            }
+        });
     }
 [% END %]
 
@@ -135,7 +157,7 @@
 
 [% IF ( CAN_user_editcatalogue_edit_catalogue || CAN_user_editcatalogue_edit_items ||
 CAN_user_serials_create_subscription ) %]
-    <div class="btn-group">
+    <div id="newDropdownContainer" class="btn-group">
     <button class="btn btn-small dropdown-toggle" data-toggle="dropdown"><i class="icon-plus"></i> New <span class="caret"></span></button>
         <ul class="dropdown-menu">
             [% IF ( CAN_user_editcatalogue_edit_catalogue ) %]
@@ -159,8 +181,8 @@ CAN_user_serials_create_subscription ) %]
     </div>
 [% END %]
 
-[% IF ( CAN_user_editcatalogue_edit_catalogue || CAN_user_editcatalogue_edit_items || CAN_user_tools_items_batchmod || CAN_user_tools_items_batchdel ) %]
-    <div class="btn-group">
+[% IF ( CAN_user_editcatalogue_edit_catalogue || CAN_user_editcatalogue_delete_catalogue || CAN_user_editcatalogue_edit_items || CAN_user_tools_items_batchmod || CAN_user_tools_items_batchdel ) %]
+    <div id="editDropdownContainer" class="btn-group">
     <button class="btn btn-small dropdown-toggle" data-toggle="dropdown"><i class="icon-pencil"></i> Edit <span class="caret"></span></button>
         <ul class="dropdown-menu">
             [% IF ( CAN_user_editcatalogue_edit_catalogue ) %]
@@ -195,7 +217,8 @@ CAN_user_serials_create_subscription ) %]
             [% IF ( CAN_user_editcatalogue_edit_catalogue ) %]
             <li><a id="duplicatebiblio" href="/cgi-bin/koha/cataloguing/addbiblio.pl?biblionumber=[% biblionumber %]&amp;frameworkcode=[% current_framework %]&amp;op=duplicate">Edit as new (duplicate)</a></li>
             <li><a href="#" id="z3950copy">Replace record via Z39.50</a></li>
-
+            [% END %]
+            [% IF ( CAN_user_editcatalogue_delete_catalogue ) %]
                 [% IF ( count ) %]
                     <li class="disabled"><a id="deletebiblio" data-toggle="tooltip" data-placement="left" title="[% count %] item(s) are attached to this record. You must delete all items before deleting this record." href="#">Delete record</a></li>
                 [% ELSE %]
@@ -215,7 +238,7 @@ CAN_user_serials_create_subscription ) %]
     </div>
 [% END %]
 
-    <div class="btn-group">
+    <div id="saveDropdownContainer" class="btn-group">
     <button class="btn btn-small dropdown-toggle" data-toggle="dropdown"><i class="icon-download-alt"></i> Save <span class="caret"></span></button>
     <ul class="dropdown-menu">
         <li><a href="/cgi-bin/koha/catalogue/export.pl?format=bibtex&amp;op=export&amp;bib=[% biblionumber %]">BIBTEX</a></li>
@@ -230,7 +253,7 @@ CAN_user_serials_create_subscription ) %]
     </div>
 
 [% IF ( virtualshelves && intranetbookbag ) %]
-    <div class="btn-group">
+    <div id="addtoDropdownContainer" class="btn-group">
     <button class="btn btn-small dropdown-toggle" data-toggle="dropdown">Add to <span class="caret"></span></button>
     <ul class="dropdown-menu">
         <li><a href="#" id="addtocart">Cart</a></li>
@@ -248,7 +271,7 @@ CAN_user_serials_create_subscription ) %]
 [% IF ( CAN_user_reserveforothers ) %]
     [% UNLESS ( norequests ) %]
         [% IF ( holdfor ) %]
-            <div class="btn-group">
+            <div id="placeholdDropdownContainer" class="btn-group">
                 <button class="btn btn-small dropdown-toggle" data-toggle="dropdown">
                     <i class="icon-hold"></i>
                     Place hold

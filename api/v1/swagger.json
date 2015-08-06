@@ -14,6 +14,49 @@
   },
   "basePath": "/api/v1",
   "paths": {
+    "/biblios/{biblionumber}": {
+      "delete": {
+        "x-mojo-controller": "Koha::REST::V1::Biblios",
+        "x-koha-permission": {
+          "editcatalogue": "delete_catalogue"
+        },
+        "operationId": "deleteBiblio",
+        "tags": ["biblios"],
+        "summary": "Deletes the given Bibliographic Record",
+        "description": "Can fail if there are dependecies to the Biblio.",
+        "produces": [
+          ""
+        ],
+        "parameters": [
+          {
+            "$ref": "#/parameters/biblionumberPathParam"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Deleting the Record succeeded.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "404": {
+            "description": "No such Bibliographic record found",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "400": {
+            "description": "Cannot delete the Bibliographic Record due to constraints. A constraint can be for example the presence of dependant Items.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          }
+        },
+        "security": [
+          { "multi_key_auth": [] }
+        ]
+      }
+    },
     "/borrowers": {
       "get": {
         "x-mojo-controller": "Koha::REST::V1::Borrowers",
@@ -170,6 +213,13 @@
     }
   },
   "parameters": {
+    "biblionumberPathParam": {
+      "name": "biblionumber",
+      "in": "path",
+      "description": "Internal biblio identifier",
+      "required": true,
+      "type": "integer"
+    },
     "borrowernumberPathParam": {
       "name": "borrowernumber",
       "in": "path",
