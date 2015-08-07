@@ -75,7 +75,7 @@ sub SendXMLData {
 	binmode $out; # as above
 	print {$out} $dom->toString(1);
 
-	my $providerConfig = {host=>'10.0.91.178', user=>'koha', pw=>'Mikkeli'}; # For testing, need to add these to secure place before pushing to git.
+	my $providerConfig = {host=>'', user=>'', pw=>''}; # For testing, need to add these to secure place before pushing to git.
 
 	#Get the ftp-connection.
 	#FIXME: Probably needs NAT to allow connection to ftp. Can't do while updating part records.
