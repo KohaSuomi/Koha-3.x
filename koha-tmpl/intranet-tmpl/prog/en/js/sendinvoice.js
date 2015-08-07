@@ -13,7 +13,7 @@ $("#sendinvoiceBtn").click(function( event ) {
 	   url: "/cgi-bin/koha/members/sendinvoice.pl",
 	   success: function(msg){
 	   		if(msg==1){
-	   			alert("ok"+msg);
+	   			alert("Lähetys onnistui!");
 	   		} else {
 	   			alert("Et ole valinnut lähetettäviä maksuja.");
 	   		}

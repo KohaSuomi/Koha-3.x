@@ -23,6 +23,7 @@ use XML::LibXML;
 use XML::Compile::Schema;
 use C4::Members;
 use C4::Accounts;
+use Net::FTP;
 use Data::Dumper;
 
 use vars qw($VERSION @ISA @EXPORT);
@@ -74,7 +75,19 @@ sub SendXMLData {
 	binmode $out; # as above
 	print {$out} $dom->toString(1);
 
-	return 1;
+	my $providerConfig = {host=>'10.0.91.178', user=>'koha', pw=>'Mikkeli'}; # For testing, need to add these to secure place before pushing to git.
+
+	#Get the ftp-connection.
+	#FIXME: Probably needs NAT to allow connection to ftp. Can't do while updating part records.
+    my ($ftpcon, $error) = _getFtp($providerConfig);
+    warn $error;
+    if ($error) {
+        return(undef, $error);
+    } else {
+    	return 1;
+    }
+
+	
 }
 
 sub MLI_Hash {
@@ -118,6 +131,24 @@ sub MLI_Hash {
 
     return ($data);
 	
+}
+
+sub _getFtp {
+
+	my ($providerConfig) = @_;
+
+    my $ftpcon = Net::FTP->new( Host => $providerConfig->{host},
+                                Timeout => 10);
+    unless ($ftpcon) {
+        return (undef, "Cannot connect to ftp server: $@");
+    }
+
+    if ($ftpcon->login($providerConfig->{user},$providerConfig->{pw})){
+        return ($ftpcon, undef);
+    }
+    else {
+        return (undef, "Cannot login to ftp server: $@");
+    }
 }
 
 END { }    # module clean-up code here (global destructor)

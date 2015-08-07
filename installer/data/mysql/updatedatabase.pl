@@ -8966,6 +8966,20 @@ if (CheckVersion($DBversion)) {
     SetVersion($DBversion);
 }
 
+$DBversion = "3.16.00.XXX";
+if (CheckVersion($DBversion)) {
+    $dbh->do(q{
+        ALTER TABLE accountlines 
+        ADD COLUMN branchcode VARCHAR(10) NULL DEFAULT NULL AFTER manager_id,
+        ADD INDEX branchcode (branchcode ASC);
+        ALTER TABLE branches
+        ADD COLUMN accountbilling VACHAR(45) NULL DEFAULT NULL AFTER opac_info;
+    });
+
+    print "Upgrade to LUMME #103 done\n";
+    SetVersion($DBversion);
+}
+
 =head1 FUNCTIONS
 
 =head2 TableExists($table)

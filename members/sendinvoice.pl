@@ -62,13 +62,10 @@ my @accounts;
 my $dir = C4::Context->config('intrahtdocs') . '/prog/' . $template->{lang} . '/data/';
 
 foreach my $accountline ( @accountlines ) {
-	#warn Dumper $accountline;
 	my $data = GetAccountlineDetails($accountline);
-	#warn Dumper $data->{'branchcode'};
 	my $branch = GetBranchDetail($data->{'branchcode'});
 
 	if ($branch->{'accountbilling'} eq 'KuntaErp') {
-		#warn $data->{'accountlines_id'};
 		$borrowernumber = $data->{'borrowernumber'};
 		push @accounts, $data->{'accountlines_id'};
 		$kuntaErp = 1;
@@ -79,8 +76,6 @@ if ($kuntaErp) {
 	$added = SendXMLData($borrowernumber, $dir, @accounts);
 	print $input->header('text/html');
 	print $added;
-
-
 } else {
 	print $input->header('text/html');
 	print $added;
