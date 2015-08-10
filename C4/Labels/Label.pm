@@ -243,16 +243,16 @@ sub _get_barcode_data {
 }
 
 sub _desc_koha_tables {
-	my $dbh = C4::Context->dbh();
-	my $kohatables;
-	for my $table ( 'biblio','biblioitems','items','branches' ) {
-		my $sth = $dbh->column_info(undef,undef,$table,'%');
-		while (my $info = $sth->fetchrow_hashref()){
-		        push @{$kohatables->{$table}} , $info->{'COLUMN_NAME'} ;
-		}
-		$sth->finish;
-	}
-	return $kohatables;
+    my $dbh = C4::Context->dbh();
+    my $kohatables;
+    for my $table ( 'biblio','biblioitems','items','branches' ) {
+        my $sth = $dbh->column_info(undef,undef,$table,'%');
+        while (my $info = $sth->fetchrow_hashref()){
+                push @{$kohatables->{$table}} , $info->{'COLUMN_NAME'} ;
+        }
+        $sth->finish;
+    }
+    return $kohatables;
 }
 
 ### This series of functions calculates the position of text and barcode on individual labels
@@ -279,10 +279,10 @@ sub _BAR {
 sub _BIBBAR {
     my $self = shift;
     my $barcode_llx = $self->{'llx'} + $self->{'left_text_margin'};     # this places the bottom left of the barcode the left text margin distance to right of the left edge of the label ($self->{'llx'})
-    my $barcode_lly = $self->{'lly'} + $self->{'top_text_margin'};      # this places the bottom left of the barcode the top text margin distance above the bottom of the label ($lly)
+    my $barcode_lly = $self->{'lly'} - $self->{'top_text_margin'} + 25;      # this places the bottom left of the barcode the top text margin distance above the bottom of the label ($lly)
     my $barcode_width = 0.8 * $self->{'width'};                         # this scales the barcode width to 80% of the label width
     my $barcode_y_scale_factor = 0.01 * $self->{'height'};              # this scales the barcode height to 10% of the label height
-    my $line_spacer = ($self->{'font_size'} * 1);       # number of pixels between text rows (This is actually leading: baseline to baseline minus font size. Recommended starting point is 20% of font size.).
+    my $line_spacer = ($self->{'font_size'} * 1.3);       # number of pixels between text rows (This is actually leading: baseline to baseline minus font size. Recommended starting point is 20% of font size.).
     my $text_lly = ($self->{'lly'} + ($self->{'height'} - $self->{'top_text_margin'}));
     $debug and warn  "Label: llx $self->{'llx'}, lly $self->{'lly'}, Text: lly $text_lly, $line_spacer, Barcode: llx $barcode_llx, lly $barcode_lly, $barcode_width, $barcode_y_scale_factor\n";
     return $self->{'llx'}, $text_lly, $line_spacer, $barcode_llx, $barcode_lly, $barcode_width, $barcode_y_scale_factor;
@@ -385,6 +385,7 @@ sub draw_label_text {
     my $item = _get_label_item($self->{'item_number'});
     my $label_fields = _get_text_fields($self->{'format_string'});
     my $record = GetMarcBiblio($item->{'biblionumber'});
+    my $itemcallnumbers_size = 0;
     # FIXME - returns all items, so you can't get data from an embedded holdings field.
     # TODO - add a GetMarcBiblio1item(bibnum,itemnum) or a GetMarcItem(itemnum).
     my $cn_source = ($item->{'cn_source'} ? $item->{'cn_source'} : C4::Context->preference('DefaultClassificationSource'));
@@ -406,12 +407,19 @@ sub draw_label_text {
         my @label_lines;
         # Fields which hold call number data  FIXME: ( 060? 090? 092? 099? )
         my @callnumber_list = qw(itemcallnumber 050a 050b 082a 952o 995k);
-        if ((grep {$field->{'code'} =~ m/$_/} @callnumber_list) and ($self->{'printing_type'} eq 'BIB') and ($self->{'callnum_split'})) { # If the field contains the call number, we do some sp
+        # LUMME #56, a feature for printing labels from Koha
+        if ((grep {$field->{'code'} =~ m/$_/} @callnumber_list) and ($self->{'printing_type'} eq 'BIBBAR') and ($self->{'callnum_split'})) {
+            $itemcallnumbers_size++;
+        }
+        if($itemcallnumbers_size eq 2) {
+            $text_lly = ($self->{'lly'} + ($self->{'height'} - $self->{'top_text_margin'})); # Reseting lines for spine labels
+        }
+        if ((grep {$field->{'code'} =~ m/$_/} @callnumber_list) and (($self->{'printing_type'} eq 'BIB') or (($self->{'printing_type'} eq 'BIBBAR') and ($itemcallnumbers_size eq 2))) and ($self->{'callnum_split'})) { # If the field contains the call number, we do some sp
             if ($cn_source eq 'lcc' || $cn_source eq 'nlm') { # NLM and LCC should be split the same way
                 @label_lines = _split_lccn($field_data);
                 @label_lines = _split_ccn($field_data) if !@label_lines;    # If it was not a true lccn, try it as a custom call number
                 push (@label_lines, $field_data) if !@label_lines;         # If it was not that, send it on unsplit
-            } elsif ($cn_source eq 'ddc') {
+            } elsif ($cn_source eq 'ddc' || $cn_source eq 'ykl') { #LUMME #56 Added ykl for splitting
                 @label_lines = _split_ddcn($field_data);
                 @label_lines = _split_ccn($field_data) if !@label_lines;
                 push (@label_lines, $field_data) if !@label_lines;
@@ -419,6 +427,7 @@ sub draw_label_text {
                 warn sprintf('Call number splitting failed for: %s. Please add this call number to bug #2500 at bugs.koha-community.org', $field_data);
                 push @label_lines, $field_data;
             }
+            
         }
         else {
             if ($field_data) {
@@ -453,6 +462,10 @@ sub draw_label_text {
                  my $whitespace = ($self->{'width'} - ($string_width + (2 * $self->{'left_text_margin'})));
                  $text_llx = (($whitespace  / 2) + $params{'llx'} + $self->{'left_text_margin'});
             }
+            # LUMMEM #56, a feature for printing labels from Koha
+            elsif(($self->{'callnum_split'}) and ($self->{'printing_type'} eq 'BIBBAR') and ($itemcallnumbers_size eq 2)) {
+                $text_llx = $params{'llx'} + $self->{'width'} - ($self->{'left_text_margin'} + $string_width);
+            }
             else {
                 $text_llx = ($params{'llx'} + $self->{'left_text_margin'});
             }
@@ -463,10 +476,12 @@ sub draw_label_text {
                                 font_size       => $self->{'font_size'},
                                 line            => $line,
                                 };
-            $text_lly = $text_lly - $params{'line_spacer'};
+            $text_lly = $text_lly - ($params{'line_spacer'});
+            
         }
         $font = $self->{'font'};        # reset font for next field
-    }	#foreach field
+
+    }   #foreach field
     return \@label_text;
 }
 
