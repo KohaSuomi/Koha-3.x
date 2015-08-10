@@ -5,6 +5,7 @@ use Modern::Perl;
 use Carp; $Carp::Verbose=1;
 
 use C4::Context;
+use Data::Dumper;
 
 sub getMappings {
     my $dbh = C4::Context->dbh();
@@ -103,9 +104,17 @@ sub getShelvingLabelsMap {
         #Store to the map the code values, not the integer id's because this is a common referencing behaviour in Koha.
         $map->{ $m->{branchcode} }->{ $m->{location_value} }->{ $m->{itype} }->{ $m->{ccode_value} } = $m->{label};
     }
-
+    
     return $map;
 }
+# LUMME #112 Getting item's callnumber order from preferences....
+# There are two types: location (callnumber starts with the location) and number (callnumber starts with the number)
+sub getItemcallnumberOrder {
+    my $configSyspref = C4::Context->preference('itemcallnumberOrder');
+    my $order = {order => $configSyspref};
+    return $order;
+}
+
 sub getReverseShelvingLabelsMap {
     my $olms = shift;
     $olms = getMappings() unless $olms;
