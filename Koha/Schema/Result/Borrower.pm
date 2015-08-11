@@ -568,7 +568,7 @@ __PACKAGE__->set_primary_key("borrowernumber");
 
 __PACKAGE__->add_unique_constraint("cardnumber", ["cardnumber"]);
 
-=head2 C<othernames_4>
+=head2 C<othernames_3>
 
 =over 4
 
@@ -578,7 +578,7 @@ __PACKAGE__->add_unique_constraint("cardnumber", ["cardnumber"]);
 
 =cut
 
-__PACKAGE__->add_unique_constraint("othernames_4", ["othernames"]);
+__PACKAGE__->add_unique_constraint("othernames_3", ["othernames"]);
 
 =head1 RELATIONS
 
@@ -608,6 +608,21 @@ Related object: L<Koha::Schema::Result::Accountoffset>
 __PACKAGE__->has_many(
   "accountoffsets",
   "Koha::Schema::Result::Accountoffset",
+  { "foreign.borrowernumber" => "self.borrowernumber" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 api_keys
+
+Type: has_many
+
+Related object: L<Koha::Schema::Result::ApiKey>
+
+=cut
+
+__PACKAGE__->has_many(
+  "api_keys",
+  "Koha::Schema::Result::ApiKey",
   { "foreign.borrowernumber" => "self.borrowernumber" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
@@ -1078,8 +1093,8 @@ Composing rels: L</course_instructors> -> course
 __PACKAGE__->many_to_many("courses", "course_instructors", "course");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07039 @ 2015-08-03 18:53:48
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:a4IdGCjpl3ict8cgApff5g
+# Created by DBIx::Class::Schema::Loader v0.07039 @ 2015-08-03 19:02:13
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:W504QS3RTDxGRSy5tL6nMw
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

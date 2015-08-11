@@ -69,6 +69,38 @@ sub isSuperuser {
     return (exists($self->{superuser}) && $self->{superuser}) ? 1 : undef;
 }
 
+=head getApiKeys
+
+    my @apiKeys = $borrower->getApiKeys( $activeOnly );
+
+=cut
+
+sub getApiKeys {
+    my ($self, $activeOnly) = @_;
+
+    my @dbix_objects = $self->_result()->api_keys({active => 1});
+    for (my $i=0 ; $i<scalar(@dbix_objects) ; $i++) {
+        $dbix_objects[$i] = Koha::ApiKey->_new_from_dbic($dbix_objects[$i]);
+    }
+
+    return \@dbix_objects;
+}
+
+=head getApiKey
+
+    my $apiKey = $borrower->getApiKeys( $activeOnly );
+
+=cut
+
+sub getApiKey {
+    my ($self, $activeOnly) = @_;
+
+    my $dbix_object = $self->_result()->api_keys({active => 1})->next();
+    my $object = Koha::ApiKey->_new_from_dbic($dbix_object);
+
+    return $object;
+}
+
 =head1 AUTHOR
 
 Kyle M Hall <kyle@bywatersolutions.com>
