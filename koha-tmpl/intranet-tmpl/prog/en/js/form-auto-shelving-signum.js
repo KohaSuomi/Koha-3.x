@@ -101,12 +101,10 @@ function getShelvingLocForm( fieldCCode, fieldHomebranch, fieldPermLocation, fie
             //But don't replace the signum and call number once they have been given.
             var signumComponents = 3;
             var oldSignum = fieldSignum.val();
-            console.log(oldSignum);
             var oldSignumFields = oldSignum.split(" ");
             var oldCallNumber = (pref.order == 'number') ? oldSignumFields[0]: oldSignumFields[1];
             var oldFullLoc = (pref.order == 'number') ? oldSignumFields[2]: oldSignumFields[0];
             var oldMainHeading = (pref.order == 'number') ? oldSignumFields[1]: oldSignumFields[2];
-            console.log(oldCallNumber);
             if (oldCallNumber && oldCallNumber.match(/^\d?\d/)) {
                 callNumber = oldCallNumber;
             }

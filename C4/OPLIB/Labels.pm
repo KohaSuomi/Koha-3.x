@@ -107,7 +107,7 @@ sub getShelvingLabelsMap {
     
     return $map;
 }
-# LUMME #112 Getting item's callnumber order from preferences.
+# LUMME #112 Getting item's callnumber order from preferences....
 # There are two types: location (callnumber starts with the location) and number (callnumber starts with the number)
 sub getItemcallnumberOrder {
     my $configSyspref = C4::Context->preference('itemcallnumberOrder');
