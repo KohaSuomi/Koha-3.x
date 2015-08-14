@@ -176,6 +176,11 @@ if ($op eq ""){
         my $c_quantity = shift( @quantities ) || GetMarcQuantity($marcrecord, C4::Context->preference('marcflavour') ) || 1;
         my $c_budget_id = shift( @budgets_id ) || $input->param('all_budget_id') || $budget_id;
         my $c_discount = shift ( @discount);
+        if ($c_discount) {
+            $c_discount =~ s/%//g; #This screws up number conversion badly
+            $c_discount =~ s/,/./g; #Make this an actual digit for Perl
+            $c_discount = $c_discount / 100 if $c_discount >= 1;
+        }
         $c_discount = $c_discount / 100 if $c_discount && $c_discount > 1;
         my $c_sort1 = shift( @sort1 ) || $input->param('all_sort1') || '';
         my $c_sort2 = shift( @sort2 ) || $input->param('all_sort2') || '';
@@ -240,19 +245,19 @@ if ($op eq ""){
             my $c = $c_discount ? $c_discount : $bookseller->{discount} / 100;
             if ( $bookseller->{listincgst} ) {
                 if ( $c_discount ) {
-                    $orderinfo{ecost} = $price;
-                    $orderinfo{rrp}   = $orderinfo{ecost} / ( 1 - $c );
+                    $orderinfo{ecost} = $price * ( 1 - $c ); #Get the VAT included discounted price
+                    $orderinfo{rrp}   = $price; #Replacement price is the non-discounted price. Otherwise our patrons can start making profit by stealing books.
                 } else {
-                    $orderinfo{ecost} = $price * ( 1 - $c );
+                    $orderinfo{ecost} = $price;
                     $orderinfo{rrp}   = $price;
                 }
             } else {
                 if ( $c_discount ) {
-                    $orderinfo{ecost} = $price / ( 1 + $orderinfo{gstrate} );
-                    $orderinfo{rrp}   = $orderinfo{ecost} / ( 1 - $c );
+                    $orderinfo{ecost} = $price / ( 1 + $orderinfo{gstrate} ) * ( 1 - $c ); #Add VAT/GST and the discount
+                    $orderinfo{rrp}   = $price / ( 1 + $orderinfo{gstrate} ); #Add the VAT
                 } else {
                     $orderinfo{rrp}   = $price / ( 1 + $orderinfo{gstrate} );
-                    $orderinfo{ecost} = $orderinfo{rrp} * ( 1 - $c );
+                    $orderinfo{ecost} = $price / ( 1 + $orderinfo{gstrate} );
                 }
             }
             $orderinfo{listprice} = $orderinfo{rrp} / $cur->{rate};
@@ -519,3 +524,4 @@ sub get_infos_syspref {
     }
     return $r;
 }
+
