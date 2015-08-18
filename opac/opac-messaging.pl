@@ -32,6 +32,9 @@ use C4::Members;
 use C4::Members::Messaging;
 use C4::Branch;
 use C4::Form::MessagingPreferences;
+use Koha::Validation;
+
+use re 'regexp_pattern';
 
 my $query = CGI->new();
 
@@ -48,10 +51,19 @@ my ( $template, $borrowernumber, $cookie ) = get_template_and_user(
 my $borrower = GetMemberDetails( $borrowernumber );
 my $messaging_options = C4::Members::Messaging::GetMessagingOptions();
 
+$template->param(
+        ValidateEmailAddress   => C4::Context->preference('ValidateEmailAddress'),
+        ValidatePhoneNumber    => (C4::Context->preference('ValidatePhoneNumber') ne "OFF"),
+        phone_regex            => regexp_pattern Koha::Validation::get_phonenumber_regex()
+);
+
 if ( defined $query->param('modify') && $query->param('modify') eq 'yes' ) {
 
+    my $valid_smsnumber = Koha::Validation::validate_phonenumber($query->param('SMSnumber'));
+    $template->param(invalid_smsnumber => 1) if not $valid_smsnumber;
+    
     # If they've modified the SMS number, record it.
-    if ( ( defined $query->param('SMSnumber') ) && ( $query->param('SMSnumber') ne $borrower->{'mobile'} ) ) {
+    if ( ( defined $query->param('SMSnumber') ) && ( $query->param('SMSnumber') ne $borrower->{'mobile'} ) && $valid_smsnumber ) {
         ModMember( borrowernumber => $borrowernumber,
                    smsalertnumber => $query->param('SMSnumber') );
         $borrower = GetMemberDetails( $borrowernumber );

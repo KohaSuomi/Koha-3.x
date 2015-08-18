@@ -429,6 +429,8 @@ INSERT INTO systempreferences ( `variable`, `value`, `options`, `explanation`, `
 ('UseKohaPlugins','0','','Enable or disable the ability to use Koha Plugins.','YesNo'),
 ('UseQueryParser','0',NULL,'If enabled, try to use QueryParser for queries.','YesNo'),
 ('UseTransportCostMatrix','0','','Use Transport Cost Matrix when filling holds','YesNo'),
+('ValidateEmailAddress','0','','Validation of email address on patrons.','YesNo'),
+('ValidatePhoneNumber','OFF','ipn|fin|new|OFF','Validation of phone number on patrons.','Choice'),
 ('viewISBD','1','','Allow display of ISBD view of bibiographic records','YesNo'),
 ('viewLabeledMARC','0','','Allow display of labeled MARC view of bibiographic records','YesNo'),
 ('viewMARC','1','','Allow display of MARC view of bibiographic records','YesNo'),

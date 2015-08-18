@@ -43,9 +43,10 @@ use C4::Branch; # GetBranches
 use C4::Form::MessagingPreferences;
 use Koha::Borrower::Debarments;
 use Koha::DateUtils;
-use Email::Valid;
+use Koha::Validation;
 
 use vars qw($debug);
+use re 'regexp_pattern';
 
 BEGIN {
 	$debug = $ENV{DEBUG} || 0;
@@ -353,35 +354,14 @@ if ($op eq 'save' || $op eq 'insert'){
     my $phonealt = $input->param('B_phone');
     my $emailalt = $input->param('B_email');
 
-    if ($phoneprimary) {
-        my $code = "ERROR_bad_phone";
-        my ($success, $errorcode, $errormessage) = ValidateMemberPhoneNumber($phoneprimary);
-        push(@errors, $code) if (!$success);
-    }
-    if ($phonesecondary) {
-        my $code = "ERROR_bad_phone";
-        my ($success, $errorcode, $errormessage) = ValidateMemberPhoneNumber($phonesecondary);
-        push(@errors, $errorcode . "_secondary") if (!$success);
-    }
-    if ($phoneother) {
-        my $code = "ERROR_bad_phone";
-        my ($success, $errorcode, $errormessage) = ValidateMemberPhoneNumber($phoneother);
-        push(@errors, $errorcode . "_other") if (!$success);
-    }
-    if ($emailprimary) {
-        push (@errors, "ERROR_bad_email") if (!Email::Valid->address($emailprimary));
-    }
-    if ($emailsecondary) {
-        push (@errors, "ERROR_bad_email_secondary") if (!Email::Valid->address($emailsecondary));
-    }
-    if ($phonealt) {
-        my $code = "ERROR_bad_phone";
-        my ($success, $errorcode, $errormessage) = ValidateMemberPhoneNumber($phonealt);
-        push(@errors, $errorcode . "_alt") if (!$success);
-    }
-    if ($emailalt) {
-        push (@errors, "ERROR_bad_email_alternative") if (!Email::Valid->address($emailalt));
-    }
+    # validate emails
+    push (@errors, "ERROR_bad_email") if ($input->param('email') && !Koha::Validation::validate_email($input->param('email')));
+    push (@errors, "ERROR_bad_email_secondary") if ($input->param('emailpro') && !Koha::Validation::validate_email($input->param('emailpro')));
+    push (@errors, "ERROR_bad_email_alternative") if ($input->param('B_email') && !Koha::Validation::validate_email($input->param('B_email')));
+    # validate phone numbers
+    push (@errors, "ERROR_bad_phone") if ($input->param('phone') && !Koha::Validation::validate_phonenumber($input->param('phone')));
+    push (@errors, "ERROR_bad_phone_secondary") if ($input->param('phonepro') && !Koha::Validation::validate_phonenumber($input->param('phonepro')));
+    push (@errors, "ERROR_bad_phone_alternative") if ($input->param('B_phone') && !Koha::Validation::validate_phonenumber($input->param('B_phone')));
 
   if (C4::Context->preference('ExtendedPatronAttributes')) {
     $extended_patron_attributes = parse_extended_patron_attributes($input);
@@ -408,7 +388,12 @@ if (
         or $input->param('SMSnumber') ne $newdata{'mobile'}
         )
 ) {
-    $newdata{smsalertnumber} = $input->param('SMSnumber');
+    if (Koha::Validation::validate_phonenumber($input->param('SMSnumber'))){
+        $newdata{smsalertnumber} = $input->param('SMSnumber');
+    } else {
+        push (@errors, "ERROR_bad_smsnumber");
+    }
+	
 }
 
 ###  Error checks should happen before this line.
@@ -709,6 +694,12 @@ if (C4::Context->preference('ExtendedPatronAttributes')) {
     $template->param(ExtendedPatronAttributes => 1);
     patron_attributes_form($template, $borrowernumber);
 }
+
+$template->param(
+        ValidateEmailAddress => C4::Context->preference('ValidateEmailAddress'),
+        ValidatePhoneNumber => C4::Context->preference('ValidatePhoneNumber') ne "OFF",
+        phone_regex => regexp_pattern Koha::Validation::get_phonenumber_regex()
+);
 
 if (C4::Context->preference('EnhancedMessagingPreferences')) {
     if ($op eq 'add') {

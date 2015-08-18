@@ -803,21 +803,31 @@
             [% ELSE %]
                 $( "#borrower_dateofbirth" ).datepicker({ yearRange: "c-120:c" });
             [% END %]
-
-            // KD-173: form validation for critical fields
+            var MSG_INCORRECT_PHONE = _("Please enter a valid phone number.");
             $.validator.addMethod('phone', function(value) {
                 if (!value.trim()) {
                     return 1;
                 }
                 else {
-                    // http://regexlib.com/REDetails.aspx?regexp_id=3009
-                    return (value.match(/^((\+)?[1-9]{1,2})?([-\s\.])?((\(\d{1,4}\))|\d{1,4})(([-\s\.])?[0-9]{1,12}){1,2}$/));
+                    return (value.match(/[% phone_regex %]/));
                 }
             },
             MSG_INCORRECT_PHONE);
 
             $("#memberentry-form").validate({
                 rules: {
+                    [% IF (ValidateEmailAddress ) %]
+                    borrower_email: {
+                        email: true
+                    },
+                    borrower_emailpro: {
+                        email: true
+                    },
+                    borrower_B_email: {
+                        email: true
+                    }[% IF ( ValidatePhoneNumber ) %],[% END %]
+                    [% END %]
+                    [% IF ( ValidatePhoneNumber ) %]
                     borrower_phone: {
                         phone: true,
                         minlength: 5,
@@ -833,12 +843,6 @@
                         minlength: 5,
                         maxlength: 20
                     },
-                    borrower_email: {
-                        email: true
-                    },
-                    borrower_emailpro: {
-                        email: true
-                    },
                     borrower_fax: {
                         phone: true,
                         minlength: 5,
@@ -848,10 +852,8 @@
                         phone: true,
                         minlength: 5,
                         maxlength: 20
-                    },
-                    borrower_B_email: {
-                        email: true
                     }
+                    [% END %]
                 },
                 submitHandler: function(form) {
                     $("body, form input[type='submit'], form button[type='submit'], form a").addClass('waiting');
@@ -860,6 +862,16 @@
                     }
                     else {
                         form.beenSubmitted = true;
+                        [% IF ValidateEmailAddress %]
+                        $("#borrower_email, #borrower_emailpro, #borrower_B_email").each(function(){
+                            $(this).val($.trim($(this).val()));
+                        });
+                        [% END %]
+                        [% IF ValidatePhoneNumber %]
+                        $("#borrower_phone, #borrower_phonepro, #borrower_B_phone, #SMSnumber").each(function(){
+                            $(this).val($.trim($(this).val()));
+                        });
+                        [% END %]
                         form.submit();
                     }
                 },
@@ -872,6 +884,12 @@
                     error.css('top', offset.top);
                     error.css('width', 'auto');
                 }
+            });
+            $("#borrower_email, #borrower_emailpro, #borrower_B_email").on("change", function(){
+                $(this).val($.trim($(this).val()));
+            });
+            $("#borrower_phone, #borrower_phonepro, #borrower_B_phone").on("change", function(){
+                $(this).val($.trim($(this).val()));
             });
         });
     //]]>

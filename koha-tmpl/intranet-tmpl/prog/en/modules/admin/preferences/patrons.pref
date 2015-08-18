@@ -138,3 +138,18 @@ Patrons:
          - pref: CardnumberLength
          - "characters long. The length can be a single number to specify an exact length, a range separated by a comma (i.e., 'Min,Max'), or a maximum with no minimum (i.e., ',Max')."
          - "If 'cardnumber' is included in the BorrowerMandatoryField list, the minimum length, if not specified here, defaults to one."
+     -
+         - Use validator
+         - pref: ValidatePhoneNumber
+           choices:
+               ipn: International Phone Numbers
+               fin: Finnish Phone Numbers
+               new: ...Not yet implemented...
+               "OFF": none
+         - to validate phone numbers on patrons.
+     -
+         - pref: ValidateEmailAddress
+           choices:
+               yes: Enable
+               no: Disable
+         - validation of email addresses on patrons.

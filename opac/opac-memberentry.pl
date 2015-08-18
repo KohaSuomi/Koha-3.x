@@ -27,7 +27,9 @@ use C4::Members;
 use Koha::Borrower::Modifications;
 use C4::Branch qw(GetBranchesLoop);
 use C4::Scrubber;
-use Email::Valid;
+use Koha::Validation;
+
+use re 'regexp_pattern';
 
 my $cgi = new CGI;
 my $dbh = C4::Context->dbh;
@@ -64,6 +66,9 @@ $template->param(
     member_titles     => GetTitles() || undef,
     branches          => GetBranchesLoop(),
     OPACPatronDetails => C4::Context->preference('OPACPatronDetails'),
+    ValidateEmailAddress   => C4::Context->preference('ValidateEmailAddress'),
+    ValidatePhoneNumber    => (C4::Context->preference('ValidatePhoneNumber') ne "OFF"),
+    phone_regex            => regexp_pattern Koha::Validation::get_phonenumber_regex()
 );
 
 if ( $action eq 'create' ) {
@@ -331,37 +336,26 @@ sub DelEmptyFields {
 sub CheckOtherFormFields {
     my $borrower = shift;
     my @invalidFields;
-
-    foreach my $field (keys %$borrower) {
-        if ($field eq "phone") {
-            my ($success, $errorcode, $errormessage) = ValidateMemberPhoneNumber($borrower->{$field});
-            push(@invalidFields, $field) if (!$success);
-        }
-        elsif ($field eq "phonepro") {
-            my ($success, $errorcode, $errormessage) = ValidateMemberPhoneNumber($borrower->{$field});
-            push(@invalidFields, $field) if (!$success);
-        }
-        elsif ($field eq "mobile") {
-            my ($success, $errorcode, $errormessage) = ValidateMemberPhoneNumber($borrower->{$field});
-            push(@invalidFields, $field) if (!$success);
-        }
-        elsif ($field eq "email") {
-            push(@invalidFields, $field) if (!Email::Valid->address($borrower->{$field}));
-        }
-        elsif ($field eq "emailpro") {
-            push(@invalidFields, $field) if (!Email::Valid->address($borrower->{$field}));
-        }
-        elsif ($field eq "fax") {
-            my ($success, $errorcode, $errormessage) = ValidateMemberPhoneNumber($borrower->{$field});
-            push(@invalidFields, $field) if (!$success);
-        }
-        elsif ($field eq "B_phone") {
-            my ($success, $errorcode, $errormessage) = ValidateMemberPhoneNumber($borrower->{$field});
-            push(@invalidFields, $field) if (!$success);
-        }
-        elsif ($field eq "B_email") {
-            push(@invalidFields, $field) if (!Email::Valid->address($borrower->{$field}));
-        }
+    if ($borrower->{'email'}) {
+        push(@invalidFields, "email") if (!Koha::Validation::validate_email($borrower->{'email'}));
+    }
+    if ($borrower->{'emailpro'}) {
+        push(@invalidFields, "emailpro") if (!Koha::Validation::validate_email($borrower->{'emailpro'}));
+    }
+    if ($borrower->{'B_email'}) {
+        push(@invalidFields, "B_email") if (!Koha::Validation::validate_email($borrower->{'B_email'}));
+    }
+    if ($borrower->{'mobile'}) {
+        push(@invalidFields, "mobile") if (!Koha::Validation::validate_phonenumber($borrower->{'mobile'}));
+    }
+    if ($borrower->{'phone'}) {
+        push(@invalidFields, "phone") if (!Koha::Validation::validate_phonenumber($borrower->{'phone'}));
+    }
+    if ($borrower->{'phonepro'}) {
+        push(@invalidFields, "phonepro") if (!Koha::Validation::validate_phonenumber($borrower->{'phonepro'}));
+    }
+    if ($borrower->{'B_phone'}) {
+        push(@invalidFields, "B_phone") if (!Koha::Validation::validate_phonenumber($borrower->{'B_phone'}));
     }
     return \@invalidFields;
 }
