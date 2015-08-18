@@ -13,7 +13,6 @@
 
         var MSG_INCORRECT_PHONE = _("Please enter a valid phone number.");
         $.validator.addMethod('phone', function(value) {
-            value = value.trim();
             if (!value.trim()) {
                 return 1;
             }
@@ -153,17 +152,38 @@
         });
         
         [% IF ValidateEmailAddress %]
-        $("#email, #emailpro, #B_email").on("change", function(){
-            $(this).val($.trim($(this).val()));
-        });
+            [% IF !email %]
+                disableCheckboxesWithInvalidPreferences($("#email"), "email");
+            [% END %]
+            $("#email").on("input", function(){
+                disableCheckboxesWithInvalidPreferences($(this), "email");
+            });
+            $("#email, #emailpro, #B_email").on("change", function(){
+                $(this).val($.trim($(this).val()));
+                disableCheckboxesWithInvalidPreferences($(this), "email");
+            });
         [% END %]
         [% IF ValidatePhoneNumber %]
-        $("#SMSnumber").on("change", function(){
-            $(this).val($.trim($(this).val()));
-        });
-        $("#phone, #phonepro, #B_phone").on("change", function(){
-            $(this).val($.trim($(this).val()));
-        });
+            [% IF !smsalertnumber %]
+                disableCheckboxesWithInvalidPreferences($("#SMSnumber"), "sms");
+            [% END %]
+            [% IF !phone %]
+                disableCheckboxesWithInvalidPreferences($("#phone"), "phone");
+            [% END %]
+            $("#SMSnumber").on("input", function(){
+                disableCheckboxesWithInvalidPreferences($(this), "sms");
+            });
+            $("#SMSnumber").on("change", function(){
+                $(this).val($.trim($(this).val()));
+                disableCheckboxesWithInvalidPreferences($(this), "sms");
+            });
+            $("#phone").on("input", function(){
+                disableCheckboxesWithInvalidPreferences($(this), "phone");
+            });
+            $("#phone, #phonepro, #B_phone").on("change", function(){
+                $(this).val($.trim($(this).val()));
+                disableCheckboxesWithInvalidPreferences($(this), "phone");
+            });
         [% END %]
 
         var mrform = $("#manual_restriction_form");
@@ -232,6 +252,7 @@
 //]]>
 </script>
 <script type="text/javascript" src="[% themelang %]/js/members.js"></script>
+<script type="text/javascript" src="[% themelang %]/js/messaging-preference.js"></script>
 </head>
 <body id="pat_memberentrygen" class="pat">
 [% INCLUDE 'header.inc' %]
@@ -1536,6 +1557,13 @@
     <input type="hidden" name="setting_messaging_prefs" value="1" />
     [% IF type_only %]
         <p>If no preferences are selected, the default preferences for the category chosen will be applied on save, otherwise your selection here is saved</p>
+    [% END %]
+    [% IF ( ValidateEmailAddress ) %]
+    <p id="required-email" style="[% IF email %]display:none;[% END %]"><label for="email">Primary email</label> is required in order to set Email preferences.</p>
+    [% END %]
+    [% IF ( ValidatePhoneNumber ) %]
+    [% IF ( TalkingTechItivaPhone ) %]<p id="required-phone" style="[% IF phone %]display:none;[% END %]"><label for="phone">Primary phone</label> is required in order to set Phone preferences.</p>[% END %]
+    [% IF ( SMSSendDriver ) %]<p id="required-sms" style="[% IF smsalertnumber %]display:none;[% END %]"><label for="SMSnumber">SMS Number</label> is required in order to set SMS preferences.</p>[% END %]
     [% END %]
     [% INCLUDE 'messaging-preference-form.inc' %]
     [% IF ( SMSSendDriver ) %]

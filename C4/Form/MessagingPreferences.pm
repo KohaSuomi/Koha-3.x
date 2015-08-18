@@ -77,9 +77,38 @@ sub handle_form_action {
     # TODO: If a "NONE" box and another are checked somehow (javascript failed), we should pay attention to the "NONE" box
     my $prefs_set = 0;
     OPTION: foreach my $option ( @$messaging_options ) {
-        my $updater = { %{ $target_params }, 
-                        message_attribute_id    => $option->{'message_attribute_id'} };
-        
+        my $updater = { borrowernumber          => $target_params->{'borrowernumber'},
+                         message_attribute_id    => $option->{'message_attribute_id'} };
+
+        my @transport_methods = $query->param($option->{'message_attribute_id'});
+        # Messaging preference validation. Make sure there is a valid contact information
+        # provided for every transport method. Otherwise remove the transport method,
+        # because the message cannot be delivered with this method!
+        if ((defined $query->param('email') && !$query->param('email') ||
+            !defined $query->param('email') && !$target_params->{'email'} && exists $target_params->{'email'})
+            && (my $transport_id = (List::MoreUtils::firstidx { $_ eq "email" } @transport_methods)) >-1) {
+
+            splice(@transport_methods, $transport_id, 1);# splice the email transport method for this message
+        }
+        if ((defined $query->param('phone') && !$query->param('phone') ||
+            !defined $query->param('phone') && !$target_params->{'phone'} && exists $target_params->{'phone'})
+            && (my $transport_id = (List::MoreUtils::firstidx { $_ eq "phone" } @transport_methods)) >-1) {
+
+            splice(@transport_methods, $transport_id, 1);# splice the phone transport method for this message
+        }
+        if ((defined $query->param('SMSnumber') && !$query->param('SMSnumber') ||
+            !defined $query->param('SMSnumber') && !$target_params->{'smsalertnumber'} && exists $target_params->{'smsalertnumber'})
+            && (my $transport_id = (List::MoreUtils::firstidx { $_ eq "sms" } @transport_methods)) >-1) {
+
+            splice(@transport_methods, $transport_id, 1);# splice the sms transport method for this message
+        }
+
+        if (@transport_methods > 0) {
+            $query->param($option->{'message_attribute_id'}, @transport_methods);
+        } else {
+            $query->delete($option->{'message_attribute_id'});
+        }
+
         # find the desired transports
         @{$updater->{'message_transport_types'}} = $query->param( $option->{'message_attribute_id'} );
         next OPTION unless $updater->{'message_transport_types'};
@@ -108,7 +137,7 @@ sub handle_form_action {
         C4::Members::Messaging::SetMessagingPreferencesFromDefaults( $target_params );
     }
     # show the success message
-    $template->param( settings_updated => 1 );
+    $template->param( settings_updated => 1 ) if (defined $template);
 }
 
 =head2 set_form_values

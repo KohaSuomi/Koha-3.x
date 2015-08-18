@@ -801,6 +801,14 @@ sub ModMember {
         if ( $data{categorycode} and $data{categorycode} ne $old_categorycode ) {
             AddEnrolmentFeeIfNeeded( $data{categorycode}, $data{borrowernumber} );
         }
+        
+        # Validate messaging preferences if any of the following field has been removed
+        if ((not Koha::Validation::validate_email($data{email}) or
+             not Koha::Validation::validate_phonenumber($data{phone})) and
+             not exists $data{smsalertnumber}) {
+            # Make sure there are no misconfigured preferences - if there is, delete them.
+            C4::Members::Messaging::DeleteAllMisconfiguredPreferences($data{borrowernumber});
+        }
 
         logaction("MEMBERS", "MODIFY", $data{'borrowernumber'}, "UPDATE (executed w/ arg: $data{'borrowernumber'})") if C4::Context->preference("BorrowersLog");
     }

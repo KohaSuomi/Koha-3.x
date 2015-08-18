@@ -26,6 +26,7 @@ use Modern::Perl;
 
 use C4::Context;
 use C4::Debug;
+use C4::Form::MessagingPreferences;
 use C4::SQLHelper qw(InsertInTable UpdateInTable);
 
 sub new {
@@ -206,6 +207,14 @@ sub ApproveModifications {
     my $data = $self->GetModifications({ borrowernumber => $borrowernumber });
 
     if ( UpdateInTable( "borrowers", $data ) ) {
+        # Validate messaging preferences if any of the following field has been removed
+        if ((not Koha::Validation::validate_email($data->{email}) or
+             not Koha::Validation::validate_phonenumber($data->{phone}) or
+             not Koha::Validation::validate_phonenumber($data->{'smsalertnumber'}))) {
+            # Make sure there are no misconfigured preferences - if there is, delete them.
+            C4::Members::Messaging::DeleteAllMisconfiguredPreferences($borrowernumber);
+        }
+        
         $self->DelModifications({ borrowernumber => $borrowernumber });
     }
 }

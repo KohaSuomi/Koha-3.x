@@ -23,6 +23,9 @@
             <div class="span10">
                 <div id="usermessaging">
                     <h3>Your messaging settings</h3>
+                    [% IF ( ValidateEmailAddress ) %]<div id="required-email" class="alert" style="[% IF BORROWER_INF.email %]display:none;[% END %]"><h4>Primary email</h4> is required in order to set Email preferences.</div>[% END %]
+                    [% IF ( TalkingTechItivaPhone AND ValidatePhoneNumber ) %]<div id="required-phone" class="alert" style="[% IF BORROWER_INF.phone %]display:none;[% END %]"><h4>Primary phone</h4> is required in order to set Phone preferences.</div>[% END %]
+                    [% IF ( SMSSendDriver AND ValidatePhoneNumber ) %]<div id="required-sms" class="alert" style="[% IF BORROWER_INF.smsalertnumber %]display:none;[% END %]"><h4>SMS number </h4> is required in order to set SMS preferences.</div>[% END %]
                     [% IF ( settings_updated ) %]
                         <div class="alert alert-success"><h4>Settings updated</h4></div>
                     [% END %]
@@ -192,13 +195,29 @@
             error.css('width', 'auto');
         }
     });
+    [% IF ( ValidateEmailAddress ) %]
+        [% IF !BORROWER_INF.email %]
+        disableCheckboxesWithInvalidPreferences($("#email"), "email");
+        [% END %]
+    [% END %]
     [% IF ( ValidatePhoneNumber ) %]
-    $("#SMSnumber").on("change", function(){
+        [% IF !BORROWER_INF.smsalertnumber %]
+        disableCheckboxesWithInvalidPreferences($("#SMSnumber"), "sms");
+        [% END %]
+        [% IF !BORROWER_INF.phone %]
+        disableCheckboxesWithInvalidPreferences($("#phone"), "phone");
+        [% END %]
+
+        $("#SMSnumber").on("input", function(){
+            disableCheckboxesWithInvalidPreferences($(this), "sms");
+        });
+        $("#SMSnumber").on("change", function(){
             $(this).val($.trim($(this).val()));
-    });
+        });
     [% END %]
   });
 //]]>
 </script>
 <script type="text/javascript" src="/opac-tmpl/bootstrap/lib/jquery/plugins/jquery.validate.min.js"></script>
+<script type="text/javascript" src="[% interface %]/[% theme %]/js/messaging-preference.js"></script>
 [% END %]

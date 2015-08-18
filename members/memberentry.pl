@@ -458,7 +458,7 @@ if ((!$nok) and $nodouble and ($op eq 'insert' or $op eq 'save')){
             C4::Members::Attributes::SetBorrowerAttributes($borrowernumber, $extended_patron_attributes);
         }
         if (C4::Context->preference('EnhancedMessagingPreferences') and $input->param('setting_messaging_prefs')) {
-            C4::Form::MessagingPreferences::handle_form_action($input, { borrowernumber => $borrowernumber }, $template);
+            C4::Form::MessagingPreferences::handle_form_action($input, \%data, $template);
         }
 	}
 	print scalar ($destination eq "circ") ? 
