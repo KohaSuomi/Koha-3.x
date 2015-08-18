@@ -218,13 +218,13 @@ This function is used to import the btj full bibliographic records.
 =cut
 
 sub stageFromFileSelectionlist {
-    my ($filePath, $comment, $encoding) = @_;
+    my ($filePath, $comment, $encoding, $matcherid) = @_;
 
     ##Push the Kirjavälitys selection list to staged records batches.
     my @args = ($ENV{KOHA_PATH}.'/misc/stage_file.pl',
                 '--file '.$filePath,
                 '--encoding '.$encoding,
-                '--match 1',
+                '--match '.($matcherid || 1),
                 '--comment "'.$comment.'"',
                 '--format ISO2709');
 
@@ -432,7 +432,7 @@ sub processBTJBibliolistType {
 
             $ftp->get($bibliosBatch, $listdirectory.$localBatchFileName);
 
-            stageFromFileSelectionlist($listdirectory.$localBatchFileName, 'List type '.$listType, $vendorConfig->{biblioEncoding});
+            stageFromFileSelectionlist($listdirectory.$localBatchFileName, 'List type '.$listType, $vendorConfig->{biblioEncoding}, $vendorConfig->{matcher});
         } catch {
             if (blessed($_)) {
                 if ($_->isa('Koha::Exception::DuplicateObject')) {
