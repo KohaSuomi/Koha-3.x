@@ -62,8 +62,8 @@ if ( defined $query->param('modify') && $query->param('modify') eq 'yes' ) {
     my $valid_smsnumber = Koha::Validation::validate_phonenumber($query->param('SMSnumber'));
     $template->param(invalid_smsnumber => 1) if not $valid_smsnumber;
     
-    # If they've modified the SMS number, record it.
-    if ( ( defined $query->param('SMSnumber') ) && ( $query->param('SMSnumber') ne $borrower->{'mobile'} ) && $valid_smsnumber ) {
+    my $sms = $query->param('SMSnumber');
+    if ( defined $sms && $valid_smsnumber && ( $borrower->{'smsalertnumber'} // '' ) ne $sms ) {
         ModMember( borrowernumber => $borrowernumber,
                    smsalertnumber => $query->param('SMSnumber') );
         $borrower = GetMemberDetails( $borrowernumber );
@@ -77,7 +77,7 @@ C4::Form::MessagingPreferences::set_form_values({ borrowernumber     => $borrowe
 # warn( Data::Dumper->Dump( [ $messaging_options ], [ 'messaging_options' ] ) );
 $template->param( BORROWER_INFO         => [ $borrower ],
                   messagingview         => 1,
-                  SMSnumber => defined $borrower->{'smsalertnumber'} ? $borrower->{'smsalertnumber'} : $borrower->{'mobile'},
+                  SMSnumber => $borrower->{'smsalertnumber'} ? $borrower->{'smsalertnumber'} : $borrower->{'mobile'},
                   SMSSendDriver                =>  C4::Context->preference("SMSSendDriver"),
                   TalkingTechItivaPhone        =>  C4::Context->preference("TalkingTechItivaPhoneNotification") );
 
