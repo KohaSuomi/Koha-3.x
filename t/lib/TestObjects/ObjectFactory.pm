@@ -166,6 +166,11 @@ sub tearDownTestContext {
         t::lib::TestObjects::BiblioFactory->deleteTestGroup($stash->{biblio});
         delete $stash->{biblio};
     }
+    if ($stash->{atomicupdate}) {
+        require t::lib::TestObjects::AtomicUpdateFactory;
+        t::lib::TestObjects::AtomicUpdateFactory->deleteTestGroup($stash->{atomicupdate});
+        delete $stash->{atomicupdate};
+    }
     if ($stash->{borrower}) {
         require t::lib::TestObjects::BorrowerFactory;
         t::lib::TestObjects::BorrowerFactory->deleteTestGroup($stash->{borrower});

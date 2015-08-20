@@ -1877,6 +1877,20 @@ CREATE TABLE reports_dictionary ( -- definitions (or snippets of SQL) stored for
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
+-- Table structure for table `atomicupdates`
+--
+
+DROP TABLE IF EXISTS `atomicupdates`;
+CREATE TABLE `atomicupdates` (
+  `atomicupdate_id` int(11) unsigned NOT NULL auto_increment,
+  `issue_id` varchar(20) NOT NULL,
+  `filename` varchar(128) NOT NULL,
+  `modification_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY  (`atomicupdate_id`),
+  UNIQUE KEY `atomic_issue_id` (`issue_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+--
 -- Table structure for table `reserveconstraints`
 --
 
@@ -2059,6 +2073,20 @@ CREATE TABLE `serial` (
   `routingnotes` text,
   PRIMARY KEY  (`serialid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `atomicupdates`
+--
+
+DROP TABLE IF EXISTS `atomicupdates`;
+CREATE TABLE `atomicupdates` (
+  `atomicupdate_id` int(11) unsigned NOT NULL auto_increment,
+  `issue_id` varchar(20) NOT NULL,
+  `filename` varchar(128) NOT NULL,
+  `modification_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY  (`atomicupdate_id`),
+  UNIQUE KEY `atomic_issue_id` (`issue_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 --
 -- Table structure for table `sessions`

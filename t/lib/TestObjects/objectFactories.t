@@ -30,6 +30,8 @@ use t::lib::TestObjects::BorrowerFactory;
 use Koha::Borrowers;
 use t::lib::TestObjects::ItemFactory;
 use Koha::Items;
+use t::lib::TestObjects::AtomicUpdateFactory;
+use Koha::AtomicUpdater;
 use t::lib::TestObjects::BiblioFactory;
 use Koha::Biblios;
 use t::lib::TestObjects::CheckoutFactory;
@@ -308,6 +310,43 @@ sub testLetterTemplateFactory {
     $f->deleteTestGroup($objects);
     $letterTemplate = Koha::LetterTemplates->find($hashLT);
     ok(not(defined($letterTemplate)), "LetterTemplate 'circulation-ODUE1-CPL-print' deleted");
+};
+
+
+
+########## AtomicUpdateFactory subtests ##########
+subtest 't::lib::TestObjects::AtomicUpdateFactory' => \&testAtomicUpdateFactory;
+sub testAtomicUpdateFactory {
+    my ($atomicUpdater, $atomicupdate);
+    my $subtestContext = {};
+    ##Create and Delete using dependencies in the $testContext instantiated in previous subtests.
+    my $atomicupdates = t::lib::TestObjects::AtomicUpdateFactory->createTestGroup([
+                            {'issue_id' => 'Bug10',
+                             'filename' => 'Bug10-RavingRabbitsMayhem.pl',
+                             'modification_time' => '2015-01-02 15:59:32',},
+                            {'issue_id' => 'Bug11',
+                             'filename' => 'Bug11-RancidSausages.perl',
+                             'modification_time' => '2015-01-02 15:59:33',},
+                            ],
+                            undef, $subtestContext);
+    $atomicUpdater = Koha::AtomicUpdater->new();
+    $atomicupdate = $atomicUpdater->find({issue_id => $atomicupdates->{Bug10}->issue_id});
+    is($atomicupdate->issue_id,
+       'Bug10',
+       "Bug10-RavingRabbitsMayhem created");
+    $atomicupdate = $atomicUpdater->find({issue_id => $atomicupdates->{Bug11}->issue_id});
+    is($atomicupdate->issue_id,
+       'Bug11',
+       "Bug11-RancidSausages created");
+
+    t::lib::TestObjects::ObjectFactory->tearDownTestContext($subtestContext);
+
+    $atomicupdate = $atomicUpdater->find({issue_id => $atomicupdates->{Bug10}->issue_id});
+    ok(not($atomicupdate),
+       "Bug10-RavingRabbitsMayhem deleted");
+    $atomicupdate = $atomicUpdater->find({issue_id => $atomicupdates->{Bug11}->issue_id});
+    ok(not($atomicupdate),
+       "Bug11-RancidSausages created");
 };
 
 
