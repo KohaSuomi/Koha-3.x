@@ -42,6 +42,7 @@ BEGIN {
 
 
 our $fields = get_fields();
+our $tmpSelectAlias = 'tmp';
 
 sub get_fields {
     my $r = C4::Context->preference('StatisticsFields') || 'location|itype|ccode';
@@ -59,14 +60,22 @@ sub get_fields {
 sub construct_query {
     my $count    = shift;
     my $subquery = shift;
-    my @select_fields = split '\|', $fields;
+
+    my @select_fields;
+    #Some DB engines and/or MySQL variants cannot cope with return-keyword, thus it needs to be prefixed.
+    if ($subquery =~ /$tmpSelectAlias$/) {
+        @select_fields = map {"$tmpSelectAlias.$_"} split('\|', $fields);
+    }
+    else {
+        @select_fields = map {($_ =~ /return/) ? "i.$_" : $_} split('\|', $fields);
+    }
+
     my $query = "SELECT COUNT(*) as count_$count,";
     $query .= join ',', @select_fields;
 
     $query .= " " . $subquery;
 
-    $fields =~ s/\|/,/g;
-    $query .= " GROUP BY $fields;";
+    $query .= " GROUP BY ".join(',', @select_fields);
 
     return $query;
 
@@ -81,10 +90,10 @@ sub GetTotalIssuesTodayByBorrower {
 
     my $query = construct_query "total_issues_today",
         "FROM (
-            SELECT it.* FROM issues i, items it WHERE i.itemnumber = it.itemnumber AND i.borrowernumber = ? AND DATE(i.issuedate) = CAST(now() AS date)
+            SELECT it.*, i.return FROM issues i, items it WHERE i.itemnumber = it.itemnumber AND i.borrowernumber = ? AND DATE(i.issuedate) = CAST(now() AS date)
             UNION
-            SELECT it.* FROM old_issues oi, items it WHERE oi.itemnumber = it.itemnumber AND oi.borrowernumber = ? AND DATE(oi.issuedate) = CAST(now() AS date)
-        ) tmp";     # alias is required by MySQL
+            SELECT it.*, oi.return FROM old_issues oi, items it WHERE oi.itemnumber = it.itemnumber AND oi.borrowernumber = ? AND DATE(oi.issuedate) = CAST(now() AS date)
+        ) $tmpSelectAlias";     # alias is required by MySQL
 
     my $sth = $dbh->prepare($query);
     $sth->execute($borrowernumber, $borrowernumber);
@@ -114,10 +123,10 @@ sub GetPrecedentStateByBorrower {
 
     my $query = construct_query "precedent_state",
         "FROM (
-            SELECT it.* FROM issues i, items it WHERE i.borrowernumber = ? AND i.itemnumber = it.itemnumber AND DATE(i.issuedate) < CAST(now() AS date)
+            SELECT it.*, i.return FROM issues i, items it WHERE i.borrowernumber = ? AND i.itemnumber = it.itemnumber AND DATE(i.issuedate) < CAST(now() AS date)
             UNION
-            SELECT it.* FROM old_issues oi, items it WHERE oi.borrowernumber = ? AND oi.itemnumber = it.itemnumber AND DATE(oi.issuedate) < CAST(now() AS date) AND DATE(oi.returndate) = CAST(now() AS date)
-        ) tmp";     # alias is required by MySQL
+            SELECT it.*, oi.return FROM old_issues oi, items it WHERE oi.borrowernumber = ? AND oi.itemnumber = it.itemnumber AND DATE(oi.issuedate) < CAST(now() AS date) AND DATE(oi.returndate) = CAST(now() AS date)
+        ) $tmpSelectAlias";     # alias is required by MySQL
 
     my $sth = $dbh->prepare($query);
     $sth->execute($borrowernumber, $borrowernumber);
