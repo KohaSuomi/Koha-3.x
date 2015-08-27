@@ -46,6 +46,8 @@ use t::lib::TestObjects::FileFactory;
 use File::Slurp;
 use File::Fu::File;
 use t::lib::TestObjects::SystemPreferenceFactory;
+use t::lib::TestObjects::MessageQueueFactory;
+use C4::Letters;
 use t::lib::TestObjects::HoldFactory;
 use C4::Context;
 
@@ -562,6 +564,54 @@ sub testSystemPreferenceFactory {
     #Delete them
     t::lib::TestObjects::ObjectFactory->tearDownTestContext($subtestContext);
     is(C4::Context->preference("opacuserlogin"), $current_pref_value, "System Preference opacuserlogin restored to '".(($current_pref_value) ? $current_pref_value:0)."' after test group deletion");
+};
+
+
+
+########## MessageQueueFactory subtests ##########
+subtest 't::lib::TestObjects::MessageQueueFactory' => \&testMessageQueueFactory;
+sub testMessageQueueFactory {
+    my $subtestContext = {};
+
+    my $messages = t::lib::TestObjects::MessageQueueFactory->createTestGroup([{
+        subject => "The quick brown fox",
+        content => "Jumps over the lazy dog.",
+        cardnumber => '11A001',
+        message_transport_type => 'sms',
+        from_address => '11A001@example.com',
+    },
+
+        ], undef, $subtestContext);
+
+    # check that the message exists in queue
+    my $queued_messages = C4::Letters->_get_unsent_messages();
+
+    my $found_testMessage = 0;
+    foreach my $message (@$queued_messages){
+        if ($message->{from_address} eq '11A001@example.com'){
+            $found_testMessage = 1;
+            last;
+        }
+    }
+
+    ok($found_testMessage, 'MessageQueue \'11A001@example.com\', message_queue match.');
+
+    # delete the queued message
+    t::lib::TestObjects::MessageQueueFactory->deleteTestGroup($messages);
+
+    # confirm the deletion
+    $queued_messages = C4::Letters->_get_unsent_messages();
+
+    $found_testMessage = 0;
+    foreach my $message (@$queued_messages){
+        if ($message->{from_address} eq '11A001@example.com'){
+            $found_testMessage = 1;
+            last;
+        }
+    }
+
+    is($found_testMessage, 0, 'MessageQueue \'11A001@example.com\', deleted.');
+
 };
 
 
