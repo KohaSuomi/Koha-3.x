@@ -1176,9 +1176,10 @@
                             </div>
                         [% END %]
                         <span class="shelvingloc">[% ITEM_RESULT.location_description %]</span>
+                        <span class="genre">[% ITEM_RESULT.genre %]</span>
                     </td>
                     [% IF ( itemdata_ccode ) %]
-                        <td class="collection">[% ITEM_RESULT.ccode %]</td>
+                        <td class="collection">[% ITEM_RESULT.ccode %]<br/><span class="newcontent">[% ITEM_RESULT.newcontent %]</span></td>
                     [% END %]
                     <td class="call_no" property="sku">
                         [% IF ( ITEM_RESULT.itemcallnumber ) %]

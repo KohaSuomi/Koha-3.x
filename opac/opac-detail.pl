@@ -51,6 +51,7 @@ use C4::Images;
 use Koha::DateUtils;
 use C4::HTML5Media;
 use C4::CourseReserves qw(GetItemCourseReservesInfo);
+use Data::Dumper;
 
 BEGIN {
 	if (C4::Context->preference('BakerTaylorEnabled')) {
@@ -527,6 +528,8 @@ if ( $itemtype ) {
     $dat->{'description'} = $itemtypes->{$itemtype}->{'description'};
 }
 my $shelflocations =GetKohaAuthorisedValues('items.location',$dat->{'frameworkcode'}, 'opac');
+my $genre =GetKohaAuthorisedValues('items.genre',$dat->{'frameworkcode'}, 'opac');
+my $newcontent =GetKohaAuthorisedValues('items.newcontent',$dat->{'frameworkcode'}, 'opac');
 my $collections =  GetKohaAuthorisedValues('items.ccode',$dat->{'frameworkcode'}, 'opac');
 my $copynumbers = GetKohaAuthorisedValues('items.copynumber',$dat->{'frameworkcode'}, 'opac');
 
@@ -620,6 +623,12 @@ if ( not $viewallitems and @items > $max_items_to_display ) {
     $itm->{'copynumber'} = $copynumbers->{$copynumber} if ( defined($copynumbers) && defined($copynumber) && exists( $copynumbers->{$copynumber} ) );
     if ( defined $itm->{'location'} ) {
         $itm->{'location_description'} = $shelflocations->{ $itm->{'location'} };
+    }
+    if ( defined $itm->{'genre'} ) {
+        $itm->{'genre'} = $genre->{ $itm->{'genre'} };
+    }
+    if ( defined $itm->{'newcontent'} ) {
+        $itm->{'newcontent'} = $newcontent->{ $itm->{'newcontent'} };
     }
     if (exists $itm->{itype} && defined($itm->{itype}) && exists $itemtypes->{ $itm->{itype} }) {
         $itm->{'imageurl'}    = getitemtypeimagelocation( 'opac', $itemtypes->{ $itm->{itype} }->{'imageurl'} );
