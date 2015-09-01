@@ -386,10 +386,11 @@ if ( ($op eq 'modify' || $op eq 'insert' || $op eq 'save'|| $op eq 'duplicate') 
     }
 }
 
-# KD#1519 Fix for saving patron phone numbers when other phone and sms-number are the same (check disabled).
-if (defined $input->param('SMSnumber')) {
-    if (Koha::Validation::validate_phonenumber($input->param('SMSnumber'))){
-        $newdata{smsalertnumber} = $input->param('SMSnumber');
+# BZ 14683: Do not mixup mobile [read: other phone] with smsalertnumber
+my $sms = $input->param('SMSnumber');
+if ( defined $sms ) {
+    if (Koha::Validation::validate_phonenumber($sms)){
+        $newdata{smsalertnumber} = $sms;
     } else {
         push (@errors, "ERROR_bad_smsnumber");
     }
@@ -708,7 +709,7 @@ if (C4::Context->preference('EnhancedMessagingPreferences')) {
         C4::Form::MessagingPreferences::set_form_values({ borrowernumber => $borrowernumber }, $template);
     }
     $template->param(SMSSendDriver => C4::Context->preference("SMSSendDriver"));
-    $template->param(SMSnumber     => defined $data{'smsalertnumber'} ? $data{'smsalertnumber'} : $data{'mobile'});
+    $template->param(SMSnumber     => $data{'smsalertnumber'} );
     $template->param(TalkingTechItivaPhone => C4::Context->preference("TalkingTechItivaPhoneNotification"));
 }
 
