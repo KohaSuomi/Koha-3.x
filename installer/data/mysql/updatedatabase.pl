@@ -8938,11 +8938,40 @@ if ( CheckVersion($DBversion) ) {
 $DBversion = "3.16.00.XXX";
 if (CheckVersion($DBversion)) {
     $dbh->do(q{
-        ALTER TABLE collections_tracking add date_added DATETIME;
-        ALTER TABLE collections_tracking add timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+        ALTER TABLE collections_tracking add date_added DATETIME
     });
 
     print "Upgrade to $DBversion done\n";
+    SetVersion($DBversion);
+}
+
+$DBversion = "3.16.00.XXX";
+if (CheckVersion($DBversion)) {
+    $dbh->do(q{
+        ALTER TABLE collections_tracking add timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    });
+
+    print "Upgrade to $DBversion done\n";
+    SetVersion($DBversion);
+}
+
+$DBversion = "3.16.00.XXX";
+if (CheckVersion($DBversion)) {
+    $dbh->do(q{
+        ALTER TABLE items ADD COLUMN genre VARCHAR(10) DEFAULT NULL
+    });
+
+    print "Upgrade to LUMME #211 done\n";
+    SetVersion($DBversion);
+}
+
+$DBversion = "3.16.00.XXX";
+if (CheckVersion($DBversion)) {
+    $dbh->do(q{
+        ALTER TABLE items ADD COLUMN sub_location VARCHAR(80) DEFAULT NULL
+    });
+
+    print "Upgrade to LUMME #211 done\n";
     SetVersion($DBversion);
 }
 

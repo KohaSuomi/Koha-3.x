@@ -3366,7 +3366,7 @@ sub CalcDateDue {
             : qq{issuelength};
 
     ##OPLIB hack crack fat jack!  Set the shortloan (lyhytlaina) and fastloan (pikalaina) durations.
-    if ($item && $item->{ccode} eq 'LYLA') { #LYLA ccode is removed via a cronjob.
+    if ($item && ($item->{ccode} eq 'LYLA' || $item->{sub_location} eq 'NEW')) { #LYLA ccode is removed via a cronjob.
         if ( $loanlength->{lengthunit} eq 'hours' ) {
             $loanlength->{$length_key} = 336;
         } else {
