@@ -571,11 +571,11 @@ function verify_images() {
                         </td>
                     [% END %]
                     <td class="location">[% UNLESS ( singlebranchmode ) %][% item.branchname %] [% END %]</td>
-                    <td class="homebranch">[% item.homebranch %]<span class="shelvingloc">[% item.location %]</span>
+                    <td class="homebranch">[% item.homebranch %]<span class="shelvingloc">[% item.location %]</span><span class="genre">[% item.genre %]</span>
                     [% IF item.itemsCollection %]
                         <span class="shelvingloc">(Col.: <a href="/cgi-bin/koha/rotating_collections/addItems.pl?colId=[% item.itemsCollection %]">[% item.itemsCollection%]</a>)</span> </td>
                     [% END %]
-                    [% IF ( itemdata_ccode ) %]<td>[% item.ccode %]</td>[% END %]
+                    [% IF ( itemdata_ccode ) %]<td>[% item.ccode %]<br/><span class="newcontent">[% item.newcontent %]</span></td>[% END %]
                     <td class="itemcallnumber">[% IF ( item.itemcallnumber ) %] [% item.itemcallnumber %][% END %]</td>
                     <td class="status">
 

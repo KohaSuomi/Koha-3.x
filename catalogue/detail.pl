@@ -184,6 +184,9 @@ $dat->{'showncount'} = scalar @items + @hostitems;
 $dat->{'hiddencount'} = scalar @all_items + @hostitems - scalar @items;
 
 my $shelflocations = GetKohaAuthorisedValues('items.location', $fw);
+#LUMME #211
+my $genre = GetKohaAuthorisedValues('items.genre', $fw);
+my $newcontent = GetKohaAuthorisedValues('items.newcontent', $fw);
 my $collections    = GetKohaAuthorisedValues('items.ccode'   , $fw);
 my $copynumbers    = GetKohaAuthorisedValues('items.copynumber', $fw);
 my (@itemloop, @otheritemloop, %itemfields);
@@ -221,6 +224,11 @@ foreach my $item (@items) {
     # same thing for copy number
     my $shelfcode = $item->{'location'};
     $item->{'location'} = $shelflocations->{$shelfcode} if ( defined( $shelfcode ) && defined($shelflocations) && exists( $shelflocations->{$shelfcode} ) );
+    #LUMME #211
+    my $genrecode = $item->{'genre'};
+    $item->{'genre'} = $genre->{$genrecode} if ( defined( $genrecode ) && defined($genre) && exists( $genre->{$genrecode} ) );
+     my $newcode = $item->{'newcontent'};
+    $item->{'newcontent'} = $newcontent->{$newcode} if ( defined( $newcode) && defined($newcontent) && exists( $newcontent->{$newcode} ) );
     my $ccode = $item->{'ccode'};
     $item->{'ccode'} = $collections->{$ccode} if ( defined( $ccode ) && defined($collections) && exists( $collections->{$ccode} ) );
     my $copynumber = $item->{'copynumber'};

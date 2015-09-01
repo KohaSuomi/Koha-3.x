@@ -1241,7 +1241,7 @@ a .term {
 }
 
 /* style for shelving location in catalogsearch */
-.shelvingloc {
+.shelvingloc, .genre, .newcontent {
     display : block;
     font-style : italic;
 }
