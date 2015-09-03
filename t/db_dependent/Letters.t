@@ -19,7 +19,7 @@
 
 use Modern::Perl;
 
-use Test::More tests => 5;
+use Test::More tests => 6;
 
 use C4::Context;
 use C4::Letters;
@@ -76,5 +76,11 @@ is(
     'failed',
     'message marked failed if tried to send SMS message for borrower with no smsalertnumber set (bug 11208)'
 );
+
+# ResendMessage
+C4::Letters::ResendMessage($messages->[0]->{message_id});
+$messages = C4::Letters::GetQueuedMessages({ borrowernumber => $borrowernumber });
+is($messages->[0]->{status},'pending', 'ResendMessage sets status to pending correctly (bug 12426)');
+
 
 $dbh->rollback;
