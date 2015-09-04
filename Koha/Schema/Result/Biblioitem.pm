@@ -213,6 +213,12 @@ __PACKAGE__->table("biblioitems");
   data_type: 'longtext'
   is_nullable: 0
 
+=head2 datereceived
+
+  data_type: 'timestamp'
+  datetime_undef_if_invalid: 1
+  is_nullable: 1
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -294,6 +300,12 @@ __PACKAGE__->add_columns(
   { data_type => "integer", is_nullable => 1 },
   "marcxml",
   { data_type => "longtext", is_nullable => 0 },
+  "datereceived",
+  {
+    data_type => "timestamp",
+    datetime_undef_if_invalid => 1,
+    is_nullable => 1,
+  },
 );
 
 =head1 PRIMARY KEY
@@ -341,8 +353,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07025 @ 2014-05-05 17:59:34
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:QE7ghWQ1JZw+IBDRwvgvSA
+# Created by DBIx::Class::Schema::Loader v0.07039 @ 2015-09-04 15:24:15
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:ZRjaiyxYY+oyJqje876bsw
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

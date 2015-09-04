@@ -46,7 +46,7 @@ __PACKAGE__->table("items");
 
   data_type: 'varchar'
   is_nullable: 1
-  size: 20
+  size: 21
 
 =head2 dateaccessioned
 
@@ -268,6 +268,12 @@ __PACKAGE__->table("items");
   is_nullable: 1
   size: 32
 
+=head2 datereceived
+
+  data_type: 'timestamp'
+  datetime_undef_if_invalid: 1
+  is_nullable: 1
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -283,7 +289,7 @@ __PACKAGE__->add_columns(
     is_nullable    => 0,
   },
   "barcode",
-  { data_type => "varchar", is_nullable => 1, size => 20 },
+  { data_type => "varchar", is_nullable => 1, size => 21 },
   "dateaccessioned",
   { data_type => "date", datetime_undef_if_invalid => 1, is_nullable => 1 },
   "booksellerid",
@@ -373,6 +379,12 @@ __PACKAGE__->add_columns(
   { data_type => "varchar", is_nullable => 1, size => 32 },
   "stocknumber",
   { data_type => "varchar", is_nullable => 1, size => 32 },
+  "datereceived",
+  {
+    data_type => "timestamp",
+    datetime_undef_if_invalid => 1,
+    is_nullable => 1,
+  },
 );
 
 =head1 PRIMARY KEY
@@ -508,7 +520,7 @@ __PACKAGE__->belongs_to(
   {
     is_deferrable => 1,
     join_type     => "LEFT",
-    on_delete     => "CASCADE",
+    on_delete     => "RESTRICT",
     on_update     => "CASCADE",
   },
 );
@@ -528,7 +540,7 @@ __PACKAGE__->belongs_to(
   {
     is_deferrable => 1,
     join_type     => "LEFT",
-    on_delete     => "CASCADE",
+    on_delete     => "RESTRICT",
     on_update     => "CASCADE",
   },
 );
@@ -609,8 +621,8 @@ __PACKAGE__->might_have(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07025 @ 2013-12-19 06:29:02
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:h6fPG62SifJ5T8QKPZNBBw
+# Created by DBIx::Class::Schema::Loader v0.07039 @ 2015-09-04 15:24:16
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:SCN0D+E8ToZQ8EfeBcke7w
 
 __PACKAGE__->belongs_to(
     "biblio",
