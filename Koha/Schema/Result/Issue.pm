@@ -188,6 +188,37 @@ __PACKAGE__->belongs_to(
 # Created by DBIx::Class::Schema::Loader v0.07010 @ 2015-05-27 17:40:17
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:OajQ1HgHnrU+X7zPmrqcHw
 
+#Stripped from Bug 11703, remove when upgrading.
+__PACKAGE__->belongs_to(
+    "borrower",
+    "Koha::Schema::Result::Borrower",
+    { borrowernumber => "borrowernumber" },
+    { join_type => "LEFT", on_delete => "CASCADE", on_update => "CASCADE" },
+);
+
+__PACKAGE__->belongs_to(
+  "item",
+  "Koha::Schema::Result::Item",
+  { itemnumber => "itemnumber" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
+  },
+);
+
+__PACKAGE__->belongs_to(
+  "branch",
+  "Koha::Schema::Result::Branch",
+  { branchcode => "branchcode" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
+  },
+);
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;
