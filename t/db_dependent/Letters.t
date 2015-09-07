@@ -19,7 +19,7 @@
 
 use Modern::Perl;
 
-use Test::More tests => 12;
+use Test::More tests => 16;
 use Test::MockModule;
 use Test::Warn;
 
@@ -99,6 +99,11 @@ is( $resent, 0, 'The message should not have been resent again' );
 $resent = C4::Letters::ResendMessage();
 is( $resent, undef, 'ResendMessage should return undef if not message_id given' );
 
+# UpdateQueuedMessage
+is(C4::Letters::UpdateQueuedMessage({ message_id => $messages->[0]->{message_id}, content => "changed content" } ), 1, "Message updated correctly");
+$messages = C4::Letters::GetQueuedMessages();
+is($messages->[0]->{content}, "changed content", "Message content was changed correctly");
+
 # Test connectivity Exception (Bug 14791)
 ModMember(borrowernumber => $borrowernumber, smsalertnumber => "+1234567890");
 warning_is { $messages_processed = C4::Letters::SendQueuedMessages(); }
@@ -109,5 +114,10 @@ is( $messages->[0]->{status}, 'pending',
     'Message is still pending after SendQueuedMessages() because of network failure (bug 14791)' );
 is( $messages->[0]->{delivery_note}, 'Connection failed. Attempting to resend.',
     'Message has correct delivery note about resending' );
+
+#DequeueLetter
+is(C4::Letters::DequeueLetter( { message_id => $messages->[0]->{message_id} } ), 1, "message successfully dequeued");
+$messages = C4::Letters::GetQueuedMessages();
+is( @$messages, 0, 'no messages left after dequeue' );
 
 $dbh->rollback;

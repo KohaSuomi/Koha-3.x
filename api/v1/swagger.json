@@ -156,6 +156,204 @@
           { "multi_key_auth": [] }
         ]
       }
+    },
+    "/messages": {
+      "get": {
+        "x-mojo-controller": "Koha::REST::V1::Messages",
+        "operationId": "listMessages",
+        "x-koha-permission": {
+          "messages": "get_message"
+        },
+        "tags": ["messages"],
+       "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "A list of messages",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref" : "#/definitions/message"
+              }
+            }
+          },
+          "404": {
+            "description": "Messages not found",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          }
+        }
+      },
+      "post": {
+        "x-mojo-controller": "Koha::REST::V1::Messages",
+        "operationId": "createMessage",
+        "x-koha-permission": {
+          "messages": "create_message"
+        },
+        "tags": ["messages"],
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "description": "A JSON object containing informations about the new message",
+            "required": true,
+            "schema": { "$ref": "#/definitions/message" }
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "201": {
+            "description": "A message",
+            "schema": {
+                "$ref": "#/definitions/message"
+            }
+          },
+          "400": {
+            "description": "Missing or wrong parameters",
+            "schema": { "$ref": "#/definitions/error" }
+          }
+        }
+      }
+    },
+    "/messages/{messagenumber}": {
+      "put": {
+        "x-mojo-controller": "Koha::REST::V1::Messages",
+        "operationId": "updateMessage",
+        "x-koha-permission": {
+          "messages": "update_message"
+        },
+        "tags": ["messages"],
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "description": "A JSON object containing informations about the new message",
+            "required": false,
+            "schema": { "$ref": "#/definitions/message" }
+          },
+          {
+            "$ref": "#/parameters/messagenumberPathParam"
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "A message",
+            "schema": {
+              "$ref" : "#/definitions/message"
+            }
+          },
+          "400": {
+            "description": "Missing or wrong parameters",
+            "schema": { "$ref": "#/definitions/error" }
+          },
+          "404": {
+            "description": "Message not found",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          }
+        }
+      },
+      "delete": {
+        "x-mojo-controller": "Koha::REST::V1::Messages",
+        "operationId": "deleteMessage",
+        "x-koha-permission": {
+          "messages": "delete_message"
+        },
+        "tags": ["messages"],
+        "parameters": [
+          {
+            "$ref": "#/parameters/messagenumberPathParam"
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+         "204": {
+            "description": "Deleting the message succeeded.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "404": {
+            "description": "Message not found.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          }
+        }
+     },
+      "get": {
+        "x-mojo-controller": "Koha::REST::V1::Messages",
+        "operationId": "getMessage",
+        "x-koha-permission": {
+          "messages": "get_message"
+        },
+        "tags": ["messages"],
+        "parameters": [
+          {
+            "$ref": "#/parameters/messagenumberPathParam"
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "A message",
+            "schema": {
+              "$ref" : "#/definitions/message"
+            }
+          },
+          "404": {
+            "description": "Message not found",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          }
+        }
+      }
+    },
+    "/messages/{messagenumber}/resend": {
+      "post": {
+        "x-mojo-controller": "Koha::REST::V1::Messages",
+        "operationId": "createResend",
+        "description": "Resends a message.",
+        "x-koha-permission": {
+          "messages": "resend_message"
+        },
+        "tags": ["messages"],
+        "parameters": [
+          {
+            "$ref": "#/parameters/messagenumberPathParam"
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "204": {
+            "description": "Resending the message succeeded.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "404": {
+            "description": "Message not found",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          }
+        }
+      }
     }
   },
   "definitions": {
@@ -203,6 +401,62 @@
     "borrowernumber": {
       "description": "Borrower internal identifier"
     },
+    "message": {
+      "type": "object",
+      "properties": {
+        "message_id": {
+          "description": "Message internal identifier",
+          "type": "integer"
+        },
+        "time_queued": {
+          "description": "Date and time of when message was placed in queue",
+          "type": "string"
+        },
+        "borrowernumber": {
+         "$ref": "#/definitions/borrowernumber"
+        },
+        "subject": {
+          "description": "Subject of the message",
+          "type": "string"
+        },
+       "content": {
+          "description": "Content of the message",
+          "type": "string"
+        },
+        "metadata": {
+          "description": "",
+          "type": "string"
+        },
+        "letter_code": {
+          "description": "",
+          "type": "string"
+        },
+        "content_type": {
+         "description": "Content type",
+          "type": "string"
+        },
+        "message_transport_type": {
+          "description": "Transport method. Values accepted by default are 'email', 'sms', 'phone' and 'print'",
+          "type": "string"
+        },
+        "status": {
+          "description": "Delivery status",
+          "type": "string"
+        },
+        "to_address": {
+          "description": "Destination email address",
+          "type": "string"
+        },
+        "from_address": {
+          "description": "Source address of email",
+          "type": "string"
+        },
+        "delivery_note": {
+          "description": "Additional delivery notes",
+          "type": "string"
+        }
+      }
+    },
     "error": {
       "type": "object",
       "properties": {
@@ -225,6 +479,13 @@
       "name": "borrowernumber",
       "in": "path",
       "description": "Internal borrower identifier",
+      "required": "true",
+      "type": "integer"
+    },
+    "messagenumberPathParam": {
+      "name": "messagenumber",
+      "in": "path",
+      "description": "Internal message identifier",
       "required": "true",
       "type": "integer"
     },

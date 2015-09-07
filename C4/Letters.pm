@@ -761,6 +761,34 @@ ENDSQL
     return $dbh->last_insert_id(undef,undef,'message_queue', undef);
 }
 
+=head2 DequeueLetter
+
+  my $success = DequeueLetter( { message_id => $message_id } )
+
+Removes a message from message_queue
+
+return 1 on success, otherwise 0
+
+=cut
+
+sub DequeueLetter {
+    my $params = shift or return;
+
+    return unless exists $params->{'message_id'} or not $params->{'message_id'};
+
+    my $dbh       = C4::Context->dbh();
+    my $statement = << 'ENDSQL';
+DELETE FROM message_queue
+WHERE message_id = ?
+ENDSQL
+
+    my $sth    = $dbh->prepare($statement);
+    my $result = $sth->execute(
+        $params->{'message_id'},              # message_id
+    );
+    return ($result > 0);
+}
+
 =head2 SendQueuedMessages ([$hashref]) 
 
   my $sent = SendQueuedMessages( { verbose => 1 } );
@@ -854,7 +882,7 @@ sub GetQueuedMessages {
 
     my $dbh = C4::Context->dbh();
     my $statement = << 'ENDSQL';
-SELECT message_id, borrowernumber, subject, content, message_transport_type, status, time_queued, delivery_note
+SELECT message_id, borrowernumber, subject, content, metadata, letter_code, message_transport_type, status, time_queued, to_address, from_address, content_type, delivery_note
 FROM message_queue
 ENDSQL
 
@@ -878,6 +906,94 @@ ENDSQL
     my $result = $sth->execute( @query_params );
     return $sth->fetchall_arrayref({});
 }
+
+
+=head2 UpdateQueuedMessage ([$hashref])
+
+  my $message = UpdateQueuedMessage( {
+        borrowernumber => '123', message_id => '100',
+        letter => { subject => "New subject", content => "New content" },
+    } );
+
+Updates the message in message_queue. Message is identified by
+required parameter message_id.
+
+returns:
+1 on success, otherwise 0
+
+=cut
+
+sub UpdateQueuedMessage {
+    my $params = shift;
+
+    if (not $params->{'message_id'}) {
+        warn __PACKAGE__."::UpdateQueuedMessage: param message_id is required";
+        return;
+    }
+
+    my $dbh = C4::Context->dbh();
+    my $statement = << 'ENDSQL';
+UPDATE message_queue
+SET
+ENDSQL
+
+    my @query_params;
+
+    if ($params->{'borrowernumber'}) {
+         $statement .= " borrowernumber = ?, ";
+         push @query_params, $params->{'borrowernumber'};
+    }
+    if ($params->{'subject'}) {
+         $statement .= " subject = ?, ";
+         push @query_params, $params->{'subject'};
+    }
+    if ($params->{'content'}) {
+         $statement .= " content = ?, ";
+         push @query_params, $params->{'content'};
+    }
+    if ($params->{'metadata'}) {
+         $statement .= " metadata = ?, ";
+         push @query_params, $params->{'metadata'};
+    }
+    if ($params->{'letter_code'}) {
+         $statement .= " letter_code = ?, ";
+         push @query_params, $params->{'letter_code'};
+    }
+    if ($params->{'content_type'}) {
+         $statement .= " content_type = ?, ";
+         push @query_params, $params->{'content_type'};
+    }
+    if ($params->{'message_transport_type'}) {
+         $statement .= " message_transport_type = ?, ";
+         push @query_params, $params->{'message_transport_type'};
+    }
+    if ($params->{'status'}) {
+         $statement .= " status = ?, ";
+         push @query_params, $params->{'status'};
+    }
+    if ($params->{'to_address'}) {
+         $statement .= " to_address = ?, ";
+         push @query_params, $params->{'to_address'};
+    }
+    if ($params->{'from_address'}) {
+         $statement .= " from_address = ?, ";
+         push @query_params, $params->{'from_address'};
+    }
+    if ($params->{'delivery_note'}) {
+         $statement .= " delivery_note = ?, ";
+         push @query_params, $params->{'delivery_note'};
+    }
+    return 0 if $statement =~ /SET(\s*)$/;
+    $statement =~ s/,(\s*)$//g; # remove last ,
+
+    $statement .= " WHERE message_id = ?";
+    push @query_params, $params->{'message_id'};
+
+    my $sth = $dbh->prepare( $statement );
+    my $result = $sth->execute( @query_params );
+    return ($result > 0);
+}
+
 
 =head2 GetMessageTransportTypes
 
