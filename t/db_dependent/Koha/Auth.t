@@ -29,6 +29,9 @@ use t::lib::Page::Opac::OpacMain;
 
 use t::lib::TestObjects::BorrowerFactory;
 
+##Enable debug mode for PageObject tests.
+#$ENV{KOHA_PAGEOBJECT_DEBUG} = 1;
+
 ##Setting up the test context
 my $testContext = {};
 
@@ -59,12 +62,14 @@ $permissionManager->grantPermission($borrowers->{'maxi_admin'}, 'superlibrarian'
 eval { #run in a eval-block so we don't die without tearing down the test context
 
     my $mainpage = t::lib::Page::Mainpage->new();
+    testBadPasswordLogin($mainpage);
     testPasswordLoginLogout($mainpage);
     testSuperuserPasswordLoginLogout($mainpage);
     testSuperlibrarianPasswordLoginLogout($mainpage);
     $mainpage->quit();
 
     my $opacmain = t::lib::Page::Opac::OpacMain->new();
+    testBadPasswordLogin($opacmain);
     testOpacPasswordLoginLogout($opacmain);
     testSuperuserPasswordLoginLogout($opacmain);
     testOpacSuperlibrarianPasswordLoginLogout($opacmain);
@@ -88,6 +93,12 @@ sub tearDown {
     ###  STARTING TEST IMPLEMENTATIONS         ###
 ######################################################
 
+sub testBadPasswordLogin {
+    my ($mainpage) = @_;
+    $mainpage->isPasswordLoginAvailable()->failPasswordLogin($borrowers->{'1A01'}->userid(), 'a truly bad password')
+             ->refresh() #Refresh is important in bringing out certain bugs with cookies and misset Userid.
+             ->isPasswordLoginAvailable();
+}
 sub testPasswordLoginLogout {
     my ($mainpage) = @_;
     $mainpage->isPasswordLoginAvailable()->doPasswordLogin($borrowers->{'1A01'}->userid(), $password)
