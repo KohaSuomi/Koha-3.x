@@ -1714,6 +1714,7 @@ necessary to check borrowers.flags.
 sub get_user_subpermissions {
     #@DEPRECATED, USE THE Koha::Auth::PermissionManager
     my $userid = shift;
+    return {} unless $userid;
 
     use Koha::Auth::PermissionManager;
     my $permissionManager = Koha::Auth::PermissionManager->new();
