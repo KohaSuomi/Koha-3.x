@@ -34,6 +34,8 @@ use Koha::DateUtils;
 use Date::Calc qw( Add_Delta_Days );
 use Encode;
 use Carp;
+use Scalar::Util qw( blessed );
+use Try::Tiny;
 
 use vars qw($VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);
 
@@ -774,6 +776,7 @@ sub SendQueuedMessages {
 
     my $unsent_messages = _get_unsent_messages();
     MESSAGE: foreach my $message ( @$unsent_messages ) {
+
         # warn Data::Dumper->Dump( [ $message ], [ 'message' ] );
         warn sprintf( 'sending %s message to patron: %s',
                       $message->{'message_transport_type'},
@@ -783,11 +786,16 @@ sub SendQueuedMessages {
             ); #Print messages are dealt with elsewhere so don't log them needlessly
         # This is just begging for subclassing
         next MESSAGE if ( lc($message->{'message_transport_type'}) eq 'rss' );
-        if ( lc( $message->{'message_transport_type'} ) eq 'email' ) {
-            _send_message_by_email( $message, $params->{'username'}, $params->{'password'}, $params->{'method'} );
-        }
-        elsif ( lc( $message->{'message_transport_type'} ) eq 'sms' ) {
-            _send_message_by_sms( $message );
+        eval {
+            if ( lc( $message->{'message_transport_type'} ) eq 'email' ) {
+                _send_message_by_email( $message, $params->{'username'}, $params->{'password'}, $params->{'method'} );
+            }
+            elsif ( lc( $message->{'message_transport_type'} ) eq 'sms' ) {
+                _send_message_by_sms( $message );
+            }
+        };
+        if ($@) {
+            warn $@;
         }
     }
     return scalar( @$unsent_messages );
@@ -1131,12 +1139,40 @@ sub _send_message_by_sms {
         return;
     }
 
-    my $success = C4::SMS->send_sms( { destination => $member->{'smsalertnumber'},
-                                       message     => $message->{'content'},
-                                     } );
-    _set_message_status( { message_id => $message->{'message_id'},
-                           status     => ($success ? 'sent' : 'failed'),
-                           delivery_note => ($success ? '' : 'No notes from SMS driver') } );
+    my $success;
+    try {
+        $success = C4::SMS->send_sms( { destination => $member->{'smsalertnumber'},
+                                           message     => $message->{'content'},
+                                         } );
+        _set_message_status( { message_id => $message->{'message_id'},
+                               status     => ($success ? 'sent' : 'failed'),
+                               delivery_note => ($success ? '' : 'No notes from SMS driver') } );
+
+    } catch {
+        if (blessed($_)){
+            if ($_->isa('Koha::Exception::ConnectionFailed')){
+                # Keep the message in pending status but
+                # add a delivery note explaining what happened
+                _set_message_status ( { message_id => $message->{'message_id'},
+                                        status     => 'pending',
+                                        delivery_note => 'Connection failed. Attempting to resend.' } );
+            }
+            else {
+                # failsafe: if we catch and unknown exception, set message status to failed
+                _set_message_status( { message_id => $message->{'message_id'},
+                               status     => 'failed',
+                               delivery_note => 'Unknown exception.' } );
+                $_->rethrow();
+            }
+        }
+        else {
+            # failsafe
+            _set_message_status( { message_id => $message->{'message_id'},
+                               status     => 'failed',
+                               delivery_note => 'Unknown non-blessed exception.' } );
+            die $_;
+        }
+    };
 
     return $success;
 }

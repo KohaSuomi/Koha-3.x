@@ -19,11 +19,23 @@
 
 use Modern::Perl;
 
-use Test::More tests => 10;
+use Test::More tests => 12;
+use Test::MockModule;
+use Test::Warn;
 
 use C4::Context;
 use C4::Letters;
 use C4::Members;
+use Koha::Exception::ConnectionFailed;
+
+my $c4sms = new Test::MockModule('C4::SMS');
+$c4sms->mock(
+    'driver' =>
+    sub {
+        warn "Fake SMS driver";
+        return "Example::ExceptionExample";
+    }
+);
 
 my $dbh = C4::Context->dbh;
 
@@ -86,5 +98,16 @@ $resent = C4::Letters::ResendMessage($messages->[0]->{message_id});
 is( $resent, 0, 'The message should not have been resent again' );
 $resent = C4::Letters::ResendMessage();
 is( $resent, undef, 'ResendMessage should return undef if not message_id given' );
+
+# Test connectivity Exception (Bug 14791)
+ModMember(borrowernumber => $borrowernumber, smsalertnumber => "+1234567890");
+warning_is { $messages_processed = C4::Letters::SendQueuedMessages(); }
+    "Fake SMS driver",
+   "SMS sent using the mocked SMS::Send driver subroutine send_sms";
+$messages = C4::Letters::GetQueuedMessages();
+is( $messages->[0]->{status}, 'pending',
+    'Message is still pending after SendQueuedMessages() because of network failure (bug 14791)' );
+is( $messages->[0]->{delivery_note}, 'Connection failed. Attempting to resend.',
+    'Message has correct delivery note about resending' );
 
 $dbh->rollback;

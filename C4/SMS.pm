@@ -36,6 +36,8 @@ use strict;
 use warnings;
 
 use C4::Context;
+use Try::Tiny;
+use Scalar::Util qw ( blessed );
 
 use vars qw( $VERSION );
 
@@ -77,7 +79,10 @@ sub send_sms {
     # warn "using driver: $driver to send message to $params->{'destination'}";
 
     my ($sent, $sender);
-    eval {
+
+    #We might die because SMS::Send $driver is not defined or the sms-number has a bad format
+    #Catch those errors and fail the sms-sending gracefully.
+    try {
         # Create a sender
         $sender = SMS::Send->new( $driver,
                                  _login    => C4::Context->preference('SMSSendUsername'),
@@ -88,14 +93,16 @@ sub send_sms {
         $sent = $sender->send_sms( to   => $params->{'destination'},
                                   text => $params->{'message'},
                              );
+        return $sent;
+    } catch {
+        if (blessed($_) && $_->can('rethrow')) {
+            $_->rethrow();
+        }
+        else {
+            die $_;
+        }
     };
-    #We might die because SMS::Send $driver is not defined or the sms-number has a bad format
-    #Catch those errors and fail the sms-sending gracefully.
-    if ($@) {
-        warn $@;
-        return undef;
-    }
-    # warn 'failure' unless $sent;
+
     return $sent;
 }
 
