@@ -45,6 +45,7 @@ my $atomicupdates = t::lib::TestObjects::AtomicUpdateFactory->createTestGroup([
     package Koha::AtomicUpdater;
     sub _getGitCommits { #instead of requiring a Git repository, we just mock the input.
         return [#Newest commit
+                '2e8a39762b506738195f21c8ff67e4e7bfe6dbba Bug_01243-SingleUpdate',
                 '2e8a39762b506738195f21c8ff67e4e7bfe6d7ab #:-55 : Fiftyfive',
                 '2e8a39762b506738195f21c8ff67e4e7bfe6d7ab #54 - KohaCon in Finland next year',
                 'b447b595acacb0c4823582acf9d8a08902118e59 #53 - Place to be.pl',
@@ -268,6 +269,54 @@ sub listPendingAtomicupdates {
         ok(0, $@);
     }
     t::lib::TestObjects::AtomicUpdateFactory->tearDownTestContext($subtestContext);
+}
+
+subtest "Apply single atomicupdate from file" => \&applySingleAtomicUpdateFromFile;
+sub applySingleAtomicUpdateFromFile {
+    my $subtestContext = {};
+    eval {
+    my $files = t::lib::TestObjects::FileFactory->createTestGroup([
+                        {   filepath => 'atomicupdate/',
+                            filename => 'Bug_01243-SingleUpdate.pl',
+                            content  => '$ENV{ATOMICUPDATE_TESTS_2} = 10;',},
+                        ],
+                        undef, $subtestContext, $testContext);
+    ###  Try first as a dry-run  ###
+    my $atomicUpdater = Koha::AtomicUpdater->new({
+                                                  scriptDir => $files->{'Bug_01243-SingleUpdate.pl'}->dirname(),
+                                                  dryRun => 1,
+                                                });
+
+    $atomicUpdater->applyAtomicUpdate($files->{'Bug_01243-SingleUpdate.pl'}->stringify);
+    my $atomicUpdate = $atomicUpdater->find({issue_id => 'Bug01243'});
+
+    ok(not($atomicUpdate),
+       "--dry-run doesn't add anything");
+    is($ENV{ATOMICUPDATE_TESTS_2},
+       undef,
+       "--dry-run doesn't execute anything");
+
+    ###  Make a change!  ###
+    $atomicUpdater = Koha::AtomicUpdater->new({
+                                                  scriptDir => $files->{'Bug_01243-SingleUpdate.pl'}->dirname(),
+                                                });
+
+    $atomicUpdater->applyAtomicUpdate($files->{'Bug_01243-SingleUpdate.pl'}->stringify);
+    $atomicUpdate = $atomicUpdater->find({issue_id => 'Bug01243'});
+    t::lib::TestObjects::AtomicUpdateFactory->addToContext($atomicUpdate, undef, $subtestContext, $testContext); #Keep track of changes
+
+    is($atomicUpdate->filename,
+       "Bug_01243-SingleUpdate.pl",
+       "Bug_01243-SingleUpdate.pl added to DB");
+    is($ENV{ATOMICUPDATE_TESTS_2},
+       10,
+       "Bug_01243-SingleUpdate.pl executed");
+
+    };
+    if ($@) {
+        ok(0, $@);
+    }
+    t::lib::TestObjects::ObjectFactory->tearDownTestContext($subtestContext);
 }
 
 t::lib::TestObjects::ObjectFactory->tearDownTestContext($testContext);

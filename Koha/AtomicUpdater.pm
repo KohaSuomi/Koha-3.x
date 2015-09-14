@@ -58,6 +58,7 @@ sub new {
     $self->{verbose} = $params->{verbose} || $self->{verbose} || 0;
     $self->{scriptDir} = $params->{scriptDir} || $self->{scriptDir} || C4::Context->config('intranetdir') . '/installer/data/mysql/atomicupdate/';
     $self->{gitRepo} = $params->{gitRepo} || $self->{gitRepo} || $ENV{KOHA_PATH};
+    $self->{dryRun} = $params->{dryRun} || $self->{dryRun} || 0;
 
     return $self;
 }
@@ -166,19 +167,8 @@ sub applyAtomicUpdates {
         my $atomicUpdate = $atomicUpdates->{$issueId};
         next unless $atomicUpdate; #Not each ordered Git commit necessarily have a atomicupdate-script.
 
-        my $filename = $atomicUpdate->filename;
-        print "Applying file '$filename'\n" if $self->{verbose} > 2;
-
-        if ( $filename =~ /\.sql$/ ) {
-            my $installer = C4::Installer->new();
-            my $rv = $installer->load_sql( $self->{scriptDir}.'/'.$filename ) ? 0 : 1;
-        } elsif ( $filename =~ /\.(perl|pl)$/ ) {
-            do $self->{scriptDir}.'/'.$filename;
-        }
-
-        $atomicUpdate->store();
+        $self->applyAtomicUpdate($atomicUpdate);
         $appliedUpdates{$issueId} = $atomicUpdate;
-        print "File '$filename' applied\n" if $self->{verbose} > 2;
     }
 
     #Check that we have actually applied all the updates.
@@ -189,6 +179,38 @@ sub applyAtomicUpdates {
     }
 
     return \%appliedUpdates;
+}
+
+sub applyAtomicUpdate {
+    my ($self, $atomicUpdate) = @_;
+    #Validate params
+    unless ($atomicUpdate) {
+        Koha::Exception::BadParameter->throw(error => __PACKAGE__."->applyAtomicUpdate($atomicUpdate):> Parameter must be a Koha::AtomicUpdate-object or a path to a valid atomicupdates-script!");
+    }
+    if ($atomicUpdate && ref($atomicUpdate) eq '') { #We have a scalar, presumably a filepath to atomicUpdate-script.
+        $atomicUpdate = Koha::AtomicUpdate->new({filename => $atomicUpdate});
+    }
+    $atomicUpdate = Koha::AtomicUpdater->cast($atomicUpdate);
+
+    my $filename = $atomicUpdate->filename;
+    print "Applying file '$filename'\n" if $self->{verbose} > 2;
+
+    unless ($self->{dryRun}) {
+        if ( $filename =~ /\.sql$/ ) {
+            my $installer = C4::Installer->new();
+            my $rv = $installer->load_sql( $self->{scriptDir}.'/'.$filename ) ? 0 : 1;
+        } elsif ( $filename =~ /\.(perl|pl)$/ ) {
+            my $fileAndPath = $self->{scriptDir}.'/'.$filename;
+            unless (my $return = do $fileAndPath ) {
+                warn "couldn't parse $fileAndPath: $@\n" if $@;
+                warn "couldn't do $fileAndPath: $!\n"    unless defined $return;
+                warn "couldn't run $fileAndPath\n"       unless $return;
+            }
+        }
+        $atomicUpdate->store();
+    }
+
+    print "File '$filename' applied\n" if $self->{verbose} > 2;
 }
 
 =head _getValidAtomicUpdateScripts

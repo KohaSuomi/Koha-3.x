@@ -19,7 +19,7 @@
 #
 
 use Modern::Perl;
-use Getopt::Long;
+use Getopt::Long qw(:config no_ignore_case);
 
 use C4::Context;
 
@@ -29,22 +29,26 @@ my $verbose = 0;
 my $help = 0;
 my $apply = 0;
 my $remove = '';
+my $dryRun = 0;
 my $insert = '';
 my $list = 0;
 my $pending = 0;
 my $directory = '';
 my $git = '';
+my $single = '';
 
 GetOptions(
     'v|verbose:i'       => \$verbose,
     'h|help'            => \$help,
     'a|apply'           => \$apply,
+    'D|dry-run'         => \$dryRun,
     'd|directory:s'     => \$directory,
     'r|remove:s'        => \$remove,
     'i|insert:s'        => \$insert,
     'l|list'            => \$list,
     'p|pending'         => \$pending,
     'g|git:s'           => \$git,
+    's|single:s'        => \$single,
 );
 
 my $usage = << 'ENDUSAGE';
@@ -58,21 +62,36 @@ applied.
 Also acts as a gateway to CRUD the koha.database_updates-table.
 
     -v --verbose        Integer, 1 is not so verbose, 3 is maximally verbose.
+
+    -D --dry-run        Flag, Run the script but don't execute any atomicupdates.
+                        You should use --verbose 3 to see what is happening.
+
     -h --help           Flag, This nice help!
+
     -a --apply          Flag, Apply all the pending atomicupdates from the
                         atomicupdates-directory.
+
     -d --directory      Path, From which directory to look for atomicupdate-scripts.
                         Defaults to '$KOHA_PATH/installer/data/mysql/atomicupdate/'
+
+    -s --single         Path, execute a single atomicupdate-script.
+                        eg. atomicupdate/Bug01243-SingleFeature.pl
+
     -r --remove         String, Remove the upgrade entry from koha.database_updates
                         eg. --remove "Bug71337"
+
     -i --insert         Path, Add an upgrade log entry for the given atomicupdate-file.
                         Useful to revert an accidental --remove -operation or for
-                        testing.
+                        testing. Does not execute the update script, simply adds
+                        the log entry.
                         eg. -i installer/data/mysql/atomicupdate/Bug5453-Example.pl
+
     -l --list           Flag, List all entries in the koha.database_updates-table.
                         This typically means all applied atomicupdates.
+
     -p --pending        Flag, List all pending atomicupdates from the
                         atomicupdates-directory.
+
     -g --git            Path, Build the update order from the Git repository given,
                         or default to the Git repository in $KOHA_PATH.
                         Eg. --git 1, to build with default values, or
@@ -126,7 +145,9 @@ if ( $help ) {
 
 my $atomicupdater = Koha::AtomicUpdater->new({verbose => $verbose,
                                               scriptDir => $directory,
-                                              gitRepo => (length($git) == 1) ? '' : $git});
+                                              gitRepo => (length($git) == 1) ? '' : $git,
+                                              dryRun => $dryRun,}
+                                            ,);
 
 if ($git) {
     $atomicupdater->buildUpdateOrderFromGit(10000);
