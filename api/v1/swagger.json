@@ -12,6 +12,7 @@
       "url": "http://koha-community.org/"
     }
   },
+  "x-mojo-around-action": "Koha::REST::V1::koha_authenticate",
   "basePath": "/api/v1",
   "paths": {
     "/biblios/{biblionumber}": {

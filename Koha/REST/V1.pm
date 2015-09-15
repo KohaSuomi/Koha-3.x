@@ -3,12 +3,15 @@ package Koha::REST::V1;
 use Modern::Perl;
 use Mojo::Base 'Mojolicious';
 use Mojo::Log;
-use Mojolicious::Plugins; #Extend the plugin system
+use Data::Walk;
+use Scalar::Util qw(blessed);
+use Try::Tiny;
 
 use Koha::Borrower;
 use Koha::Borrowers;
 use Koha::ApiKey;
 use Koha::ApiKeys;
+use Koha::Auth;
 
 
 =head startup
@@ -65,12 +68,10 @@ sub startup {
     $self->setKohaParamLogging();
     $self->setKohaParamConfig();
 
+    # Force charset=utf8 in Content-Type header for JSON responses
+    $self->types->type(json => 'application/json; charset=utf8');
 
-    ##Add the Koha namespace to the plugin engine to find plugins from.
-    my $plugin = $self->plugins();
-    push @{$plugin->namespaces}, 'Koha::REST::V1::Plugins';
-
-    $self->plugin(KohaliciousSwagtenticator => {
+    $self->plugin(Swagger2 => {
         url => $self->home->rel_file("api/v1/swagger.json"),
     });
 }
@@ -106,4 +107,99 @@ sub setKohaParamLogging {
         print __PACKAGE__."::startup():> No logfile given, defaulting to STDERR. Define your logfile and loglevel to the MOJO_LOGFILES and MOJO_LOGLEVEL environmental variables. If you want foreground logging, set the MOJO_LOGFILES as undef.\n";
     }
 }
+
+=head _koha_authenticate
+
+    _koha_authenticate($c, $config);
+
+Checks all authentications in Koha, and prepares the data for a
+Mojolicious::Plugin::Swagger2->render_swagger($errors, $data, $statusCode) -response
+if authentication failed for some reason.
+
+@PARAM1 Mojolicious::Controller or a subclass
+@PARAM2 Reference to HASH, the "Operation Object" from Swagger2.0 specification,
+                            matching the given "Path Item Object"'s HTTP Verb.
+@RETURNS List of: HASH Ref, errors encountered
+                  HASH Ref, data to be sent
+                  String, status code from the Koha::REST::V1::check_key_auth()
+=cut
+
+sub koha_authenticate {
+    my ($next, $c, $opObj) = @_;
+    my ($error, $data, $statusCode); #define return values
+
+    try {
+
+        my $authParams = {};
+        $authParams->{authnotrequired} = 1 unless $opObj->{"x-koha-permission"};
+        my ($borrower, $cookie) = Koha::Auth::authenticate($c, $opObj->{"x-koha-permission"}, $authParams);
+
+    } catch {
+      my $e = $_;
+      if (blessed($e)) {
+        my $swagger2DocumentationUrl = _findConfigurationParameterFromAnyConfigurationFile($c->app->config(), 'swagger2DocumentationUrl') || '';
+
+        if ($e->isa('Koha::Exception::NoPermission') ||
+            $e->isa('Koha::Exception::LoginFailed') ||
+            $e->isa('Koha::Exception::UnknownObject')
+           ) {
+          $error = [{message => $e->error, path => $c->req->url->path_query},
+                    {message => "See '$swagger2DocumentationUrl' for how to properly authenticate to Koha"},];
+          $data = {header => {"WWW-Authenticate" => "Koha $swagger2DocumentationUrl"}};
+          $statusCode = 401; #Throw Unauthorized with instructions on how to properly authorize.
+        }
+        elsif ($e->isa('Koha::Exception::BadParameter')) {
+          $error = [{message => $e->error, path => $c->req->url->path_query}];
+          $data = {};
+          $statusCode = 400; #Throw a Bad Request
+        }
+        elsif ($e->isa('Koha::Exception::VersionMismatch') ||
+               $e->isa('Koha::Exception::BadSystemPreference') ||
+               $e->isa('Koha::Exception::ServiceTemporarilyUnavailable')
+              ){
+          $error = [{message => $e->error, path => $c->req->url->path_query}];
+          $data = {};
+          $statusCode = 503; #Throw Service Unavailable, but will be available later.
+        }
+        else {
+          $e->rethrow();
+        }
+      }
+      else {
+        die $e;
+      }
+    };
+    return $next->($c) unless ($error || $data || $statusCode);
+    return $c->render_swagger(
+        {errors => $error},
+        $data,
+        $statusCode,
+    );
+}
+
+=head findConfigurationParameterFromAnyConfigurationFile
+
+Because we can use this REST API with CGI, or Plack, or Hypnotoad, or Morbo, ...
+We cannot know which configuration file we are currently using.
+$conf = {hypnotoad => {#conf params},
+         plack     => {#conf params},
+         ...
+        }
+So find the needed markers from any configuration file.
+=cut
+
+sub _findConfigurationParameterFromAnyConfigurationFile {
+  my ($conf, $paramLookingFor) = @_;
+
+  my $found;
+  my $wanted = sub {
+    if ($_ eq $paramLookingFor) {
+      $found = $Data::Walk::container->{$_};
+      return ();
+    }
+  };
+  Data::Walk::walk( $wanted, $conf);
+  return $found;
+}
+
 1;
