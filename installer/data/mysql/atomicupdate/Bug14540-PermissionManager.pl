@@ -63,38 +63,84 @@ unless ($atomicUpdater->find('Bug14540')) {
     $dbh->do("INSERT INTO permissions (module, code, description) VALUES ('staffaccess', 'staff_access_permissions', 'Allow staff members to modify permissions for other staff members.');");
 
     ##Create borrower_permissions to replace singular userflags from borrowers.flags.
+    my $sthSelectSubPermissions = $dbh->prepare("SELECT * FROM permissions p LEFT JOIN permission_modules pm ON p.module = pm.module WHERE pm.permission_module_id = ?");
+    my $sthSelectBorrowerPermission = $dbh->prepare("SELECT * FROM borrower_permissions WHERE permission_id = ? AND borrowernumber = ?");
+    my $sthInsertBorrowerPermission = $dbh->prepare("INSERT INTO borrower_permissions (borrowernumber, permission_module_id, permission_id) VALUES (?,?,?)");
+    sub grantAllSubpermissions {
+        my ($borrowernumber, $module_id, $dbh) = @_;
+
+        $sthSelectSubPermissions->execute($module_id);
+        my $subPermissions = $sthSelectSubPermissions->fetchall_arrayref({});
+        foreach my $sp (@$subPermissions) {
+            $sthSelectBorrowerPermission->execute($sp->{permission_id}, $borrowernumber);
+            my $alreadyPermission = $sthSelectBorrowerPermission->fetchrow_hashref();
+            unless ($alreadyPermission) {
+                $sthInsertBorrowerPermission->execute($borrowernumber, $sp->{permission_module_id}, $sp->{permission_id});
+            }
+        }
+    }
+
     my $sthSelectAllBorrowers = $dbh->prepare("SELECT * FROM borrowers;");
-    my $sth = $dbh->prepare("
-            INSERT INTO borrower_permissions (borrowernumber, permission_module_id, permission_id)
-            VALUES (?,
-                    (SELECT permission_module_id FROM permission_modules WHERE module = ?),
-                    (SELECT permission_id FROM permissions WHERE code = ?)
-                   );
-            ");
     $sthSelectAllBorrowers->execute();
     my $borrowers = $sthSelectAllBorrowers->fetchall_arrayref({});
     foreach my $b (@$borrowers) {
         next unless $b->{flags};
         if ( ( $b->{flags} & ( 2**0 ) ) ) {
-            $sth->execute($b->{borrowernumber}, 'superlibrarian', 'superlibrarian');
+            grantAllSubpermissions($b->{borrowernumber}, 21, $dbh); #superlibrarian
+        }
+        if ( ( $b->{flags} & ( 2**1 ) ) ) {
+            grantAllSubpermissions($b->{borrowernumber}, 1, $dbh); #circulate
         }
         if ( ( $b->{flags} & ( 2**2 ) ) ) {
-            $sth->execute($b->{borrowernumber}, 'catalogue', 'staff_login');
+            grantAllSubpermissions($b->{borrowernumber}, 2, $dbh); #catalogue
+        }
+        if ( ( $b->{flags} & ( 2**3 ) ) ) {
+            grantAllSubpermissions($b->{borrowernumber}, 3, $dbh); #parameters, should be deprecated already
         }
         if ( ( $b->{flags} & ( 2**4 ) ) ) {
-            $sth->execute($b->{borrowernumber}, 'borrowers', 'view_borrowers');
+            grantAllSubpermissions($b->{borrowernumber}, 4, $dbh); #borrowers
         }
         if ( ( $b->{flags} & ( 2**5 ) ) ) {
-            $sth->execute($b->{borrowernumber}, 'permissions', 'set_permissions');
+            grantAllSubpermissions($b->{borrowernumber}, 5, $dbh); #permissions
+        }
+        if ( ( $b->{flags} & ( 2**6 ) ) ) {
+            grantAllSubpermissions($b->{borrowernumber}, 6, $dbh); #reserveforothers
+        }
+#        if ( ( $b->{flags} & ( 2**7 ) ) ) {
+#            grantAllSubpermissions($b->{borrowernumber}, 7, $dbh); #borrow, should be deprecated already
+#        }
+        if ( ( $b->{flags} & ( 2**9 ) ) ) {
+            grantAllSubpermissions($b->{borrowernumber}, 9, $dbh); #editcatalogue
+        }
+        if ( ( $b->{flags} & ( 2**10 ) ) ) {
+            grantAllSubpermissions($b->{borrowernumber}, 10, $dbh); #updatecharges
+        }
+        if ( ( $b->{flags} & ( 2**11 ) ) ) {
+            grantAllSubpermissions($b->{borrowernumber}, 11, $dbh); #acquisition
         }
         if ( ( $b->{flags} & ( 2**12 ) ) ) {
-            $sth->execute($b->{borrowernumber}, 'management', 'management');
+            grantAllSubpermissions($b->{borrowernumber}, 12, $dbh); #management
+        }
+        if ( ( $b->{flags} & ( 2**13 ) ) ) {
+            grantAllSubpermissions($b->{borrowernumber}, 13, $dbh); #tools
         }
         if ( ( $b->{flags} & ( 2**14 ) ) ) {
-            $sth->execute($b->{borrowernumber}, 'editauthorities', 'edit_authorities');
+            grantAllSubpermissions($b->{borrowernumber}, 14, $dbh); #editauthorities
+        }
+        if ( ( $b->{flags} & ( 2**15 ) ) ) {
+            grantAllSubpermissions($b->{borrowernumber}, 15, $dbh); #serials
+        }
+        if ( ( $b->{flags} & ( 2**16 ) ) ) {
+            grantAllSubpermissions($b->{borrowernumber}, 16, $dbh); #reports
         }
         if ( ( $b->{flags} & ( 2**17 ) ) ) {
-            $sth->execute($b->{borrowernumber}, 'staffaccess', 'staff_access_permissions');
+            grantAllSubpermissions($b->{borrowernumber}, 17, $dbh); #staffaccess
+        }
+        if ( ( $b->{flags} & ( 2**18 ) ) ) {
+            grantAllSubpermissions($b->{borrowernumber}, 18, $dbh); #coursereserves
+        }
+        if ( ( $b->{flags} & ( 2**19 ) ) ) {
+            grantAllSubpermissions($b->{borrowernumber}, 19, $dbh); #plugins
         }
     }
 
