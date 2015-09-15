@@ -37,7 +37,7 @@ use Koha::Exception::BadParameter;
 
 =cut
 
-our $testImplementationMainPackage = 't::db_dependent::Api';
+our $testImplementationMainPackage = 't::db_dependent';
 
 sub new {
     my ($class, $params) = @_;
@@ -63,7 +63,7 @@ sub _validateParams {
 
     ##Actually check the params
     unless ($params->{basePath}) {
-        $params->{basePath} = 'v1';
+        $params->{basePath} = '/api/v1';
     }
 
     if ($params->{pathsObjectPath}) {
@@ -104,7 +104,9 @@ sub _buildPackageAndSubroutineName {
     my ($self) = @_;
 
     my $bp = $self->get_basePath();
-    $bp =~ s/\///g;
+    $bp =~ s!^/!!;
+    my @bp = map {ucfirst($_)} split('/', $bp);
+    $bp = join('::', @bp);
 
     my ($sModule, $sPathTail) = ($1, $2) if $self->get_pathsObjectPath() =~ /^\/(\w+)\/?(.*)$/;
     $sPathTail =~ s/\{.*?\}/_n_/g;
