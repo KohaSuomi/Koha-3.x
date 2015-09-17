@@ -92,6 +92,7 @@ sub send_sms {
         # Send a message
         $sent = $sender->send_sms( to   => $params->{'destination'},
                                   text => $params->{'message'},
+                                  _message_id => $params->{'message_id'},
                              );
         return $sent;
     } catch {

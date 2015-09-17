@@ -1259,6 +1259,7 @@ sub _send_message_by_sms {
     try {
         $success = C4::SMS->send_sms( { destination => $member->{'smsalertnumber'},
                                            message     => $message->{'content'},
+                                           message_id  => $message->{'message_id'},
                                          } );
         _set_message_status( { message_id => $message->{'message_id'},
                                status     => ($success ? 'sent' : 'failed'),
@@ -1272,6 +1273,12 @@ sub _send_message_by_sms {
                 _set_message_status ( { message_id => $message->{'message_id'},
                                         status     => 'pending',
                                         delivery_note => 'Connection failed. Attempting to resend.' } );
+            }
+            elsif ($_->isa('Koha::Exception::SMSDeliveryFailure')){
+                # SMS delivery was unsuccessful. Set message to failed and give a delivery note
+                _set_message_status ( { message_id => $message->{'message_id'},
+                                        status     => 'failed',
+                                        delivery_note => $_->error } );
             }
             else {
                 # failsafe: if we catch and unknown exception, set message status to failed

@@ -255,4 +255,86 @@ sub delete_n_404 {
     return 1;
 }
 
+sub post_n_reportlabyrintti404 {
+    my ($class, $restTest, $driver) = @_;
+    my $testContext = $restTest->get_testContext();
+    my $activeUser = $restTest->get_activeBorrower();
+    my $path = $restTest->get_routePath();
+
+    $path =~ s/\{messagenumber\}/12334893298007/;
+    $driver->post_ok(
+                    $path => { Accept => 'application/x-www-form-urlencoded'} =>
+                    form => {
+                        status => "OK",
+                        message => "Message delivery succesful",
+                    });
+    $driver->status_is(404);
+
+    return 1;
+}
+
+sub post_n_reportlabyrintti204 {
+    my ($class, $restTest, $driver) = @_;
+    my $testContext = $restTest->get_testContext();
+    my $activeUser = $restTest->get_activeBorrower();
+    my $path = $restTest->get_routePath();
+
+    #Create the test context.
+    my $messages = t::lib::TestObjects::MessageQueueFactory->createTestGroup(
+                        {
+                            subject => "The quick brown fox",
+                            content => "Jumps over the lazy dog.",
+                            cardnumber => $activeUser->{'_result'}->{'_column_data'}->{cardnumber},
+                            message_transport_type => 'sms',
+                            from_address => '11A001@example.com',
+                        }, undef, $testContext, undef, undef);
+
+    my $messagenumber = $messages->{'11A001@example.com'}->{message_id};
+    $path =~ s/\{messagenumber\}/$messagenumber/;
+    $driver->post_ok(
+                    $path => { Accept => 'application/x-www-form-urlencoded'} =>
+                    form => {
+                        status => "OK",
+                        message => "Message delivery succesful",
+                    }
+            );
+    $driver->status_is(204);
+
+    t::lib::TestObjects::ObjectFactory->tearDownTestContext($testContext);
+    return 1;
+}
+
+sub post_n_reportlabyrintti201 {
+    my ($class, $restTest, $driver) = @_;
+    my $testContext = $restTest->get_testContext();
+    my $activeUser = $restTest->get_activeBorrower();
+    my $path = $restTest->get_routePath();
+
+    #Create the test context.
+    my $messages = t::lib::TestObjects::MessageQueueFactory->createTestGroup(
+                        {
+                            subject => "The quick brown fox",
+                            content => "Jumps over the lazy dog.",
+                            cardnumber => $activeUser->{'_result'}->{'_column_data'}->{cardnumber},
+                            message_transport_type => 'sms',
+                            from_address => '11A001@example.com',
+                        }, undef, $testContext, undef, undef);
+
+    my $messagenumber = $messages->{'11A001@example.com'}->{message_id};
+    $path =~ s/\{messagenumber\}/$messagenumber/;
+    $driver->post_ok(
+                    $path => { Accept => 'application/x-www-form-urlencoded'} =>
+                    form => {
+                        status => "ERROR",
+                        message => "Test error delivery note",
+                    }
+            );
+    $driver->status_is(201);
+    my $message = C4::Letters::GetMessage($messagenumber);
+    is($message->{delivery_note}, "Test error delivery note", "Delivery note for failed SMS received successfully.");
+
+    t::lib::TestObjects::ObjectFactory->tearDownTestContext($testContext);
+    return 1;
+}
+
 1;

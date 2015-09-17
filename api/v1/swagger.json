@@ -354,6 +354,56 @@
           }
         }
       }
+    },
+    "/messages/{messagenumber}/report/labyrintti": {
+      "post": {
+        "x-mojo-controller": "Koha::REST::V1::Messages::Reports",
+        "operationId": "createLabyrinttiReport",
+        "tags": ["messages"],
+        "parameters": [
+          {
+            "$ref": "#/parameters/messagenumberPathParam"
+          },
+          {
+            "name": "status",
+            "in": "formData",
+            "type": "string",
+            "description": "Status of the delivery",
+            "required": true
+          },
+          {
+            "name": "message",
+            "in": "formData",
+            "type": "string",
+            "description": "Delivery notes",
+            "required": true
+          }
+        ],
+        "consumes": ["application/x-www-form-urlencoded"],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "201": {
+            "description": "Response for creating a new report. Required status ERROR",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "204": {
+            "description": "Response for receiving delivery report with status OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "404": {
+            "description": "Message not found",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          }
+        }
+      }
     }
   },
   "definitions": {

@@ -143,5 +143,19 @@ __PAZPAR2_TOGGLE_XML_POST__
     </rest>
  </testservers>
 
+ <smsProviders>
+    <labyrintti>
+        <!-- Login details for SMS Gateway service -->
+        <user></user>
+        <passwd></passwd>
+        <!-- Report URL is the page where your SMS Gateway provider will send a report
+             about the delivery of the message.
+
+             With REST API, it should be
+             http://mydomain.com/api/v1/messages/{messagenumber}/report/_your_gateway_
+                                                                                    -->
+        <reportUrl></reportUrl>
+    </labyrintti>
+ </smsProviders>
 </config>
 </yazgfs>
