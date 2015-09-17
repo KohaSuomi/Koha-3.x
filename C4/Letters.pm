@@ -900,7 +900,7 @@ sub GetMessage {
     return unless $message_id;
     my $dbh = C4::Context->dbh;
     return $dbh->selectrow_hashref(q|
-        SELECT message_id, borrowernumber, subject, content, metadata, letter_code, message_transport_type, status, time_queued, to_address, from_address, content_type
+        SELECT message_id, borrowernumber, subject, content, metadata, letter_code, message_transport_type, status, time_queued, to_address, from_address, content_type, delivery_note
         FROM message_queue
         WHERE message_id = ?
     |, {}, $message_id );
