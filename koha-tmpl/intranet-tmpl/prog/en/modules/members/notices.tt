@@ -20,6 +20,21 @@
     });
     
     });
+    function resendMessage(id, status_element){
+        var resend = $.ajax({
+                type: "POST",
+                url: "/api/v1/messages/"+id+"/resend",
+                data: { },
+                statusCode: {
+                    404: function(){
+                        alert("Message not found.");
+                    },
+                    204: function(){
+                        $(status_element).text("pending");
+                    }
+                }
+            });
+    }
 //]]>
 </script>
 <style type="text/css">
@@ -73,14 +88,9 @@
             [% ELSIF ( QUEUED_MESSAGE.status == 'failed' ) %]failed
             [% ELSIF ( QUEUED_MESSAGE.status == 'deleted' ) %]deleted
             [% ELSE %][% QUEUED_MESSAGE.status %][% END %]
-            [% IF ( QUEUED_MESSAGE.status != 'pending' ) %]
+            [% IF ( QUEUED_MESSAGE.status != 'pending' ) AND showResendLink == 1 %]
             <div class="notice">
-                <form action="/cgi-bin/koha/members/notices.pl?borrowernumber=[% borrowernumber %]" method="POST">
-                    <input type="hidden" name="op" value="resend_notice" />
-                    <input type="hidden" name="borrowernumber" value="[% borrowernumber %]" />
-                    <input type="hidden" name="message_id" value="[% QUEUED_MESSAGE.message_id %]" />
-                    <a href="#" onclick="$(this).closest('form').submit();return false;" title="Attempt to resend the notice">Resend</a>
-                </form>
+                <a href="#" onclick="resendMessage([% QUEUED_MESSAGE.message_id %], $(this).closest('td'));return false;" title="Attempt to resend the notice">Resend</a>
             </div>
             [% END %]
         </td>

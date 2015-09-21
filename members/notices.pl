@@ -28,6 +28,8 @@ use C4::Members;
 use C4::Branch;
 use C4::Letters;
 use C4::Members::Attributes qw(GetBorrowerAttributes);
+use Try::Tiny;
+use Scalar::Util qw ( blessed );
 
 use C4::Dates qw/format_date/;
 my $input=new CGI;
@@ -54,17 +56,6 @@ $template->param( picture => 1 ) if $picture;
 
 $template->param( %{$borrower} );
 
-# Allow resending of messages in Notices tab
-if ( $op eq 'resend_notice' ) {
-    my $message_id = $input->param('message_id');
-    my $message = C4::Letters::GetMessage( $message_id );
-    if ( $message->{borrowernumber} = $borrowernumber ) {
-        C4::Letters::ResendMessage( $message_id );
-        # redirect to self to avoid form submission on refresh
-        print $input->redirect("/cgi-bin/koha/members/notices.pl?borrowernumber=$borrowernumber");
-    }
-}
-
 # Getting the messages
 my $queued_messages = C4::Letters::GetQueuedMessages({borrowernumber => $borrowernumber});
 
@@ -76,6 +67,21 @@ if (C4::Context->preference('ExtendedPatronAttributes')) {
     );
 }
 
+my $showResendLink = 0;
+
+my $permissionManager = Koha::Auth::PermissionManager->new();
+try {
+    $showResendLink = 1 if $permissionManager->hasPermission($loggedinuser,'messages','resend_message');
+} catch {
+    if (blessed($_) && $_->isa('Koha::Exception::NoPermission')) {
+        # no permission
+    }
+    else {
+        die $_;
+    }
+};
+
+
 $template->param(
 			QUEUED_MESSAGES 	=> $queued_messages,
 			borrowernumber 		=> $borrowernumber,
@@ -84,6 +90,7 @@ $template->param(
                         categoryname            => $borrower->{'description'},
 			activeBorrowerRelationship => (C4::Context->preference('borrowerRelationship') ne ''),
             RoutingSerials => C4::Context->preference('RoutingSerials'),
+            showResendLink => $showResendLink,
 );
 output_html_with_http_headers $input, $cookie, $template->output;
 
