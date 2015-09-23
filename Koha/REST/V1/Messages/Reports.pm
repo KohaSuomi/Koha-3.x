@@ -28,10 +28,10 @@ sub create_labyrintti_report {
                             status          => 'failed',
                             delivery_note   => $args->{message},
                     });
-        return $c->$cb('', 201);
+        return $c->$cb('', 200);
     }
 
-    return $c->$cb('', 204);
+    return $c->$cb('', 200);
 }
 
 1;

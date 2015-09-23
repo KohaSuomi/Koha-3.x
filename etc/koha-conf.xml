@@ -149,12 +149,17 @@ __PAZPAR2_TOGGLE_XML_POST__
         <user></user>
         <passwd></passwd>
         <!-- Report URL is the page where your SMS Gateway provider will send a report
-             about the delivery of the message.
+             about the delivery of the message. Leave {messagenumber} as it is; it will
+             be replaced by message_id in your driver.
 
              With REST API, it should be
              http://mydomain.com/api/v1/messages/{messagenumber}/report/_your_gateway_
                                                                                     -->
         <reportUrl></reportUrl>
+        <!-- Use UTF-16. Note: with this encoding, maxlength of sms = 70 chars
+            To use UTF-16 when needed: yes
+            To disable and use GSM 03.38: leave blank -->
+        <Unicode></Unicode>
     </labyrintti>
  </smsProviders>
 </config>

@@ -89,8 +89,6 @@ sub send_sms {
     $recipientNumber =~ s/'//g;
     $message =~ s/(")|(\$\()|(`)/\\"/g; #Sanitate " so it won't break the system( iconv'ed curl command )
 
-
-
     my $base_url = "https://gw.labyrintti.com:28443/sendsms";
     my $parameters = {
         'user'      => $self->{_login},
@@ -100,6 +98,21 @@ sub send_sms {
         'unicode'   => 'yes',
     };
 
+    # check if we need to use unicode
+    #  -> if unicode => yes, maxlength for 1 sms = 70 chars
+    #  -> else maxlenght = 160 chars (140 bytes, GSM 03.38)
+    my $gsm0388 = decode("gsm0338",encode("gsm0338", $message));
+
+    if ($message ne $gsm0388 and C4::Context->config('smsProviders')->{'labyrintti'}->{'Unicode'} eq "yes"){
+        $parameters->{'unicode'} = 'yes';
+        C4::Letters::UpdateQueuedMessage({
+               message_id => $params->{_message_id},
+               metadata   => 'UTF-16',
+        });
+    } else {
+        $parameters->{'unicode'} = 'no';
+    }
+
     my $report_url = C4::Context->config('smsProviders')->{'labyrintti'}->{'reportUrl'};
     if ($report_url) {
         my $msg_id = $params->{_message_id};
@@ -107,7 +120,7 @@ sub send_sms {
         $parameters->{'report'} = $report_url;
     }
 
-    my $lwpcurl = LWP::Curl->new(auto_encode => 0);
+    my $lwpcurl = LWP::Curl->new();
     my $return = $lwpcurl->post($base_url, $parameters);
 
     if ($lwpcurl->{retcode} == 6) {

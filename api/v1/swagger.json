@@ -427,14 +427,8 @@
           "application/json"
         ],
         "responses": {
-          "201": {
-            "description": "Response for creating a new report. Required status ERROR",
-            "schema": {
-              "type": "string"
-            }
-          },
-          "204": {
-            "description": "Response for receiving delivery report with status OK",
+          "200": {
+            "description": "Response for receiving the report.",
             "schema": {
               "type": "string"
             }
