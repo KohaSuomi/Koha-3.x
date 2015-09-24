@@ -397,6 +397,7 @@
 
                                     <input type="text" id="borrower_phone" name="borrower_phone" value="[% borrower.phone %]" />
                                     [% IF mandatory.defined('phone') %]<span class="required">Required</span>[% END %]
+                                    [% IF ( SMSSendDriver ) %]<div class="hint"><div id="phone-reminder" style="display:none;"><strong>Remember to also update <a href="opac-messaging.pl" target="_blank">SMS number</a> if needed (optional).</strong></div></div>[% END %]
                                 </li>
                             [% END %]
 
@@ -885,6 +886,17 @@
                     error.css('width', 'auto');
                 }
             });
+            [% IF ( SMSSendDriver ) %]
+            $("#borrower_phone").on("input",function(e){
+                if ($(this).val() != "[% borrower.phone %]"){
+                    $("#phone-reminder").css("display", "block");
+                } else {
+                    if ($("#phone-reminder").css("display") == "block") {
+                        $("#phone-reminder").css("display", "none");
+                    }
+                }
+            });
+            [% END %]
             $("#borrower_email, #borrower_emailpro, #borrower_B_email").on("change", function(){
                 $(this).val($.trim($(this).val()));
             });

@@ -202,6 +202,17 @@
             mrform.hide();
             e.preventDefault();
         });
+        [% IF ( SMSSendDriver ) %]
+        $("#phone").on("input",function(e){
+            if ($(this).val() != $("#SMSnumber").val()){
+                $("#phone-reminder").css("display", "block");
+            } else {
+                if ($("#phone-reminder").css("display") == "block") {
+                    $("#phone-reminder").css("display", "none");
+                }
+            }
+        });
+        [% END %]
     });
 
     function clear_entry(node) {
@@ -777,7 +788,7 @@
       [% END %]
       Primary phone: </label>
         <input type="text" id="phone" name="phone" value="[% phone %]" class="[% focusAction %]" />
-	  [% IF ( mandatoryphone ) %]<span class="required">Required</span>[% END %]<div class="hint">Shows on transit slips</div>
+	  [% IF ( mandatoryphone ) %]<span class="required">Required</span>[% END %]<div class="hint">Shows on transit slips[% IF ( SMSSendDriver ) %]<div id="phone-reminder" style="display:none;"><strong>Remember to also update <span onclick="$('#SMSnumber').focus()" style="text-decoration:underline;cursor:pointer;">SMS number</span> if needed.</strong></div>[% END %]</div>
 
     </li>
         [% END %]

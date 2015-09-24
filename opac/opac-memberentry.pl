@@ -66,6 +66,7 @@ $template->param(
     member_titles     => GetTitles() || undef,
     branches          => GetBranchesLoop(),
     OPACPatronDetails => C4::Context->preference('OPACPatronDetails'),
+    SMSSendDriver     => C4::Context->preference('SMSSendDriver'),
     ValidateEmailAddress   => C4::Context->preference('ValidateEmailAddress'),
     ValidatePhoneNumber    => (C4::Context->preference('ValidatePhoneNumber') ne "OFF"),
     phone_regex            => regexp_pattern Koha::Validation::get_phonenumber_regex()
