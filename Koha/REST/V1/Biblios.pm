@@ -5,6 +5,7 @@ use Modern::Perl;
 use Mojo::Base 'Mojolicious::Controller';
 
 use Koha::Database;
+use C4::Biblio;
 
 sub delete_biblio {
     my ($c, $args, $cb) = @_;
@@ -16,12 +17,11 @@ sub delete_biblio {
         return $c->$cb({error => "Biblio not found"}, 404);
     }
 
-    my $itemCount = $schema->resultset('Item')->search({biblionumber => $args->{biblionumber}})->count();
-    if ($itemCount) {
-        return $c->$cb({error => "Biblio has Items attached. Delete them first."}, 400);
+    my $errors = C4::Biblio::DelBiblio( $args->{biblionumber} );
+    if ($errors) {
+        return $c->$cb({error => $errors}, 400);
     }
 
-    $biblio->delete();
     return $c->$cb('', 204);
 }
 
