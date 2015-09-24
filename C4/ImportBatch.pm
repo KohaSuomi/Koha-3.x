@@ -1415,7 +1415,7 @@ sub SetImportRecordBiblioMatch {
 
 =head RecordsFromISO2709File
 
-    my $records = C4::ImportBatch::RecordsFromISO2709File($input_file, $record_type, $encoding);
+    my ($errors, $records) = C4::ImportBatch::RecordsFromISO2709File($input_file, $record_type, $encoding);
 
 Reads ISO2709 binary porridge from the given file and creates MARC::Record-objects out of it.
 
@@ -1453,7 +1453,7 @@ sub RecordsFromISO2709File {
 
 =head RecordsFromMARCXMLFile
 
-    my $records = C4::ImportBatch::RecordsFromMARCXMLFile($input_file, $encoding);
+    my ($errors, $records) = C4::ImportBatch::RecordsFromMARCXMLFile($input_file, $encoding);
 
 Creates MARC::Record-objects out of the given MARCXML-file.
 
@@ -1466,10 +1466,21 @@ sub RecordsFromMARCXMLFile {
     my ($filename, $encoding) = @_;
     my $batch = MARC::File::XML->in( $filename );
     my @marcRecords;
-    while (my $record = $batch->next($encoding)) { #How incredibly hard can be these MARC-libraries be to use?
-        push @marcRecords, $record;
-    }
-    return \@marcRecords;
+    my @errors;
+    my $record;
+
+    do {
+        eval {
+            $record = $batch->next($encoding);
+            push @marcRecords, $record if $record;
+        };
+        if ($@) {
+            push @errors, $@;
+        }
+
+    } while ($@ || $record);
+
+    return (\@errors, \@marcRecords);
 }
 
 # internal functions
