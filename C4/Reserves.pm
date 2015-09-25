@@ -39,6 +39,7 @@ use C4::Dates qw( format_date_in_iso );
 
 use Koha::DateUtils;
 use Koha::Calendar;
+use Data::Dumper;
 
 use DateTime;
 
@@ -139,6 +140,9 @@ BEGIN {
         &_reserve_last_pickup_date
 
         &GetReservesControlBranch
+        &checkReserveCategorycode
+	&CalculatePriority
+	&_FixPriority
     );
     @EXPORT_OK = qw( MergeHolds );
 }    
@@ -2451,6 +2455,41 @@ sub printReserve {
         }
         return join('',@sb);
     }
+}
+
+=head checkReserveCategorycode
+
+=cut
+
+sub checkReserveCategorycode {
+    my ($reserve) = @_;
+    my $status = 0;
+    my $dbh = C4::Context->dbh();
+    warn Dumper $reserve;
+    my $sql = "SELECT categorycode
+                 FROM branchrelations
+                WHERE branchcode=?
+                AND (categorycode != 'PUBLIC' OR categorycode != 'ACA'";
+
+    my $sth = $dbh->prepare( $sql );
+    my $sql2 = "SELECT categorycode
+                 FROM items
+                 JOIN branchrelations on (items.homebranch = branchrelations.branchcode)
+                WHERE itemnumber = ?
+                AND (categorycode != 'PUBLIC' OR categorycode != 'ACA'";
+
+    my $sth2 = $dbh->prepare( $sql2 );
+    $sth->execute($reserve->{'branchcode'});
+    while ( my $row1 = $sth->fetchrow_hashref() ) {
+        $sth2->execute($reserve->{'itemnumber'}, $reserve->{'branchcode'});
+        while ( my $row2 = $sth2->fetchrow_hashref() ) {
+            if ($row1->{'categorycode'} eq $row2->{'categorycode'}) {
+                $status = 1;
+            }
+        }
+    }
+
+    return $status;
 }
 
 =head1 AUTHOR

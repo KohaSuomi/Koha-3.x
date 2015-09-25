@@ -8988,7 +8988,7 @@ if (CheckVersion($DBversion)) {
 $DBversion = "3.16.00.XXX";
 if (CheckVersion($DBversion)) {
     $dbh->do(q{
-        ALTER TABLE items ADD COLUMN newcontent VARCHAR(3) DEFAULT NULL
+        ALTER TABLE items ADD COLUMN sub_location VARCHAR(80) DEFAULT NULL
     });
 
     print "Upgrade to LUMME #211 done\n";

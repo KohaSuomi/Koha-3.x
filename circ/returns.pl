@@ -46,6 +46,7 @@ use C4::Koha;   # FIXME : is it still useful ?
 use C4::RotatingCollections;
 use Koha::DateUtils;
 use Koha::Calendar;
+use Data::Dumper;
 
 my $query = new CGI;
 
@@ -406,11 +407,12 @@ if ( $messages->{'WrongTransfer'} and not $messages->{'WasTransfered'}) {
 # reserve found and item arrived at the expected branch
 #
 if ( $messages->{'ResFound'}) {
+
     my $reserve    = $messages->{'ResFound'};
     my $branchname = $branches->{ $reserve->{'branchcode'} }->{'branchname'};
     my ($borr) = GetMemberDetails( $reserve->{'borrowernumber'}, 0 );
 
-    if ( $reserve->{'ResFound'} eq "Waiting" or $reserve->{'ResFound'} eq "Reserved" ) {
+    if ( ($reserve->{'ResFound'} eq "Waiting" or $reserve->{'ResFound'} eq "Reserved")) {
         if ( $reserve->{'ResFound'} eq "Waiting" ) {
             $template->param(
                 waiting      => ($userenv_branch eq $reserve->{'branchcode'} ? 1 : 0 ),

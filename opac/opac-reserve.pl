@@ -120,7 +120,14 @@ my $branch = $query->param('branch') || $borr->{'branchcode'} || C4::Context->us
 $template->param( branch => $branch );
 
 # make branch selection options...
-my $branchloop = GetBranchesLoop($branch);
+my $branchloop;
+my $pickup = C4::Context->preference('relationPickUp');
+
+if ($pickup) {
+    $branchloop = GetBranchesLoopByRelation($query->param('biblionumber'), $branch);
+}else {
+    $branchloop = GetBranchesLoop($branch);
+}
 
 # Is the person allowed to choose their branch
 my $OPACChooseBranch = (C4::Context->preference("OPACAllowUserToChooseBranch")) ? 1 : 0;

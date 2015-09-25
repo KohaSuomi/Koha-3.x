@@ -3283,12 +3283,13 @@ sub _koha_add_biblio {
             seriestitle = ?,
             copyrightdate = ?,
             datecreated=NOW(),
-            abstract = ?
+            abstract = ?,
+            teosid = ?
         ";
     my $sth = $dbh->prepare($query);
     $sth->execute(
         $frameworkcode, $biblio->{'author'},      $biblio->{'title'},         $biblio->{'unititle'}, $biblio->{'notes'},
-        $biblio->{'serial'},        $biblio->{'seriestitle'}, $biblio->{'copyrightdate'}, $biblio->{'abstract'}
+        $biblio->{'serial'},        $biblio->{'seriestitle'}, $biblio->{'copyrightdate'}, $biblio->{'abstract'}, $biblio->{'teosid'}
     );
 
     my $biblionumber = $dbh->{'mysql_insertid'};
@@ -3325,7 +3326,8 @@ sub _koha_modify_biblio {
                serial = ?,
                seriestitle = ?,
                copyrightdate = ?,
-               abstract = ?
+               abstract = ?,
+               teosid = ?
         WHERE  biblionumber = ?
         "
       ;
@@ -3333,7 +3335,7 @@ sub _koha_modify_biblio {
 
     $sth->execute(
         $frameworkcode,      $biblio->{'author'},      $biblio->{'title'},         $biblio->{'unititle'}, $biblio->{'notes'},
-        $biblio->{'serial'}, $biblio->{'seriestitle'}, $biblio->{'copyrightdate'}, $biblio->{'abstract'}, $biblio->{'biblionumber'}
+        $biblio->{'serial'}, $biblio->{'seriestitle'}, $biblio->{'copyrightdate'}, $biblio->{'abstract'}, $biblio->{'teosid'}, $biblio->{'biblionumber'}
     ) if $biblio->{'biblionumber'};
 
     if ( $dbh->errstr || !$biblio->{'biblionumber'} ) {

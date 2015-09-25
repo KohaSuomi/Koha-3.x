@@ -9,7 +9,7 @@ $("input[id=ssn_submit]").click(function( event ) {
 
     $.ajax({
         type: "POST",
-        url: "https://turva.vaarakirjastot.fi/ssn/addssn?ajax=1",
+        url: "https://turva.lummekirjastot.fi/ssn/addssn?ajax=1",
         dataType: 'json',
         data: { ssn: ssn_value, username: ssn_username, password: ssn_password }
     })

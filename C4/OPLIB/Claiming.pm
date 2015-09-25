@@ -37,6 +37,7 @@ use Net::FTP;
 
 use C4::OPLIB::ClaimletterOdt;
 use C4::OPLIB::ClaimletterText;
+use Data::Dumper;
 
 #binmode STDOUT, ":encoding(UTF-8)";
 
@@ -327,7 +328,6 @@ sub processODUECLAIM {
     print "\n------------------------------------------------------\n".strftime('%H:%M:%S',localtime).'>Gathering Claim letters (ODUECLAIM)'."\n------------------------------------------------------\n" if $verbose;
 
     my ($message_queue_notClaimedBarcodesMap, $claimletters) = gatherClaimletters();
-
     if (! scalar(%$claimletters)) { #If we have no claimletters!
         return 0; #Do nuffing
     }

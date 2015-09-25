@@ -458,6 +458,13 @@ OPAC:
                   no: Allow
             - patrons to select their branch on the OPAC or show branch names with callnumbers.
         -
+            - pref: relationPickUp
+              default: 0
+              choices:
+                  yes: "Don't allow"
+                  no: Allow
+            - patron to pick up items from all branches.
+        -
             - pref: SearchMyLibraryFirst
               choices:
                   yes: Limit
