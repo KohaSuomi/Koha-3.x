@@ -818,7 +818,7 @@ $(document).ready(function(){
         return false;
     });
 
-[% IF ( ( Koha.Preference( 'RequestOnOpac' ) == 1 ) && ( Koha.Preference( 'opacuserlogin' ) == 1 ) && DisplayMultiPlaceHold ) %]
+[% IF ( ( Koha.Preference( 'RequestOnOpac' ) == 1 ) && ( Koha.Preference( 'opacuserlogin' ) == 1 ) && DisplayMultiPlaceHold && (Koha.Preference( 'relationPickup' ) != 1)) %]
     $("#placehold").html("<input class=\"hold disabled\" type=\"submit\" value=\""+_("Place hold")+"\"/>");
     $("#placehold").find("input:submit").click(function(){
         holdMultiple();

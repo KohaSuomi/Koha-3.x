@@ -251,9 +251,6 @@ sub _find_member {
     return $found;
 }
 
-<<<<<<< HEAD
-1;
-=======
 ### ------------------------------------- ###
 ### Testing GetAge() / SetAge() functions ###
 ### ------------------------------------- ###
@@ -329,4 +326,3 @@ sub testAgeAccessors {
 } #sub testAgeAccessors
 
 1;
->>>>>>> Bug 13106 - Encapsulate Circulation::GetAgeRestriction() and modify it to check borrowers age as well.

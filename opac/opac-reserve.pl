@@ -35,6 +35,7 @@ use C4::Branch; # GetBranches
 use C4::Overdues;
 use C4::Debug;
 use Koha::DateUtils;
+use Data::Dumper;
 use Date::Calc qw/Today Date_to_Days/;
 # use Data::Dumper;
 
@@ -119,7 +120,27 @@ my $branch = $query->param('branch') || $borr->{'branchcode'} || C4::Context->us
 $template->param( branch => $branch );
 
 # make branch selection options...
-my $branchloop = GetBranchesLoop($branch);
+my $branchloop;
+my $pickup = C4::Context->preference('relationPickUp');
+
+if ($pickup) {
+    $branchloop = GetBranchesLoopByRelation($query->param('biblionumber'), $branch);
+    my $nomatch = 1;
+    foreach my $branchcode (@$branchloop) {
+        my $b = $branchcode->{branchcode};
+        if ($borr->{'branchcode'} eq $b) {
+            $nomatch = 0;
+            last;
+            
+        } 
+    }
+    if ($nomatch){
+        $template->param( none_available => 1 );
+    }
+    
+}else {
+    $branchloop = GetBranchesLoop($branch);
+}
 
 # Is the person allowed to choose their branch
 my $OPACChooseBranch = (C4::Context->preference("OPACAllowUserToChooseBranch")) ? 1 : 0;

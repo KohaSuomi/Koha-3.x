@@ -47,6 +47,7 @@ BEGIN {
 	        &CheckCategoryUnique
 		&mybranch
 		&GetBranchesCount
+        &GetBranchesLoopByRelation
 	);
     @EXPORT_OK = qw( &onlymine &mybranch );
 }
@@ -562,6 +563,51 @@ sub GetBranchesCount {
     $sth->execute();
     my $row = $sth->fetchrow_hashref();
     return $row->{'branches_count'};
+}
+
+#LUMME #224, getting the branches loop from branch relations
+sub GetBranchesLoopByRelation { 
+    my ($biblionumber, $branch) = @_;
+    my $branch = @_ ? shift : mybranch();
+    my $branches = GetBranches();
+
+    my $dbh = C4::Context->dbh;
+
+    my $itemquery = "SELECT homebranch FROM items WHERE biblionumber = ?";
+    my $relationquery = "SELECT DISTINCT categorycode FROM branchrelations where branchcode=?";
+    my $itemsth = $dbh->prepare( $itemquery );
+    my $relationsth = $dbh->prepare( $relationquery );
+    $itemsth->execute($biblionumber);
+    my %categories;
+    while ( my ($row) = $itemsth->fetchrow_array ) {
+        
+        $relationsth->execute($row);
+        while ( my ($category) = $relationsth->fetchrow_array ) {
+
+            $categories{$category} = 1;
+        }
+    }
+
+    my @loop;
+
+    my $categorysth = $dbh->prepare(q{
+        SELECT branchcode
+        FROM branchrelations
+        WHERE categorycode = ?
+    });
+    foreach my $key (keys %categories) {
+        $categorysth->execute( $key );
+        while ( my ($branchcode) = $categorysth->fetchrow_array ) {
+            push @loop, {
+                value      => $branchcode,
+                branchcode => $branchcode,
+                selected   => ($branchcode eq $branch) ? 1 : 0,
+                branchname => $branches->{$branchcode}->{branchname},
+            };
+        }
+    }
+    
+    return \@loop;
 }
 
 1;

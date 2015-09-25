@@ -41,7 +41,7 @@
                                         [% IF ( ( Koha.Preference( 'virtualshelves' ) == 1 ) && loggedinusername ) %]
                                             <a href="#" class="newshelf disabled" onclick="addSelToShelf(); return false;">Add to a list</a>
                                         [% END %]
-                                        [% IF ( Koha.Preference( 'RequestOnOpac' ) == 1 ) %]
+                                        [% IF ( Koha.Preference( 'RequestOnOpac' ) == 1 ) && (Koha.Preference( 'relationPickup' ) != 1)%]
                                             <a href="#" class="hold disabled" onclick="holdSel(); return false;">Place hold</a>
                                         [% END %]
                                         [% IF ( TagsInputEnabled && loggedinusername ) %]

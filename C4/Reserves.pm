@@ -147,6 +147,8 @@ BEGIN {
         &_reserve_last_pickup_date
 
         &GetReservesControlBranch
+	&CalculatePriority
+	&_FixPriority
     );
     @EXPORT_OK = qw( MergeHolds );
 }    
@@ -2690,6 +2692,7 @@ sub printReserve {
         return join('',@sb);
     }
 }
+
 
 =head1 AUTHOR
 

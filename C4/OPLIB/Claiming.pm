@@ -330,7 +330,7 @@ sub processODUECLAIM {
     print "\n------------------------------------------------------\n".strftime('%H:%M:%S',localtime).'>Gathering Claim letters (ODUECLAIM)'."\n------------------------------------------------------\n" if $verbose;
 
     my ($message_queue_notClaimedBarcodesMap, $claimletters) = gatherClaimletters();
-
+    
     if (! scalar(%$claimletters)) { #If we have no claimletters!
         return 0; #Do nuffing
     }
