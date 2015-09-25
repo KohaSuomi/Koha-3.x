@@ -243,8 +243,11 @@ $(document).ready(function() {
     </tr>
   [% UNLESS ( serialslis.subscriptionexpired ) %]
   [% IF ( serialslis.serialsadditems ) %]
-          <tr>
-          <td colspan="5">
+    <tr>
+    [% FOREACH item IN serialslis.items %]
+    [% IF ( item.itemid.substr(0,1) == "N" ) %]
+
+    <td colspan="5">
       <a id="label[% serialslis.subscriptionid %][% serialslis.serialid %]" style="color: grey; font-size: 80%; cursor: pointer;"  onclick="unHideItems('items[% serialslis.subscriptionid %][% serialslis.serialid %]','label[% serialslis.subscriptionid %][% serialslis.serialid %]',  '[% serialslis.serialid %]');setStatus([% serialslis.serialid %]);">
              Click to add item</a>
         <fieldset class="rows" style="display:none;" id="items[% serialslis.subscriptionid %][% serialslis.serialid %]">
@@ -252,7 +255,7 @@ $(document).ready(function() {
                 Item</a>
         </legend>
           <div class="cataloguing_additem_itemlist">
-        [% FOREACH item IN serialslis.items %]
+
         <div id="item[% item.serialid %][% item.countitems %]" class="items">
         <ol>[% FOREACH iteminformatio IN item.iteminformation %]<li>
                <div class="subfield_line" style="[% iteminformatio.hidden %]" id="subfield[% item.serialid %][% item.countitems %][% iteminformatio.subfield %][% iteminformatio.random %]">
@@ -283,10 +286,12 @@ $(document).ready(function() {
         <input type="hidden" name="bibnum" value="[% item.biblionumber %]" />
         <input type="hidden" name="itemid" value="[% item.itemid %]" />
         <input type="hidden" name="field_value" value="[% item.itemnumber %]" />
-        [% END %] <!-- /items -->
         </div>
         </fieldset>
     </td>
+
+  [% END %]
+  [% END %]
     </tr>
   [% END %]
   [% END %]

@@ -260,6 +260,9 @@ if ( $op and $op eq 'serialchangestatus' ) {
         my $countdistinct;
         my $range = scalar(@itemid);
         for ( my $i = 0 ; $i < $range ; $i++ ) {
+          if (C4::Items::GetItem($itemid[$i])) {
+            next();
+          }
             unless ( $itemhash{ $itemid[$i] } ) {
                 if (   $serials[$countdistinct]
                     && $serials[$countdistinct] ne "NEW" )
