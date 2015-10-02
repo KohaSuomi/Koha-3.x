@@ -695,10 +695,10 @@ function checkMultiHold() {
           <a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=[% reserveloo.biblionumber %]">
                 [% IF ( reserveloo.barcodenumber ) %]
                     [% reserveloo.barcodenumber %]
-                    <input type="hidden" name="itemnumber" value="[% reserveloo.itemnumber %]" />
                 [% ELSE %]
                     No barcode
                 [% END %]
+                <input type="hidden" name="itemnumber" value="[% reserveloo.itemnumber %]" />
           </a>
     [% ELSE %]
       [% IF ( reserveloo.constrainttypea ) %]
@@ -707,10 +707,10 @@ function checkMultiHold() {
                 <a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=[% reserveloo.biblionumber %]">
                      [% IF ( reserveloo.barcodenumber ) %]
                          [% reserveloo.barcodenumber %]
-                        <input type="hidden" name="itemnumber" value="[% reserveloo.itemnumber %]" />
                     [% ELSE %]
                         No barcode
                     [% END %]
+                    <input type="hidden" name="itemnumber" value="[% reserveloo.itemnumber %]" />
                 </a>
                 </i>
             [% ELSE %]
