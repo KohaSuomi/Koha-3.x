@@ -206,6 +206,7 @@ sub getLanguages {
 
     my @languages_loop;
     my $languages_hash;
+    my $priority_sorting = C4::Context->preference("AdvancedSearchLanguagesSort");
     my $dbh=C4::Context->dbh;
     my $default_language = 'en';
     my $current_language = $default_language;
@@ -252,10 +253,10 @@ sub getLanguages {
         }
         if ( !$language_list || index (  $language_list, $language_subtag_registry->{ iso639_2_code } ) >= 0) {
             $languages_hash->{$language_subtag_registry->{ iso639_2_code }} = $language_subtag_registry;
-            push @languages_loop, $language_subtag_registry if not $language_list;
+            push @languages_loop, $language_subtag_registry if not $language_list or not $priority_sorting;
         }
     }
-    if ($language_list) {
+    if ($language_list and $priority_sorting) {
         # sort @languages_loop into order defined in AdvancedSearchLanguages preference
         my @adv_search_languages = split /[,|]+/, $language_list;
         foreach my $adv_search_lang (@adv_search_languages){
