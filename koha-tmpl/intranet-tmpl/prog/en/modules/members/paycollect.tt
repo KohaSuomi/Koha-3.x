@@ -60,6 +60,102 @@ function moneyFormat(textObj) {
 }
 //]]>
 </script>
+<style type="text/css">
+    .ball {
+        background-color: rgba(0,0,0,0);
+        border: 25px solid rgba(240,192,71,0.9);
+        opacity: .9;
+        border-top: 25px solid rgba(0,0,0,0);
+        border-left: 25px solid rgba(0,0,0,0);
+        border-radius: 150px;
+        box-shadow: 0 0 35px #f0c047;
+        width: 140px;
+        height: 140px;
+        margin: 50px auto;
+        -moz-animation: spin 1s infinite linear;
+        -webkit-animation: spin 1s infinite linear;
+    }
+    
+    .ball1 {
+        background-color: rgba(0,0,0,0);
+        border: 25px solid rgba(240,192,71,0.9);
+        opacity: .9;
+        border-top: 25px solid rgba(0,0,0,0);
+        border-left: 25px solid rgba(0,0,0,0);
+        border-radius: 150px;
+        box-shadow: 0 0 15px #f0c047;
+        width: 70px;
+        height: 70px;
+        margin: 0 auto;
+        position: relative;
+        top: -205px;
+        -moz-animation: spinoff .5s infinite linear;
+        -webkit-animation: spinoff .5s infinite linear;
+    }
+    
+    @-moz-keyframes spin {
+        0% {
+            -moz-transform: rotate(0deg);
+        }
+    
+        100% {
+            -moz-transform: rotate(360deg);
+        };
+    }
+    
+    @-moz-keyframes spinoff {
+        0% {
+            -moz-transform: rotate(0deg);
+        }
+    
+        100% {
+            -moz-transform: rotate(-360deg);
+        };
+    }
+    
+    @-webkit-keyframes spin {
+        0% {
+            -webkit-transform: rotate(0deg);
+        }
+    
+        100% {
+            -webkit-transform: rotate(360deg);
+        };
+    }
+    
+    @-webkit-keyframes spinoff {
+        0% {
+            -webkit-transform: rotate(0deg);
+        }
+    
+        100% {
+            -webkit-transform: rotate(-360deg);
+        };
+    }
+    
+    .office-button {
+        background:#eee;
+        border:solid 2px rgba(240,192,71,1);
+        border-radius: 5px;
+        font:3em Verdana;
+        margin:10px;
+        min-width:100px;
+        height:100px;
+        outline:none;
+        box-shadow:0 0 2px rgba(240,192,71,1);
+    }
+    .selected {
+        background:#afa;
+        border:solid 4px rgba(50,2020,50,1);
+        box-shadow:0 0 2px rgba(50,2020,50,1);
+    }
+    .office-button::-moz-focus-inner {
+        border:0;
+    }
+    #add_new_office {
+        cursor:pointer;
+    }
+</style>
 </head>
 <body id="pat_paycollect" class="pat">
 [% INCLUDE 'header.inc' %]
@@ -97,8 +193,106 @@ function moneyFormat(textObj) {
     </div>
 [% END %]
 
+[% IF ( startSending ) %]
+    <div><h2>Processing payment [% payment.Id %] - Please complete the payment [% IF ( payment.Office ) %]at cash register [% payment.Office %][% ELSE %] at any cash register[% END %].</h2>
+        <div class="ball"></div>
+        <div class="ball1"></div>
+    </div>
+    <div><p>
+        Current status:
+            <span id="status">
+                <span class="connecting">Connecting to the cash register.</span>
+                <span class="pending" style="display:none">Payment is pending. Please complete the payment and navigate back to <a href="/cgi-bin/koha/members/boraccount.pl?borrowernumber=10902939">Account</a>.</span>
+                <span class="paid" style="display:none">Payment is completed.</span>
+                <span class="cancelled" style="display:none">Payment was cancelled.</span>
+                <span class="processing" style="display:none">Payment is completed, but Koha is still processing it.</span>
+            </span>
+        </p>
+        <button type="button" id="recheck">Update payment status</button>
+    </div>
+    <script type="text/javascript">
+        $(document).ready(function() {
+            $.ajax({
+                url: "/cgi-bin/koha/members/paycollect.pl",
+                type: "post",
+                dataType: "json",
+                data: JSON.stringify([% json_payment %]),
+                contentType: "application/json"
+            }).done(function(data){
+                var response = jQuery.parseJSON(JSON.stringify(data));
+
+                handlePOSResponse(data);
+            });
+            $("#recheck").click(function() {
+                $.get("/api/v1/pos/cpu/" + [% payment.Id %], function(data) {
+                    var response = jQuery.parseJSON(JSON.stringify(data));
+
+                    handlePOSResponse(response);
+                });
+            });
+        });
+
+        function handlePOSResponse(response){
+            $("span[id='status']").children().css("display","none");
+            if (response.Status == 0 || response.status == "cancelled") {
+                $("span.cancelled").css("display", "inline-block");
+                colorBall("red");
+
+                if (response.error) {
+                    alert(_("Error: ") + JSON.stringify(response));
+                }
+
+                window.location.replace("/cgi-bin/koha/members/boraccount.pl?borrowernumber=[% borrowernumber %]");
+            }
+            else if (response.Status == 1 || response.status == "paid") {
+                $("span.paid").css("display", "inline-block");
+                colorBall("green");
+                window.location.replace("/cgi-bin/koha/members/boraccount.pl?borrowernumber=[% borrowernumber %]");
+            }
+            else if (response.Status == 2 || response.status == "pending") {
+                $("span.pending").css("display", "inline-block");
+            }
+            else if (response.status == "processing") {
+                $("span.processing").css("display", "inline-block");
+            }
+            else if (response.Status == 97) {
+                $("span.cancelled").css("display", "inline-block");
+                colorBall("red");
+                alert(_("Duplicate transaction number: ") + JSON.stringify(response));
+            }
+            else if (response.Status == 98) {
+                $("span.cancelled").css("display", "inline-block");
+                colorBall("red");
+                alert(_("Cash register server system error: ") + JSON.stringify(response));
+            }
+            else if (response.Status == 99) {
+                $("span.cancelled").css("display", "inline-block");
+                colorBall("red");
+                alert(_("Payment request is malformed: ") + JSON.stringify(response));
+            }
+            else {
+                $("span.cancelled").css("display", "inline-block");
+                alert(_("Error: ") + JSON.stringify(response));
+            }
+        }
+
+        function colorBall(color) {
+            if (color == "red"){
+                $(".ball").css("border", "25px solid rgba(204,0,0,0.9)");
+                $(".ball1").css("border", "25px solid rgba(204,0,0,0.9)");
+                $(".ball").css("box-shadow", "0 0 35px rgb(204,0,0)");
+                $(".ball1").css("box-shadow", "0 0 15px rgb(204,0,0)");
+            } else if (color == "green") {
+                $(".ball").css("border", "25px solid rgba(0,204,0,0.9)");
+                $(".ball1").css("border", "25px solid rgba(0,204,0,0.9)");
+                $(".ball").css("box-shadow", "0 0 35px rgb(0,204,0)");
+                $(".ball1").css("box-shadow", "0 0 15px rgb(0,204,0)");
+            }
+        }
+    </script>
+[% ELSE %]
 [% IF ( pay_individual ) %]
-    <form name="payindivfine" id="payindivfine" onsubmit="return validatePayment(this);" method="post" action="/cgi-bin/koha/members/paycollect.pl">
+    <form name="payindivfine" id="payindivfine" onsubmit="return validatePayment(this)" method="post" action="/cgi-bin/koha/members/paycollect.pl">
     <input type="hidden" name="borrowernumber" id="borrowernumber" value="[% borrower.borrowernumber %]" />
     <input type="hidden" name="pay_individual" id="pay_individual" value="[% pay_individual %]" />
     <input type="hidden" name="itemnumber" id="itemnumber" value="[% itemnumber %]" />
@@ -146,7 +340,11 @@ function moneyFormat(textObj) {
             <!-- default to paying all -->
         <input name="paid" id="paid" value="[% amountoutstanding | format('%.2f') %]" onchange="moneyFormat(document.payindivfine.paid)"/>
     </li>
+    <li>
+        [% INCLUDE offices %]
+    </li>
 </ol>
+<div>
 </fieldset>
 
     <div class="action"><input type="submit" name="submitbutton" value="Confirm" />
@@ -198,7 +396,7 @@ function moneyFormat(textObj) {
     <input type="hidden" name="borrowernumber" id="borrowernumber" value="[% borrower.borrowernumber %]" />
     <input type="hidden" name="selected_accts" id="selected_accts" value="[% selected_accts %]" />
     <input type="hidden" name="total" id="total" value="[% total %]" />
-
+    
     <fieldset class="rows">
     [% IF ( selected_accts ) %]<legend>Pay an amount toward selected fines</legend>[% ELSE %]<legend>Pay an amount toward all fines</legend>[% END %]
     <ol>
@@ -215,19 +413,179 @@ function moneyFormat(textObj) {
         <label for="selected_accts_notes">Note: </label>
         <textarea name="selected_accts_notes" id="selected_accts_notes">[% selected_accts_notes %]</textarea>
     </li>
+    <li>
+        [% INCLUDE offices %]
+    </li>
     </ol>
     </fieldset>
     <div class="action"><input type="submit" name="submitbutton" value="Confirm" />
         <a class="cancel" href="/cgi-bin/koha/members/boraccount.pl?borrowernumber=[% borrower.borrowernumber %]">Cancel</a></div>
     </form>
 [% END %]
+[% END %]
 </div></div>
 </div>
 </div>
-
 <div class="yui-b">
 [% INCLUDE 'circ-menu.tt' %]
 </div>
 </div>
 [% INCLUDE 'intranet-bottom.inc' %]
+[% BLOCK offices %]
+    [% IF POSIntegration %]
+        [% IF POSIntegration_in_branch %]
+    <label for="offices">Select office:</label>
+    <div id="offices"></div>
+    <input type="hidden" name="Office" id="office" />
+    <span id="add_new_office"><a>Add new office</a></span>
+    <div id="office_form" style="display:none">
+        <label for="office_new">Office:</label><input type="text" name="office_new" id="office_new" />
+        <button id="new_office" type="button">Add new office</button>
+        <p>Offices are stored as a browser cookie. Currently stored offices will disappear and need to be added again if you clear the browser cookies.</p>
+        <p>You can delete a stored office by first selecting it, and then pressing the delete-key on your keyboard.</p>
+    </div>
+        [% ELSE %]
+    <span id="add_new_office"><a>Add new office</a></span>
+    <div id="office_form" style="display:none">
+        <p>Cash register integration has not been enabled for your branch. In order to enable cash register integration in this branch ([% branch %]), please contact a superlibrarian. Koha payment types need to be mapped into your cash register item numbers.</p>
+    </div>
+        [% END%]
+    [% END %]
+[% END %]
+[% IF POSIntegration %]
+<script type="text/javascript">
+    $(document).ready(function() {
+        $("#add_new_office").click(function() {
+            if ($("#office_form").css("display") == "none") {
+                $("#office_form").css("display", "block"); 
+            } else {
+                $("#office_form").css("display", "none"); 
+            }
+        });
+        [% IF POSIntegration_in_branch %]
+        loadCashRegisters();
+        $("#new_office").click(function() {
+            if ($("#office_new").val().length > 0) {
+                newOffice($("#office_new").val());
+            }
+        });
 
+        $("#office").bind("enterKey",function(e) {
+            if ($("#office_new").val().length > 0) {
+                newOffice($("#office_new").val());
+            }
+        });
+        $("#office_new").keyup(function(e) {
+            if(e.keyCode == 13) {
+                $(this).trigger("enterKey");
+            }
+        });
+
+        $("body").on("click", "button[id*=office-]", function() {
+            selectOffice(this);
+        });
+        $("body").on("keyup", "button[id*=office-]", function(e) {
+            if(e.keyCode == 46) {
+                deleteOffice(this);
+            }
+        });
+        [% END %]
+    });
+    [% IF POSIntegration_in_branch %]
+    function selectOffice(button) {
+        // Deselect all other buttons
+        $.each($("button[id*=office-]"), function(key, obj) {
+            $(obj).attr("class", "office-button");
+        })
+        $(button).attr("class", "office-button selected");
+
+        $("#office").val($(button).attr("id").substr(7));
+    }
+    function newOffice(office) {
+        var offices = getOffices();
+
+        if (offices == null) {
+            offices = [];
+        }
+        if (offices.indexOf(office) > -1) {
+            return offices;
+        }
+        offices.push(office);
+
+        $.each(offices, function(key, val){
+            if (!$("#office-"+val).length) {
+                $("#offices").append('<button id="office-'+val+'" type="button" class="office-button">'+val+'</button>');
+            }
+        });
+
+        setCookie("offices", JSON.stringify(offices), "100*365");
+
+        $("#office_new").val("");
+        return offices;
+    }
+    function deleteOffice(obj) {
+        var offices = getOffices();
+
+        if (offices == null) {
+            return null;
+        }
+
+        $(obj).remove();
+
+        var index = offices.indexOf($(obj).attr("id").substr(7));
+
+        offices.splice(index, 1);
+
+        if ($("#office").val() == $(obj).attr("id").substr(7)) {
+            $("#office").val("");
+        }
+        setCookie("offices", JSON.stringify(offices), "100*365");
+
+        return offices;
+    }
+    function loadCashRegisters() {
+        var offices = getOffices();
+
+        if (offices == null) {
+            return null;
+        }
+        $.each(offices, function(key, val){
+            if (!$("#office-"+val).length) {
+                $("#offices").append('<button id="office-'+val+'" type="button" class="office-button">'+val+'</button>');
+            }
+        });
+    }
+    function getOffices() {
+        var cookie;
+        var name = "offices=";
+        var ca = document.cookie.split(';');
+        for(var i=0; i<ca.length; i++) {
+            var c = ca[i];
+            while (c.charAt(0)==' ') c = c.substring(1);
+            if (c.indexOf(name) == 0) cookie = c.substring(name.length,c.length);
+        }
+
+        if (!cookie) {
+            return null;
+        }
+
+        return JSON.parse(cookie);
+    }
+
+    function setCookie(cname, cvalue, exdays) {
+        var d = new Date();
+        d.setTime(d.getTime() + (exdays*24*60*60*1000));
+        var expires = "expires="+d.toUTCString();
+        document.cookie = cname + "=" + cvalue + "; " + expires;
+    }
+
+    function validatePayment(obj) {
+        if ($("#office").val().length == 0) {
+            alert(_("Please select office"));
+            return false;
+        }
+        $(obj)[0].submit();
+    }
+    [% END %]
+</script>
+[% END %]

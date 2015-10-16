@@ -13,3 +13,16 @@ Tools:
         - Set the fine for the 1st, 2nd and 3rd overdue notifications. Separated by |, eg. <strong>3|3|7</strong>
         - pref: claimingFines
           class: Choice
+    -
+        - Use
+        - pref: POSIntegration
+          choices:
+              cpu: CPU integration
+              "OFF": None
+        - component to handle Borrower's fine payments.
+    -
+        - CPU / Ceepos integration. Map accountlines' accounttypes to item numbers for cash registers in different branches.
+        - pref: cpuitemnumbers
+          type: textarea
+          class: code
+        - Use parameter "Default" to define an item number for other types than defined.

@@ -28,6 +28,8 @@ use C4::Members;
 use C4::Accounts;
 use C4::Koha;
 use C4::Branch;
+use C4::OPLIB::CPUIntegration;
+use JSON;
 
 my $input = CGI->new();
 
@@ -41,6 +43,18 @@ my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
         debug           => 1,
     }
 );
+
+# POS integration AJAX call
+my $posintegration = 1 if (C4::Context->preference("POSIntegration") ne "OFF");
+my $posintegration_in_branch = 1 if C4::OPLIB::CPUIntegration::hasBranchEnabledIntegration(C4::Branch::mybranch());
+if ($posintegration && $posintegration_in_branch && $input->param('POSTDATA')) {
+    my $payment = JSON->new->utf8->canonical(1)->decode($input->param('POSTDATA'));
+
+    if ($payment->{send_payment} && $payment->{send_payment} eq "POST") {
+        output_ajax_with_http_headers $input, C4::OPLIB::CPUIntegration::SendPayment($payment);
+        exit 1;
+    }
+}
 
 # get borrower details
 my $borrowernumber = $input->param('borrowernumber');
@@ -57,9 +71,14 @@ my $individual   = $input->param('pay_individual');
 my $writeoff     = $input->param('writeoff_individual');
 my $select_lines = $input->param('selected');
 my $select       = $input->param('selected_accts');
+my $office       = $input->param('Office');
 my $payment_note = uri_unescape $input->param('payment_note');
 my $accountno;
 my $accountlines_id;
+
+$template->param( POSIntegration => 1 ) if $posintegration;
+$template->param( POSIntegration_in_branch => 1 ) if $posintegration_in_branch;
+
 if ( $individual || $writeoff ) {
     if ($individual) {
         $template->param( pay_individual => 1 );
@@ -106,6 +125,28 @@ if ( $total_paid and $total_paid ne '0.00' ) {
             total_due => $total_due
         );
     } else {
+        if ($posintegration and C4::Context->preference("POSIntegration") eq "cpu" and $posintegration_in_branch) {
+            my $payment;
+
+            $payment->{borrowernumber}      = $borrowernumber;
+            $payment->{total_paid}          = $total_paid;
+            $payment->{total_due}           = $total_due;
+            $payment->{payment_note}        = $payment_note || $input->param('notes') || $input->param('selected_accts_notes');
+            $payment->{office}              = $office;
+            my @selected = (defined $select) ? split /,/, $select : $accountno;
+            $payment->{selected}             = \@selected;
+
+            my $CPUPayment = C4::OPLIB::CPUIntegration::InitializePayment($payment);
+
+            $template->param(
+                startSending => 1,
+                payment => $CPUPayment,
+                posdestination => C4::Context->config('pos')->{'CPU'}->{'url'},
+                json_payment => JSON::encode_json($CPUPayment),
+                office          => $office,
+            );
+        } else {
+
         if ($individual) {
             if ( $total_paid == $total_due ) {
                 makepayment( $accountlines_id, $borrowernumber, $accountno, $total_paid, $user,
@@ -135,6 +176,8 @@ if ( $total_paid and $total_paid ne '0.00' ) {
 "/cgi-bin/koha/members/boraccount.pl?borrowernumber=$borrowernumber"
             );
         }
+
+        }
     }
 } else {
     $total_paid = '0.00';    #TODO not right with pay_individual
@@ -148,6 +191,7 @@ $template->param(
     total         => $total_due,
     activeBorrowerRelationship => (C4::Context->preference('borrowerRelationship') ne ''),
     RoutingSerials => C4::Context->preference('RoutingSerials'),
+    branch          => C4::Branch::mybranch(),
 );
 
 output_html_with_http_headers $input, $cookie, $template->output;

@@ -602,6 +602,76 @@
           }
         }
       }
+    },
+    "/pos/cpu/{invoicenumber}": {
+      "get": {
+        "x-mojo-controller": "Koha::REST::V1::POSIntegration",
+        "operationId": "getTransaction",
+        "x-koha-permission": {
+          "updatecharges": "remaining_permissions"
+        },
+        "tags": ["POS Integration"],
+        "parameters": [
+          {
+            "$ref": "#/parameters/invoicenumberPathParam"
+          }
+        ],
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "responses": {
+          "200": {
+            "description": "A transaction",
+            "schema": {
+              "$ref" : "#/definitions/transaction"
+            }
+          },
+          "404": {
+            "description": "Transaction not found",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          }
+        }
+      }
+    },
+    "/pos/cpu/{invoicenumber}/report": {
+      "post": {
+        "x-mojo-controller": "Koha::REST::V1::POSIntegration",
+        "operationId": "cpuReport",
+        "tags": ["POS Integration"],
+        "parameters": [
+          {
+            "$ref": "#/parameters/invoicenumberPathParam"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "type": "string",
+            "description": "New report",
+            "schema": { "$ref": "#/definitions/CPUinvoiceReport" }
+          }
+        ],
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "responses": {
+          "200": {
+            "description": "Response for receiving report",
+            "type": "string"
+          },
+          "400": {
+            "description": "Bad parameters",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "404": {
+            "description": "Transaction not found",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          }
+        }
+      }
     }
   },
   "definitions": {
@@ -883,6 +953,58 @@
         }
       }
     },
+    "transaction": {
+      "type": "object",
+      "properties": {
+        "borrowernumber": {
+          "$ref": "#/definitions/borrowernumber"
+        },
+        "accountlines_id": {
+          "description": "Reference to related accountlines row where accounttype is Pay. If null, transaction is incomplete. Else it is completed.",
+          "type": "integer"
+        },
+        "status": {
+          "description": "Status of transaction",
+          "type": "string"
+        },
+        "timestamp": {
+          "description": "Creation time",
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "price_in_cents": {
+          "description": "Total price of transaction",
+          "type": "integer"
+        }
+      }
+    },
+    "CPUinvoiceReport": {
+      "type": "object",
+      "properties": {
+        "Source": {
+          "type": "string"
+        },
+        "Id": {
+          "description": "Invoice identification number",
+          "type": "string"
+        },
+        "Status": {
+          "description": "Status of payment",
+          "type": "integer"
+        },
+        "Reference": {
+          "description": "Receipt number for successful payments",
+          "type": "integer",
+          "required": false
+        },
+        "Hash": {
+          "description": "Hash for response parameters",
+          "type": "string"
+        }
+      }
+    },
     "error": {
       "type": "object",
       "properties": {
@@ -932,6 +1054,13 @@
       "name": "messagenumber",
       "in": "path",
       "description": "Internal message identifier",
+      "required": "true",
+      "type": "integer"
+    },
+    "invoicenumberPathParam": {
+      "name": "invoicenumber",
+      "in": "path",
+      "description": "Internal invoice identifier",
       "required": "true",
       "type": "integer"
     },

@@ -162,5 +162,23 @@ __PAZPAR2_TOGGLE_XML_POST__
         <Unicode></Unicode>
     </labyrintti>
  </smsProviders>
+ <pos>
+    <CPU>
+        <!-- Delivered by CPU: -->
+        <source></source>                           <!-- Source id -->
+        <secretKey></secretKey>                     <!-- Secret key for generating SHA-256 hash -->
+        <url></url>                                 <!-- Address to the cash register server -->
+
+        <!-- Koha settings -->
+        <mode></mode>                               <!-- Use 2 for synchronized mode -->
+        <notificationAddress></notificationAddress> <!-- https://server/api/v1/pos/cpu/{invoicenumber}/report -->
+        <!-- Replace "server" with your server address, but keep {invoicenumber} as it is (it will be converted later into real id) -->
+
+        <!-- SSL certificates -->
+        <ssl_cert></ssl_cert>                       <!-- SSL certificate path -->
+        <ssl_key></ssl_key>                         <!-- SSL key path -->
+        <ssl_ca_file></ssl_ca_file>                 <!-- CA certificate path -->
+  </CPU>
+ </pos>
 </config>
 </yazgfs>

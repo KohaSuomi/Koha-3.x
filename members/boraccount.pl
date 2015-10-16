@@ -34,6 +34,9 @@ use C4::Branch;
 use C4::Accounts;
 use C4::Members::Attributes qw(GetBorrowerAttributes);
 
+use Koha::PaymentsTransaction;
+use Koha::PaymentsTransactions;
+
 my $input=new CGI;
 
 
@@ -69,6 +72,7 @@ my $totalcredit;
 if($total <= 0){
         $totalcredit = 1;
 }
+my $related_accountlines;
 
 my $reverse_col = 0; # Flag whether we need to show the reverse column
 foreach my $accountline ( @{$accts}) {
@@ -87,6 +91,21 @@ foreach my $accountline ( @{$accts}) {
     if ($accountline->{accounttype} =~ /^Pay/) {
         $accountline->{payment} = 1;
         $reverse_col = 1;
+    }
+
+    my $transaction = Koha::PaymentsTransactions->find({ accountlines_id => $accountline->{accountlines_id} }) if $accountline->{accounttype} eq "Pay";
+
+    # If transaction is found, find all related accountlines and store them so we can highlight
+    # them in the Fines tab.
+    if ($transaction) {
+        $accountline->{transactionnumber} = $transaction->transaction_id if $transaction;
+
+        my $relacclines = $transaction->GetRelatedAccountlines();
+        foreach my $relaccline (@$relacclines){
+            $related_accountlines->{$relaccline->{accountlines_id}} = [] if not exists $related_accountlines->{$relaccline->{accountlines_id}};
+
+            push $related_accountlines->{$relaccline->{accountlines_id}}, $transaction->transaction_id;
+        }
     }
 }
 
@@ -128,6 +147,7 @@ $template->param(
     is_child            => ($data->{'category_type'} eq 'C'),
     reverse_col         => $reverse_col,
     accounts            => $accts,
+    relatedaccounts     => $related_accountlines,
 	activeBorrowerRelationship => (C4::Context->preference('borrowerRelationship') ne ''),
     RoutingSerials => C4::Context->preference('RoutingSerials'),
 );

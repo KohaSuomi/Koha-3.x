@@ -1,6 +1,14 @@
 [% INCLUDE 'doc-head-open.inc' %]
 <title>Koha &rsaquo; Patrons &rsaquo; Account for [% INCLUDE 'patron-title.inc' %]</title>
 [% INCLUDE 'doc-head-close.inc' %]
+<style type="text/css">
+   td.transaction-selected {
+	  background:#FFBC8F !important;
+   }
+   tr:hover td.transaction-selected  {
+	  background:#F0A16C !important;
+   }
+</style>
 </head>
 <body id="pat_borraccount" class="pat">
 [% INCLUDE 'header.inc' %]
@@ -29,6 +37,7 @@
 <table>
   <tr>
   	<th>Date</th>
+	<th>Transaction number</th>
     <th>Description of charges</th>
     <th>Note</th>
     <th>Amount</th>
@@ -42,8 +51,12 @@
 	<!-- FIXME: Shouldn't hardcode dollar signs, since Euro or Pound might be needed -->
   [% FOREACH account IN accounts %]
 
-   [% IF ( loop.odd ) %]<tr>[% ELSE %]<tr class="highlight">[% END %]
+   [% IF ( loop.odd ) %]<tr [% IF account.transactionnumber %]class="transaction"[% END %]>[% ELSE %]<tr class="highlight [% IF account.transactionnumber %]transaction[% END %]">[% END %]
+		 [% FOREACH relline IN relatedaccounts.${account.accountlines_id} %]
+			<input type="hidden" name="parentTransaction" value="[% relline %]" />
+		 [% END %]
       <td>[% account.date %]</td>
+	  <td class="transactionnumber">[% IF account.transactionnumber %][% account.transactionnumber %][% ELSE %]-[% END %]</td>
       <td>
         [% SWITCH account.accounttype %]
           [% CASE 'Pay' %]Payment, thanks
@@ -92,7 +105,7 @@
   [% END %]
 <tfoot>
   <tr>
-    <td colspan="4">Total due</td>
+    <td colspan="5">Total due</td>
     [% IF ( totalcredit ) %]
       [% IF ( reverse_col ) %]
         <td colspan="3" class="credit">
@@ -114,7 +127,37 @@
 
 </div>
 </div>
+<script type="text/javascript">
+   $("tr").on("click", function(e) {
+	  $("td").each(function() {
+		 if ($(this).hasClass("transaction-selected")) {
+			$(this).removeClass("transaction-selected");
+		 }
+	  });
+	  if ($(this).hasClass("transaction")) {
+		 $(this).children("td").addClass("transaction-selected");
+		 $(this).children("td").each(function() {
+			if ($(this).hasClass("transactionnumber")) {
+			   var transactionnumber = $(this).html();
 
+			   $("input[name*='parentTransaction']").each(function() {
+				  if ($(this).val() == transactionnumber) {
+					 $(this).parent().children("td").addClass("transaction-selected");
+				  }
+			   });
+			}
+		 });
+	  }
+	  e.stopPropagation();
+   })
+   $(document).click(function(e) {
+	  $("td").each(function() {
+		 if ($(this).hasClass("transaction-selected")) {
+			$(this).removeClass("transaction-selected");
+		 }
+	  });
+   });
+</script>
 <div class="yui-b">
 [% INCLUDE 'circ-menu.inc' %]
 </div>

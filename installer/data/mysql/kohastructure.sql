@@ -1796,6 +1796,47 @@ CREATE TABLE `patronimage` ( -- information related to patron images
   CONSTRAINT `patronimage_fk1` FOREIGN KEY (`borrowernumber`) REFERENCES `borrowers` (`borrowernumber`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+--
+-- Table structure for table `payments_transactions`
+--
+
+DROP TABLE IF EXISTS `payments_transactions`;
+CREATE TABLE `payments_transactions` ( -- information related to payments via POS integration
+  transaction_id int(11) NOT NULL auto_increment, -- transaction number
+  borrowernumber int(11) NOT NULL, -- the borrowernumber that the payment is for
+  accountlines_id int(11), -- the accountlines_id of the payment (the accounttype is Pay)
+  status ENUM('paid','pending','cancelled','unsent') DEFAULT 'pending', -- status of transaction
+  timestamp timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, -- timestamp for payment initialization
+  description TEXT NOT NULL, -- additional description that can hold notes. Prints into the accountlines Pay event once the payment is completed
+  price_in_cents int(11) NOT NULL, -- total price of the payment in cents
+  PRIMARY KEY (transaction_id),
+  FOREIGN KEY (accountlines_id)
+    REFERENCES accountlines(accountlines_id)
+    ON DELETE CASCADE,
+  FOREIGN KEY (borrowernumber)
+    REFERENCES borrowers(borrowernumber)
+    ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `payments_transactions_accountlines`
+--
+
+DROP TABLE IF EXISTS `payments_transactions_accountlines`;
+CREATE TABLE `payments_transactions` ( -- related accountlines for payments (transactions)
+  transactions_accountlines_id int(11) NOT NULL auto_increment,
+  transaction_id int(11) NOT NULL, -- referenced transaction_id from payments_transactions
+  accountlines_id int(11) NOT NULL, -- referenced accountlines_id from accountlines
+  paid_price_cents int(11) NOT NULL, -- price (in cents) of the item in accountlines
+  PRIMARY KEY (transactions_accountlines_id),
+  FOREIGN KEY (transaction_id)
+    REFERENCES payments_transactions(transaction_id)
+    ON DELETE CASCADE,
+  FOREIGN KEY (accountlines_id)
+    REFERENCES accountlines(accountlines_id)
+    ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 -- Table structure for table `pending_offline_operations`
 --
 -- this table is MyISAM, InnoDB tables are growing only and this table is filled/emptied/filled/emptied...
