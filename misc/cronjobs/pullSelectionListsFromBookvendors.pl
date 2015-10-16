@@ -62,7 +62,7 @@ This script takes the following parameters :
 
     --verbose | v       verbose. An integer, 1 for slightly verbose, 2 for largely verbose!
 ";
-my $ftp = C4::OPLIB::AcquisitionIntegration::connectToKirjavalitys();
+
 if ( $help ) {
     print $usage;
 }
