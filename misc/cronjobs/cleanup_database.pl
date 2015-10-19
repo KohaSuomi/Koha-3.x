@@ -59,6 +59,8 @@ Usage: $0 [-h|--help] [--sessions] [--sessdays DAYS] [-v|--verbose] [--zebraqueu
    --merged           purged completed entries from need_merge_authorities.
    --import DAYS      purge records from import tables older than DAYS days.
                       Defaults to 60 days if no days specified.
+   --calendar DAYS    purge rows from koha.special_holidays-table older than DAYS days.
+                      Defaults to 362 days if no days specified.
    --z3950            purge records from import tables that are the result
                       of Z39.50 searches
    --logs DAYS        purge entries from action_logs older than DAYS days.
@@ -74,7 +76,7 @@ USAGE
 my (
     $help,            $sessions,       $sess_days,    $verbose,
     $zebraqueue_days, $mail,           $purge_merged, $pImport,
-    $pLogs,           $pSearchhistory, $pZ3950,
+    $pLogs,           $pSearchhistory, $pZ3950,       $calendar,
     $pListShareInvites,
 );
 
@@ -87,6 +89,7 @@ GetOptions(
     'zebraqueue:i' => \$zebraqueue_days,
     'merged'       => \$purge_merged,
     'import:i'     => \$pImport,
+    'calendar:i'   => \$calendar,
     'z3950'        => \$pZ3950,
     'logs:i'       => \$pLogs,
     'searchhistory:i' => \$pSearchhistory,
@@ -112,6 +115,7 @@ unless ( $sessions
     || $mail
     || $purge_merged
     || $pImport
+    || $calendar
     || $pLogs
     || $pSearchhistory
     || $pZ3950
@@ -186,6 +190,17 @@ if($purge_merged) {
     $sth = $dbh->prepare("DELETE FROM need_merge_authorities WHERE done=1");
     $sth->execute() or die $dbh->errstr;
     print "Done with purging need_merge_authorities.\n" if $verbose;
+}
+
+if ($calendar) {
+    my $daysOld = $calendar || 362;
+    print "Purging koha.special_holidays from '$calendar' days ago.\n" if $verbose;
+    eval {
+        Koha::Calendar::cleanupCalendar();
+    };
+    if ($@) {
+        warn DateTime->now()->iso8601()." - Exception while purging the Calendar:\n".$@;
+    }
 }
 
 if($pImport) {
