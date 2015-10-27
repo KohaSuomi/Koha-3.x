@@ -9,7 +9,7 @@ use Carp qw(cluck);
 sub readRow {
     my ($self, $textRow) = @_;
 
-    if ( $_ =~ /^(\d+):(\d*):(.*)/ ) {
+    if ( $_ =~ /^([0-9A-Z-]+):(\d*):(.*)/ ) {
         my $copyId       = $1; #Old value
         my $itemnumber   = $2; #new Koha itemnumber
         my $barcode      = $3;
