@@ -209,6 +209,7 @@ CREATE TABLE `biblioitems` ( -- information related to bibliographic records in 
   KEY `isbn` (`isbn`(255)),
   KEY `issn` (`issn`(255)),
   KEY `publishercode` (`publishercode`),
+  KEY `timestamp_bibno` (`timestamp`, `biblionumber`),
   CONSTRAINT `biblioitems_ibfk_1` FOREIGN KEY (`biblionumber`) REFERENCES `biblio` (`biblionumber`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -866,7 +867,8 @@ CREATE TABLE `deletedbiblioitems` ( -- information about bibliographic records t
   KEY `bibnoidx` (`biblionumber`),
   KEY `itemtype_idx` (`itemtype`),
   KEY `isbn` (`isbn`(255)),
-  KEY `publishercode` (`publishercode`)
+  KEY `publishercode` (`publishercode`),
+  KEY `timestamp_bibno` (`timestamp`, `biblionumber`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
