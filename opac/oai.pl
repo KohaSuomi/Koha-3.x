@@ -1,27 +1,28 @@
 #!/usr/bin/perl
 
 # Copyright Biblibre 2008
+# Copyright The National Library of Finland 2015
 #
 # This file is part of Koha.
 #
-# Koha is free software; you can redistribute it and/or modify it under the
-# terms of the GNU General Public License as published by the Free Software
-# Foundation; either version 2 of the License, or (at your option) any later
-# version.
+# Koha is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
 #
-# Koha is distributed in the hope that it will be useful, but WITHOUT ANY
-# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-# A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+# Koha is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
 #
-# You should have received a copy of the GNU General Public License along
-# with Koha; if not, write to the Free Software Foundation, Inc.,
-# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+# You should have received a copy of the GNU General Public License
+# along with Koha; if not, see <http://www.gnu.org/licenses>.
 
 
 use strict;
 use warnings;
 
-use CGI qw/:standard -oldstyle_urls/;
+use CGI qw( :standard -oldstyle_urls -utf8 );
 use vars qw( $GZIP );
 use C4::Context;
 
@@ -59,6 +60,9 @@ else {
 }
 
 binmode STDOUT, ':encoding(UTF-8)';
+# OAI-PMH handles dates in UTC, so do that on the database level to avoid the
+# need for any conversions
+C4::Context->dbh->prepare("SET time_zone='+00:00'")->execute();
 my $repository = C4::OAI::Repository->new();
 
 # __END__ Main Prog
@@ -71,7 +75,7 @@ my $repository = C4::OAI::Repository->new();
 # - from
 # - until
 # - offset
-# 
+#
 package C4::OAI::ResumptionToken;
 
 use strict;
@@ -86,9 +90,9 @@ sub new {
 
     my $self = $class->SUPER::new(%args);
 
-    my ($metadata_prefix, $offset, $from, $until, $set);
+    my ($metadata_prefix, $offset, $from, $until, $set, $stage);
     if ( $args{ resumptionToken } ) {
-        ($metadata_prefix, $offset, $from, $until, $set)
+        ($metadata_prefix, $offset, $from, $until, $set, $stage)
             = split( '/', $args{resumptionToken} );
     }
     else {
@@ -101,6 +105,7 @@ sub new {
         }
         $offset = $args{ offset } || 0;
         $set = $args{set};
+        $stage = (defined $args{stage}) ? $args{stage} : 0;
     }
 
     $self->{ metadata_prefix } = $metadata_prefix;
@@ -108,9 +113,10 @@ sub new {
     $self->{ from            } = $from;
     $self->{ until           } = $until;
     $self->{ set             } = $set;
+    $self->{ stage           } = $stage;
 
     $self->resumptionToken(
-        join( '/', $metadata_prefix, $offset, $from, $until, $set ) );
+        join( '/', $metadata_prefix, $offset, $from, $until, $set, $stage ) );
     $self->cursor( $offset );
 
     return $self;
@@ -138,9 +144,9 @@ sub new {
         repositoryName      => C4::Context->preference("LibraryName"),
         adminEmail          => C4::Context->preference("KohaAdminEmailAddress"),
         MaxCount            => C4::Context->preference("OAI-PMH:MaxCount"),
-        granularity         => 'YYYY-MM-DD',
-        earliestDatestamp   => '0001-01-01',
-        deletedRecord       => 'no',
+        granularity         => 'YYYY-MM-DDThh:mm:ssZ',
+        earliestDatestamp   => '0001-01-01T00:00:00Z',
+        deletedRecord       => 'persistent',
     );
 
     # FIXME - alas, the description element is not so simple; to validate
@@ -187,6 +193,11 @@ sub new {
             metadataNamespace => 'http://www.openarchives.org/OAI/2.0/oai_dc/'
         ) );
         $self->metadataFormat( HTTP::OAI::MetadataFormat->new(
+            metadataPrefix    => 'marc21',
+            schema            => 'http://www.loc.gov/MARC21/slim http://www.loc.gov/ standards/marcxml/schema/MARC21slim.xsd',
+            metadataNamespace => 'http://www.loc.gov/MARC21/slim http://www.loc.gov/ standards/marcxml/schema/MARC21slim'
+        ) );
+        $self->metadataFormat( HTTP::OAI::MetadataFormat->new(
             metadataPrefix    => 'marcxml',
             schema            => 'http://www.loc.gov/MARC21/slim http://www.loc.gov/ standards/marcxml/schema/MARC21slim.xsd',
             metadataNamespace => 'http://www.loc.gov/MARC21/slim http://www.loc.gov/ standards/marcxml/schema/MARC21slim'
@@ -210,7 +221,7 @@ use HTTP::OAI::Metadata::OAI_DC;
 use base ("HTTP::OAI::Record");
 
 sub new {
-    my ($class, $repository, $marcxml, $timestamp, $setSpecs, %args) = @_;
+    my ($class, $repository, $marcxml, $timestamp, $setSpecs, $deleted, %args) = @_;
 
     my $self = $class->SUPER::new(%args);
 
@@ -218,22 +229,25 @@ sub new {
     $self->header( new HTTP::OAI::Header(
         identifier  => $args{identifier},
         datestamp   => $timestamp,
+        status => $deleted ? 'deleted' : undef
     ) );
 
     foreach my $setSpec (@$setSpecs) {
         $self->header->setSpec($setSpec);
     }
 
-    my $parser = XML::LibXML->new();
-    my $record_dom = $parser->parse_string( $marcxml );
-    my $format =  $args{metadataPrefix};
-    if ( $format ne 'marcxml' ) {
-        my %args = (
-            OPACBaseURL => "'" . C4::Context->preference('OPACBaseURL') . "'"
-        );
-        $record_dom = $repository->stylesheet($format)->transform($record_dom, %args);
+    if (!$deleted) {
+        my $parser = XML::LibXML->new();
+        my $record_dom = $parser->parse_string( $marcxml );
+        my $format =  $args{metadataPrefix};
+        if ( $format ne 'marcxml' && $format ne 'marc21' ) {
+            my %args = (
+                OPACBaseURL => "'" . C4::Context->preference('OPACBaseURL') . "'"
+            );
+            $record_dom = $repository->stylesheet($format)->transform($record_dom, %args);
+        }
+        $self->metadata( HTTP::OAI::Metadata->new( dom => $record_dom ) );
     }
-    $self->metadata( HTTP::OAI::Metadata->new( dom => $record_dom ) );
 
     return $self;
 }
@@ -314,40 +328,48 @@ sub new {
     if(defined $token->{'set'}) {
         $set = GetOAISetBySpec($token->{'set'});
     }
-    my $sql = "
-        SELECT biblioitems.biblionumber, biblioitems.timestamp
-        FROM biblioitems
-    ";
-    $sql .= " JOIN oai_sets_biblios ON biblioitems.biblionumber = oai_sets_biblios.biblionumber " if defined $set;
-    $sql .= " WHERE DATE(timestamp) >= ? AND DATE(timestamp) <= ? ";
-    $sql .= " AND oai_sets_biblios.set_id = ? " if defined $set;
-    $sql .= "
-        LIMIT $repository->{'koha_max_count'}
-        OFFSET $token->{'offset'}
-    ";
-    my $sth = $dbh->prepare( $sql );
-    my @bind_params = ($token->{'from'}, $token->{'until'});
-    push @bind_params, $set->{'id'} if defined $set;
-    $sth->execute( @bind_params );
+    my $max = $repository->{'koha_max_count'};
+    my $offset = $token->{'offset'};
 
-    my $pos = $token->{offset};
-    while ( my ($biblionumber, $timestamp) = $sth->fetchrow ) {
-        $timestamp =~ s/ /T/, $timestamp .= 'Z';
-        $self->identifier( new HTTP::OAI::Header(
-            identifier => $repository->{ koha_identifier} . ':' . $biblionumber,
-            datestamp  => $timestamp,
-        ) );
-        $pos++;
+    my $count = 0;
+    # Since creating a union of normal and deleted record tables would be a heavy
+    # operation, build results in two stages: first deleted records, then normal records
+    MAINLOOP:
+    for ( my $stage = $token->{'stage'}; $stage < 2; $stage++ ) {
+        my $sql = C4::OAI::Utils->build_list_sql($stage == 0, $set, $max, $offset);
+        my $sth = $dbh->prepare( $sql ) || die('Query preparation failed: ' . $dbh->errstr);
+        my @bind_params = (C4::OAI::Utils->fix_date($token->{'from'}, 0), C4::OAI::Utils->fix_date($token->{'until'}, 1));
+        push @bind_params, $set->{'id'} if defined $set;
+        $sth->execute( @bind_params ) || die('Query failed: ' . $dbh->errstr);
+
+        while ( my ($biblionumber, $timestamp) = $sth->fetchrow ) {
+            $count++;
+            if ( $count > $max ) {
+                $self->resumptionToken(
+                    new C4::OAI::ResumptionToken(
+                        metadataPrefix  => $token->{metadata_prefix},
+                        from            => $token->{from},
+                        until           => $token->{until},
+                        offset          => $offset + $max,
+                        set             => $token->{set},
+                        stage           => $stage
+                    )
+                );
+                last MAINLOOP;
+            }
+            $timestamp =~ s/ /T/, $timestamp .= 'Z';
+            my $header = new HTTP::OAI::Header(
+                identifier => $repository->{ koha_identifier} . ':' . $biblionumber,
+                datestamp  => $timestamp,
+            );
+            if ($stage == 0) {
+                $header->status( 'deleted' );
+            }
+            $self->identifier( $header );
+        }
+        # Reset offset for next stage
+        $offset = 0;
     }
-    $self->resumptionToken(
-        new C4::OAI::ResumptionToken(
-            metadataPrefix  => $token->{metadata_prefix},
-            from            => $token->{from},
-            until           => $token->{until},
-            offset          => $pos,
-            set             => $token->{set}
-        )
-    ) if ($pos > $token->{offset});
 
     return $self;
 }
@@ -467,51 +489,117 @@ sub new {
     if(defined $token->{'set'}) {
         $set = GetOAISetBySpec($token->{'set'});
     }
-    my $sql = "
-        SELECT biblioitems.biblionumber, biblioitems.marcxml, biblioitems.timestamp
-        FROM biblioitems
-    ";
-    $sql .= " JOIN oai_sets_biblios ON biblioitems.biblionumber = oai_sets_biblios.biblionumber " if defined $set;
-    $sql .= " WHERE DATE(timestamp) >= ? AND DATE(timestamp) <= ? ";
-    $sql .= " AND oai_sets_biblios.set_id = ? " if defined $set;
-    $sql .= "
-        LIMIT $repository->{'koha_max_count'}
-        OFFSET $token->{'offset'}
-    ";
+    my $offset = $token->{'offset'};
+    my $max = $repository->{'koha_max_count'};
+    my $query = '
+SELECT biblioitems.marcxml
+FROM biblioitems
+WHERE biblionumber = ?
+';
+    my $marc_sth = $dbh->prepare($query) || die('Query preparation failed: ' . $dbh->errstr);
 
-    my $sth = $dbh->prepare( $sql );
-    my @bind_params = ($token->{'from'}, $token->{'until'});
-    push @bind_params, $set->{'id'} if defined $set;
-    $sth->execute( @bind_params );
+    my $count = 0;
+    # Since creating a union of normal and deleted record tables would be a heavy
+    # operation, build results in two stages: first deleted records, then normal records
+    MAINLOOP:
+    for ( my $stage = $token->{'stage'}; $stage < 2; $stage++ ) {
+        my $sql = C4::OAI::Utils->build_list_sql($stage == 0, $set, $max, $offset);
+        my $sth = $dbh->prepare( $sql ) || die('Query preparation failed: ' . $dbh->errstr);
+        my @bind_params = (C4::OAI::Utils->fix_date($token->{'from'}, 0), C4::OAI::Utils->fix_date($token->{'until'}, 1));
+        push @bind_params, $set->{'id'} if defined $set;
+        $sth->execute( @bind_params ) || die('Query failed: ' . $dbh->errstr);
 
-    my $pos = $token->{offset};
-    while ( my ($biblionumber, $marcxml, $timestamp) = $sth->fetchrow ) {
-        my $oai_sets = GetOAISetsBiblio($biblionumber);
-        my @setSpecs;
-        foreach (@$oai_sets) {
-            push @setSpecs, $_->{spec};
+        while ( my ($biblionumber, $timestamp) = $sth->fetchrow ) {
+            $count++;
+            if ( $count > $max ) {
+                $self->resumptionToken(
+                    new C4::OAI::ResumptionToken(
+                        metadataPrefix  => $token->{metadata_prefix},
+                        from            => $token->{from},
+                        until           => $token->{until},
+                        offset          => $offset + $max,
+                        set             => $token->{set},
+                        stage           => $stage
+                    )
+                );
+                last MAINLOOP;
+            }
+            my $marcxml = '';
+            if ($stage == 1) {
+                $marc_sth->execute(($biblionumber)) || die('Query failed: ' . $dbh->errstr);
+                my @marc_results = $marc_sth->fetchrow_array();
+                if (@marc_results) {
+                    $marcxml = $marc_results[0];
+                }
+            }
+            my $oai_sets = GetOAISetsBiblio($biblionumber);
+            my @setSpecs;
+            foreach (@$oai_sets) {
+                push @setSpecs, $_->{spec};
+            }
+            $self->record( C4::OAI::Record->new(
+                $repository, $marcxml, $timestamp, \@setSpecs, $stage == 0 || !$marcxml,
+                identifier      => $repository->{ koha_identifier } . ':' . $biblionumber,
+                metadataPrefix  => $token->{metadata_prefix}
+            ) );
         }
-        $self->record( C4::OAI::Record->new(
-            $repository, $marcxml, $timestamp, \@setSpecs,
-            identifier      => $repository->{ koha_identifier } . ':' . $biblionumber,
-            metadataPrefix  => $token->{metadata_prefix}
-        ) );
-        $pos++;
+        # Reset offset for next stage
+        $offset = 0;
     }
-    $self->resumptionToken(
-        new C4::OAI::ResumptionToken(
-            metadataPrefix  => $token->{metadata_prefix},
-            from            => $token->{from},
-            until           => $token->{until},
-            offset          => $pos,
-            set             => $token->{set}
-        )
-    ) if ($pos > $token->{offset});
 
     return $self;
 }
 
 # __END__ C4::OAI::ListRecords
+
+package C4::OAI::Utils;
+
+use strict;
+
+sub fix_date {
+    my ($class, $date, $end) = @_;
+
+    if (length($date) == 10) {
+        if ($end) {
+            $date .= ' 23:59:59';
+        } else {
+            $date .= ' 00:00:00';
+        }
+    } else {
+        $date = substr($date, 0, 10) . ' ' . substr($date, 11, 8);
+    }
+    return $date;
+}
+
+sub build_list_sql {
+    my ($class, $deleted, $set, $max, $offset) = @_;
+
+    my $table = $deleted ? 'deletedbiblioitems' : 'biblioitems';
+
+    my $sql = "
+SELECT bi.biblionumber, bi.timestamp
+  FROM $table bi
+  WHERE bi.timestamp >= ? AND bi.timestamp <= ?
+  ORDER BY bi.biblionumber
+";
+
+    # Use a subquery for sets since it allows us to use an index for the subquery in
+    # biblioitems table and is quite a bit faster than a join.
+    if (defined $set) {
+        $sql = "
+SELECT bi.* FROM ($sql) bi
+  WHERE bi.biblionumber in (SELECT osb.biblionumber FROM oai_sets_biblios osb WHERE osb.set_id = ?)
+";
+    }
+    $sql .= '
+  LIMIT ' . ($max + 1) . "
+  OFFSET $offset
+";
+
+    return $sql;
+}
+
+# __END__ C4::OAI::Utils;
 
 
 
@@ -541,7 +629,7 @@ sub new {
 
     $self->{ koha_identifier      } = C4::Context->preference("OAI-PMH:archiveID");
     $self->{ koha_max_count       } = C4::Context->preference("OAI-PMH:MaxCount");
-    $self->{ koha_metadata_format } = ['oai_dc', 'marcxml'];
+    $self->{ koha_metadata_format } = ['oai_dc', 'marc21', 'marcxml'];
     $self->{ koha_stylesheet      } = { }; # Build when needed
 
     # Load configuration file if defined in OAI-PMH:ConfFile syspref
@@ -639,7 +727,7 @@ C4::OAI::Repository - Handles OAI-PMH requests for a Koha database.
 This object extend HTTP::OAI::Repository object.
 It accepts OAI-PMH HTTP requests and returns result.
 
-This OAI-PMH server can operate in a simple mode and extended one. 
+This OAI-PMH server can operate in a simple mode and extended one.
 
 In simple mode, repository configuration comes entirely from Koha system
 preferences (OAI-PMH:archiveID and OAI-PMH:MaxCount) and the server returns
@@ -662,8 +750,8 @@ configuration file koha-oai.conf can look like that:
       metadataNamespace: http://veryspecial.tamil.fr/vs/format-pivot/1.1/vs
       schema: http://veryspecial.tamil.fr/vs/format-pivot/1.1/vs.xsd
       xsl_file: /usr/local/koha/xslt/vs.xsl
-    marcxml:
-      metadataPrefix: marxml
+    marc21 or marcxml:
+      metadataPrefix: marc21 or marxml
       metadataNamespace: http://www.loc.gov/MARC21/slim http://www.loc.gov/standards/marcxml/schema/MARC21slim
       schema: http://www.loc.gov/MARC21/slim http://www.loc.gov/standards/marcxml/schema/MARC21slim.xsd
     oai_dc:
