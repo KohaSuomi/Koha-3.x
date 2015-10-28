@@ -80,8 +80,10 @@ $template->param( all_branches => 1 ) if $all_branches;
 
 my (@reservloop, @overloop);
 my ($reservcount, $overcount);
-my @getreserves = $all_branches ? GetReservesForBranch() : GetReservesForBranch($default);
 # get reserves for the branch we are logged into, or for all branches
+my @getreserves = $all_branches ? GetReservesForBranch() : GetReservesForBranch($default);
+my $expiredReserves = $all_branches ? C4::Reserves::GetExpiredReserves() : C4::Reserves::GetExpiredReserves({branchcode => $default});
+push @getreserves, @$expiredReserves;
 
 my $today = DateTime->now();
 foreach my $num (@getreserves) {

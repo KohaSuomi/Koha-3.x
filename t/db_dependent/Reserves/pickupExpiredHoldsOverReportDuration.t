@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# Copyright 2015 Open Source Freedom Fighters
+# Copyright 2015 KohaSuomi
 #
 # This file is part of Koha.
 #
@@ -18,54 +18,32 @@
 # along with Koha; if not, see <http://www.gnu.org/licenses>.
 
 use Modern::Perl;
-
 use Test::More;
 use Try::Tiny;
+use Scalar::Util qw(blessed);
 
-use t::lib::Page::Circulation::Waitingreserves;
 use t::lib::TestObjects::ObjectFactory;
 use t::lib::TestObjects::HoldFactory;
 use t::lib::TestObjects::SystemPreferenceFactory;
-use Koha::Auth::PermissionManager;
-
-##Enable debug mode for PageObject tests.
-#$ENV{KOHA_PAGEOBJECT_DEBUG} = 1;
+use Koha::Calendar;
 
 ##Setting up the test context
 my $testContext = {};
+my $calendar = Koha::Calendar->new(branchcode => 'CPL');
+$calendar->add_holiday( DateTime->now(time_zone => C4::Context->tz())->subtract(days => 2) ); #Day before yesterday is a holiday.
 
-my $password = '1234';
-my ($holds, $borrowers);
-subtest "Setting up test context" => \&settingUpTestContext;
-sub settingUpTestContext {
-    eval { #run in a eval-block so we don't die without tearing down the test context
+t::lib::TestObjects::SystemPreferenceFactory->createTestGroup([{preference => 'PickupExpiredHoldsOverReportDuration',
+                                                                value => 2,
+                                                               },
+                                                               {preference => 'ExpireReservesMaxPickUpDelay',
+                                                                value => 1,
+                                                               },
+                                                               {preference => 'ReservesMaxPickUpDelay',
+                                                                value => 6,
+                                                               },
+                                                              ], undef, $testContext);
 
-        t::lib::TestObjects::SystemPreferenceFactory->createTestGroup([
-            {preference => 'PickupExpiredHoldsOverReportDuration',
-             value => 2,
-            },
-            {preference => 'ExpireReservesMaxPickUpDelay',
-             value => 1,
-            },
-            {preference => 'ReservesMaxPickUpDelay',
-             value => 6,
-            },
-            ], undef, $testContext);
-
-        my $borrowerFactory = t::lib::TestObjects::BorrowerFactory->new();
-        $borrowers = $borrowerFactory->createTestGroup([
-                    {firstname  => 'Olli-Antti',
-                     surname    => 'Kivi',
-                     cardnumber => '1A01',
-                     branchcode => 'CPL',
-                     userid     => 'mini_admin',
-                     password   => $password,
-                    },
-                ], undef, $testContext);
-        my $permissionManager = Koha::Auth::PermissionManager->new();
-        $permissionManager->grantPermission($borrowers->{'1A01'}, 'circulate', 'circulate_remaining_permissions');
-
-        $holds = t::lib::TestObjects::HoldFactory->createTestGroup([
+my $holds = t::lib::TestObjects::HoldFactory->createTestGroup([
             {cardnumber  => '1A01',
              isbn        => '987Kivi',
              barcode     => '1N01',
@@ -80,28 +58,28 @@ sub settingUpTestContext {
              waitingdate => DateTime->now(time_zone => C4::Context->tz())->subtract(days => 8)->iso8601(),
              reservenotes => 'expire2daysAgo',
             },
-            {cardnumber  => '1A01',
+            {cardnumber  => '1A02',
              isbn        => '987Kivi',
              barcode     => '1N03',
              branchcode  => 'CPL',
              waitingdate => DateTime->now(time_zone => C4::Context->tz())->subtract(days => 7)->iso8601(),
              reservenotes => 'expire1dayAgo1',
             },
-            {cardnumber  => '1A01',
+            {cardnumber  => '1A03',
              isbn        => '987Kivi',
              barcode     => '1N04',
              branchcode  => 'CPL',
              waitingdate => DateTime->now(time_zone => C4::Context->tz())->subtract(days => 7)->iso8601(),
              reservenotes => 'expire1dayAgo2',
             },
-            {cardnumber  => '1A01',
+            {cardnumber  => '1A04',
              isbn        => '987Kivi',
              barcode     => '1N05',
              branchcode  => 'CPL',
              waitingdate => DateTime->now(time_zone => C4::Context->tz())->subtract(days => 6)->iso8601(),
              reservenotes => 'expiresToday',
             },
-            {cardnumber  => '1A01',
+            {cardnumber  => '1A05',
              isbn        => '987Kivi',
              barcode     => '1N06',
              branchcode  => 'CPL',
@@ -110,39 +88,30 @@ sub settingUpTestContext {
             },
         ], undef, $testContext);
 
+
+
+##Test context set, starting testing:
+subtest "Expiring holds and getting old_reserves" => \&expiringHoldsAndOld_reserves;
+sub expiringHoldsAndOld_reserves {
+    eval { #run in a eval-block so we don't die without tearing down the test context
         C4::Reserves::CancelExpiredReserves();
-
-        ok(1, "Test context set without crashing");
-
+        my $expiredReserves = C4::Reserves::GetExpiredReserves({branchcode => 'CPL'});
+        ok($expiredReserves->[0]->{reserve_id} == $holds->{'expire2daysAgo'}->{reserve_id} &&
+           $expiredReserves->[0]->{pickupexpired} eq DateTime->now(time_zone => C4::Context->tz())->subtract(days => 2)->ymd()
+           , "Hold for Item 1N02 expired yesterday");
+        ok($expiredReserves->[1]->{reserve_id} == $holds->{'expire1dayAgo1'}->{reserve_id} &&
+           $expiredReserves->[1]->{pickupexpired} eq DateTime->now(time_zone => C4::Context->tz())->subtract(days => 1)->ymd()
+           , "Hold for Item 1N03 expired today");
+        ok($expiredReserves->[2]->{reserve_id} == $holds->{'expire1dayAgo2'}->{reserve_id} &&
+           $expiredReserves->[2]->{pickupexpired} eq DateTime->now(time_zone => C4::Context->tz())->subtract(days => 1)->ymd()
+           , "Hold for Item 1N04 expired today");
+        is($expiredReserves->[3], undef,
+           "Holds for Items 1N05 and 1N06 not expired.");
     };
     if ($@) { #Catch all leaking errors and gracefully terminate.
-        ok(0, "Test context set without crashing");
         warn $@;
         tearDown();
         exit 1;
-    }
-}
-
-subtest "Display expired waiting reserves" => \&displayExpiredWaitingReserves;
-sub displayExpiredWaitingReserves {
-    eval { #run in a eval-block so we don't die without tearing down the test context
-
-        my $expectedExpiredHoldsInOrder = [
-            $holds->{expire2daysAgo},
-            $holds->{expire1dayAgo1},
-            $holds->{expire1dayAgo2},
-        ];
-
-        my $waitingreserves = t::lib::Page::Circulation::Waitingreserves->new();
-        $waitingreserves->doPasswordLogin($borrowers->{'1A01'}->userid(), $password)
-            ->showHoldsOver()->assertHoldRowsVisible($expectedExpiredHoldsInOrder)
-            ->doPasswordLogout();
-        $waitingreserves->quit();
-
-    };
-    if ($@) { #Catch all leaking errors and gracefully terminate.
-        ok(0, "Subtest crashed");
-        warn $@;
     }
 }
 

@@ -416,6 +416,10 @@ Circulation:
             - pref: ExpireReservesMaxPickUpDelayCharge
               class: currency
         -
+            - pref: PickupExpiredHoldsOverReportDuration
+              class: integer
+            - "For how many days holds expired by the 'ExpireReservesMaxPickUpDelay'-syspref are visible in the 'Hold Over'-tab in /circ/waitingreserves.pl ?"
+        -
             - Satisfy holds from the libraries
             - pref: StaticHoldsQueueWeight
               class: multi

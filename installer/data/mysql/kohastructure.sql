@@ -1708,6 +1708,7 @@ CREATE TABLE `old_reserves` ( -- this table holds all holds/reserves that have b
   `itemnumber` int(11) default NULL, -- foreign key from the items table defining the specific item the patron has placed on hold or the item this hold was filled with
   `waitingdate` date default NULL, -- the date the item was marked as waiting for the patron at the library
   `expirationdate` DATE DEFAULT NULL, -- the date the hold expires (usually the date entered by the patron to say they don't need the hold after a certain date)
+  `pickupexpired` DATE DEFAULT NULL, -- if hold has been waiting but it expired before it was picked up, the expiration date is set here
   `lowestPriority` tinyint(1) NOT NULL, -- has this hold been pinned to the lowest priority in the holds queue (1 for yes, 0 for no)
   `suspend` BOOLEAN NOT NULL DEFAULT 0, -- in this hold suspended (1 for yes, 0 for no)
   `suspend_until` DATETIME NULL DEFAULT NULL, -- the date this hold is suspended until (NULL for infinitely)
@@ -1716,6 +1717,7 @@ CREATE TABLE `old_reserves` ( -- this table holds all holds/reserves that have b
   KEY `old_reserves_biblionumber` (`biblionumber`),
   KEY `old_reserves_itemnumber` (`itemnumber`),
   KEY `old_reserves_branchcode` (`branchcode`),
+  KEY `old_reserves_pickupexpired` (`pickupexpired`),
   CONSTRAINT `old_reserves_ibfk_1` FOREIGN KEY (`borrowernumber`) REFERENCES `borrowers` (`borrowernumber`)
     ON DELETE SET NULL ON UPDATE SET NULL,
   CONSTRAINT `old_reserves_ibfk_2` FOREIGN KEY (`biblionumber`) REFERENCES `biblio` (`biblionumber`)
@@ -1942,6 +1944,7 @@ CREATE TABLE `reserves` ( -- information related to holds/reserves in Koha
   `itemnumber` int(11) default NULL, -- foreign key from the items table defining the specific item the patron has placed on hold or the item this hold was filled with
   `waitingdate` date default NULL, -- the date the item was marked as waiting for the patron at the library
   `expirationdate` DATE DEFAULT NULL, -- the date the hold expires (usually the date entered by the patron to say they don't need the hold after a certain date)
+  `pickupexpired` DATE DEFAULT NULL, -- if hold has been waiting but it expired before it was picked up, the expiration date is set here
   `lowestPriority` tinyint(1) NOT NULL,
   `suspend` BOOLEAN NOT NULL DEFAULT 0,
   `suspend_until` DATETIME NULL DEFAULT NULL,
@@ -1951,6 +1954,7 @@ CREATE TABLE `reserves` ( -- information related to holds/reserves in Koha
   KEY `biblionumber` (`biblionumber`),
   KEY `itemnumber` (`itemnumber`),
   KEY `branchcode` (`branchcode`),
+  KEY `reserves_pickupexpired` (`pickupexpired`),
   CONSTRAINT `reserves_ibfk_1` FOREIGN KEY (`borrowernumber`) REFERENCES `borrowers` (`borrowernumber`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `reserves_ibfk_2` FOREIGN KEY (`biblionumber`) REFERENCES `biblio` (`biblionumber`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `reserves_ibfk_3` FOREIGN KEY (`itemnumber`) REFERENCES `items` (`itemnumber`) ON DELETE CASCADE ON UPDATE CASCADE,
