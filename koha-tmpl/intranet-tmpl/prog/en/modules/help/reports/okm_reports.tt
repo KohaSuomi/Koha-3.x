@@ -34,6 +34,8 @@ Library groups that are statistical OKM groups are named as &lt;group_code&gt;_O
 <h5>Musical recording</h5>
 <p>An Item is considered to be a musical recording, if it is in the ykl-class 78.</p>
 <br/>
+<h4>Active Borrowers</h4>
+<p>The sum of unique Users Issuing or Renewing Items for the duration of the Report in the Branch or Branches specified in the Report.</p>
 <h4>Acquisitions</h4>
 <p>An Item is considered to be acquired, if it has been ordered using the acquisitions module and received on the given timeframe.<br/>
 However, if the acquisitions-module is not used, the Item is considered acquired if it has been added to the collection on the given timeframe.</p>
