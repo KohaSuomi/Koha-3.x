@@ -23,6 +23,7 @@ use Carp;
 
 use C4::Items;
 use Koha::Biblios;
+use Koha::BiblioItems;
 use Koha::Items;
 use Koha::Checkouts;
 
@@ -64,17 +65,16 @@ sub handleTestObject {
 
     #Look for the parent biblio, if we don't find one, create a default one.
     my ($biblionumber, $biblioitemnumber, $itemnumber);
-    my $biblio;
-    $biblio = Koha::Biblios->find({biblionumber => $object->{biblionumber}}) if $object->{biblionumber};
-    unless ($biblio) {
-        my $biblios = t::lib::TestObjects::BiblioFactory->createTestGroup({"biblio.title" => "Test Items' Biblio",},
+    my $biblios = t::lib::TestObjects::BiblioFactory->createTestGroup({"biblio.title" => "Test Items' Biblio",
+                                                                       "biblioitems.isbn" => $object->{isbn},
+                                                                       "biblio.biblionumber" => $object->{biblionumber}},
                                                                           undef, @$stashes);
-        $biblio = $biblios->{'971-972-call-me'};
-        $object->{biblionumber} = $biblio->{biblionumber};
+    my $biblio;
+    foreach my $k (keys %$biblios) {
+        $biblio = $biblios->{$k};
     }
-    else {
-        $object->{biblionumber} = $biblio->biblionumber;
-    }
+    $object->{biblionumber} = $biblio->{biblionumber};
+    $object->{biblio} = $biblio;
 
     #Ok we got a biblio, now we can add an Item for it. First see if the Item already exists.
     my $item;

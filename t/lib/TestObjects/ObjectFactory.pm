@@ -176,6 +176,11 @@ sub tearDownTestContext {
         t::lib::TestObjects::BorrowerFactory->deleteTestGroup($stash->{borrower});
         delete $stash->{borrower};
     }
+    if ($stash->{hold}) {
+        require t::lib::TestObjects::HoldFactory;
+        t::lib::TestObjects::HoldFactory->deleteTestGroup($stash->{hold});
+        delete $stash->{hold};
+    }
     if ($stash->{letterTemplate}) {
         require t::lib::TestObjects::LetterTemplateFactory;
         t::lib::TestObjects::LetterTemplateFactory->deleteTestGroup($stash->{letterTemplate});
@@ -199,6 +204,7 @@ sub getHashKey {
     my ($class, $object, $primaryKey, $hashKeys) = @_;
 
     my @collectedHashKeys;
+    $hashKeys = $class->getDefaultHashKey unless $hashKeys;
     $hashKeys = [$hashKeys] unless ref($hashKeys) eq 'ARRAY';
     foreach my $hashKey (@$hashKeys) {
         if (ref($object) eq 'HASH') {

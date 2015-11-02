@@ -42,10 +42,66 @@ use t::lib::TestObjects::FileFactory;
 use File::Slurp;
 use File::Fu::File;
 use t::lib::TestObjects::SystemPreferenceFactory;
+use t::lib::TestObjects::HoldFactory;
 use C4::Context;
 
 
 my $testContext = {}; #Gather all created Objects here so we can finally remove them all.
+
+
+
+########## HoldFactory subtests ##########
+subtest 't::lib::TestObjects::HoldFactory' => \&testHoldFactory;
+sub testHoldFactory {
+    my $subtestContext = {};
+    ##Create and Delete using dependencies in the $testContext instantiated in previous subtests.
+    my $holds = t::lib::TestObjects::HoldFactory->createTestGroup(
+                        {cardnumber        => '1A01',
+                         isbn              => '971',
+                         barcode           => '1N01',
+                         branchcode        => 'CPL',
+                         waitingdate       => '2015-01-15',
+                        },
+                        ['cardnumber','isbn','barcode'], $subtestContext);
+
+    is($holds->{'1A01-971-1N01'}->{branchcode},
+       'CPL',
+       "Hold '1A01-971-1N01' pickup location is 'CPL'.");
+    is($holds->{'1A01-971-1N01'}->{waitingdate},
+       '2015-01-15',
+       "Hold '1A01-971-1N01' waiting date is '2015-01-15'.");
+
+    #using the default test hold identifier reservenotes to distinguish hard-to-identify holds.
+    my $holds2 = t::lib::TestObjects::HoldFactory->createTestGroup([
+                        {cardnumber        => '1A01',
+                         isbn              => '971',
+                         barcode           => '1N02',
+                         branchcode        => 'CPL',
+                         reservenotes      => 'nice hold',
+                        },
+                        {cardnumber        => '1A01',
+                         barcode           => '1N03',
+                         isbn              => '971',
+                         branchcode        => 'CPL',
+                         reservenotes      => 'better hold',
+                        },
+                    ], undef, $subtestContext);
+
+    is($holds2->{'nice hold'}->{branchcode},
+        'CPL',
+        "Hold 'nice hold' pickup location is 'CPL'.");
+    is($holds2->{'nice hold'}->{borrower}->cardnumber,
+        '1A01',
+        "Hold 'nice hold' cardnumber is '1A01'.");
+    is($holds2->{'better hold'}->{isbn},
+        '971',
+        "Hold 'better hold' isbn '971'.");
+
+    t::lib::TestObjects::HoldFactory->deleteTestGroup($subtestContext->{hold});
+
+    my $holds_deleted = C4::Reserves::GetReservesFromBiblionumber({biblionumber => $holds->{'1A01-971-1N01'}->{biblio}->{biblionumber}});
+    ok (not(@$holds_deleted), "Holds deleted");
+};
 
 
 

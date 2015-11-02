@@ -41,6 +41,7 @@ sub getObjectType {
                         {'biblio.title' => 'I wish I met your mother',
                          'biblio.author'   => 'Pertti Kurikka',
                          'biblio.copyrightdate' => '1960',
+                         'biblio.biblionumber' => 1212,
                          'biblioitems.isbn'     => '9519671580',
                          'biblioitems.itemtype' => 'BK',
                         },
@@ -71,6 +72,7 @@ sub handleTestObject {
     ##First see if the given Record already exists in the DB. For testing purposes we use the isbn as the UNIQUE identifier.
     my $resultset = Koha::Database->new()->schema()->resultset('Biblioitem');
     my $existingBiblio = $resultset->search({isbn => $object->{"biblioitems.isbn"}})->next();
+    $existingBiblio = $resultset->search({biblionumber => $object->{"biblio.biblionumber"}})->next() unless $existingBiblio;
     my ($record, $biblionumber, $biblioitemnumber);
     unless ($existingBiblio) {
         $record = C4::Biblio::TransformKohaToMarc($object);
