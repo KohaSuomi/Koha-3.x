@@ -26,7 +26,7 @@ use Koha::Database;
 use base qw(Koha::Object);
 
 sub type {
-    return 'BiblioItem';
+    return 'Biblioitem';
 }
 
 1;

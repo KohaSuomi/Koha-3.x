@@ -28,7 +28,7 @@ use Koha::BiblioItem;
 use base qw(Koha::Objects);
 
 sub type {
-    return 'BiblioItem';
+    return 'Biblioitem';
 }
 
 sub object_class {
