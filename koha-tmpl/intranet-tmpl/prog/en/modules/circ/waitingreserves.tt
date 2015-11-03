@@ -88,22 +88,22 @@
                </tr></thead>
                <tbody>[% FOREACH reserveloo IN reserveloop %]
                 <tr>
-                    <td><span title="[% reserveloo.waitingdate %]">[% reserveloo.waitingdate | $KohaDates %]</span></td>
-                    <td>[% reserveloo.lastpickupdate %]</td>
-                    <td>[% INCLUDE 'biblio-default-view.inc' biblionumber = reserveloo.biblionumber %]
+                    <td class="waitingdate"><span title="[% reserveloo.waitingdate %]">[% reserveloo.waitingdate | $KohaDates %]</span></td>
+                    <td class="lastpickupdate">[% reserveloo.lastpickupdate %]</td>
+                    <td class="title">[% INCLUDE 'biblio-default-view.inc' biblionumber = reserveloo.biblionumber %]
                         [% reserveloo.title |html %] [% reserveloo.subtitle |html %]
                         </a>
                             &nbsp; (<b>[% reserveloo.itemtype %]</b>)
                             <br />Barcode: [% reserveloo.barcode %]
                     </td>
-                    <td><a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=[% reserveloo.borrowernum %]">[% reserveloo.borrowername %], [% reserveloo.borrowerfirstname %]</a><br />[% reserveloo.borrowerphone %]<br />
+                    <td class="borrower"><a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=[% reserveloo.borrowernum %]">[% reserveloo.borrowername %], [% reserveloo.borrowerfirstname %]</a><br />[% reserveloo.borrowerphone %]<br />
                         [% IF ( reserveloo.borrowermail ) %]<a href="mailto:[% reserveloo.email %]?subject=Reservation: [% reserveloo.title %]">
                         [% reserveloo.borrowermail %]</a>[% END %]
                     </td>
-                    <td>[% reserveloo.homebranch %]<br />[% reserveloo.itemcallnumber %]</td>
-                    <td>[% reserveloo.copynumber %]</td>
-                    <td>[% reserveloo.enumchron %]</td>
-                    <td>
+                    <td class="location">[% reserveloo.homebranch %]<br />[% reserveloo.itemcallnumber %]</td>
+                    <td class="copynumber">[% reserveloo.copynumber %]</td>
+                    <td class="enumchron">[% reserveloo.enumchron %]</td>
+                    <td class="action">
                         <form name="cancelReserve" action="waitingreserves.pl" method="post">
                             <input type="hidden" name="borrowernumber" value="[% reserveloo.borrowernum %]" />
                             <input type="hidden" name="itemnumber" value="[% reserveloo.itemnumber %]" />
@@ -150,21 +150,21 @@
                </tr></thead>
                <tbody>[% FOREACH overloo IN overloop %]
                     <tr>
-                        <td><p><span title="[% overloo.waitingdate %]">[% overloo.waitingdate | $KohaDates %]</span></p></td>
-                        <td>[% overloo.lastpickupdate %]</td>
-                        <td>[% INCLUDE 'biblio-default-view.inc' biblionumber = overloo.biblionumber %][% overloo.title |html %] [% overloo.subtitle |html %]
+                        <td class="waitingdate"><p><span title="[% overloo.waitingdate %]">[% overloo.waitingdate | $KohaDates %]</span></p></td>
+                        <td class="lastpickupdate">[% overloo.lastpickupdate %]</td>
+                        <td class="title">[% INCLUDE 'biblio-default-view.inc' biblionumber = overloo.biblionumber %][% overloo.title |html %] [% overloo.subtitle |html %]
                         </a>
                             [% UNLESS ( item_level_itypes ) %][% IF ( overloo.itemtype ) %]&nbsp; (<b>[% overloo.itemtype %]</b>)[% END %][% END %]
                         <br />Barcode: [% overloo.barcode %]
                     </td>
-                    <td><a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=[% overloo.borrowernum %]">[% overloo.borrowername %], [% overloo.borrowerfirstname %]</a><br />[% overloo.borrowerphone %]<br />
+                    <td class="borrower"><a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=[% overloo.borrowernum %]">[% overloo.borrowername %], [% overloo.borrowerfirstname %]</a><br />[% overloo.borrowerphone %]<br />
                         [% IF ( overloo.borrowermail ) %]<a href="mailto:[% overloo.email %]?subject=Reservation: [% overloo.title |url %]">
         [% overloo.borrowermail %]</a>[% END %]
                     </td>
-                    <td>[% overloo.homebranch %] [% overloo.itemcallnumber %]</td>
-                    <td>[% overloo.copynumber %]</td>
-                    <td>[% overloo.enumchron %]</td>
-                    <td><form name="cancelReserve" action="waitingreserves.pl" method="post">
+                    <td class="location">[% overloo.homebranch %] [% overloo.itemcallnumber %]</td>
+                    <td class="copynumber">[% overloo.copynumber %]</td>
+                    <td class="enumchron">[% overloo.enumchron %]</td>
+                    <td class="action"><form name="cancelReserve" action="waitingreserves.pl" method="post">
                             <input type="hidden" name="borrowernumber" value="[% overloo.borrowernum %]" />
                             <input type="hidden" name="itemnumber" value="[% overloo.itemnumber %]" />
                             <input type="hidden" name="fbr" value="[% overloo.holdingbranch %]" />
