@@ -215,7 +215,7 @@ $tagid = '001'; #Override the original id finding.
 # the SQL query to search on isbn
 my $sth_isbn = $dbh->prepare("SELECT biblionumber,biblioitemnumber FROM biblioitems WHERE isbn=?");
 
-$dbh->{AutoCommit} = 0;
+#$dbh->{AutoCommit} = 0;
 my $loghandle;
 if ($logfile){
    $loghandle= IO::File->new($logfile, $writemode) ;
@@ -522,13 +522,13 @@ RECORD: while (  ) {
             }
             $yamlhash->{$originalid} = $biblionumber if ($yamlfile);
         }
-        $dbh->commit() if (0 == $i % $commitnum);
+#        $dbh->commit() if (0 == $i % $commitnum);
     }
     print $record->as_formatted()."\n" if ($verbose//0)==2;
     last if $i == $number;
 }
-$dbh->commit();
-$dbh->{AutoCommit} = 1;
+#$dbh->commit();
+#$dbh->{AutoCommit} = 1;
 
 
 if ($fk_off) {

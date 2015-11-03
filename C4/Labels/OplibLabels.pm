@@ -161,14 +161,34 @@ sub populateAndCreateLabelSheets {
 
 sub getSignum {
     my $record = shift; #A
+
     #Get the proper SIGNUM (important) Use one of the Main Entries or the Title Statement
+    my $leader = $record->leader(); #If this is a video, we calculate the signum differently, 06 = 'g'
     my $signumSource; #One of fields 100, 110, 111, 130, or 245 if 1XX is missing
-    if (($signumSource = $record->subfield('100', 'a')) ||
-        ($signumSource = $record->subfield('110', 'a')) ||
-        ($signumSource = $record->subfield('111', 'a')) ||
-        ($signumSource = $record->subfield('130', 'a')) ||
-        ($signumSource = $record->subfield('245', 'a')) ) {
-        return substr $signumSource, 0, 3;
+    my $nonFillingCharacters = 0;
+
+    if (substr($leader,6,1) eq 'g' && ($signumSource = $record->subfield('245', 'a'))) {
+        $nonFillingCharacters = $record->field('245')->indicator(2);
     }
+    elsif ($signumSource = $record->subfield('100', 'a')) {
+
+    }
+    elsif ($signumSource = $record->subfield('110', 'a')) {
+
+    }
+    elsif ($signumSource = $record->subfield('111', 'a')) {
+
+    }
+    elsif ($signumSource = $record->subfield('130', 'a')) {
+        $nonFillingCharacters = $record->field('130')->indicator(1);
+        $nonFillingCharacters = 0 if (not(defined($nonFillingCharacters)) || $nonFillingCharacters eq ' ');
+    }
+    elsif ($signumSource = $record->subfield('245', 'a')) {
+        $nonFillingCharacters = $record->field('245')->indicator(2);
+    }
+    if ($signumSource) {
+        return uc(substr($signumSource, $nonFillingCharacters, 3));
+    }
+
     return undef;
 }

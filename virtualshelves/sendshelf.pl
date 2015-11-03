@@ -113,6 +113,7 @@ if ( $email ) {
 
     # Getting template result
     my $template_res = $template2->output();
+    my $template_res_over = $template_res;
     my $body;
 
     # Analysing information and getting mail properties
@@ -165,17 +166,35 @@ $isofile
 $boundary--
 END_OF_BODY
 
-    # Sending mail
-    if ( sendmail %mail ) {
-        # do something if it works....
-        $template->param( SENT      => "1" );
-    }
-    else {
-        # do something if it doesnt work....
-        carp "Error sending mail: $Mail::Sendmail::error \n";
-        $template->param( error => 1 );
-    }
+#use Data::Dumper;
+#open(FH, ">", "/tmp/lol");
+#print FH Data::Dumper::Dumper(\%mail);
+#close(FH);
 
+    my $dbh       = C4::Context->dbh();
+    my $statement = << 'ENDSQL';
+INSERT INTO message_queue
+( borrowernumber, subject, content, metadata, letter_code, message_transport_type, status, time_queued, to_address, from_address, content_type )
+VALUES
+( ?,              ?,       ?,       ?,        ?,           ?,                      ?,      NOW(),       ?,          ?,            ? )
+ENDSQL
+
+    my $sth    = $dbh->prepare($statement);
+    my $result = $sth->execute(
+$borrowernumber, decode('UTF-8',$mail{subject}), decode('UTF-8',$template_res_over), '', 'VIRTUALSH','email','pending', $email, $email_from, ''
+);
+
+#    # Sending mail
+#    if ( sendmail %mail ) {
+#        # do something if it works....
+        $template->param( SENT      => "1" );
+#    }
+#    else {
+#        # do something if it doesnt work....
+#        carp "Error sending mail: $Mail::Sendmail::error \n";
+#        $template->param( error => 1 );
+#    }
+#
     $template->param( email => $email );
     output_html_with_http_headers $query, $cookie, $template->output;
 

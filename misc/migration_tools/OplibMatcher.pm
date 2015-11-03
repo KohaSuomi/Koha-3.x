@@ -4,6 +4,9 @@ package OplibMatcher;
 use Modern::Perl;
 use Carp;
 
+my $legacyBiblionumberRegexp; #Use this regexp to make sure the biblionumber we are dealing with is of proper format
+#$legacyBiblionumberRegexp = qr(\d+); #For Pallas and other full number biblionumbers
+$legacyBiblionumberRegexp = qr/([0-9A-Z]{8}-[0-9A-Z]{4}-[0-9A-Z]{4}-[0-9A-Z]{4}-[0-9A-Z]{12})/; #For crazy Origo
 sub new {
     my ($class, $manualRulesFile, $matcherLogFile, $verbose) = @_;
     my $self = {};
@@ -30,7 +33,7 @@ sub _loadManualMatchingRules {
 
     open(MVF, "<:encoding(utf-8)", $manualRulesFile) or warn "Couldn't open the matcher verification file '$manualRulesFile' ".$!;
     while (<MVF>) {
-        if ($_ =~ /^\s*(\d+)\s+(.*?)(\s+#.*?)?$/) {
+        if ($_ =~ /^\s*($legacyBiblionumberRegexp)\s+(.*?)(\s+#.*?)?$/) {
             $self->_putManualMatchingRuleToHash( $1, $2 ); #Map the legacy biblionumber to an existing koha biblionumber.
         }
         else {
@@ -48,7 +51,7 @@ sub _putManualMatchingRuleToHash {
 sub _writeManualMatchingRuleToFile {
     my ($self, $legacyBiblionumber, $status, $comment) = @_;
     my $handle = $self->{manualRulesFile};
-    my $text = sprintf("%12s %12s",$legacyBiblionumber, $status).(($comment) ? "    $comment" : "")."\n";
+    my $text = sprintf("%38s %12s",$legacyBiblionumber, $status).(($comment) ? "    $comment" : "")."\n";
     print $handle $text;
 }
 =head
@@ -58,7 +61,7 @@ check the statuses.
 sub addPendingToManualMatchingRules {
     my ($self, $legacyBiblionumber) = @_;
 
-    carp "legacyBiblionumber '$legacyBiblionumber' is not a digit!" unless($legacyBiblionumber && $legacyBiblionumber =~ /^\d+$/);
+    carp "legacyBiblionumber '$legacyBiblionumber' is not valid!" unless($legacyBiblionumber && $legacyBiblionumber =~ /^$legacyBiblionumberRegexp$/);
 
     my $status = 'PENDING';
     my $comment;
@@ -73,7 +76,7 @@ sub addMatchToManualMatchingRules {
     my ($self, $legacyBiblionumber, $matchingBiblionumber) = @_;
     my $handle = $self->{manualRulesFile};
 
-    carp "legacyBiblionumber '$legacyBiblionumber' is not a digit!" unless($legacyBiblionumber && $legacyBiblionumber =~ /^\d+$/);
+    carp "legacyBiblionumber '$legacyBiblionumber' is not valid!" unless($legacyBiblionumber && $legacyBiblionumber =~ /^$legacyBiblionumberRegexp$/);
     carp "matchingBiblionumber '$matchingBiblionumber' is not a digit!" unless($matchingBiblionumber && $matchingBiblionumber =~ /^\d+$/);
 
     my $comment = "#automatch";
@@ -303,7 +306,7 @@ sub _makeMultitierMatchingSearches_pielinen {
             $searchQuery = "$title and $itemtype";
             ($zebraerror, $results, $resultSetSize) = C4::Search::SimpleSearch( $searchQuery, undef, 1 );
             unless ($zebraerror) {
-                $self->writeToMatcherLog("SearchISBNSerial: $searchQuery\nResultSetSize: $resultSetSize.\n") if $self->{verbose};
+                $self->writeToMatcherLog("SearchSerial: $searchQuery\nResultSetSize: $resultSetSize.\n") if $self->{verbose};
                 ($results, $resultSetSize) = $self->_removeComponentPartsFromSearchResults($results, $resultSetSize) if $resultSetSize > 1;
             }
         }
@@ -402,3 +405,4 @@ sub _makeMultitierMatchingSearches_libra3 {
 }
 
 return 1;
+
