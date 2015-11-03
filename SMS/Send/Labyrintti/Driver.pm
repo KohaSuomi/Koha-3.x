@@ -94,7 +94,7 @@ sub send_sms {
         'user'      => $self->{_login},
         'password'  => $self->{_password},
         'dests'     => $recipientNumber,
-        'text'      => $message,
+        'text'      => uri_escape_utf8($message),
         'unicode'   => 'yes',
     };
 
