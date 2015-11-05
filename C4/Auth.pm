@@ -1715,13 +1715,25 @@ sub get_user_subpermissions {
     my $userid = shift;
     return {} unless $userid;
 
-    use Koha::Auth::PermissionManager;
-    my $permissionManager = Koha::Auth::PermissionManager->new();
-    my $borrowerPermissions = $permissionManager->getBorrowerPermissions($userid); #Prefetch all related tables.
     my $user_perms = {};
-    foreach my $perm ( @$borrowerPermissions ) {
-        $user_perms->{ $perm->getPermissionModule->module }->{ $perm->getPermission->code } = 1;
-    }
+    try {
+        use Koha::Auth::PermissionManager;
+        my $permissionManager = Koha::Auth::PermissionManager->new();
+        my $borrowerPermissions = $permissionManager->getBorrowerPermissions($userid); #Prefetch all related tables.
+        foreach my $perm ( @$borrowerPermissions ) {
+            $user_perms->{ $perm->getPermissionModule->module }->{ $perm->getPermission->code } = 1;
+        }
+    } catch {
+        if (blessed($_) && $_->isa('Koha::Exception::UnknownObject')) {
+            return $user_perms;
+        }
+        elsif (blessed($_)) {
+            $_->rethrow();
+        }
+        else {
+            die $_;
+        }
+    };
 
     return $user_perms;
 }
