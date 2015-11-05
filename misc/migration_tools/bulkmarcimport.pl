@@ -445,6 +445,7 @@ RECORD: while (  ) {
             } else {
                 if ($insert) {
                     eval { ( $biblionumber, $biblioitemnumber ) = AddBiblio( $record, '', { defer_marc_save => 1 } ) };
+                    die "Biblionumber '$biblionumber' and biblioitemnumber '$biblioitemnumber' do not match! This causes critical issues in Koha!\n" if $biblionumber != $biblioitemnumber;
                     if ($@) {
                         warn "ERROR: Adding biblio $biblionumber failed: $@\n";
                         printlog( { id => $originalid || $id || $biblionumber, op => "insert", status => "ERROR" } ) if ($logfile);
