@@ -121,4 +121,5 @@ done_testing;
 
 sub tearDown {
     t::lib::TestObjects::ObjectFactory->tearDownTestContext($testContext);
+    $calendar->cleanupCalendar({daysOld => -1});
 }
