@@ -59,6 +59,7 @@ sub get_barcode {
     $nextnum = $year . $args->{mon} . $nextnum;
     warn "New hbyymmincr Barcode = $nextnum" if $DEBUG;
     my $scr = "
+
         for (i=0 ; i<document.f.field_value.length ; i++) {
             if (document.f.tag[i].value == '$args->{loctag}' && document.f.subfield[i].value == '$args->{locsubfield}') {
                 fnum = i;
@@ -151,17 +152,42 @@ my $DEBUG = 0;
 sub get_barcode {
     my ($args) = @_;
     my $nextnum;
-    my $query = "select max(cast( substring_index(barcode, '-',-1) as signed)) from items where barcode like ?";
+    my $query = "SELECT MAX(CAST(SUBSTRING(barcode,-4) AS signed)) from items where barcode REGEXP ?";
     my $sth=C4::Context->dbh->prepare($query);
-    $sth->execute("$args->{year}%");
+    $sth->execute("^[0-9][0-9][0-9]$args->{year}");
     while (my ($count)= $sth->fetchrow_array) {
         warn "Examining Record: $count" if $DEBUG;
         $nextnum = $count if $count;
     }
+
     $nextnum++;
-    $nextnum = sprintf("%0*d", "4",$nextnum);
-    $nextnum = "$args->{year}-$nextnum";
-    return $nextnum;
+    $nextnum = sprintf("%0*d", "6",$nextnum);
+    #$nextnum = "$args->{year}$nextnum";
+
+    my $scr = "
+        for (i=0 ; i<document.f.field_value.length ; i++) {
+            if (document.f.tag[i].value == '$args->{loctag}' && document.f.subfield[i].value == '$args->{locsubfield}') {
+                fnum = i;
+            }
+        }
+
+    var json; //Variable which receives the results
+    var loc_url = '/cgi-bin/koha/cataloguing/barcode_ajax.pl'; //Location
+
+    \$.getJSON(loc_url, function(jsonData){
+        json = jsonData;
+        
+        if (document.f.field_value[fnum].value.substring(0,3) == 'MLI') {
+            \$('#' + id).val(491 + '$args->{year}' + json.nextnum);
+        }else if (document.f.field_value[fnum].value.substring(0,3) == 'MAN') {
+            \$('#' + id).val(507 + '$args->{year}' + json.nextnum);
+        } else {
+            \$('#' + id).val(document.f.field_value[fnum].value + '$args->{year}' + json.nextnum);
+        }
+    });//$.getJSON ends here
+    ";
+
+    return $nextnum, $scr;
 }
 
 1;

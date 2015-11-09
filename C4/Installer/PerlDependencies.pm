@@ -827,6 +827,12 @@ our $PERL_DEPS = {
         'required' => '1',
         'min_ver'  => '2.23',
     },
+    'Cpanel::JSON::XS' => {
+        'usage'    => 'Barcode generation',
+        'required' => '1',
+        'min_ver'  => '3.0107',
+    },
+
 };
 
 1;
