@@ -669,6 +669,29 @@ sub recordpayment_selectaccts {
     return;
 }
 
+=head GetAllBorrowersWithUnpaidFines
+
+    my $badBorrowers = C4::Accounts::GetAllBorrowersWithUnpaidFines();
+
+@RETURNS ARRAYRef of HASHRefs of koha.borrowers + amountoutstanding-key
+            containing the total amount outstanding.
+            Ordered by borrowernumber ASCending.
+=cut
+
+sub GetAllBorrowersWithUnpaidFines {
+    my $sth = C4::Context->dbh->prepare("
+        SELECT b.*, SUM(a.amountoutstanding) AS amountoutstanding
+        FROM borrowers b
+            LEFT JOIN accountlines a ON b.borrowernumber = a.borrowernumber
+        WHERE a.amountoutstanding > 0
+        GROUP BY b.borrowernumber
+        ORDER BY b.borrowernumber ASC
+        "
+    );
+    $sth->execute();
+    return $sth->fetchall_arrayref({});
+}
+
 # makepayment needs to be fixed to handle partials till then this separate subroutine
 # fills in
 sub makepartialpayment {
