@@ -803,8 +803,8 @@ sub ModMember {
         }
         
         # Validate messaging preferences if any of the following field has been removed
-        if ((not Koha::Validation::validate_email($data{email}) or
-             not Koha::Validation::validate_phonenumber($data{phone})) and
+        if ((not Koha::Validation::validate_email($data{email} or !$data{email}) or
+             not Koha::Validation::validate_phonenumber($data{phone}) or $data{phone}) and
              not exists $data{smsalertnumber}) {
             # Make sure there are no misconfigured preferences - if there is, delete them.
             C4::Members::Messaging::DeleteAllMisconfiguredPreferences($data{borrowernumber});

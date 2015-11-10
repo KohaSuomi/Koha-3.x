@@ -80,9 +80,11 @@ sub handle_form_action {
     my $borrowernumber;
     my $logEntries = [];
     OPTION: foreach my $option ( @$messaging_options ) {
-        my $updater = { borrowernumber          => $target_params->{'borrowernumber'},
-                         message_attribute_id    => $option->{'message_attribute_id'} };
+        my $updater = { message_attribute_id    => $option->{'message_attribute_id'} };
         $borrowernumber = $target_params->{borrowernumber} unless $borrowernumber;
+
+        $updater->{borrowernumber} = $borrowernumber if defined $borrowernumber;
+        $updater->{categorycode} = $target_params->{categorycode} if defined $target_params->{categorycode} and not defined $borrowernumber;
 
         my @transport_methods = $query->param($option->{'message_attribute_id'});
         # Messaging preference validation. Make sure there is a valid contact information
