@@ -164,7 +164,7 @@ FloMax.persistBranchRule = function (brJSON, branchRule) {
     if (brJSON.floating == 'DISABLED') {
         brJSON.delete = 1; //A hack to trick Perl CGI to understand this is a HTTP DELETE-verb.
         $.ajax('floating-matrix-api.pl',
-               {method : 'DELETE',
+               {method : 'POST', //Should be DELETE but damn CGI
                 data : brJSON,
                 dataType : 'json',
         }).done(function(data, textStatus, jqXHR){
