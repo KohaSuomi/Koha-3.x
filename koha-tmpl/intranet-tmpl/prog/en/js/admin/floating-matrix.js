@@ -1,5 +1,6 @@
 ////Create javascript namespace
 var FloMax = FloMax || {};
+FloMax.Tester = FloMax.Tester || {};
 
 //// DOCUMENT READY INIT SCRIPTS
 
@@ -13,6 +14,13 @@ $(document).ready(function() {
     //Color cells based on their floatingType
     $(".branchRule").each(function(){
         FloMax.changeBranchRuleColor(this);
+    });
+
+    //Bind actions to the FloMax Tester
+    $("#floatingRuleTester input[type='submit']").bind({
+        click: function() {
+            FloMax.Tester.testFloating();
+        }
     });
 
     //Bind action listeners to the floating matrix
@@ -183,4 +191,60 @@ FloMax.persistBranchRule = function (brJSON, branchRule) {
             alert("Saving floating rule "+brJSON.fromBranch+"-"+brJSON.toBranch+" failed, because of the following error:\n"+data.status+" "+data.statusText+"\n"+"More specific error: "+error.error);
         });
     }
+}
+
+FloMax.Tester.defaultTestResultColor = "#B9D8D9";
+
+FloMax.Tester.testFloating = function() {
+    var testCase = FloMax.Tester.buildTestCaseFromHTML();
+    $(".cssload-loader").css('visibility', 'visible');
+
+    $.ajax('floating-matrix-api.pl',
+           {method : 'POST',
+            data : testCase,
+            dataType : 'json',
+    }).done(function(data, textStatus, jqXHR){
+
+        FloMax.Tester.displayTestResult(data.testResult);
+
+    }).fail(function (data, textStatus, jqXHR) {
+        var error = $.parseJSON(data.responseText); //Pass the error as JSON so we don't trigger the default Koha error pages.
+        alert("Testing floating rule "+testCase.fromBranch+"-"+testCase.toBranch+" failed, because of the following error:\n"+data.status+" "+data.statusText+"\n"+"More specific error: "+error.error);
+        FloMax.Tester.displayTestResult("error");
+    });
+}
+FloMax.Tester.buildTestCaseFromHTML = function () {
+    var fromBranch = $("#floatingRuleTester #testerFromBranch").val();
+    var toBranch   = $("#floatingRuleTester #testerToBranch").val();
+    var barcode    = $("#floatingRuleTester #testerBarcode").val();
+
+    var testCase = {
+        'fromBranch' : fromBranch,
+        'toBranch' : toBranch,
+        'barcode' : barcode,
+        'test': true,
+    };
+    return testCase;
+}
+FloMax.Tester.displayTestResult = function (testResult) {
+    $(".cssload-loader").css('visibility', 'hidden');
+    var color;
+    if (testResult == null) {
+        color = FloMax.branchRuleDisabledColor;
+    }
+    else if (testResult == 'ALWAYS') {
+        color = FloMax.branchRuleAlwaysColor;
+    }
+    else if (testResult == 'POSSIBLE') {
+        color = FloMax.branchRulePossibleColor;
+    }
+    else if (testResult == "error") {
+        color = FloMax.Tester.defaultTestResultColor;
+    }
+    else {
+        color = FloMax.Tester.defaultTestResultColor;
+        alert("Couldn't display test result '"+testResult+"'. Value is unknown.");
+    }
+
+    $("#testResulDisplay").css('background-color', color);
 }

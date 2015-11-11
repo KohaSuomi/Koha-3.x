@@ -25,6 +25,7 @@ use JSON::XS;
 use C4::Context;
 use C4::Output;
 use C4::Auth qw(check_cookie_auth);
+use C4::Items;
 
 use Koha::FloatingMatrix;
 
@@ -51,6 +52,15 @@ if ($data) {
         if ($data->{delete}) {
             $fm->deleteBranchRule($data->{fromBranch}, $data->{toBranch});
             $fm->store();
+        }
+        elsif ($data->{test}) {
+            my $item = C4::Items::GetItem(undef, $data->{barcode});
+            if ($data->{barcode} && $item) {
+                $data->{testResult} = $fm->checkFloating($item, $data->{fromBranch}, $data->{toBranch});
+            }
+            else {
+                Koha::Exception::BadParameter->throw(error => "No Item found using barcode '".$data->{barcode}."'");
+            }
         }
         ##If we are getting a POST-request, we UPSERT
         else {

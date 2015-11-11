@@ -1,6 +1,7 @@
 [% INCLUDE 'doc-head-open.inc' %]
 <title>Koha &rsaquo; Administration &rsaquo; Floating matrix</title>
 <link rel="stylesheet" type="text/css" href="[% themelang %]/css/admin/floating-matrix.css" />
+<link rel="stylesheet" type="text/css" href="[% themelang %]/css/admin/floating-matrix-loader.css" />
 [% INCLUDE 'doc-head-close.inc' %]
 
 </head>
@@ -37,6 +38,32 @@
                     </li>
                 </ul>
             </div>
+
+            <fieldset>
+            <legend>Floating rule tester</legend>
+            <div id="floatingRuleTester">
+                <label for="testerFromBranch">Choose the origin library:</label>
+                <select id="testerFromBranch">
+                [% FOR branchcode IN branches.keys.sort; branch = branches.$branchcode %]
+                    <option value="[% branch.branchcode %]">[% branch.branchcode %]</option>
+                [% END %]
+                </select>
+                <label for="testerToBranch">Choose the destination library:</label>
+                <select id="testerToBranch">
+                [% FOR branchcode IN branches.keys.sort; branch = branches.$branchcode %]
+                    <option value="[% branch.branchcode %]">[% branch.branchcode %]</option>
+                [% END %]
+                </select>
+                <input id="testerBarcode" type="test" width="12"/>
+                <input id="tester" type="submit" value="Test"/>
+                <span id="testResulDisplay"/>
+                <div class="cssload-loader">
+                    <div class="cssload-inner cssload-one"></div>
+                    <div class="cssload-inner cssload-two"></div>
+                    <div class="cssload-inner cssload-three"></div>
+                </div>
+            </div>
+            </fieldset>
 
             <table id="floatingMatrix">
                 <tr id="fmHeaderRow">

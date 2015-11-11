@@ -1,6 +1,14 @@
 .disabled-transfer {
     background-color: #FF8888;
 }
+
+#testResulDisplay { width: 20px;
+                    height: 22px;
+                    background-color: #B9D8D9;
+                    vertical-align: middle;
+                    display: inline-block;
+}
+
 .branchRule select { width: 100%; }
 .branchRule select {padding: 0px; margin: 5px 0px;}
 
