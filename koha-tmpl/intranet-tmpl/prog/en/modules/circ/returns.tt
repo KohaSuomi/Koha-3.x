@@ -531,7 +531,11 @@ $(document).ready(function () {
                 [% END %]
             </td>
             <td><a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=[% riloo.itembiblionumber %]">
-                    [% riloo.itemtitle |html %]</a></td>
+                    [% riloo.itemtitle |html %]
+                </a>
+                <br/>
+                <span class="item_enumeration" style="white-space: nowrap;">[% riloo.enumchron %]</span>
+            </td>
 			<td>[% riloo.itemauthor %]</td>
             <td><a href="/cgi-bin/koha/catalogue/moredetail.pl?biblionumber=[% riloo.itembiblionumber %]&amp;itemnumber=[% riloo.itemnumber %]#item[% riloo.itemnumber %]">[% riloo.barcode %]</a></td>
             <td>[% riloo.homebranch %]</td>

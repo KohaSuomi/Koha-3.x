@@ -574,6 +574,7 @@ foreach ( sort { $a <=> $b } keys %returneditems ) {
         $ri{itemtype}         = $biblio->{'itemtype'};
         $ri{itemnote}         = $biblio->{'itemnotes'};
         $ri{ccode}            = $biblio->{'ccode'};
+        $ri{enumchron}        = $biblio->{'enumchron'};
         $ri{itemnumber}       = $biblio->{'itemnumber'};
         $ri{barcode}          = $bar_code;
         $ri{homebranch}       = $item->{'homebranch'};
