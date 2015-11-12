@@ -36,6 +36,7 @@ use List::MoreUtils qw/any/;
 use C4::Search;
 use Storable qw(thaw freeze);
 use URI::Escape;
+use Data::Dumper;
 
 use MARC::File::XML;
 use URI::Escape;
@@ -262,7 +263,7 @@ sub generate_subfield_form {
                         onfocus="Focus$function_name($subfield_data{random}, '$subfield_data{id}');"
 			onchange=" $change"
                          onblur=" Blur$function_name($subfield_data{random}, '$subfield_data{id}');" />
-                        <a href="#" class="buttonDot" onclick="Clic$function_name('$subfield_data{id}'); return false;" title="Tag Editor">...</a>
+                         <a href="#" class="buttonDot" onclick="Clic$function_name('$subfield_data{id}'); return false;" title="Tag Editor">...</a>
                         $javascript];
                 } else {
                     warn "Plugin Failed: $plugin";

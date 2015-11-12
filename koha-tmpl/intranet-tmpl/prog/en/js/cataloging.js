@@ -113,7 +113,7 @@ function CloneField(index, hideMarc, advancedMARCEditor) {
             inputs[0].setAttribute('id',inputs[0].getAttribute('id')+new_key);
             inputs[0].setAttribute('name',inputs[0].getAttribute('name')+new_key);
             var id_input;
-            try {
+            try {g
                 id_input = inputs[1].getAttribute('id')+new_key;
                 inputs[1].setAttribute('id',id_input);
                 inputs[1].setAttribute('name',inputs[1].getAttribute('name')+new_key);

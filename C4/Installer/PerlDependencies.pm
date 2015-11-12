@@ -759,7 +759,7 @@ our $PERL_DEPS = {
     },
     'LWP::Curl' => {
         'usage'    => 'Curl',
-        'required' => '1',
+        'required' => '0',
         'min_ver'  => '0.12',
     },
 };

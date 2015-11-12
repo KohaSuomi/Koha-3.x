@@ -464,7 +464,7 @@ sub draw_label_text {
             }
             # LUMMEM #56, a feature for printing labels from Koha
             elsif(($self->{'callnum_split'}) and ($self->{'printing_type'} eq 'BIBBAR') and ($itemcallnumbers_size eq 2)) {
-                $text_llx = $params{'llx'} + $self->{'width'} - ($self->{'left_text_margin'} + $string_width);
+                $text_llx = $params{'llx'} + 5 + $self->{'width'} - ($self->{'left_text_margin'} + $string_width);
             }
             else {
                 $text_llx = ($params{'llx'} + $self->{'left_text_margin'});

@@ -290,7 +290,59 @@
         </xsl:if>
 
 	<a><xsl:attribute name="href">/cgi-bin/koha/catalogue/detail.pl?biblionumber=<xsl:value-of select="$biblionumber"/></xsl:attribute><xsl:attribute name="class">title</xsl:attribute>
-
+        <xsl:choose>
+         <xsl:when test="marc:datafield[@tag=245]">
+           <xsl:for-each select="marc:datafield[@tag=245]">
+                <xsl:variable name="title">
+                         <xsl:call-template name="subfieldSelect">
+                            <xsl:with-param name="codes">a</xsl:with-param>
+                        </xsl:call-template>
+                        <xsl:if test="marc:subfield[@code='h']">
+                            <xsl:text> </xsl:text>
+                            <xsl:call-template name="subfieldSelect">
+                                <xsl:with-param name="codes">h</xsl:with-param>
+                            </xsl:call-template>
+                        </xsl:if>
+                        <xsl:if test="marc:subfield[@code='b']">
+                            <xsl:text> </xsl:text>
+                            <xsl:call-template name="subfieldSelect">
+                                <xsl:with-param name="codes">b</xsl:with-param>
+                            </xsl:call-template>
+                        </xsl:if>
+                    <xsl:text> </xsl:text>
+                        <xsl:call-template name="subfieldSelect">
+                            <xsl:with-param name="codes">fgknps</xsl:with-param>
+                         </xsl:call-template>
+                </xsl:variable>
+                <xsl:variable name="titleChop">
+                    <xsl:call-template name="chopPunctuation">
+                        <xsl:with-param name="chopString">
+                            <xsl:value-of select="$title"/>
+                        </xsl:with-param>
+                    </xsl:call-template>
+                </xsl:variable>
+                <xsl:value-of select="$titleChop"/>
+            </xsl:for-each>
+         </xsl:when>
+         <xsl:otherwise>
+            <xsl:for-each select="marc:datafield[@tag=240]">
+                <xsl:variable name="title">
+                         <xsl:call-template name="subfieldSelect">
+                            <xsl:with-param name="codes">a</xsl:with-param>
+                        </xsl:call-template>
+                </xsl:variable>
+                <xsl:variable name="titleChop">
+                    <xsl:call-template name="chopPunctuation">
+                        <xsl:with-param name="chopString">
+                            <xsl:value-of select="$title"/>
+                        </xsl:with-param>
+                    </xsl:call-template>
+                </xsl:variable>
+                <xsl:value-of select="$titleChop"/>
+            </xsl:for-each>
+         </xsl:otherwise>
+        </xsl:choose>
+        <!--
         <xsl:if test="marc:datafield[@tag=245]">
         <xsl:for-each select="marc:datafield[@tag=245]">
             <xsl:variable name="title">
@@ -323,7 +375,7 @@
             </xsl:variable>
             <xsl:value-of select="$titleChop"/>
         </xsl:for-each>
-        </xsl:if>
+        </xsl:if>-->
     </a>
 
     <!-- Author Statement: Alternate Graphic Representation (MARC 880) -->
