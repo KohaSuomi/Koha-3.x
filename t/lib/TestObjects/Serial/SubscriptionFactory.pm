@@ -137,7 +137,7 @@ sub handleTestObject {
                                 $o->{notes},
                                 $o->{letter},
                                 $o->{firstacquidate},
-                                $o->{irregularity},
+                                $o->{irregularity} || '',
                                 $o->{numberpattern},
                                 $o->{locale},
                                 $o->{callnumber},
