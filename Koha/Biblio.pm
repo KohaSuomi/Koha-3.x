@@ -22,11 +22,32 @@ use Modern::Perl;
 use Carp;
 
 use Koha::Database;
+use Koha::Serial::Subscriptions;
 
 use base qw(Koha::Object);
 
 sub type {
     return 'Biblio';
+}
+
+sub subscription {
+    my ($self) = @_;
+    return $self->{subscription} if $self->{subscription};
+
+    my $resultset = Koha::Database->new->schema->resultset('Subscription');
+    $self->{subscription} = $resultset->search({biblionumber => $self->biblionumber}, {limit => 1})->next();
+    $self->{subscription} = Koha::Serial::Subscriptions->cast($self->{subscription});
+    return $self->{subscription};
+}
+
+sub subscriptions {
+    my ($self) = @_;
+    return $self->{subscriptions} if $self->{subscriptions};
+
+    my $resultset = Koha::Database->new->schema->resultset('Subscription');
+    my @subscriptions = Koha::Serial::Subscriptions->search({biblionumber => $self->biblionumber});
+    $self->{subscriptions} = \@subscriptions;
+    return $self->{subscriptions};
 }
 
 1;

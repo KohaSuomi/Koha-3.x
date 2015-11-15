@@ -18,8 +18,9 @@ package Koha::Serial::Subscription;
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 use Modern::Perl;
-
 use Carp;
+
+use C4::Context;
 
 use Koha::Database;
 use Koha::Serial::Subscription::Frequencies;
@@ -31,6 +32,8 @@ use Koha::Acquisition::Booksellers;
 use Koha::Items;
 
 use base qw(Koha::Object);
+
+use Koha::Exception::UnknownProgramState;
 
 sub type {
     return 'Subscription';
@@ -155,6 +158,21 @@ sub items {
     }
 
     return $self->{items};
+}
+
+sub getDisplayCount {
+    my ($self) = @_;
+
+    my $interface = C4::Context->interface();
+    if ($interface eq 'opac') {
+        return $self->opacdisplaycount();
+    }
+    elsif ($interface eq 'intranet') {
+        return $self->staffdisplaycount();
+    }
+    else {
+        Koha::Exception::UnknownProgramState->throw(error => __PACKAGE__."->getDisplayCount():> C4::Context->interface '$interface' is unknown. It should be 'opac' or 'intranet'.");
+    }
 }
 
 1;
