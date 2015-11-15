@@ -199,6 +199,7 @@ INSERT INTO systempreferences ( `variable`, `value`, `options`, `explanation`, `
 ('NewItemsDefaultLocation','','','If set, all new items will have a location of the given Location Code ( Authorized Value type LOC )',''),
 ('noissuescharge','5','','Define maximum amount withstanding before check outs are blocked','Integer'),
 ('noItemTypeImages','0',NULL,'If ON, disables item-type images','YesNo'),
+('UseBetaFeatures','0',NULL,'Use beta features?','YesNo'),
 ('NoLoginInstructions', '', '60|10', 'Instructions to display on the OPAC login form when a patron is not logged in', 'Textarea'),
 ('NotesBlacklist','',NULL,'List of notes fields that should not appear in the title notes/description separator of details','free'),
 ('NoticeCSS','',NULL,'Notices CSS url.','free'),

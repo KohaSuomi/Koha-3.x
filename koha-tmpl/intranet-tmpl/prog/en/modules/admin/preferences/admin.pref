@@ -23,6 +23,13 @@ Administration:
                   no: Show
             - itemtype icons in the catalog.
         -
+            - pref: UseBetaFeatures
+              default: 0
+              choices:
+                  yes: "Use only"
+                  no: "Spare me from"
+            - beta features like Serials stuff :)
+        -
             - Separate columns in an exported report file with
             - pref: delimiter
               default: ","
