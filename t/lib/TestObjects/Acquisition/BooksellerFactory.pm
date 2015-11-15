@@ -107,7 +107,7 @@ sub handleTestObject {
     foreach my $c (@$contacts) {
         $c->{booksellerid} = $bookseller->id;
     }
-    $bookseller->{contacts} = t::lib::TestObjects::Acquisition::Bookseller::ContactFactory->createTestGroup($contacts, undef, @$stashes);
+    #$bookseller->{contacts} = t::lib::TestObjects::Acquisition::Bookseller::ContactFactory->createTestGroup($contacts, undef, @$stashes);
 
     return $bookseller;
 }
