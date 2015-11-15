@@ -162,6 +162,7 @@ function verify_images() {
 //]]>
 </script>
 <link rel="stylesheet" type="text/css" href="[% themelang %]/css/datatables.css" />
+<link rel="stylesheet" type="text/css" href="[% themelang %]/css/jstree/style.min.css" />
 [% INCLUDE 'datatables.inc' %]
 <script type="text/javascript" src="[% interface %]/lib/jquery/plugins/jquery.dataTables.columnFilter.js"></script>
 [% INCLUDE 'browser-strings.inc' %]
@@ -998,4 +999,52 @@ function verify_images() {
 </div>
 [% END %]
 </div>
+
+[% IF UseBetaFeatures %][%# Serials display improvements fix%]
+<script type="text/javascript" src="[% interface %]/lib/jquery/plugins/jstree.min.js"></script>
+<script type="text/javascript" src="[% interface %]/lib/log4javascript.js"></script>
+<script type="text/javascript" src="[% themelang %]/js/Serials/CollectionMap.js"></script>
+<script type="text/javascript" src="[% themelang %]/js/Items/ItemsTable.js"></script>
+<script type="text/javascript" src="[% themelang %]/js/Items.js"></script>
+<script type="text/javascript" src="[% themelang %]/js/Holds.js"></script>
+<script type="text/javascript" src="[% themelang %]/js/Borrowers.js"></script>
+<script type="text/javascript" src="[% themelang %]/js/Branches.js"></script>
+<script type="text/javascript" src="[% themelang %]/js/Items/ItemsTableRow.tmpl.js"></script>
+<script type="text/javascript">
+
+var branches = [% branchloopJSON %];
+
+var log = log4javascript.getDefaultLogger();
+
+var collectionMap; var itemsTable; var holdPicker;
+$(document).ready(function() {
+    Branches.createBranchSelectorHtml(branches);
+
+    $("div#menu").parent().append('<div id="jstree2">jsTree was here</div>');
+    $("div#noitems").remove();
+    $("div#holdings").append('<table id="itemtable"></table>');
+    collectionMap = new Serials.CollectionMap.CollectionMap($("#jstree2"), [% biblionumber %]);
+    itemsTable = new Items.ItemsTable.ItemsTable(
+             {node: $("#itemtable"),
+              biblionumber: [% biblionumber %],
+              datatable: $("#itemtable"),
+              loggedinbranch: "[% LoginBranchcode %]",
+              datasource: "ajax",
+             });
+    Serials.CollectionMap.subscribe(collectionMap, itemsTable);
+    holdPicker = new Holds.HoldPicker({
+      biblio: {biblionumber:  [% biblionumber %]},
+      item: null,
+      borrower: {firstname:      "[% holdfor_firstname %]",
+                 surname:        "[% holdfor_surname %]",
+                 borrowernumber: "[% holdfor_borrowernumber %]",
+                 cardnumber:     "[% holdfor_cardnumber %]",},
+      suspend_until: null,
+      pickupBranch: {branchcode: "[% LoginBranchcode %]"},
+    });
+
+});
+
+</script>
+[% END %][%# Serials display improvements fix%]
 [% INCLUDE 'intranet-bottom.inc' %]

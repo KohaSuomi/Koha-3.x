@@ -45,6 +45,7 @@ use C4::HTML5Media;
 use C4::CourseReserves qw(GetItemCourseReservesInfo);
 use C4::Acquisition qw(GetOrdersByBiblionumber);
 use C4::RotatingCollections qw(GetItemsCollection); # KD-139
+use JSON::XS;
 
 my $query = CGI->new();
 
@@ -78,6 +79,7 @@ if($query->cookie("holdfor")){
         holdfor_surname => $holdfor_patron->{'surname'},
         holdfor_firstname => $holdfor_patron->{'firstname'},
         holdfor_cardnumber => $holdfor_patron->{'cardnumber'},
+        holdfor_borrowernumber => $holdfor_patron->{'borrowernumber'},
     );
 }
 
@@ -109,6 +111,7 @@ $template->param(
     normalized_isbn => $isbn,
 );
 
+my $dat = &GetBiblioData($biblionumber);
 my $marcnotesarray   = GetMarcNotes( $record, $marcflavour );
 my $marcisbnsarray   = GetMarcISBN( $record, $marcflavour );
 my $marcauthorsarray = GetMarcAuthors( $record, $marcflavour );
@@ -123,7 +126,21 @@ my $branches = GetBranches();
 my $itemtypes = GetItemTypes();
 my $dbh = C4::Context->dbh;
 
-my @all_items = GetItemsInfo( $biblionumber );
+#Get the branchesloop for the BranchSelector-widget
+my $json = JSON::XS->new();
+my $branchLoopJSON = $json->encode(GetBranchesLoop());
+$template->param( branchloopJSON  => $branchLoopJSON,
+                  UseBetaFeatures => C4::Context->preference('UseBetaFeatures'));
+
+#Serials have a REST-API-driven data source to facilitate pagination in the GUI.
+#So only take as many Items as it is reasonable to show.
+my @all_items;
+if ($dat->{serial} && C4::Context->preference('UseBetaFeatures')) { #For serials only show the top 20 SerialItems from your loggedinbranch.
+    #@all_items = GetItemsInfo( $biblionumber, 1 );
+}
+else {
+    @all_items = GetItemsInfo( $biblionumber );
+}
 my @items;
 for my $itm (@all_items) {
     push @items, $itm unless ( $itm->{itemlost} && GetHideLostItemsPreference($borrowernumber) && !$showallitems);
