@@ -20,6 +20,8 @@ package C4::Serials;
 
 use Modern::Perl;
 
+use Koha::Serial::Subscriptions;
+use Koha::Serial::Subscription::Numberpatterns;
 use C4::Auth qw(haspermission);
 use C4::Context;
 use C4::Dates qw(format_date format_date_in_iso);
@@ -167,6 +169,66 @@ sub GetLateIssues {
         push @issuelist, $line;
     }
     return @issuelist;
+}
+
+sub updatePatternsXYZ {
+    my ($params) = @_;
+    my $verbose = $params->{verbose};
+    my $serialSequenceSplitter = $params->{serialSequenceSplitterRegexp};
+    my $dbh = C4::Context->dbh();
+
+    sub trim {
+        my $string = shift;
+        $string =~ s/^\s*//;
+        $string =~ s/\s*$//;
+        return $string;
+    }
+
+    my $sth = $dbh->prepare("SELECT serialid, serialseq FROM serial");
+    $sth->execute();
+
+    my $sth_clean      = $dbh->prepare(" UPDATE serial SET pattern_x=NULL , pattern_y=NULL , pattern_z=NULL WHERE serialid=? ");
+    my $sth_update_xyz = $dbh->prepare(" UPDATE serial SET pattern_x=? , pattern_y=? , pattern_z=? WHERE serialid=? ");
+    my $sth_update_xy  = $dbh->prepare(" UPDATE serial SET pattern_x=? , pattern_y=? WHERE serialid=? ");
+    my $sth_update_x   = $dbh->prepare(" UPDATE serial SET pattern_x=? WHERE serialid=? ");
+    my $ss = $sth->fetchall_arrayref({});
+    foreach my $s (@$ss) {
+        $sth_clean->execute($s->{serialid});
+
+        my ($x, $y, $z);
+        my @elem = split(/$serialSequenceSplitter/,$s->{serialseq});
+        if (1) {
+            $x = $elem[0] ? trim($elem[0]) : '';
+            $y = $elem[1] ? trim($elem[1]) : '';
+            $z = $elem[2] ? trim($elem[2]) : '';
+        }
+        elsif ($s->{serialseq} =~ /^(\d+) ?: ?([-0-9A-Za-z]+) $/) {
+            $x = $1;
+            $y = $2;
+            $z = $3;
+        }
+        elsif ($s->{serialseq} =~ /^(\d+) ?: ?([-0-9A-Za-z]*) ?:? ?(.*)/) {
+            $x = $1;
+            $y = $2;
+            $z = $3;
+        }
+        else {
+            print "Couldn't parse serialid '".$s->{serialid}."'s serialseq '".$s->{serialseq}."'\n" if $verbose;
+            next();
+        }
+
+        if ($x && $y && $z) {
+            $sth_update_xyz->execute($x, $y, $z, $s->{serialid});
+        }
+        elsif ($x && $y) {
+            $sth_update_xy->execute($x, $y, $s->{serialid});
+        }
+        else {
+            $sth_update_x->execute($x, $s->{serialid});
+        }
+
+        print "UPDATE serialid '".$s->{serialid}."', '$x' '$y' '$z'\n" if $verbose;
+    }
 }
 
 =head2 GetSubscriptionHistoryFromSubscriptionId
@@ -1244,7 +1306,7 @@ sub ModSerialStatus {
         # next date (calculated from actual date & frequency parameters)
         my $nextpublisheddate = GetNextDate($subscription, $publisheddate, 1);
         my $nextpubdate = $nextpublisheddate;
-        NewIssue( $newserialseq, $subscriptionid, $subscription->{'biblionumber'}, 1, $nextpubdate, $nextpubdate );
+        NewIssue( $newserialseq, $subscriptionid, $subscription->{'biblionumber'}, 1, $nextpubdate, $nextpubdate, undef, $newlastvalue1, $newlastvalue2, $newlastvalue3 );
         $query = "UPDATE subscription SET lastvalue1=?, lastvalue2=?, lastvalue3=?, innerloop1=?, innerloop2=?, innerloop3=?
                     WHERE  subscriptionid = ?";
         $sth = $dbh->prepare($query);
@@ -1503,11 +1565,11 @@ sub NewSubscription {
     my $serialseq = GetSeq($subscription, $pattern) || q{};
     $query = qq|
         INSERT INTO serial
-            (serialseq,subscriptionid,biblionumber,status, planneddate, publisheddate)
-        VALUES (?,?,?,?,?,?)
+            (serialseq,subscriptionid,biblionumber,status, planneddate, publisheddate, pattern_x, pattern_y, pattern_z)
+        VALUES (?,?,?,?,?,?,?,?,?)
     |;
     $sth = $dbh->prepare($query);
-    $sth->execute( $serialseq, $subscriptionid, $biblionumber, 1, $firstacquidate, $firstacquidate );
+    $sth->execute( $serialseq, $subscriptionid, $biblionumber, 1, $firstacquidate, $firstacquidate, $subscription->{lastvalue1}, $subscription->{lastvalue2}, $subscription->{lastvalue3} );
 
     logaction( "SERIAL", "ADD", $subscriptionid, "" ) if C4::Context->preference("SubscriptionLog");
 
@@ -1599,19 +1661,32 @@ returns the serial id
 =cut
 
 sub NewIssue {
-    my ( $serialseq, $subscriptionid, $biblionumber, $status, $planneddate, $publisheddate, $notes ) = @_;
+    my ( $serialseq, $subscriptionid, $biblionumber, $status, $planneddate, $publisheddate, $notes, $pattern_x, $pattern_y, $pattern_z ) = @_;
     ### FIXME biblionumber CAN be provided by subscriptionid. So Do we STILL NEED IT ?
 
     return unless ($subscriptionid);
 
+    unless ($pattern_x || $pattern_y || $pattern_z) {
+        #Because the subcription's lastvalues are not updated yet, we need to find them the hard way.
+        my $subscription = Koha::Serial::Subscriptions->find($subscriptionid);
+        my $pattern = $subscription->numberpattern();
+        my ($calculated,
+            $newlastvalue1, $newlastvalue2, $newlastvalue3,
+            $newinnerloop1, $newinnerloop2, $newinnerloop3) =
+                C4::Serials::GetNextSeq($subscription->unblessed(), $pattern->unblessed(), $planneddate);
+        $pattern_x = $newlastvalue1;
+        $pattern_y = $newlastvalue2;
+        $pattern_z = $newlastvalue3;
+    }
+
     my $dbh   = C4::Context->dbh;
     my $query = qq|
         INSERT INTO serial
-            (serialseq,subscriptionid,biblionumber,status,publisheddate,planneddate,notes)
-        VALUES (?,?,?,?,?,?,?)
+            (serialseq,subscriptionid,biblionumber,status,publisheddate,planneddate,notes,pattern_x,pattern_y,pattern_z)
+        VALUES (?,?,?,?,?,?,?,?,?,?)
     |;
     my $sth = $dbh->prepare($query);
-    $sth->execute( $serialseq, $subscriptionid, $biblionumber, $status, $publisheddate, $planneddate, $notes );
+    $sth->execute( $serialseq, $subscriptionid, $biblionumber, $status, $publisheddate, $planneddate, $notes, $pattern_x, $pattern_y, $pattern_z );
     my $serialid = $dbh->{'mysql_insertid'};
     $query = qq|
         SELECT missinglist,recievedlist

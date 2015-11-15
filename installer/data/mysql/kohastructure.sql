@@ -2077,7 +2077,13 @@ CREATE TABLE `serial` (
   `publisheddate` date default NULL,
   `claimdate` date default NULL,
   `routingnotes` text,
-  PRIMARY KEY  (`serialid`)
+  `pattern_x` varchar(6) default NULL,
+  `pattern_y` varchar(6) default NULL,
+  `pattern_z` varchar(6) default NULL,
+  PRIMARY KEY  (`serialid`),
+  KEY `pattern_x` (`pattern_x`),
+  KEY `pattern_y` (`pattern_y`),
+  KEY `pattern_z` (`pattern_z`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --

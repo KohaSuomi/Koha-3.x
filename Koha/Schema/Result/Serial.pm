@@ -84,6 +84,24 @@ __PACKAGE__->table("serial");
   data_type: 'text'
   is_nullable: 1
 
+=head2 pattern_x
+
+  data_type: 'varchar'
+  is_nullable: 1
+  size: 6
+
+=head2 pattern_y
+
+  data_type: 'varchar'
+  is_nullable: 1
+  size: 6
+
+=head2 pattern_z
+
+  data_type: 'varchar'
+  is_nullable: 1
+  size: 6
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -107,6 +125,12 @@ __PACKAGE__->add_columns(
   { data_type => "date", datetime_undef_if_invalid => 1, is_nullable => 1 },
   "routingnotes",
   { data_type => "text", is_nullable => 1 },
+  "pattern_x",
+  { data_type => "varchar", is_nullable => 1, size => 6 },
+  "pattern_y",
+  { data_type => "varchar", is_nullable => 1, size => 6 },
+  "pattern_z",
+  { data_type => "varchar", is_nullable => 1, size => 6 },
 );
 
 =head1 PRIMARY KEY
@@ -139,8 +163,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07025 @ 2013-10-14 20:56:21
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:xloe1BJrVD7sU07AnA4P2g
+# Created by DBIx::Class::Schema::Loader v0.07039 @ 2015-11-17 18:12:10
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:molOBdwuOaLcdxaSHsFlkA
 
 __PACKAGE__->belongs_to(
   "subscription",
