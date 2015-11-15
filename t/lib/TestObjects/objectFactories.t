@@ -26,6 +26,8 @@ use DateTime;
 use Koha::DateUtils;
 
 use t::lib::TestObjects::ObjectFactory;
+use t::lib::TestObjects::Serial::SubscriptionFactory;
+use Koha::Serial::Subscriptions;
 use t::lib::TestObjects::BorrowerFactory;
 use Koha::Borrowers;
 use t::lib::TestObjects::ItemFactory;
@@ -47,6 +49,62 @@ use C4::Context;
 
 
 my $testContext = {}; #Gather all created Objects here so we can finally remove them all.
+my $now = DateTime->now(time_zone => C4::Context->tz());
+my $year = $now->year();
+
+
+
+########## SubscriptionFactory subtests ##########
+subtest "t::lib::TestObjects::SubscriptionFactory" => \&testSubscriptionFactory;
+sub testSubscriptionFactory {
+    my $subtestContext = {};
+    my $biblionumber; #Get the biblionumber the test Subscription is for.
+
+    eval {
+    my $subscriptions = t::lib::TestObjects::Serial::SubscriptionFactory->createTestGroup(
+                                                   {internalnotes => 'TSUB1',
+                                                    receiveSerials => 5,
+                                                    staffdisplaycount => 10,
+                                                    opacdisplaycount => 15,
+                                                   },
+                                                    undef, $subtestContext);
+    $biblionumber = $subscriptions->{TSUB1}->biblionumber;
+
+    C4::Context->interface('opac');
+    is($subscriptions->{TSUB1}->opacdisplaycount,
+       15,
+       "Get opacdisplaycount.");
+    C4::Context->interface('opac');
+    is($subscriptions->{TSUB1}->staffdisplaycount,
+       10,
+       "Get staffdisplaycount.");
+
+    my $serials = $subscriptions->{TSUB1}->serials();
+    ok($serials->[0]->pattern_x == $year &&
+       $serials->[0]->pattern_y == 1 &&
+       $serials->[0]->pattern_z == 1,
+       "Patterns x,y,z set for the first serial.");
+    ok($serials->[2]->pattern_x == $year &&
+       $serials->[2]->pattern_y == 1 &&
+       $serials->[2]->pattern_z == 3,
+       "Patterns x,y,z set for the third serial.");
+    ok($serials->[4]->pattern_x == $year &&
+       $serials->[4]->pattern_y == 2 &&
+       $serials->[4]->pattern_z == 1,
+       "Patterns x,y,z set for the fifth serial.");
+
+    my @items = Koha::Items->search({biblionumber => $biblionumber});
+    is(scalar(@items), 5, "Created Items while receiving Serials");
+    };
+    if ($@) {
+        ok(0, "Subtest crashed with error:\n$@\n");
+    }
+
+    t::lib::TestObjects::ObjectFactory->tearDownTestContext($subtestContext);
+
+    my @items = Koha::Items->search({biblionumber => $biblionumber});
+    is(scalar(@items), 0, "Created Items torn down");
+}
 
 
 

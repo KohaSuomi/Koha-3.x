@@ -290,7 +290,7 @@ sub deleteTestGroup {
         eval {
             my @serials = $schema->resultset('Serial')->search({subscriptionid => $subscription->subscriptionid});
 
-            ##Because serialitems-table doesn't have a primery key, resorting to a DBI hack.
+            ##Because serialitems-table doesn't have a primary key, resorting to a DBI hack.
             my $dbh = C4::Context->dbh();
             my $sth_delete_serialitems = $dbh->prepare("DELETE FROM serialitems WHERE serialid = ?");
 
