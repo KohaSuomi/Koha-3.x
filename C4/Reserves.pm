@@ -45,6 +45,11 @@ use DateTime;
 use List::MoreUtils qw( firstidx );
 use Scalar::Util qw(blessed);
 
+use Koha::Exception::BadParameter;
+use Koha::Exception::DB;
+use Koha::Exception::NoPermission;
+use Koha::Exception::UnknownObject;
+
 use vars qw($VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);
 
 =head1 NAME
@@ -208,6 +213,7 @@ sub AddReserve {
         $const,          $priority,     $notes,   $checkitem,
         $found,          $waitingdate,	$expdate
     );
+    my $reserve_id = $sth->{mysql_insertid};
 
     # Send e-mail to librarian if syspref is active
     if(C4::Context->preference("emailLibrarianWhenHoldIsPlaced")){
@@ -238,7 +244,7 @@ sub AddReserve {
         }
     }
 
-    return;     # FIXME: why not have a useful return value?
+    return $reserve_id;
 }
 
 =head2 GetReserve
@@ -257,6 +263,92 @@ sub GetReserve {
     my $sth = $dbh->prepare( $query );
     $sth->execute( $reserve_id );
     return $sth->fetchrow_hashref();
+}
+
+=head PlaceHold
+
+    C4::Reserves::PlaceHold({biblionumber => 12,
+                             itemnumber => 23,
+                             borrowernumber => 34,
+                             pickupBranch => $pickupBranch,
+                             expirationDate => $expDate,
+                             suspend_until => $suspendDate,
+                            });
+
+@PARAM1 HASHRef, keys:
+    {Int} 'borrowernumber', MANDATORY
+    {Int} 'itemnumber', OPTIONAL
+    {Int} 'biblionumber' MANDATORY if 'itemnumber' is missing
+    {String} 'pickupBranch', MANDATORY
+    {Date String ISO8601} 'expirationDate', OPTIONAL
+    {Date String ISO8601} 'suspend_until', OPTIONAL
+
+@THROWS Koha::Exception::BadParameter if proper parameters are lacking.
+@THROWS Koha::Exception::DB if there is something wrong when inserting the hold to the database.
+@THROWS Koha::Exception::NoPermission if the Borrower doesn't have enough permissions to place a Hold.
+@THROWS Koha::Exception::UnknownObject if no Borrower is found.
+=cut
+
+sub PlaceHold {
+    my $params = shift;
+
+    my $borrowernumber = $params->{borrowernumber};
+    my $biblionumber = $params->{biblionumber};
+    my $itemnumber = $params->{itemnumber};
+    my $pickupBranch = $params->{branchcode};
+    my $expirationDate = $params->{expirationdate};
+    # AddReserve expects date to be in syspref format
+    if ($expirationDate) {
+        $expirationDate = C4::Dates->new($expirationDate, 'iso')->output;
+    }
+
+    my $borrower = Koha::Borrowers->find($borrowernumber);
+    unless ($borrower) {
+        Koha::Exception::UnknownObject->throw(error => 'Borrower not found');
+    }
+    unless ($biblionumber or $itemnumber) {
+        Koha::Exception::BadParameter->throw(error => "At least one of biblionumber, itemnumber should be given");
+    }
+    unless ($pickupBranch) {
+        Koha::Exception::BadParameter->throw(error => "Pickup branch is required");
+    }
+
+    my $item_biblionumber = C4::Biblio::GetBiblionumberFromItemnumber($itemnumber);
+    if ($itemnumber && $biblionumber and $biblionumber != $item_biblionumber) {
+        Koha::Exception::BadParameter->throw(error => "Item $itemnumber doesn't belong to biblio $biblionumber");
+    }
+
+    $biblionumber ||= $item_biblionumber;
+    my $biblio = C4::Biblio::GetBiblio($biblionumber);
+
+    my $can_reserve =
+      $itemnumber
+      ? CanItemBeReserved( $borrowernumber, $itemnumber )
+      : CanBookBeReserved( $borrowernumber, $biblionumber );
+
+    unless ($can_reserve eq 'OK') {
+        Koha::Exception::NoPermission->throw(error => "Hold cannot be placed. Reason: $can_reserve");
+    }
+
+    my $number_reserves = C4::Reserves::GetReserveCount( $borrowernumber );
+
+    if ( C4::Context->preference('maxreserves') && ($number_reserves >= C4::Context->preference('maxreserves')) ) {
+        Koha::Exception::NoPermission->throw(error => "Too many holds: $number_reserves");
+    }
+
+    my $priority = C4::Reserves::CalculatePriority($biblionumber);
+    $itemnumber ||= undef;
+
+    my $reserve_id = C4::Reserves::AddReserve($pickupBranch, $borrowernumber,
+        $biblionumber, 'a', undef, $priority, undef, ($expirationDate ? $expirationDate : undef), undef,
+        $biblio->{title}, $itemnumber);
+
+    unless ($reserve_id) {
+        Koha::Exception::DB->throw(error => "Database error while placing the hold. See Koha logs for details.");
+    }
+
+    my $reserve = C4::Reserves::GetReserve($reserve_id);
+    return $reserve;
 }
 
 =head2 GetReservesFromBiblionumber

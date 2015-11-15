@@ -15,6 +15,96 @@
   "x-mojo-around-action": "Koha::REST::V1::koha_authenticate",
   "basePath": "/api/v1",
   "paths": {
+    "/serialitems": {
+      "get": {
+        "x-mojo-controller": "Koha::REST::V1::Serials",
+        "operationId": "getSerialItems",
+        "tags": ["serials"],
+        "summary": "Fetches SerialItems representing Serials (without an Item-object) and Magazines (with an Item-object)",
+        "description": "You cannot return all SerialItems, but you must filter your search with GET-parameters.",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {  "$ref": "#/parameters/biblionumberQueryParam" },
+          {  "$ref": "#/parameters/pattern_xQueryParam" },
+          {  "$ref": "#/parameters/pattern_yQueryParam" },
+          {  "$ref": "#/parameters/pattern_zQueryParam" },
+          {  "$ref": "#/parameters/holdingbranchQueryParam" },
+          {  "$ref": "#/parameters/serialStatusQueryParam" },
+          {  "$ref": "#/parameters/limitQueryParam" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Fetching the objects succeeded.",
+            "schema": {
+              "type": "object"
+            }
+          },
+          "404": {
+            "description": "No objects match the search request",
+            "schema": {
+              "type": "#/definitions/error"
+            }
+          },
+          "400": {
+            "description": "Bad search parameters.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "500": {
+            "description": "Server-side error. I am sorry :(",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          }
+        }
+      }
+    },
+    "/serials/collection": {
+      "get": {
+        "x-mojo-controller": "Koha::REST::V1::Serials",
+        "operationId": "getCollection",
+        "tags": ["serials"],
+        "summary": "Fetches a volume overview of all serials in the system, and a count of how many have been received.",
+        "description": "Fetches a volume overview of all serials in the system, and a count of how many have been received.",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {  "$ref": "#/parameters/biblionumberQueryParam" },
+          {  "$ref": "#/parameters/holdingbranchQueryParam" },
+          {  "$ref": "#/parameters/serialStatusQueryParam" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Fetching the objects succeeded.",
+            "schema": {
+              "type": "object"
+            }
+          },
+          "404": {
+            "description": "No objects match the search request",
+            "schema": {
+              "type": "#/definitions/error"
+            }
+          },
+          "400": {
+            "description": "Bad search parameters.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "500": {
+            "description": "Server-side error. I am sorry :(",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          }
+        }
+      }
+    },
     "/biblios/{biblionumber}": {
       "delete": {
         "x-mojo-controller": "Koha::REST::V1::Biblios",
@@ -66,10 +156,15 @@
         },
         "operationId": "listBorrowers",
         "tags": ["borrowers"],
-        "summary": "just a summary",
-        "description": "long description",
+        "summary": "Searches for Borrowers",
+        "description": "Search borrowers from Koha, optionally filter the search with specific parameters. All parameters given, must be present in the returned Borrower-objects. If no search parameters are given, all borrowers are returned! This is certainly not what you want.",
         "produces": [
           "application/json"
+        ],
+        "parameters": [
+          {  "$ref": "#/parameters/cardnumberQueryParam" },
+          {  "$ref": "#/parameters/useridQueryParam" },
+          {  "$ref": "#/parameters/borrowernumberQueryParam" }
         ],
         "responses": {
           "200": {
@@ -163,6 +258,72 @@
         "security": [
           { "multi_key_auth": [] }
         ]
+      }
+    },
+    "/borrowers/{borrowernumber}/holds": {
+      "get": {
+        "x-mojo-controller": "Koha::REST::V1::Borrowers::Holds",
+        "x-koha-permission": {
+          "borrowers": "*"
+        },
+        "operationId": "listBorrowerHolds",
+        "tags": ["borrowers", "holds"],
+        "parameters": [
+          { "$ref": "#/parameters/borrowernumberPathParam" }
+        ],
+        "produces": ["application/json"],
+        "responses": {
+          "200": {
+            "description": "A list of holds",
+            "schema": { "$ref": "#/definitions/holds" }
+          },
+          "404": {
+            "description": "Borrower not found",
+            "schema": { "$ref": "#/definitions/error" }
+          }
+        }
+      },
+      "post": {
+        "x-mojo-controller": "Koha::REST::V1::Borrowers::Holds",
+        "x-koha-permission": {
+          "circulate": "*"
+        },
+        "operationId": "addBorrowerHold",
+        "tags": ["borrowers", "holds"],
+        "parameters": [
+          { "$ref": "#/parameters/borrowernumberPathParam" },
+          {
+            "name": "body",
+            "in": "body",
+            "description": "A Hold-object",
+            "required": true,
+            "schema": { "$ref": "#/definitions/newBorrowerHoldBody" }
+          }
+        ],
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "responses": {
+          "201": {
+            "description": "Created hold",
+            "schema": { "$ref": "#/definitions/hold" }
+          },
+          "400": {
+            "description": "Missing or wrong parameters",
+            "schema": { "$ref": "#/definitions/error" }
+          },
+          "403": {
+            "description": "Hold not allowed",
+            "schema": { "$ref": "#/definitions/error" }
+          },
+          "404": {
+            "description": "Borrower not found",
+            "schema": { "$ref": "#/definitions/error" }
+          },
+          "500": {
+            "description": "Internal error",
+            "schema": { "$ref": "#/definitions/error" }
+          }
+        }
       }
     },
     "/auth/session": {
@@ -461,6 +622,92 @@
         }
       }
     },
+    "holds": {
+      "type": "array",
+      "items": {"$ref": "#/definitions/hold"}
+    },
+    "hold": {
+      "type": "object",
+      "properties": {
+        "reserve_id": {
+          "description": "Internal reserve identifier"
+        },
+        "borrowernumber": { "$ref" : "#/definitions/borrowernumber" },
+        "reservedate": {
+          "description": "the date the reserve was placed"
+        },
+        "biblionumber": { "$ref": "#/definitions/biblionumber" },
+        "constrainttype": {
+          "description": "type of constraint"
+        },
+        "branchcode": { "$ref": "#/definitions/branchcode" },
+        "notificationdate": {
+          "description": "currently unused"
+        },
+        "reminderdate": {
+          "description": "currently unused"
+        },
+        "cancellationdate": {
+          "description": "the date the reserve was cancelled"
+        },
+        "reservenotes": {
+          "description": "notes related to this reserve"
+        },
+        "priority": {
+          "description": "where in the queue the patron sits"
+        },
+        "found": {
+          "description": "a one letter code defining what the status of the reserve is after it has been confirmed"
+        },
+        "timestamp": {
+          "description": "date and time the reserve was last updated"
+        },
+        "itemnumber": { "$ref": "#/definitions/itemnumber" },
+        "waitingdate": {
+          "description": "the date the item was marked as waiting for the patron at the library"
+        },
+        "expirationdate": {
+          "description": "the date the reserve expires"
+        },
+        "lowestPriority": {
+          "description": ""
+        },
+        "suspend": {
+          "description": ""
+        },
+        "suspend_until": {
+          "description": ""
+        }
+      }
+    },
+    "newBorrowerHoldBody": {
+      "type": "object",
+      "properties": {
+        "biblionumber": {
+          "description": "Biblio internal identifier",
+          "type": "integer"
+        },
+        "itemnumber": {
+          "description": "Item internal identifier",
+          "type": "integer"
+        },
+        "branchcode": {
+          "description": "Pickup location",
+          "type": "string",
+          "required": true
+        },
+        "expirationdate": {
+          "description": "Reserve end date",
+          "type": "string",
+          "format": "date"
+        },
+        "suspend_until": {
+          "description": "Suspend the Hold until this date, so the Hold won't get caught but advances in queue.",
+          "type": "string",
+          "format": "date"
+        }
+      }
+    },
     "borrowerStatus": {
       "type": "object",
       "properties": {
@@ -654,12 +901,32 @@
       "required": true,
       "type": "integer"
     },
+    "biblionumberQueryParam": {
+      "name": "biblionumber",
+      "in": "query",
+      "description": "Internal biblio identifier",
+      "required": true,
+      "type": "integer"
+    },
     "borrowernumberPathParam": {
       "name": "borrowernumber",
       "in": "path",
       "description": "Internal borrower identifier",
       "required": "true",
       "type": "integer"
+    },
+    "holdingbranchQueryParam": {
+      "name": "branchcode",
+      "in": "query",
+      "description": "The code of the branch where the Items have been last seen.",
+      "required": false,
+      "type": "string"
+    },
+    "branchcode": {
+      "name": "branchcode",
+      "in": "body",
+      "description": "Branchcode of the library branch in question.",
+      "type": "string"
     },
     "messagenumberPathParam": {
       "name": "messagenumber",
@@ -676,6 +943,62 @@
       "schema" : {
         "$ref": "#/definitions/testedSession"
       }
+    },
+    "borrowernumberQueryParam": {
+      "name": "borrowernumber",
+      "in": "query",
+      "description": "The internal id of the Borrower, unique value",
+      "required": false,
+      "type": "integer"
+    },
+    "useridQueryParam": {
+      "name": "userid",
+      "in": "query",
+      "description": "The userid of the Borrower, unique value",
+      "required": false,
+      "type": "string"
+    },
+    "cardnumberQueryParam": {
+      "name": "cardnumber",
+      "in": "query",
+      "description": "The cardnumber of the Borrower, unique value",
+      "required": false,
+      "type": "string"
+    },
+    "pattern_xQueryParam": {
+      "name": "pattern_x",
+      "in": "query",
+      "description": "The first serial issue enumeration field, typically the year.",
+      "required": false,
+      "type": "integer"
+    },
+    "pattern_yQueryParam": {
+      "name": "pattern_y",
+      "in": "query",
+      "description": "the second enumeration, eg volume.",
+      "required": false,
+      "type": "integer"
+    },
+    "pattern_zQueryParam": {
+      "name": "pattern_z",
+      "in": "query",
+      "description": "the third enumeration field.",
+      "required": false,
+      "type": "integer"
+    },
+    "serialStatusQueryParam": {
+      "name": "serialStatus",
+      "in": "query",
+      "description": "Status of a serial. 1 = Expected, 2 = Received, 3 = Late, 4 = Not issued, 7 = Claimed.",
+      "required": false,
+      "type": "integer"
+    },
+    "limitQueryParam": {
+      "name": "limit",
+      "in": "query",
+      "description": "Limit the resultset to this many results.",
+      "required": false,
+      "type": "integer"
     }
   },
   "securityDefinitions": {

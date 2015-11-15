@@ -231,6 +231,145 @@ sub updatePatternsXYZ {
     }
 }
 
+=head GetSerialItems
+
+    my $serialItems = C4::Serials::GetSerialItems({
+            biblionumber => 2323, #MANDATORY
+            pattern_x => '2015',  #OPTIONAL
+            pattern_y => '12',    #OPTIONAL
+            pattern_z => 'abba',  #OPTIONAL
+            serialStatus => 2,    #OPTIONAL, koha.serial.status, 2 == received
+            limit => 100,         #OPTIONAL
+    });
+
+=cut
+
+sub GetSerialItems {
+    my ($params) = @_;
+    my $dbh = C4::Context->dbh;
+
+    my @params = ($params->{biblionumber});
+    my $serialitems_sql = "
+SELECT i.*,
+  (SELECT lib FROM authorised_values WHERE category = 'LOC' AND authorised_value = i.location) as c_location,
+  (SELECT lib FROM authorised_values WHERE category = 'LOC' AND authorised_value = i.permanent_location) as c_permanent_location,
+  (SELECT lib FROM authorised_values WHERE category = 'NOT_LOAN' AND authorised_value = i.notforloan) as c_notforloan,
+  (SELECT lib FROM authorised_values WHERE category = 'DAMAGED' AND authorised_value = i.damaged) as c_damaged,
+  (SELECT lib FROM authorised_values WHERE category = 'LOST' AND authorised_value = i.itemlost) as c_itemlost,
+  (SELECT lib FROM authorised_values WHERE category = 'WITHDRAWN' AND authorised_value = i.withdrawn) as c_withdrawn,
+  (SELECT description FROM itemtypes WHERE itemtype = i.itype) as c_itype,
+  (SELECT lib FROM authorised_values WHERE category = 'CCODE' AND authorised_value = i.ccode) as c_ccode,
+  (SELECT branchname FROM branches WHERE branchcode = holdingbranch) as c_holdingbranch,
+  (SELECT branchname FROM branches WHERE branchcode = homebranch) as c_homebranch,
+  s.*,
+  iss.date_due as iss_date_due,
+  issb.borrowernumber as iss_borrowernumber,
+  issb.cardnumber as iss_cardnumber,
+  resbor.cardnumber as res_cardnumber,
+  resbor.borrowernumber as res_borrowernumber,
+  resbor.waitingdate as res_waitingdate,
+  bt.frombranch as transfertfrom,
+  bt.tobranch as transfertto,
+  bt.datesent as transfertwhen,
+  itps.imageurl
+FROM serial s
+    LEFT JOIN subscription sub ON sub.subscriptionid = s.subscriptionid
+    LEFT JOIN serialitems si ON s.serialid = si.serialid
+    LEFT JOIN items i ON i.itemnumber = si.itemnumber
+    LEFT JOIN issues iss ON i.itemnumber = iss.itemnumber
+    LEFT JOIN borrowers issb ON issb.borrowernumber = iss.borrowernumber
+    LEFT JOIN branchtransfers bt ON i.itemnumber = bt.itemnumber
+    LEFT JOIN itemtypes itps ON itps.itemtype = i.itype
+    LEFT JOIN (SELECT resb.cardnumber, resb.borrowernumber, r.itemnumber, r.waitingdate FROM reserves r LEFT JOIN borrowers resb ON resb.borrowernumber = r.borrowernumber ORDER BY priority ASC LIMIT 1) as resbor ON resbor.itemnumber = i.itemnumber
+WHERE bt.datearrived IS NULL AND s.biblionumber = ?
+";
+    if ($params->{pattern_x}) {
+        $serialitems_sql .= "AND s.pattern_x = ? ";
+        push @params, $params->{pattern_x};
+    }
+    if ($params->{pattern_y}) {
+        $serialitems_sql .= "AND s.pattern_y = ? ";
+        push @params, $params->{pattern_y};
+    }
+    if ($params->{pattern_z}) {
+        $serialitems_sql .= "AND s.pattern_z = ? ";
+        push @params, $params->{pattern_z};
+    }
+    if ($params->{serialStatus}) {
+        $serialitems_sql .= "AND s.status = ? ";
+        push @params, $params->{serialStatus};
+    }
+    if ($params->{holdingbranch}) {
+        $serialitems_sql .= "AND i.holdingbranch = ? ";
+        push @params, $params->{holdingbranch};
+    }
+    $serialitems_sql .= "ORDER BY s.publisheddate DESC ";
+    if ($params->{limit}) {
+        $serialitems_sql .= "LIMIT ? ";
+        push @params, $params->{limit};
+    }
+
+    my $serialitems_sth = $dbh->prepare($serialitems_sql);
+    $serialitems_sth->execute( @params );
+    if ($serialitems_sth->errstr) {
+        die $serialitems_sth->errstr;
+    }
+
+    my $serialItems = $serialitems_sth->fetchall_arrayref({});
+
+#    foreach my $si (@$serialItems) {
+#        #Check the availability for GUI
+#        unless ($si->{notforloan} or $si->{onloan} or $si->{itemlost} or $si->{withdrawn} or $si->{damaged} or $si->{transfertwhen} or $si->{reservedate} ) {
+#            $si->{available} = 1;
+#        }
+#    }
+    return $serialItems;
+}
+
+sub GetCollectionMap {
+    my ($params) = @_;
+
+    my $collection_ary = _getCollection($params);
+    my $collectionMap = {};
+    foreach my $colle (@$collection_ary) {
+        my $x = $colle->{pattern_x};
+        my $y = $colle->{pattern_y};
+        my $z = $colle->{pattern_z};
+        if ($x && $y && $z) {
+            $collectionMap->{$colle->{pattern_x}}->{childs}->{$colle->{pattern_y}}->{childs}->{$colle->{pattern_z}} = $colle;
+        }
+        elsif ($x && $y) {
+            $collectionMap->{$colle->{pattern_x}}->{childs}->{$colle->{pattern_y}} = $colle;
+        }
+        elsif ($x) {
+            $collectionMap->{$colle->{pattern_x}} = $colle;
+        }
+    }
+
+    return $collectionMap;
+}
+
+sub _getCollection {
+    my ($params) = @_;
+    my $dbh = C4::Context->dbh;
+
+    my @params = ($params->{biblionumber});
+    my $sql = "SELECT sum(IF(status = 2, 1, 0)) as arrived, pattern_x, pattern_y, pattern_z FROM serial s WHERE s.biblionumber = ?";
+    if ($params->{serialStatus}) {
+        push @params, $params->{serialStatus};
+        $sql .= " AND s.status = ? ";
+    }
+    $sql .= " GROUP BY pattern_x, pattern_y, pattern_z ";
+    my $collection_sth = $dbh->prepare( $sql );
+    $collection_sth->execute( @params );
+    if ($collection_sth->errstr) {
+        die $collection_sth->errstr;
+    }
+
+    my $collection_ary = $collection_sth->fetchall_arrayref({});
+    return $collection_ary;
+}
+
 =head2 GetSubscriptionHistoryFromSubscriptionId
 
 $history = GetSubscriptionHistoryFromSubscriptionId($subscriptionid);

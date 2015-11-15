@@ -1248,9 +1248,10 @@ sub GetItemsByBiblioitemnumber {
 
 =head2 GetItemsInfo
 
-  @results = GetItemsInfo($biblionumber);
+  @results = GetItemsInfo($biblionumber, $limit);
 
 Returns information about items with the given biblionumber.
+Use $limit to limit the amount of Items to return.
 
 C<GetItemsInfo> returns a list of references-to-hash. Each element
 contains a number of keys. Most of them are attributes from the
@@ -1289,9 +1290,10 @@ If this is set, it is set to C<One Order>.
 =cut
 
 sub GetItemsInfo {
-    my ( $biblionumber ) = @_;
+    my ( $biblionumber, $limit, $holdingbranch ) = @_;
     my $dbh   = C4::Context->dbh;
     # note biblioitems.* must be avoided to prevent large marc and marcxml fields from killing performance.
+    my @params = ($biblionumber);
     my $query = "
     SELECT items.*,
            biblio.*,
@@ -1319,9 +1321,18 @@ sub GetItemsInfo {
      LEFT JOIN biblioitems ON biblioitems.biblioitemnumber = items.biblioitemnumber
      LEFT JOIN itemtypes   ON   itemtypes.itemtype         = "
      . (C4::Context->preference('item-level_itypes') ? 'items.itype' : 'biblioitems.itemtype');
-    $query .= " WHERE items.biblionumber = ? ORDER BY home.branchname, items.enumchron, LPAD( items.copynumber, 8, '0' ), items.dateaccessioned DESC" ;
+    $query .= " WHERE items.biblionumber = ? ";
+    if ($holdingbranch) {
+        $query .= " AND items.holdingbranch = ? ";
+        push @params, $holdingbranch;
+    }
+    $query .= " ORDER BY home.branchname, items.enumchron, LPAD( items.copynumber, 8, '0' ), items.dateaccessioned DESC" ;
+    if ($limit) {
+        $query .= " LIMIT ? ";
+        push @params, $limit;
+    }
     my $sth = $dbh->prepare($query);
-    $sth->execute($biblionumber);
+    $sth->execute(@params);
     my $i = 0;
     my @results;
     my $serial;

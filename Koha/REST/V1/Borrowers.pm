@@ -9,13 +9,20 @@ use Mojo::JSON;
 use ILS::Patron;
 use Koha::Borrowers;
 use Koha::Auth::Challenge::Password;
+use Koha::Database;
 
 sub list_borrowers {
     my ($c, $args, $cb) = @_;
 
-    my $borrowers = Koha::Borrowers->search;
+    my $resultset = Koha::Database->new()->schema()->resultset('Borrower');
+    my @bor = $resultset->search({'-or' => $args},{rows => 20});
+    my @results;
+    foreach my $b (@bor) {
+        my $bo = {$b->get_columns()};
+        push @results, $bo;
+    }
 
-    $c->$cb($borrowers->unblessed, 200);
+    $c->$cb(\@results, 200);
 }
 
 sub get_borrower {
