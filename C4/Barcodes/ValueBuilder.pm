@@ -59,6 +59,7 @@ sub get_barcode {
     $nextnum = $year . $args->{mon} . $nextnum;
     warn "New hbyymmincr Barcode = $nextnum" if $DEBUG;
     my $scr = "
+
         for (i=0 ; i<document.f.field_value.length ; i++) {
             if (document.f.tag[i].value == '$args->{loctag}' && document.f.subfield[i].value == '$args->{locsubfield}') {
                 fnum = i;
@@ -97,7 +98,13 @@ sub get_barcode {
                 fnum = i;
             }
         }
-    if (\$('#' + id).val() == '') {
+
+    var json; //Variable which receives the results
+    var loc_url = '/cgi-bin/koha/cataloguing/barcode_ajax.pl'; //Location
+
+    \$.getJSON(loc_url, function(jsonData){
+        json = jsonData;
+        
         if (document.f.field_value[fnum].value.substring(0,3) == 'MLI') {
             \$('#' + id).val(491+'$args->{year}$nextnum');
         }else if (document.f.field_value[fnum].value.substring(0,3) == 'MAN') {
@@ -108,7 +115,7 @@ sub get_barcode {
         else {
             \$('#' + id).val(666 + '$args->{year}$nextnum');
         }
-    }
+    });//$.getJSON ends here
     ";
 
     return $nextnum, $scr;

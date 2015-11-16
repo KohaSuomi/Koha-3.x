@@ -256,4 +256,3 @@ function check_additem(unique_item_fields) {
     }
     return success;
 }
-
