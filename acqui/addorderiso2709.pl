@@ -234,20 +234,13 @@ if ($op eq ""){
         );
         # get the price if there is one.
         my $price= shift( @prices ) || GetMarcPrice($marcrecord, C4::Context->preference('marcflavour'));
-        my $libraryDiscount = C4::OPLIB::AcquisitionIntegration::getDiscounts($patron->{branchcode}, $marcrecord);
-        warn "$libraryDiscount\n";
         if ($price){
             # in France, the cents separator is the , but sometimes, ppl use a .
             # in this case, the price will be x100 when unformatted ! Replace the . by a , to get a proper price calculation
             $price =~ s/\./,/ if C4::Context->preference("CurrencyFormat") eq "FR";
             $price = $num->unformat_number($price);
             $orderinfo{gstrate} = $bookseller->{gstrate};
-            my $c;
-            if ($libraryDiscount) {
-                $c =  $libraryDiscount / 100;
-            } else {
-                $c = $c_discount ? $c_discount : $bookseller->{discount} / 100;
-            }
+            my $c = $c_discount ? $c_discount : C4::OPLIB::AcquisitionIntegration::getDiscounts($patron->{branchcode}, $marcrecord, $bookseller->{discount}) / 100;
             if ( $bookseller->{listincgst} ) {
                 if ( $c_discount ) {
                     $orderinfo{ecost} = $price;

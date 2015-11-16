@@ -276,27 +276,35 @@ sub getSubfieldFromMARCXML {
     return 0;
 }
 
+#########################################
+### Arvo 1.0 discounts from syspref   ###
+#########################################
+
 sub getDiscounts {
-    my ($branch, $record) = @_;
+    my ($branch, $record, $bookseller) = @_;
 
     my $code = substr($branch, 0, index($branch, '_'));
 
-    # create object
-    my $xml = new XML::Simple;
-
     my $discount = 0;
 
-    # read XML file
-    my $data = $xml->XMLin("/home/ubuntu/discounts/lumme.xml");
+    my $discountSyspref = C4::Context->preference('ArvoDiscounts');
+
+    my $config = YAML::XS::Load(
+                        Encode::encode(
+                            'UTF-8',
+                            $discountSyspref,
+                            Encode::FB_CROAK
+                        )
+                    );
     
     for my $field ( $record->field('971') ) {
         for my $subfield_value  ($field->subfield('t')){
             #check value
-            return $discount = $data->{$code}->{'s'.$subfield_value} if $data->{$code}->{'s'.$subfield_value};
+            return $discount = $config->{$code}->{'t'.$subfield_value} if $config->{$code}->{'t'.$subfield_value};
         }
     }
 
-    return 0;
+    return $bookseller;
 
 }
 
