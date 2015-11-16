@@ -86,6 +86,9 @@ my $errors = []; #Collect all the errors here!
 my $kvFtpExceptionFiles = { 'marcarkisto' => 1,
                             'Order' => 1,
                             'tmp' => 1,
+                            'heinavesi' => 1,
+                            'varkaus' => 1,
+                            'pieksamaki' =>1
                           };
 
 
@@ -166,18 +169,21 @@ sub getAllKirjavalitysSelectionlists {
     my $ftpcon = C4::OPLIB::AcquisitionIntegration::connectToKirjavalitys();
 
     my $ftpfiles = $ftpcon->ls();
-    foreach my $file (@$ftpfiles) {
-        if ($file =~ /^kvmarcxmlenn\d{8}\.xml/) {
-            print "Kirjavalitys: Found file: $file\n" if $verbose;
-            push @$kvenn_selectionlist_filenames, $file;
-        }elsif ($file =~ /^kvmarcxmlulk\d{8}\.xml/) {
-            print "Kirjavalitys: Found file: $file\n" if $verbose;
-            push @$kvulk_selectionlist_filenames, $file;
-        }elsif ($kvFtpExceptionFiles->{$file}) {
-            #We have a list of files that are allowed to be in the KV ftp directory and we won't warn about.
-        }
-        else {
-            print "Kirjavalitys: Unknown file in ftp-server '$file'\n";
+    foreach my $clients (@$ftpfiles) {
+        my $client = $ftpcon->ls("/".$clients);
+        foreach my $file (@$client) {
+            if ($file =~ /kvmarcxmlenn\d{8}\.xml/) {
+                print "Kirjavalitys: Found file: $file\n" if $verbose;
+                push @$kvenn_selectionlist_filenames, $file;
+            }elsif ($file =~ /kvmarcxmlulk\d{8}\.xml/) {
+                print "Kirjavalitys: Found file: $file\n" if $verbose;
+                push @$kvulk_selectionlist_filenames, $file;
+            }elsif ($kvFtpExceptionFiles->{$file}) {
+                #We have a list of files that are allowed to be in the KV ftp directory and we won't warn about.
+            }
+            else {
+                print "Kirjavalitys: Unknown file in ftp-server '$file'\n";
+            }
         }
     }
     $ftpcon->close();
@@ -266,6 +272,7 @@ Aknowledge the reception by moving the selectionListBatches to marcarkisto-direc
 sub moveKirjavalitysSelectionListBatch {
     my ($filePath, $targetDirectory, $ftp) = @_;
     my($fileName, $dirs, $suffix) = File::Basename::fileparse( $filePath );
+    print "HERE: $filePath\n" if $verbose;
 
     my $currentDir = $ftp->getCurrentFtpDirectory();
     $ftp->changeFtpDirectory($targetDirectory);
@@ -359,10 +366,11 @@ sub getAllBTJSelectionlists {
     my ($ma_selectionlist_filenames, $mk_selectionlist_filenames) = @_;
 
     my $ftpcon = C4::OPLIB::AcquisitionIntegration::connectToBTJselectionLists();
-
+    my $vendorConfig = C4::OPLIB::AcquisitionIntegration::getVendorConfig('BTJSelectionLists');
     my $ftpfiles = $ftpcon->ls();
+    my $filePickRegexp = qr($vendorConfig->{filePickRegexp});
     foreach my $file (@$ftpfiles) {
-        if ($file =~ /U011-(\d\d)(\d\d)\D/) { #Pick only files of specific format
+        if ($file =~ /$filePickRegexp/) { #Pick only files of specific format
             #Subtract file's date from current date.
             #The year must be selected, but there is no way of knowing which year is set on the selection list files so using arbitrary 2000
             my $difference_days = Date::Calc::Delta_Days(2000,$1,$2,2000,$now->month(),$now->day());
@@ -370,7 +378,7 @@ sub getAllBTJSelectionlists {
             if ( $difference_days >= 0 && #If the year changes there is trouble, because during subtraction year is always the same
                  $difference_days < $stagedFileVerificationDuration_days) { #if selection list is too old, skip trying to stage it.
 
-                if ($file =~ /xa$/) {
+                if ($file =~ /xmk$/) {
                     print "BTJ: Found file: $file\n" if $verbose;
                     push @$ma_selectionlist_filenames, $file;
                 }elsif ($file =~ /xk$/) {

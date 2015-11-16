@@ -389,17 +389,22 @@ sub draw_label_text {
     # FIXME - returns all items, so you can't get data from an embedded holdings field.
     # TODO - add a GetMarcBiblio1item(bibnum,itemnum) or a GetMarcItem(itemnum).
     my $cn_source = ($item->{'cn_source'} ? $item->{'cn_source'} : C4::Context->preference('DefaultClassificationSource'));
+    my $signum = {};
     LABEL_FIELDS:       # process data for requested fields on current label
     for my $field (@$label_fields) {
         if ($field->{'code'} eq 'itemtype') {
             $field->{'data'} = C4::Context->preference('item-level_itypes') ? $item->{'itype'} : $item->{'itemtype'};
+        } elsif (($field->{'code'} eq 'itemcallnumber') or ($field->{'code'} eq 'genre')) { 
+            $field->{'data'} = _get_barcode_data($field->{'code'},$item,$record);
+            $signum->{$field->{'code'}} = $field->{'data'};
         }
         else {
             $field->{'data'} = _get_barcode_data($field->{'code'},$item,$record);
         }
         #FIXME: We should not force the title to oblique; this should be selectible in the layout configuration
         ($field->{'code'} eq 'title') ? (($font =~ /T/) ? ($font = 'TI') : ($font = ($font . 'O'))) : ($font = $font);
-        my $field_data = $field->{'data'};
+        my $field_data;
+        $field_data = $field->{'data'};
         if ($field_data) {
             $field_data =~ s/\n//g;
             $field_data =~ s/\r//g;
@@ -410,6 +415,9 @@ sub draw_label_text {
         # LUMME #56, a feature for printing labels from Koha
         if ((grep {$field->{'code'} =~ m/$_/} @callnumber_list) and ($self->{'printing_type'} eq 'BIBBAR') and ($self->{'callnum_split'})) {
             $itemcallnumbers_size++;
+        }
+        if ($field->{'data'} eq $signum->{'itemcallnumber'} and $itemcallnumbers_size eq 2) {
+            $field_data = $signum->{'itemcallnumber'}.' '.$signum->{'genre'};
         }
         if($itemcallnumbers_size eq 2) {
             $text_lly = ($self->{'lly'} + ($self->{'height'} - $self->{'top_text_margin'})); # Reseting lines for spine labels
@@ -464,7 +472,7 @@ sub draw_label_text {
             }
             # LUMMEM #56, a feature for printing labels from Koha
             elsif(($self->{'callnum_split'}) and ($self->{'printing_type'} eq 'BIBBAR') and ($itemcallnumbers_size eq 2)) {
-                $text_llx = $params{'llx'} + $self->{'width'} - ($self->{'left_text_margin'} + $string_width);
+                $text_llx = $params{'llx'} + 5 + $self->{'width'} - ($self->{'left_text_margin'} + $string_width);
             }
             else {
                 $text_llx = ($params{'llx'} + $self->{'left_text_margin'});

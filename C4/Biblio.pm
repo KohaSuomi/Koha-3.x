@@ -1538,17 +1538,18 @@ sub GetMarcPrice {
         carp 'GetMarcPrice called on undefined record';
         return;
     }
-
+    
     my @listtags;
     my $subfield;
     
     if ( $marcflavour eq "MARC21" ) {
-        @listtags = ('345', '020');
-        $subfield="c";
+        @listtags = ('971', '020');
+        $subfield="e";
     } elsif ( $marcflavour eq "UNIMARC" ) {
         @listtags = ('345', '010');
         $subfield="d";
-    } else {
+    } 
+    else {
         return;
     }
     

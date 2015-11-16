@@ -276,6 +276,31 @@ sub getSubfieldFromMARCXML {
     return 0;
 }
 
+sub getDiscounts {
+    my ($branch, $record) = @_;
+
+    my $code = substr($branch, 0, index($branch, '_'));
+
+    # create object
+    my $xml = new XML::Simple;
+
+    my $discount = 0;
+
+    # read XML file
+    my $data = $xml->XMLin("/home/ubuntu/discounts/lumme.xml");
+    
+    for my $field ( $record->field('971') ) {
+        for my $subfield_value  ($field->subfield('t')){
+            #check value
+            return $discount = $data->{$code}->{'s'.$subfield_value} if $data->{$code}->{'s'.$subfield_value};
+        }
+    }
+
+    return 0;
+
+}
+
+
 #########################################
 ### Vendor service connection helpers ###
 #########################################

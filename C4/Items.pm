@@ -474,6 +474,7 @@ my %default_values_for_mod_from_marc = (
     withdrawn             => 0,
     sub_location         => undef,
     genre                => undef,
+    itemnotes_nonpublic  => undef,
 );
 
 sub ModItemFromMarc {
