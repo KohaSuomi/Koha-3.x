@@ -1629,7 +1629,6 @@ sub NormalizeISBN {
     return unless $string;
 
     my $isbn = Business::ISBN->new($string);
-
     if ( $isbn && $isbn->is_valid() ) {
 
         if ( $format eq 'ISBN-10' ) {

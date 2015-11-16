@@ -78,7 +78,7 @@ unless ( $kv_selects || $btj_selects || $btj_biblios ) {
 C4::Context->setCommandlineEnvironment();
 Koha::Logger->setConsoleVerbosity($verbose);
 
-my $listdirectory = '/tmp/'; #Where to store selection lists
+#my $listdirectory = '/tmp/'; #Where to store selection lists
 my $stagedFileVerificationDuration_days = 700; #Stop looking for selection lists older than this when staging MARC for the Koha reservoir
                                                #Be aware that the Koha cleanup_database.pl -script also removes the imported lists.
 my $importedSelectionlists = getImportedSelectionlists();
@@ -93,6 +93,9 @@ my $errors = []; #Collect all the errors here!
 my $kvFtpExceptionFiles = { 'marcarkisto' => 1,
                             'Order' => 1,
                             'tmp' => 1,
+                            'heinavesi' => 1,
+                            'varkaus' => 1,
+                            'pieksamaki' =>1
                           };
 
 
@@ -111,10 +114,19 @@ sub forKirjavalitys {
 
     my $vendorConfig = C4::OPLIB::AcquisitionIntegration::getVendorConfig('Kirjavalitys');
 
-    getAllKirjavalitysSelectionlists($kvenn_selectionlist_filenames, $kvulk_selectionlist_filenames);
+    my $listdirectory = $vendorConfig->{localStorageDir};
 
-    processKirjavalitysSelectionlistType($vendorConfig, $kvenn_selectionlist_filenames, 'ennakot');
-    processKirjavalitysSelectionlistType($vendorConfig, $kvulk_selectionlist_filenames, 'ulkomaiset');
+    my $directories = $vendorConfig->{KVDirectories};
+
+    unless ($listdirectory) {
+        print "Local storage directory is not defined";
+    } else {
+
+        getAllKirjavalitysSelectionlists($kvenn_selectionlist_filenames, $kvulk_selectionlist_filenames);
+
+        processKirjavalitysSelectionlistType($vendorConfig, $kvenn_selectionlist_filenames, 'ennakot', $listdirectory, $directories);
+        processKirjavalitysSelectionlistType($vendorConfig, $kvulk_selectionlist_filenames, 'ulkomaiset', $listdirectory, $directories);
+    }
 
     if (scalar @$errors) {
         print "\nFOLLOWING ERRORS WERE FOUND!\n".
@@ -123,14 +135,37 @@ sub forKirjavalitys {
     }
 }
 sub processKirjavalitysSelectionlistType {
-    my ($vendorConfig, $selectionListBatches, $listType) = @_;
+    my ($vendorConfig, $selectionListBatches, $listType, $listdirectory, $directories) = @_;
 
     my $ftp = Koha::FTP->new( C4::OPLIB::AcquisitionIntegration::connectToKirjavalitys() );
     my $selectionListProcessor = C4::OPLIB::SelectionListProcessor->new({listType => $listType});
 
+    if ($directories) {
+        #Go through all the required directories
+        foreach my $directory (@{ $directories }){
+            #Check if the required directory exists
+            if(-d $directory){
+                #Everything is allright here
+                print "Required directory '$directory' exists!\n";
+            }else{
+                #Here we have to create the missing directory
+                print "Required directory '$directory' is missing. Creating the required directory...\n";
+                mkdir $directory, 0755;
+                print "Required directory '$directory' created.\n";
+            }
+
+        }
+    }
+
     for(my $i = 0 ; $i < scalar @$selectionListBatches ; $i++) {
         try {
             my $selectionListBatch = $selectionListBatches->[$i];
+
+            #Splitting selectionListBatch to get a working filepath
+            my $index = index($selectionListBatch, "/", 1);
+            my $directory = substr $selectionListBatch, 0, $index;
+
+            my $merged_directory = $directories ? $directory."/marcarkisto" : 'marcarkisto';
 
             print "Importing $selectionListBatch\n" if $verbose > 1;
 
@@ -150,8 +185,7 @@ sub processKirjavalitysSelectionlistType {
                                                     });
 
             stageSelectionlists($selectionLists, $vendorConfig->{selectionListEncoding}, $listType, $ymd);
-
-            moveKirjavalitysSelectionListBatch($listdirectory.$selectionListBatch, 'marcarkisto', $ftp);
+            moveKirjavalitysSelectionListBatch($listdirectory.$selectionListBatch, $merged_directory, $ftp);
 
         } catch {
             if (blessed($_)) {
@@ -161,7 +195,10 @@ sub processKirjavalitysSelectionlistType {
                  #Thus we get the "Exiting subroutine via next" -warning. Because there are no actions after the catch-statement,
                  #this doesn't really hurt here, but just a remnder for anyone brave enough to venture further here.
             }
-            else { die "Exception not caught by try-catch:> ".$_;}
+            else { 
+                #die "Exception not caught by try-catch:> ".$_;
+                print "Exception not caught by try-catch:> ".$_;
+            }
         };
     }
     $ftp->quit();
@@ -173,20 +210,24 @@ sub getAllKirjavalitysSelectionlists {
     my $ftpcon = C4::OPLIB::AcquisitionIntegration::connectToKirjavalitys();
 
     my $ftpfiles = $ftpcon->ls();
-    foreach my $file (@$ftpfiles) {
-        if ($file =~ /^kvmarcxmlenn\d{8}\.xml/) {
-            print "Kirjavalitys: Found file: $file\n" if $verbose;
-            push @$kvenn_selectionlist_filenames, $file;
-        }elsif ($file =~ /^kvmarcxmlulk\d{8}\.xml/) {
-            print "Kirjavalitys: Found file: $file\n" if $verbose;
-            push @$kvulk_selectionlist_filenames, $file;
-        }elsif ($kvFtpExceptionFiles->{$file}) {
-            #We have a list of files that are allowed to be in the KV ftp directory and we won't warn about.
-        }
-        else {
-            print "Kirjavalitys: Unknown file in ftp-server '$file'\n";
+    foreach my $clients (@$ftpfiles) {
+        my $client = $ftpcon->ls($clients);
+        foreach my $file (@$client) {
+            if ($file =~ /kvmarcxmlenn\d{8}\.xml/) {
+                print "Kirjavalitys: Found file: $file\n" if $verbose;
+                push @$kvenn_selectionlist_filenames, $file;
+            }elsif ($file =~ /kvmarcxmlulk\d{8}\.xml/) {
+                print "Kirjavalitys: Found file: $file\n" if $verbose;
+                push @$kvulk_selectionlist_filenames, $file;
+            }elsif ($kvFtpExceptionFiles->{$file}) {
+                #We have a list of files that are allowed to be in the KV ftp directory and we won't warn about.
+            }
+            else {
+                print "Kirjavalitys: Unknown file in ftp-server '$file'\n";
+            }
         }
     }
+
     $ftpcon->close();
 
     @$kvenn_selectionlist_filenames = sort @$kvenn_selectionlist_filenames;
@@ -253,11 +294,26 @@ sub moveKirjavalitysSelectionListBatch {
     my ($filePath, $targetDirectory, $ftp) = @_;
     my($fileName, $dirs, $suffix) = File::Basename::fileparse( $filePath );
 
+    #Variables used for getting the file's directory
+    my $firstslash = rindex($filePath, "/");
+    my $secondslash = rindex($filePath, "/", $firstslash-1);
+
+    #Getting the file's directory as a string
+    my $delDirectory = substr $filePath, $secondslash, $firstslash - $secondslash + 1;
+
     my $currentDir = $ftp->getCurrentFtpDirectory();
     $ftp->changeFtpDirectory($targetDirectory);
     $ftp->put($filePath);
-    $ftp->changeFtpDirectory($currentDir);
-    $ftp->delete($fileName);
+    #FIXME: Create better solution for handling lists in root and separated directories.
+    if ($targetDirectory =~ m/^marcarkisto$/i ) {
+        $ftp->changeFtpDirectory($currentDir);
+        $ftp->delete($fileName);
+    } else {
+        $ftp->changeFtpDirectory($currentDir.$delDirectory); 
+        $ftp->delete($fileName);
+        $ftp->changeFtpDirectory($currentDir);
+    }
+
 }
 
 
@@ -281,10 +337,18 @@ sub forBTJ {
 
     my $vendorConfig = C4::OPLIB::AcquisitionIntegration::getVendorConfig('BTJSelectionLists');
 
-    getAllBTJSelectionlists($ma_selectionlist_filenames, $mk_selectionlist_filenames);
+    my $listdirectory = $vendorConfig->{localStorageDir};
 
-    processBTJSelectionlistType($vendorConfig, $ma_selectionlist_filenames, 'av-aineisto');
-    processBTJSelectionlistType($vendorConfig, $mk_selectionlist_filenames, 'kirja-aineisto');
+    unless ($listdirectory) {
+        print "Local storage directory is not defined";
+    } else {
+        getAllBTJSelectionlists($ma_selectionlist_filenames, $mk_selectionlist_filenames);
+
+        processBTJSelectionlistType($vendorConfig, $ma_selectionlist_filenames, 'av-aineisto', $listdirectory);
+        processBTJSelectionlistType($vendorConfig, $mk_selectionlist_filenames, 'kirja-aineisto', $listdirectory);
+    }
+
+    
 
     if (scalar @$errors) {
         print "\nFOLLOWING ERRORS WERE FOUND!\n".
@@ -293,7 +357,7 @@ sub forBTJ {
     }
 }
 sub processBTJSelectionlistType {
-    my ($vendorConfig, $selectionListBatches, $listType) = @_;
+    my ($vendorConfig, $selectionListBatches, $listType, $listdirectory) = @_;
 
     my $ftp = Koha::FTP->new( C4::OPLIB::AcquisitionIntegration::connectToBTJselectionLists() );
     my $selectionListProcessor = C4::OPLIB::SelectionListProcessor->new({listType => $listType});
@@ -336,7 +400,10 @@ sub processBTJSelectionlistType {
                  #Thus we get the "Exiting subroutine via next" -warning. Because there are no actions after the catch-statement,
                  #this doesn't really hurt here, but just a remnder for anyone brave enough to venture further here.
             }
-            else { die "Exception not caught by try-catch:> ".$_;}
+            else { 
+                #Giving the command print instead of die allows as to continue while ignoring possible errors.
+                print "Exception not caught by try-catch:> ".$_;
+            }
         };
     }
     $ftp->quit();
@@ -345,10 +412,11 @@ sub getAllBTJSelectionlists {
     my ($ma_selectionlist_filenames, $mk_selectionlist_filenames) = @_;
 
     my $ftpcon = C4::OPLIB::AcquisitionIntegration::connectToBTJselectionLists();
-
+    my $vendorConfig = C4::OPLIB::AcquisitionIntegration::getVendorConfig('BTJSelectionLists');
     my $ftpfiles = $ftpcon->ls();
+    my $fileRegexp = qr($vendorConfig->{fileRegexp});
     foreach my $file (@$ftpfiles) {
-        if ($file =~ /U011-(\d\d)(\d\d)\D/) { #Pick only files of specific format
+        if ($file =~ /$fileRegexp/) { #Pick only files of specific format
             #Subtract file's date from current date.
             #The year must be selected, but there is no way of knowing which year is set on the selection list files so using arbitrary 2000
             my $difference_days = Date::Calc::Delta_Days(2000,$1,$2,2000,$now->month(),$now->day());
@@ -356,7 +424,7 @@ sub getAllBTJSelectionlists {
             if ( $difference_days >= 0 && #If the year changes there is trouble, because during subtraction year is always the same
                  $difference_days < $stagedFileVerificationDuration_days) { #if selection list is too old, skip trying to stage it.
 
-                if ($file =~ /xa$/) {
+                if ($file =~ /xmk$/) {
                     print "BTJ: Found file: $file\n" if $verbose;
                     push @$ma_selectionlist_filenames, $file;
                 }elsif ($file =~ /xk$/) {

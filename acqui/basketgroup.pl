@@ -336,7 +336,8 @@ if ( $op eq "add" ) {
 # Send this closed basketgroup to the bookseller using the booksellers desired method
 #
     my $basketgroupid = $input->param('basketgroupid');
-    my $errorsList = C4::OPLIB::AcquisitionIntegration::SendBasketgroupToVendors($basketgroupid);
+    my $patron = C4::Members::GetMember( borrowernumber => $loggedinuser );
+    my $errorsList = C4::OPLIB::AcquisitionIntegration::SendBasketgroupToVendors($basketgroupid, $patron->{branchcode});
 
 	$template->param(listclosed => 1);
 	$template->param(orderErrorList => $errorsList) if $errorsList;

@@ -44,6 +44,9 @@ use C4::Bookseller qw/GetBookSellerFromId/;
 use C4::Suggestions;    # GetSuggestion
 use C4::Branch;         # GetBranches
 use C4::Members;
+use XML::Simple;
+use Data::Dumper;
+use C4::OPLIB::AcquisitionIntegration;
 
 my $input = new CGI;
 my ($template, $loggedinuser, $cookie, $userflags) = get_template_and_user({
