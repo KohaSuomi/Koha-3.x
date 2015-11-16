@@ -457,6 +457,7 @@ INSERT INTO systempreferences ( `variable`, `value`, `options`, `explanation`, `
 ('yuipath','local','local|http://yui.yahooapis.com/2.5.1/build','Insert the path to YUI libraries, choose local if you use koha offline','Choice'),
 ('z3950AuthorAuthFields','701,702,700',NULL,'Define the MARC biblio fields for Personal Name Authorities to fill biblio.author','free'),
 ('z3950NormalizeAuthor','0','','If ON, Personal Name Authorities will replace authors in biblio.author','YesNo'),
-('relationPickUp', '0', NULL, 'If ON, patron can pick up from all branches and if OFF the pick up branch will be defined by item relations', 'YesNo')
+('relationPickUp', '0', NULL, 'If ON, patron can pick up from all branches and if OFF the pick up branch will be defined by item relations', 'YesNo'),
+('ArvoDiscounts','','70|10','Define Arvo 1.0 discounts:','Textarea')
 
 ;

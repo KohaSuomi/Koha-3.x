@@ -1674,7 +1674,6 @@ sub MungeMarcPrice {
     return $price;
 }
 
-
 =head2 GetMarcQuantity
 
 return the quantity of a book. Used in acquisition only, when importing a file an iso2709 from a bookseller

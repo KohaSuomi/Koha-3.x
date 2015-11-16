@@ -59,6 +59,7 @@ use C4::Bookseller qw/GetBookSellerFromId/;
 use C4::Branch qw/GetBranches/;
 use C4::Members qw/GetMember/;
 use C4::OPLIB::AcquisitionIntegration;
+use C4::OPLIB::SendAcquisitionByXML;
 
 our $input=new CGI;
 
@@ -358,6 +359,17 @@ if ( $op eq "add" ) {
         -attachment => 'basketgroup' . $basketgroupid . '.csv',
     );
     print GetBasketGroupAsCSV( $basketgroupid, $input );
+    exit;
+}elsif ( $op eq "export_xml" ) {
+#
+# export a closed basketgroup in xml
+#
+    my $basketgroupid = $input->param('basketgroupid');
+    my $booksellerid    = $input->param('booksellerid');
+
+    C4::OPLIB::SendAcquisitionByXML::sendBasketGroupAsXml($basketgroupid);
+    print $input->redirect('/cgi-bin/koha/acqui/basketgroup.pl?booksellerid=' . $booksellerid);
+
     exit;
 }elsif( $op eq "delete"){
 #

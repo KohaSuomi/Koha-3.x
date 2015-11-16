@@ -247,34 +247,65 @@ if ($op eq ""){
             currency           => $cgiparams->{'all_currency'},
         );
         # get the price if there is one.
-        my $price = $prices[$index] || GetMarcPrice($marcrecord, C4::Context->preference('marcflavour'));
+        my $price= shift( @prices ) || GetMarcPrice($marcrecord, C4::Context->preference('marcflavour'));
         if ($price){
             # in France, the cents separator is the , but sometimes, ppl use a .
             # in this case, the price will be x100 when unformatted ! Replace the . by a , to get a proper price calculation
             $price =~ s/\./,/ if C4::Context->preference("CurrencyFormat") eq "FR";
             $price = $num->unformat_number($price);
-            $orderinfo{gstrate} = $bookseller->{gstrate};
-            my $c = $c_discount ? $c_discount : $bookseller->{discount} / 100;
+
+            # Getting the correct gstrate and discount percentages from marcxml file
+            $orderinfo{gstrate} = GetMarcGSTrate($marcrecord, C4::Context->preference('marcflavour')) / 100;
+
+            # The discount depends on bookseller
+            my $c;
+
+            if($bookseller->{name} =~ /BTJ/i || $bookseller->{name} =~ /BTJ/ || $bookseller->{url}  =~ /www.btj.fi/) {
+                $c = $c_discount ? $c_discount : C4::OPLIB::AcquisitionIntegration::getDiscounts($patron->{branchcode}, $marcrecord, $bookseller->{discount}) / 100;    
+            }else{
+                $c = $c_discount ? $c_discount : GetMarcDiscount($marcrecord, C4::Context->preference('marcflavour')) / 100;    
+            }
+
             if ( $bookseller->{listincgst} ) {
                 if ( $c_discount ) {
+                    if($bookseller->{name} =~ /BTJ/i || $bookseller->{name} =~ /BTJ/ || $bookseller->{url}  =~ /www.btj.fi/) {
+                        $orderinfo{ecost} = $price;
+                    } else {
+                        $orderinfo{ecost} = $price * ( 1 - $c );
+                    }
                     $orderinfo{ecost} = $price * ( 1 - $c ); #Get the VAT included discounted price
                     $orderinfo{rrp}   = $price; #Replacement price is the non-discounted price. Otherwise our patrons can start making profit by stealing books.
                 } else {
-                    $orderinfo{ecost} = $price;
+                    if($bookseller->{name} =~ /BTJ/i || $bookseller->{name} =~ /BTJ/ || $bookseller->{url}  =~ /www.btj.fi/) {
+                        $orderinfo{ecost} = $price * ( 1 - $c );
+                    } else {
+                        $orderinfo{ecost} = $price;
+                    }
                     $orderinfo{rrp}   = $price;
                 }
             } else {
                 if ( $c_discount ) {
-                    $orderinfo{ecost} = $price / ( 1 + $orderinfo{gstrate} ) * ( 1 - $c ); #Add VAT/GST and the discount
-                    $orderinfo{rrp}   = $price / ( 1 + $orderinfo{gstrate} ); #Add the VAT
+                    if($bookseller->{name} =~ /BTJ/i || $bookseller->{name} =~ /BTJ/ || $bookseller->{url}  =~ /www.btj.fi/) {
+                        $orderinfo{ecost} = $price / ( 1 + $orderinfo{gstrate} ); #Add VAT/GST and the discount
+                        $orderinfo{rrp}   = $price;
+                    } else {
+                        $orderinfo{ecost} = $price / ( 1 + $orderinfo{gstrate} ) * ( 1 - $c ); #Add VAT/GST and the discount
+                        $orderinfo{rrp}   = $price / ( 1 + $orderinfo{gstrate} ); #Add the VAT
+                    }
                 } else {
-                    $orderinfo{rrp}   = $price / ( 1 + $orderinfo{gstrate} );
-                    $orderinfo{ecost} = $price / ( 1 + $orderinfo{gstrate} );
+                    if($bookseller->{name} =~ /BTJ/i || $bookseller->{name} =~ /BTJ/ || $bookseller->{url}  =~ /www.btj.fi/) {
+                        $orderinfo{rrp}   = $price;
+                        $orderinfo{ecost} = $orderinfo{rrp} * ( 1 - $c );
+                    } else {
+                        $orderinfo{rrp}   = $price / ( 1 + $orderinfo{gstrate} );
+                        $orderinfo{ecost} = $price / ( 1 + $orderinfo{gstrate} );
+                    }
                 }
             }
             $orderinfo{listprice} = $orderinfo{rrp} / $cur->{rate};
             $orderinfo{unitprice} = $orderinfo{ecost};
             $orderinfo{total} = $orderinfo{ecost} * $c_quantity;
+            $orderinfo{discount} = $c*100;
         } else {
             $orderinfo{listprice} = 0;
         }
