@@ -55,6 +55,9 @@ Holds.placeHold = function (item, borrower, pickupBranch, biblio, expirationdate
                 var item = Items.Cache.getLocalItem(hold.itemnumber);
                 Items.publicate(item, hold, 'place_hold_succeeded');
             }
+            if (holdPicker) {
+                holdPicker.publish(item, hold, 'place_hold_succeeded');
+            }
 //            //You can extend the publication targets here.
 //            if (hold.biblionumber) {
 //                var biblio = Biblios.Cache.getLocalBiblio(hold.biblionumber);
@@ -66,6 +69,9 @@ Holds.placeHold = function (item, borrower, pickupBranch, biblio, expirationdate
             if (requestBody.itemnumber) { //See if this ajax-call was called with an Item.
                 var item = Items.Cache.getLocalItem( requestBody.itemnumber );
                 Items.publicate(item, responseObject, 'place_hold_failed');
+            }
+            if (holdPicker) {
+                holdPicker.publish(item, responseObject, 'place_hold_failed');
             }
 //            //You can extend the publication targets here.
 //            if (requestBody.biblionumber) {
@@ -105,18 +111,41 @@ Holds.HoldPicker = function (params) {
     this._template = function () {
         var html =
         '<fieldset id="holdPicker" style="position: absolute; width: 200px; right: 75px;">'+
-        '  <legend>Hold Picker</legend>'+
+        '  <legend>'+MSG_HOLD_PLACER+'</legend>'+
         '  <div class="biblioInfo"></div><button id="hp_exit" style="position: absolute; top: -10px; right: 4px;"> X </button>'+
         '  <br/><span class="borrowerInfo"></span>'+
-        '  <br/><input id="hp_cardnumber" type="text" width="16"/>'+
+        '  <br/><input placeholder="'+MSG_USERID_OR_CARDNUMBER+'" id="hp_cardnumber" type="text" width="16"/>'+
         '  <div id="hp_datepicker"></div>'+
+        '  <label for="hp_pickupBranches">'+MSG_PICKUP_BRANCH+'</label>'+
         Branches.getBranchSelectorHtml({}, "hp_pickupBranches")+
-        '  <span class="result"></span>'+
-        '  <button id="hp_placeHold">Place Hold</button><button id="hp_clear">Clear</button>'+
+        '  <div class="result"></div>'+
+        '  <button id="hp_placeHold">'+MSG_PLACE_HOLD+'</button><button id="hp_clear">'+MSG_CLEAR+'</button>'+
         '</fieldset>'+
         '';
         return $(html);
     }
+    /**
+     * Implements the Subscriber-Publisher pattern.
+     * Receives a publication from the Publisher.
+     */
+    this.publish = function(publisher, data, event) {
+        var resultElem = this.getResultElement();
+        if (event == "place_hold_succeeded") {
+            $(resultElem).html("<span class='notification' style='color: #00AA00;'>"+MSG_HOLD_PLACED+"</span>");
+        }
+        else if (event == "place_hold_failed") {
+            $(resultElem).html("<span class='notification' style='color: #AA0000;'>"+data.error+"</span>");
+        }
+        else if (event == "get_borrower_failed") {
+            $(resultElem).html('<span class="error">'+data+'</span>');
+        }
+        else if (event == "get_borrower_succeeded") {
+            $(resultElem).html('');
+        }
+        else {
+            alert("Holds.HoldPicker.publish():> Unknown event-type '"+event+"'");
+        }
+    };
     this.getBiblioElement = function () {
         return $(this.rootElement).find(".biblioInfo");
     }
@@ -161,7 +190,7 @@ Holds.HoldPicker = function (params) {
     this.getResultElement = function () {
         return $(this.rootElement).find(".result");
     }
-    this.setResult = function (result) {
+    this.displayResult = function (result) {
         var re = this.getResultElement();
         re.html(result);
     }
@@ -265,10 +294,19 @@ Holds.HoldPicker = function (params) {
                                         userid: searchTerm,
                                     }, function (jqXHR, textStatus, errorThrown) {
                     if (String(errorThrown.status).search(/^2\d\d/) >= 0) { //Status is OK
-                        self.setBorrower(jqXHR[0]);
+                        if (jqXHR[0]) {
+                            self.setBorrower(jqXHR[0]);
+                            self.publish(self, jqXHR[0], 'get_borrower_succeeded');
+                        }
+                        else {
+                            self.publish(self, MSG_NO_SUCH_BORROWER, 'get_borrower_failed');
+                            self.clearCardnumber();
+                        }
                     }
                     else {
                         self.setBorrower(null)
+                        self.publish(self, errorThrown, 'get_borrower_failed');
+                        self.clearCardnumber();
                     }
                     self.renderBorrower();
                 });

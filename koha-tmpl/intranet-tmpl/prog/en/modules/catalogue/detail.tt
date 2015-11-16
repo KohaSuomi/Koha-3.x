@@ -1000,7 +1000,7 @@ function verify_images() {
 [% END %]
 </div>
 
-[% IF UseBetaFeatures %][%# Serials display improvements fix%]
+[% IF UseBetaFeatures && subscriptionsnumber %][%# Serials display improvements fix%]
 <script type="text/javascript" src="[% interface %]/lib/jquery/plugins/jstree.min.js"></script>
 <script type="text/javascript" src="[% interface %]/lib/log4javascript.js"></script>
 <script type="text/javascript" src="[% themelang %]/js/Serials/CollectionMap.js"></script>
@@ -1012,6 +1012,43 @@ function verify_images() {
 <script type="text/javascript" src="[% themelang %]/js/Items/ItemsTableRow.tmpl.js"></script>
 <script type="text/javascript">
 
+var MSG_AVAILABLE = _("Available");
+var MSG_BARCODE = _("Barcode");
+var MSG_CALL_NUMBER = _("Call number");
+var MSG_CANNOT_LOAD_AVAILABILITY_MAP = _("Cannot load the Serials Availability Map. Try force-reloading this page.");
+var MSG_CHECKED_OUT_TO = _("Checked out to");
+var MSG_CLEAR = _("Clear");
+var MSG_COLLECTION = _("Collection");
+var MSG_COPY_NUMBER = _("Copy number");
+var MSG_CURRENT_LOCATION = _("Current location");
+var MSG_DUE_DATE = _("due");
+var MSG_EDIT = _("Edit");
+var MSG_HOLD_FOR = _("Hold for");
+var MSG_HOLD = _("Hold");
+var MSG_HOLD_PLACED = _("Hold placed");
+var MSG_HOLD_PLACER = _("Hold Placer");
+var MSG_HOLD_WAITING_SINCE = _("Hold waiting since");
+var MSG_HOME_LIBRARY = _("Home library");
+var MSG_HOST_RECORDS = _("Host records");
+var MSG_IN_TRANSIT = _("In transit");
+var MSG_ITEM_TYPE = _("Item type");
+var MSG_LAST_SEEN = _("Last seen");
+var MSG_MATERIALS_SPECIFIED = _("Materials specified");
+var MSG_NO_SUCH_BORROWER = _("No such borrower");
+var MSG_NOT_FOR_LOAN = _("Not for loan");
+var MSG_PICKUP_BRANCH = _("Pickup branch");
+var MSG_PLACE_HOLD = _("Place Hold");
+var MSG_PRINT_LABEL = _("Print label");
+var MSG_PUBLICATION_DETAILS = _("Publication details");
+var MSG_PUBLIC_NOTES = _("Public notes");
+var MSG_SERIAL_NUMBERS = _("Serial numbers");
+var MSG_SPINE_LABEL = _("Spine label");
+var MSG_STATUS = _("Status");
+var MSG_TRANSFER_STARTED = _("Transfer started");
+var MSG_URL = _("url");
+var MSG_USERID_OR_CARDNUMBER = _("Userid or cardnumber");
+var MSG_WITHDRAWN = _("Withdrawn");
+
 var branches = [% branchloopJSON %];
 
 var log = log4javascript.getDefaultLogger();
@@ -1020,7 +1057,7 @@ var collectionMap; var itemsTable; var holdPicker;
 $(document).ready(function() {
     Branches.createBranchSelectorHtml(branches);
 
-    $("div#menu").parent().append('<div id="jstree2">jsTree was here</div>');
+    $("div#menu").parent().append('<h4 style="padding-left: 10px;">'+MSG_SERIAL_NUMBERS+'</h4><div id="jstree2">'+MSG_CANNOT_LOAD_AVAILABILITY_MAP+'</div>');
     $("div#noitems").remove();
     $("div#holdings").append('<table id="itemtable"></table>');
     collectionMap = new Serials.CollectionMap.CollectionMap($("#jstree2"), [% biblionumber %]);
@@ -1030,6 +1067,7 @@ $(document).ready(function() {
               datatable: $("#itemtable"),
               loggedinbranch: "[% LoginBranchcode %]",
               datasource: "ajax",
+              hiddencolumns: [14],
              });
     Serials.CollectionMap.subscribe(collectionMap, itemsTable);
     holdPicker = new Holds.HoldPicker({

@@ -27,6 +27,7 @@ Items.ItemsTable = {
      *     @param {jQuery Node} 'datatable' - The jQuery datatable which is used to display the results.
      *     @param {long} 'biblionumber' - For which Biblio is this graph generated for?
      *     @param {String} 'loggedinbranch' - In which branch are we? Show first results from this branch.
+     *     @param {Array of Int} 'hiddencolumns', Column indexes starting from 0, which should always be hidden.
      *     @param {function} 'callback' - the callback function to call when this object has been constructed.
      *         the callback function gets two parameters:
      *         @param {ItemsTable} this - This object just created.
@@ -39,6 +40,7 @@ Items.ItemsTable = {
         this.datasource = params.datasource;
         this.datatable = params.datatable;
         this.loggedinbranch = params.loggedinbranch;
+        this.hiddencolumns = (params.hiddencolumns ? params.hiddencolumns : []);
         if (typeof params.callback == "function") {
             this.events.callback = callback;
         }
@@ -123,6 +125,11 @@ Items.ItemsTable = {
             else {
                 datatable.fnSetColumnVis(i, true, false);
             }
+        }
+        //Always hide configured columns
+        for(var i=0 ; i<self.hiddencolumns.length ; i++) {
+            hidColIndex = self.hiddencolumns[i];
+            datatable.fnSetColumnVis(hidColIndex, false, false);
         }
     },
 

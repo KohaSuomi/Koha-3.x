@@ -12,22 +12,22 @@ Items.ItemsTableView.template = function () {
     '<thead>'+
     '    <tr>'+
     '        <th></th>'+
-    '        <th>Item type</th>'+
-    '        <th>Current location</th>'+
-    '        <th>Home library</th>'+
-    '        <th>Collection</th>'+
-    '        <th>Call number</th>'+
-    '        <th>Status</th>'+
-    '        <th>Last seen</th>'+
-    '        <th>Barcode</th>'+
-    '        <th>Publication details</th>'+
-    '        <th>url</th>'+
-    '        <th>Copy number</th>'+
-    '        <th>Materials specified</th>'+
-    '        <th>Public notes</th>'+
-    '        <th>Spine label</th>'+
-    '        <th>Host records</th>'+
-    '        <th>Edit</th>'+
+    '        <th>'+MSG_ITEM_TYPE+'</th>'+
+    '        <th>'+MSG_CURRENT_LOCATION+'</th>'+
+    '        <th>'+MSG_HOME_LIBRARY+'</th>'+
+    '        <th>'+MSG_COLLECTION+'</th>'+
+    '        <th>'+MSG_CALL_NUMBER+'</th>'+
+    '        <th>'+MSG_STATUS+'</th>'+
+    '        <th>'+MSG_LAST_SEEN+'</th>'+
+    '        <th>'+MSG_BARCODE+'</th>'+
+    '        <th>'+MSG_PUBLICATION_DETAILS+'</th>'+
+    '        <th>'+MSG_URL+'</th>'+
+    '        <th>'+MSG_COPY_NUMBER+'</th>'+
+    '        <th>'+MSG_MATERIALS_SPECIFIED+'</th>'+
+    '        <th>'+MSG_PUBLIC_NOTES+'</th>'+
+    '        <th>'+MSG_SPINE_LABEL+'</th>'+
+    '        <th>'+MSG_HOST_RECORDS+'</th>'+
+    '        <th>'+MSG_EDIT+'</th>'+
     '    </tr>'+
     '</thead>'+
     '<tbody>'+
@@ -68,10 +68,10 @@ Items.ItemsTableRowTmpl = {
             (item.copynumber ? item.copynumber : ''),
             (item.materials ? item.materials : ''),
             (item.itemnotes ? item.itemnotes : ''),
-            '<a href="/cgi-bin/koha/labels/spinelabel-print.pl?barcode='+item.barcode+'" >Print label</a>',
+            '<a href="/cgi-bin/koha/labels/spinelabel-print.pl?barcode='+item.barcode+'" >'+MSG_PRINT_LABEL+'</a>',
             ( item.hostbiblionumber ? '<a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber='+item.hostbiblionumber+'" >'+item.hosttitle+'</a>' : ''),
-            '<a href="/cgi-bin/koha/cataloguing/additem.pl?op=edititem&amp;biblionumber='+item.biblionumber+'&amp;itemnumber='+item.itemnumber+'#edititem">Edit</a><br/>'+
-                '<button class="placeHold" onclick="holdPicker.selectItem('+item.itemnumber+')">Hold</button>',
+            '<a href="/cgi-bin/koha/cataloguing/additem.pl?op=edititem&amp;biblionumber='+item.biblionumber+'&amp;itemnumber='+item.itemnumber+'#edititem">'+MSG_EDIT+'</a><br/>'+
+                '<button class="placeHold" onclick="holdPicker.selectItem('+item.itemnumber+')">'+MSG_HOLD+'</button>',
         ];
     },
     getSelector: function (item) {
@@ -84,7 +84,7 @@ Items.ItemsTableRowTmpl = {
         return "itr_"+item.itemnumber;
     },
     displayPlaceHoldSucceeded: function (self, publisher, item) {
-        $(self.element).find("button.placeHold").parent().append("<br/><span class='notification' style='color: #00AA00;'>Hold placed</span>");
+        $(self.element).find("button.placeHold").parent().append("<br/><span class='notification' style='color: #00AA00;'>"+MSG_HOLD_PLACED+"</span>");
     },
     displayPlaceHoldFailed: function (self, publisher, errorObject) {
         $(self.element).find("button.placeHold").parent().append("<br/><span class='notification' style='color: #AA0000;'>"+errorObject.error+"</span>");

@@ -12,28 +12,28 @@ Items.getAvailability = function (item) {
 
     if (item.date_due) {
         html +=
-        '<span class="datedue">Checked out to <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber='+item.iss_borrowernumber+'">'+
-        item.iss_cardnumber+'</a> : due '+item.iss_date_due+"</span>";
+        '<span class="datedue">'+MSG_CHECKED_OUT_TO+' <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber='+item.iss_borrowernumber+'">'+
+        item.iss_cardnumber+'</a> : '+MSG_DUE_DATE+' '+item.iss_date_due+"</span>";
     }
     if (item.transfertwhen) {
         html +=
-        '<span class="intransit">In transit from '+item.transfertfrom+' to '+item.transfertto+' since '+item.transfertwhen+"</span>";
+        '<span class="intransit">'+MSG_IN_TRANSIT+': '+item.transfertfrom+' -> '+item.transfertto+'. '+MSG_TRANSFER_STARTED+' '+item.transfertwhen+"</span>";
     }
     if (item.c_withdrawn) {
         html +=
-        '<span class="wdn">Withdrawn</span>';
+        '<span class="wdn">'+MSG_WITHDRAWN+'</span>';
     }
     if (item.c_notforloan) {
         html +=
-        '<span>Not for loan'+(item.c_notforloan ? ' ('+item.c_notforloan+')' : "");
+        '<span>'+MSG_NOT_FOR_LOAN+''+(item.c_notforloan ? ' ('+item.c_notforloan+')' : "");
     }
     if (item.res_borrowernumber) {
         html +=
-        '<span>Hold for <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber='+item.res_borrowernumber+'">'+item.res_cardnumber+'</a></span>';
+        '<span>'+MSG_HOLD_FOR+' <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber='+item.res_borrowernumber+'">'+item.res_cardnumber+'</a></span>';
     }
     if (item.res_waitingdate) {
         html +=
-        '<span>Hold waiting since '+item.res_waitingdate+'</span>';
+        '<span>'+MSG_HOLD_WAITING_SINCE+' '+item.res_waitingdate+'</span>';
     }
     if (item.restricted) {
         html +=
@@ -49,7 +49,7 @@ Items.getAvailability = function (item) {
     }
     if (html.length == 0) {
         html +=
-        '<span>Available</span>';
+        '<span>'+MSG_AVAILABLE+'</span>';
     }
 
     return html;
