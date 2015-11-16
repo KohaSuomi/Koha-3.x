@@ -121,9 +121,35 @@ sub processKirjavalitysSelectionlistType {
     my $ftp = Koha::FTP->new( C4::OPLIB::AcquisitionIntegration::connectToKirjavalitys() );
     my $selectionListProcessor = C4::OPLIB::SelectionListProcessor->new({listType => $listType});
 
+    my @directories = ("/tmp/varkaus/", "/tmp/heinavesi/", "/tmp/pieksamaki/");
+    my $i = 0;
+
+    #Go through all the required directories
+    foreach(@directories){
+        #Check if the required directory exists
+        if(-d @directories[$i]){
+            #Everything is allright here
+            print "Required directory '@directories[$i]' exists!\n";
+        }else{
+            #Here we have to create the missing directory
+            print "Required directory '@directories[$i]' is missing. Creating the required directory...\n";
+            mkdir @directories[$i], 0755;
+            print "Required directory '@directories[$i]' created.\n";
+        }
+
+        $i++;
+    }
+
     for(my $i = 0 ; $i < scalar @$selectionListBatches ; $i++) {
         try {
             my $selectionListBatch = $selectionListBatches->[$i];
+
+            #Splitting selectionListBatch to get a working filepath
+            my $index = index($selectionListBatch, "/", 1);
+            my $directory = substr $selectionListBatch, 0, $index;
+            my $marc = "/marcarkisto/";
+
+            my $merged_directory = $directory;
 
             print "Importing $selectionListBatch\n" if $verbose > 1;
 
@@ -143,8 +169,7 @@ sub processKirjavalitysSelectionlistType {
                                                     });
 
             stageSelectionlists($selectionLists, $vendorConfig->{selectionListEncoding}, $listType, $ymd);
-
-            moveKirjavalitysSelectionListBatch($listdirectory.$selectionListBatch, 'marcarkisto', $ftp);
+            moveKirjavalitysSelectionListBatch($listdirectory.$selectionListBatch, $merged_directory, $ftp);
 
         } catch {
             if (blessed($_)) {
@@ -154,7 +179,10 @@ sub processKirjavalitysSelectionlistType {
                  #Thus we get the "Exiting subroutine via next" -warning. Because there are no actions after the catch-statement,
                  #this doesn't really hurt here, but just a remnder for anyone brave enough to venture further here.
             }
-            else { die "Exception not caught by try-catch:> ".$_;}
+            else { 
+                #die "Exception not caught by try-catch:> ".$_;
+                print "Exception not caught by try-catch:> ".$_;
+            }
         };
     }
     $ftp->quit();
@@ -166,20 +194,24 @@ sub getAllKirjavalitysSelectionlists {
     my $ftpcon = C4::OPLIB::AcquisitionIntegration::connectToKirjavalitys();
 
     my $ftpfiles = $ftpcon->ls();
-    foreach my $file (@$ftpfiles) {
-        if ($file =~ /^kvmarcxmlenn\d{8}\.xml/) {
-            print "Kirjavalitys: Found file: $file\n" if $verbose;
-            push @$kvenn_selectionlist_filenames, $file;
-        }elsif ($file =~ /^kvmarcxmlulk\d{8}\.xml/) {
-            print "Kirjavalitys: Found file: $file\n" if $verbose;
-            push @$kvulk_selectionlist_filenames, $file;
-        }elsif ($kvFtpExceptionFiles->{$file}) {
-            #We have a list of files that are allowed to be in the KV ftp directory and we won't warn about.
-        }
-        else {
-            print "Kirjavalitys: Unknown file in ftp-server '$file'\n";
+    foreach my $clients (@$ftpfiles) {
+        my $client = $ftpcon->ls("/".$clients);
+        foreach my $file (@$client) {
+            if ($file =~ /kvmarcxmlenn\d{8}\.xml/) {
+                print "Kirjavalitys: Found file: $file\n" if $verbose;
+                push @$kvenn_selectionlist_filenames, $file;
+            }elsif ($file =~ /kvmarcxmlulk\d{8}\.xml/) {
+                print "Kirjavalitys: Found file: $file\n" if $verbose;
+                push @$kvulk_selectionlist_filenames, $file;
+            }elsif ($kvFtpExceptionFiles->{$file}) {
+                #We have a list of files that are allowed to be in the KV ftp directory and we won't warn about.
+            }
+            else {
+                print "Kirjavalitys: Unknown file in ftp-server '$file'\n";
+            }
         }
     }
+
     $ftpcon->close();
 
     @$kvenn_selectionlist_filenames = sort @$kvenn_selectionlist_filenames;
@@ -267,11 +299,19 @@ sub moveKirjavalitysSelectionListBatch {
     my ($filePath, $targetDirectory, $ftp) = @_;
     my($fileName, $dirs, $suffix) = File::Basename::fileparse( $filePath );
 
+    #Variables used for getting the file's directory
+    my $firstslash = rindex($filePath, "/");
+    my $secondslash = rindex($filePath, "/", $firstslash-1);
+
+    #Getting the file's directory as a string
+    my $delDirectory = substr $filePath, $secondslash, $firstslash - $secondslash + 1;
+
     my $currentDir = $ftp->getCurrentFtpDirectory();
     $ftp->changeFtpDirectory($targetDirectory);
     $ftp->put($filePath);
-    $ftp->changeFtpDirectory($currentDir);
+    $ftp->changeFtpDirectory($delDirectory); There might be need to activate these later
     $ftp->delete($fileName);
+    print "$fileName\n";
 }
 
 
