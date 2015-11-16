@@ -1729,16 +1729,6 @@ sub GetHiddenItemnumbers {
     # For each item
     foreach my $item (@items) {
 
-        ##HACKMAN HERE! Vaara-Hack to filter with more precision.
-        my $pl = $item->{permanent_location};
-        if (($item->{holdingbranch} eq 'LIE_LIE' && ( $pl eq 'VAR' || $pl eq 'NUV' || $pl eq 'VVA' ))
-            ||
-            ( 0 ) #Extend the special cases here
-           ) {
-            push @resultitems, $item->{'itemnumber'};
-            next();
-        }
-
         # We check each rule
         foreach my $field (keys %$hidingrules) {
             my $val;
