@@ -86,6 +86,9 @@ BEGIN {
       &GetCOinSBiblio
       &GetMarcPrice
       &MungeMarcPrice
+      &GetMarcGSTrate
+      &GetMarcDiscount
+      &MungeMarcPercentage
       &GetMarcQuantity
 
       &GetAuthorisedValueDesc
@@ -1543,8 +1546,8 @@ sub GetMarcPrice {
     my $subfield;
     
     if ( $marcflavour eq "MARC21" ) {
-        @listtags = ('345', '020');
-        $subfield="c";
+        @listtags = ('971');
+        $subfield="e";
     } elsif ( $marcflavour eq "UNIMARC" ) {
         @listtags = ('345', '010');
         $subfield="d";
@@ -1619,7 +1622,6 @@ sub MungeMarcPrice {
     $price =~s/,/./;
     return $price;
 }
-
 
 =head2 GetMarcQuantity
 

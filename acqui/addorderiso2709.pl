@@ -236,8 +236,9 @@ if ($op eq ""){
             # in this case, the price will be x100 when unformatted ! Replace the . by a , to get a proper price calculation
             $price =~ s/\./,/ if C4::Context->preference("CurrencyFormat") eq "FR";
             $price = $num->unformat_number($price);
-            $orderinfo{gstrate} = $bookseller->{gstrate};
-            my $c = $c_discount ? $c_discount : $bookseller->{discount} / 100;
+            # Getting the correct gstrate and discount percentages from marcxml file
+            $orderinfo{gstrate} = GetMarcGSTrate($marcrecord, C4::Context->preference('marcflavour')) / 100;
+            my $c = $c_discount ? $c_discount : GetMarcDiscount($marcrecord, C4::Context->preference('marcflavour')) / 100;
             if ( $bookseller->{listincgst} ) {
                 if ( $c_discount ) {
                     $orderinfo{ecost} = $price;
@@ -258,6 +259,7 @@ if ($op eq ""){
             $orderinfo{listprice} = $orderinfo{rrp} / $cur->{rate};
             $orderinfo{unitprice} = $orderinfo{ecost};
             $orderinfo{total} = $orderinfo{ecost} * $c_quantity;
+            $orderinfo{discount} = $c*100;
         } else {
             $orderinfo{listprice} = 0;
         }
@@ -323,6 +325,116 @@ $template->param( budget_loop    => $budget_loop,);
 
 output_html_with_http_headers $input, $cookie, $template->output;
 
+# Get the gstrate of the item marcxml file. Used only in acquisitions.
+
+sub GetMarcGSTrate {
+  my ( $record, $marcflavour ) = @_;
+    if (!$record) {
+        carp 'GetMarcPrice called on undefined record';
+        return;
+    }
+
+    my @listtags;
+    my $subfield;
+    
+    if ( $marcflavour eq "MARC21" ) {
+        @listtags = ('971');
+        $subfield="f";
+    } else {
+        return;
+    }
+    
+    for my $field ( $record->field(@listtags) ) {
+        for my $subfield_value  ($field->subfield($subfield)){
+            #check value
+            $subfield_value = MungeMarcPercentage( $subfield_value );
+            return $subfield_value if ($subfield_value);
+        }
+    }
+    return 0; # no price found
+}
+
+# Get the discount of the item from marcxml file. Used only in acquisitions.
+
+sub GetMarcDiscount {
+  my ( $record, $marcflavour ) = @_;
+    if (!$record) {
+        carp 'GetMarcPrice called on undefined record';
+        return;
+    }
+
+    my @listtags;
+    my $subfield;
+    
+    if ( $marcflavour eq "MARC21" ) {
+        @listtags = ('971');
+        $subfield="g";
+    } else {
+        return;
+    }
+    
+    for my $field ( $record->field(@listtags) ) {
+        for my $subfield_value  ($field->subfield($subfield)){
+            #check value
+            $subfield_value = MungeMarcPercentage( $subfield_value );
+            return $subfield_value if ($subfield_value);
+        }
+    }
+    return 0; # no price found
+}
+
+# Returns the best guess what the wanted percentage is.
+
+sub MungeMarcPercentage {
+    my ( $gstrate ) = @_;
+    return unless ( $gstrate =~ m/\d/ ); ## No digits means no gstrate.
+
+    my $symbol = '%';
+
+    my $localrate;
+    if ( $symbol ) {
+        my @matches =($gstrate=~ /
+            \s?
+            (                          # start of capturing parenthesis
+            (?:
+            (?:[\p{Sc}\p{L}\/.]){1,4}  # any character from Currency signs or Letter Unicode categories or slash or dot                                              within 1 to 4 occurrences : call this whole block 'symbol block'
+            |(?:\d+[\p{P}\s]?){1,4}    # or else at least one digit followed or not by a punctuation sign or whitespace,                                             all theese within 1 to 4 occurrences : call this whole block 'digits block'
+            )
+            \s?\p{Sc}?\s?              # followed or not by a whitespace. \p{Sc}?\s? are for cases like '25$ USD'
+            (?:
+            (?:[\p{Sc}\p{L}\/.]){1,4}  # followed by same block as symbol block
+            |(?:\d+[\p{P}\s]?){1,4}    # or by same block as digits block
+            )
+            \s?\p{L}{0,4}\s?           # followed or not by a whitespace. \p{L}{0,4}\s? are for cases like '$9.50 USD'
+            )                          # end of capturing parenthesis
+            (?:\p{P}|\z)               # followed by a punctuation sign or by the end of the string
+            /gx);
+
+        if ( @matches ) {
+            foreach ( @matches ) {
+                $localrate = $_ and last;
+            }
+            if ( !$localrate ) {
+                foreach ( @matches ) {
+                    $localrate = $_ and last if $_=~ /(^|[^\p{Sc}\p{L}\/])\Q$symbol\E([^\p{Sc}\p{L}\/]+\z|\z)/;
+                }
+            }
+        }
+    }
+    if ( $localrate ) {
+        $gstrate = $localrate;
+    } else {
+        ## Grab the first number in the string ( can use commas or periods for thousands separator and/or decimal separator )
+        ( $gstrate ) = $gstrate =~ m/([\d\,\.]+[[\,\.]\d\d]?)/;
+    }
+    # eliminate symbol/isocode, space and any final dot from the string
+    $gstrate =~ s/[\p{Sc}\p{L}\/ ]|\.$//g;
+    # remove comma,dot when used as separators from hundreds
+    $gstrate =~s/[\,\.](\d{3})/$1/g;
+    # convert comma to dot to ensure correct display of decimals if existing
+    $gstrate =~s/,/./;
+    return $gstrate;
+}
 
 sub import_batches_list {
     my ($template) = @_;
