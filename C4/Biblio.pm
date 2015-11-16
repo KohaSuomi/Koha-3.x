@@ -86,9 +86,6 @@ BEGIN {
       &GetCOinSBiblio
       &GetMarcPrice
       &MungeMarcPrice
-      &GetMarcGSTrate
-      &GetMarcDiscount
-      &MungeMarcPercentage
       &GetMarcQuantity
 
       &GetAuthorisedValueDesc
@@ -1541,7 +1538,7 @@ sub GetMarcPrice {
         carp 'GetMarcPrice called on undefined record';
         return;
     }
-
+    
     my @listtags;
     my $subfield;
     
@@ -1551,7 +1548,8 @@ sub GetMarcPrice {
     } elsif ( $marcflavour eq "UNIMARC" ) {
         @listtags = ('345', '010');
         $subfield="d";
-    } else {
+    } 
+    else {
         return;
     }
     

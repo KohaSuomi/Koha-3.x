@@ -50,7 +50,7 @@ to add to Batch [% batch_id %]
 [% IF ( selected ) %]
    <option value="ti" selected="selected">Title</option>
 [% ELSE %]
-   <option value="ti" selected="selected">Title</option>[% END %]
+   <option value="nb" selected="selected">ISBN</option>[% END %]
 
 [% IF ( selected ) %]<option value="ti,phr" selected="selected">Title phrase</option>
 [% ELSE %]<option value="ti,phr">Title phrase</option>[% END %]

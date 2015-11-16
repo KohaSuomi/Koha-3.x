@@ -69,6 +69,7 @@ if($view eq 'card') {
     my $style_doc    = $parser->parse_file($xslfile);
     my $stylesheet   = $xslt->parse_stylesheet($style_doc);
     my $results      = $stylesheet->transform($source);
+
     my $newxmlrecord = $stylesheet->output_string($results);
     print $input->header(-charset => 'UTF-8'), Encode::encode_utf8($newxmlrecord);
 }

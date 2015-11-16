@@ -759,8 +759,13 @@ our $PERL_DEPS = {
     },
     'LWP::Curl' => {
         'usage'    => 'Curl',
-        'required' => '0',
+        'required' => '1',
         'min_ver'  => '0.12',
+    },
+    'Cpanel::JSON::XS' => {
+        'usage'    => 'Barcode generation',
+        'required' => '0',
+        'min_ver'  => '3.0107',
     },
 };
 

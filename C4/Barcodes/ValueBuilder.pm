@@ -106,11 +106,14 @@ sub get_barcode {
         json = jsonData;
         
         if (document.f.field_value[fnum].value.substring(0,3) == 'MLI') {
-            \$('#' + id).val(491 + '$args->{year}' + json.nextnum);
+            \$('#' + id).val(491+'$args->{year}$nextnum');
         }else if (document.f.field_value[fnum].value.substring(0,3) == 'MAN') {
-            \$('#' + id).val(507 + '$args->{year}' + json.nextnum);
-        } else {
-            \$('#' + id).val(document.f.field_value[fnum].value + '$args->{year}' + json.nextnum);
+            \$('#' + id).val(507 + '$args->{year}$nextnum');
+        } else if (document.f.field_value[fnum].value.substring(0,3) == 'VAR') {
+            \$('#' + id).val(915 + '$args->{year}$nextnum');
+        }
+        else {
+            \$('#' + id).val(666 + '$args->{year}$nextnum');
         }
     });//$.getJSON ends here
     ";

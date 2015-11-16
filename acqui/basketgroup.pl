@@ -59,6 +59,7 @@ use C4::Bookseller qw/GetBookSellerFromId/;
 use C4::Branch qw/GetBranches/;
 use C4::Members qw/GetMember/;
 use C4::OPLIB::AcquisitionIntegration;
+use C4::OPLIB::SendAcquisitionByXML;
 
 our $input=new CGI;
 
@@ -357,6 +358,31 @@ if ( $op eq "add" ) {
         -attachment => 'basketgroup' . $basketgroupid . '.csv',
     );
     print GetBasketGroupAsCSV( $basketgroupid, $input );
+    exit;
+}elsif ( $op eq "export_xml" ) {
+#
+# export a closed basketgroup in csv
+#
+    my $basketgroupid = $input->param('basketgroupid');
+    print $input->header(
+        -type       => 'text/xml',
+        -encoding => 'UTF-8',
+        -attachment => 'tilaus' . $basketgroupid . '.xml',
+    );
+    print C4::OPLIB::SendAcquisitionByXML::GetBasketGroupAsXML( $basketgroupid, $input );
+
+    my $msg = MIME::Lite->new(
+    From    => C4::Context->preference("KohaAdminEmailAddress"),
+    To      => 'johanna.raisa@mikkeli.fi',
+    Subject => 'tilaus',
+    Type    => 'multipart/mixed',
+    );
+
+    $msg->attach(
+        Type     => 'text/xml',
+        Filename => 'tilaus' . $basketgroupid . '.xml',
+    );
+
     exit;
 }elsif( $op eq "delete"){
 #

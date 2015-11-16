@@ -69,3 +69,10 @@ Acquisitions:
             - pref: VaaraAcqVendorConfigurations
               type: textarea
               class: code
+        -
+            - "Define Arvo 1.0 discounts:"
+            - "This is a YAML-config."
+            - "."
+            - pref: ArvoDiscounts
+              type: textarea
+              class: code

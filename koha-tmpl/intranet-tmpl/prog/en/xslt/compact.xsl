@@ -69,13 +69,20 @@
           <span class="DDC"><xsl:value-of select="marc:subfield[@code='a']"/></span>
         </xsl:if>
         <xsl:if test="@tag='856'">
-          <br/><xsl:apply-templates mode="link" select="marc:subfield" />
+          <br/><xsl:apply-templates mode="link" select="marc:subfield" /><br/>
         </xsl:if>
       </xsl:template>
       <xsl:template match="marc:subfield" mode="link">
         <xsl:if test="@code='u'">
           <span class="link">
-            <a class="url" href="{.}"/>
+            <a class="url" href="{.}" target='_blank'><xsl:value-of select="."/></a>
+        </span>
+        </xsl:if>
+      </xsl:template>
+      <xsl:template match="marc:subfield" mode="iframe">
+        <xsl:if test="@code='u'">
+          <span class="frame">
+            <iframe class="url" src="https://{.}"/>
         </span>
         </xsl:if>
       </xsl:template>
