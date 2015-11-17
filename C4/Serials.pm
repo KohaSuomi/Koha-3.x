@@ -281,7 +281,7 @@ FROM serial s
     LEFT JOIN branchtransfers bt ON i.itemnumber = bt.itemnumber
     LEFT JOIN itemtypes itps ON itps.itemtype = i.itype
     LEFT JOIN (SELECT resb.cardnumber, resb.borrowernumber, r.itemnumber, r.waitingdate FROM reserves r LEFT JOIN borrowers resb ON resb.borrowernumber = r.borrowernumber ORDER BY priority ASC LIMIT 1) as resbor ON resbor.itemnumber = i.itemnumber
-WHERE bt.datearrived IS NULL AND s.biblionumber = ?
+WHERE s.biblionumber = ?
 ";
     if ($params->{pattern_x}) {
         $serialitems_sql .= "AND s.pattern_x = ? ";

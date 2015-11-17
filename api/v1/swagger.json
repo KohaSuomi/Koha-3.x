@@ -916,7 +916,7 @@
       "type": "integer"
     },
     "holdingbranchQueryParam": {
-      "name": "branchcode",
+      "name": "holdingbranch",
       "in": "query",
       "description": "The code of the branch where the Items have been last seen.",
       "required": false,
