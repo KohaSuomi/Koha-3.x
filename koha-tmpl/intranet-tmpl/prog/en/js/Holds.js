@@ -237,7 +237,8 @@ Holds.HoldPicker = function (params) {
             html +=
             '<span>'+
                 (this.item.barcode ? this.item.barcode : "")+" "+
-                (this.item.enumchron ? this.item.enumchron : "")+
+                (this.item.enumchron ? '('+this.item.enumchron+')' : "")+" "+
+                (this.item.homebranch ? '<strong class="branchcode">'+this.item.homebranch+'</strong>' : "")+
             '</span>';
         }
         $(ie).html(html);
