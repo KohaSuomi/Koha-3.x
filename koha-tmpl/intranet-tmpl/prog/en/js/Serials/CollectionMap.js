@@ -252,16 +252,11 @@ Serials.CollectionMap = {
         do {
             var a_comparable = a_seqs[i];
             var b_comparable = b_seqs[i];
-            if (isNaN(a_comparable) || isNaN(b_comparable)) {
-                comparisonResult = (a_comparable > b_comparable ? -1 :
-                                    (a_comparable == b_comparable ? 0 : 1)
-                                );
-            }
-            else {
-                comparisonResult = (Number(a_comparable) > Number(b_comparable) ? -1 :
+            a_comparable = (isNaN(a_comparable) ? parseInt(a_comparable) : a_comparable);
+            b_comparable = (isNaN(b_comparable) ? parseInt(b_comparable) : b_comparable);
+            comparisonResult = (Number(a_comparable) > Number(b_comparable) ? -1 :
                                     (Number(a_comparable) == Number(b_comparable) ? 0 : 1)
                                 );
-            }
             i++;
         } while (comparisonResult == 0 && a_comparable && b_comparable);
         return comparisonResult;
