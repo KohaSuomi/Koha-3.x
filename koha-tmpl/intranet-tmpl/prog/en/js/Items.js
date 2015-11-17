@@ -8,51 +8,61 @@ if (typeof Items == "undefined") {
  */
 Items.getAvailability = function (item) {
 
-    var html = "";
+    var html = [];
 
     if (item.date_due) {
-        html +=
+        html.push(
         '<span class="datedue">'+MSG_CHECKED_OUT_TO+' <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber='+item.iss_borrowernumber+'">'+
-        item.iss_cardnumber+'</a> : '+MSG_DUE_DATE+' '+item.iss_date_due+"</span>";
+        item.iss_cardnumber+'</a> : '+MSG_DUE_DATE+' '+item.iss_date_due+"</span>"
+        );
     }
     if (item.transfertwhen) {
-        html +=
-        '<span class="intransit">'+MSG_IN_TRANSIT+': '+item.transfertfrom+' -> '+item.transfertto+'. '+MSG_TRANSFER_STARTED+' '+item.transfertwhen+"</span>";
+        html.push(
+        '<span class="intransit">'+MSG_IN_TRANSIT+': '+item.transfertfrom+' -> '+item.transfertto+'. '+MSG_TRANSFER_STARTED+' '+item.transfertwhen+"</span>"
+        );
     }
     if (item.c_withdrawn) {
-        html +=
-        '<span class="wdn">'+MSG_WITHDRAWN+'</span>';
+        html.push(
+        '<span class="wdn">'+MSG_WITHDRAWN+'</span>'
+        );
     }
     if (item.c_notforloan) {
-        html +=
-        '<span>'+MSG_NOT_FOR_LOAN+''+(item.c_notforloan ? ' ('+item.c_notforloan+')' : "");
+        html.push(
+        '<span>'+MSG_NOT_FOR_LOAN+''+(item.c_notforloan ? ' ('+item.c_notforloan+')' : "")
+        );
     }
     if (item.res_borrowernumber) {
-        html +=
-        '<span>'+MSG_HOLD_FOR+' <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber='+item.res_borrowernumber+'">'+item.res_cardnumber+'</a></span>';
+        html.push(
+        '<span>'+MSG_HOLD_FOR+' <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber='+item.res_borrowernumber+'">'+item.res_cardnumber+'</a></span>'
+        );
     }
     if (item.res_waitingdate) {
-        html +=
-        '<span>'+MSG_HOLD_WAITING_SINCE+' '+item.res_waitingdate+'</span>';
+        html.push(
+        '<span>'+MSG_HOLD_WAITING_SINCE+' '+item.res_waitingdate+'</span>'
+        );
     }
     if (item.restricted) {
-        html +=
-        '<span class="restricted">('+item.restricted+')</span>';
+        html.push(
+        '<span class="restricted">('+item.restricted+')</span>'
+        );
     }
     if (item.c_itemlost) {
-        html +=
-        '<span class="lost">('+item.c_itemlost+')</span>';
+        html.push(
+        '<span class="lost">('+item.c_itemlost+')</span>'
+        );
     }
     if (item.c_damaged) {
-        html +=
-        '<span class="dmg">('+item.c_damaged+')</span>';
+        html.push(
+        '<span class="dmg">('+item.c_damaged+')</span>'
+        );
     }
     if (html.length == 0) {
-        html +=
-        '<span>'+MSG_AVAILABLE+'</span>';
+        html.push(
+        '<span>'+MSG_AVAILABLE+'</span>'
+        );
     }
 
-    return html;
+    return html.join('<br/>');
 }
 
 /**
