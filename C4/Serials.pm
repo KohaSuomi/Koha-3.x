@@ -304,7 +304,7 @@ WHERE s.biblionumber = ?
         push @params, $params->{holdingbranch};
     }
     $serialitems_sql .= " GROUP BY i.itemnumber ";
-    $serialitems_sql .= " ORDER BY s.publisheddate DESC ";
+    $serialitems_sql .= " ORDER BY s.pattern_x DESC, s.pattern_y DESC, s.pattern_z DESC ";
     if ($params->{limit}) {
         $serialitems_sql .= "LIMIT ? ";
         push @params, $params->{limit};
