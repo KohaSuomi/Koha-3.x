@@ -970,21 +970,21 @@
       "in": "query",
       "description": "The first serial issue enumeration field, typically the year.",
       "required": false,
-      "type": "integer"
+      "type": "string"
     },
     "pattern_yQueryParam": {
       "name": "pattern_y",
       "in": "query",
       "description": "the second enumeration, eg volume.",
       "required": false,
-      "type": "integer"
+      "type": "string"
     },
     "pattern_zQueryParam": {
       "name": "pattern_z",
       "in": "query",
       "description": "the third enumeration field.",
       "required": false,
-      "type": "integer"
+      "type": "string"
     },
     "serialStatusQueryParam": {
       "name": "serialStatus",
