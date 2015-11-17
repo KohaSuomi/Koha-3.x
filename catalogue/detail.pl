@@ -161,8 +161,14 @@ my $dat = &GetBiblioData($biblionumber);
 my $subscriptionsnumber = CountSubscriptionFromBiblionumber($biblionumber);
 my @subscriptions       = GetSubscriptions( $dat->{title}, $dat->{issn}, undef, $biblionumber );
 my @subs;
+my $serialsadditems;
 
 foreach my $subscription (@subscriptions) {
+    if ($subscription->{serialsadditems}) {
+        $serialsadditems = 1;
+        next;
+    }
+
     my %cell;
 	my $serials_to_display;
     $cell{subscriptionid}    = $subscription->{subscriptionid};
@@ -384,6 +390,7 @@ $template->param(
     biblionumber        => $biblionumber,
     ($analyze? 'analyze':'detailview') =>1,
     subscriptions       => \@subs,
+    serialsadditems     => $serialsadditems,
     subscriptionsnumber => $subscriptionsnumber,
     subscriptiontitle   => $dat->{title},
     searchid            => $query->param('searchid'),

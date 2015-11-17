@@ -1000,7 +1000,7 @@ function verify_images() {
 [% END %]
 </div>
 
-[% IF UseBetaFeatures && subscriptionsnumber %][%# Serials display improvements fix%]
+[% IF UseBetaFeatures && subscriptionsnumber && serialsadditems %][%# Serials display improvements fix%]
 <script type="text/javascript" src="[% interface %]/lib/jquery/plugins/jstree.min.js"></script>
 <script type="text/javascript" src="[% interface %]/lib/log4javascript.js"></script>
 <script type="text/javascript" src="[% themelang %]/js/Serials/CollectionMap.js"></script>
