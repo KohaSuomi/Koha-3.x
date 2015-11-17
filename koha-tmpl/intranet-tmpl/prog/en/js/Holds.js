@@ -198,6 +198,14 @@ Holds.HoldPicker = function (params) {
         return $(this.rootElement).find("#hp_placeHold");
     }
     this.placeHold = function () {
+        //Prevent accidental double hold placements by using a timer to prevent repeated Place Hold-actions.
+        if (this._placeHoldInProgress) {
+            return;
+        }
+        this._placeHoldInProgress = Date.now();
+        window.setTimeout(function () {
+                self._placeHoldInProgress = 0;
+            }, 2000);
         Holds.placeHold(this.item, this.borrower, this.pickupBranch, this.biblio, null, this.suspend_until);
     }
     this.getClearElement = function () {

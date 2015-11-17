@@ -138,31 +138,47 @@ Items.ItemsTable = {
      * Calls the callback function after everything is ok or failed.
      */
     _initAjax: function(self) {
+
+        var data = {
+            biblionumber: self.biblionumber,
+            limit: 20,
+            serialStatus: 2,
+        };
+        //If the first one had too few results, get results from everywhere.
+        if (! self.events._initedWithTooFewResults) {
+            data.holdingbranch = self.loggedinbranch;
+        }
+
         $.ajax("/api/v1/serialitems",
                 { "method": "get",
                   "accepts": "application/json",
-                  "data": {
-                    biblionumber: self.biblionumber,
-                    limit: 20,
-                    holdingbranch: self.loggedinbranch,
-                    serialStatus: 2, //Only arrived serials
-                  },
+                  "data": data,
                   "success": function (jqXHR, textStatus, errorThrown) {
-                    Items.Cache.clear();
-                    Items.Cache.addLocalItems(jqXHR.serialItems);
-                    var htmlTableContent = Items.ItemsTableView.template();
-                    $(self.node).html(htmlTableContent).DataTable($.extend(true, {}, dataTablesDefaults, {
-                        'sDom': 't',
-                        'bPaginate': false,
-                        'bAutoWidth': false
-                        ,   "aoColumnDefs": [
-                                { "aTargets": [ 0 ], "bSortable": false, "bSearchable": false }
-                            ]
-                    }));
-                    Items.ItemsTable.setItems(self, jqXHR.serialItems);
+                    var serialItems = jqXHR.serialItems;
+                    if (self.events._initedWithTooFewResults ||
+                        (Array.isArray(serialItems) && serialItems.length > 10))
+                    {
+                        Items.Cache.clear();
+                        Items.Cache.addLocalItems(jqXHR.serialItems);
+                        var htmlTableContent = Items.ItemsTableView.template();
+                        $(self.node).html(htmlTableContent).DataTable($.extend(true, {}, dataTablesDefaults, {
+                            'sDom': 't',
+                            'bPaginate': false,
+                            'bAutoWidth': false
+                            ,   "aoColumnDefs": [
+                                    { "aTargets": [ 0 ], "bSortable": false, "bSearchable": false }
+                                ]
+                        }));
+                        Items.ItemsTable.setItems(self, serialItems);
 
-                    if (typeof self.events.callback == "function") {
-                        self.events.callback(self, errorThrown);
+                        if (typeof self.events.callback == "function") {
+                            self.events.callback(self, errorThrown);
+                        }
+                    }
+                    else {
+                        //If we get too few results, make a more broad search
+                        self.events._initedWithTooFewResults = 1;
+                        Items.ItemsTable._initAjax(self);
                     }
                   },
                   "error": function (jqXHR, textStatus, errorThrown) {
