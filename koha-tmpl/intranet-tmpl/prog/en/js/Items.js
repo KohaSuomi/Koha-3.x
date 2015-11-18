@@ -10,7 +10,7 @@ Items.getAvailability = function (item) {
 
     var html = [];
 
-    if (item.date_due) {
+    if (item.iss_date_due) {
         html.push(
         '<span class="datedue">'+MSG_CHECKED_OUT_TO+' <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber='+item.iss_borrowernumber+'">'+
         item.iss_cardnumber+'</a> : '+MSG_DUE_DATE+' '+item.iss_date_due+"</span>"
