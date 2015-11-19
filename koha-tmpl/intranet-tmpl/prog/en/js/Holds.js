@@ -252,7 +252,7 @@ Holds.HoldPicker = function (params) {
             $(be).html(
                 (this.borrower.cardnumber ? this.borrower.cardnumber : this.borrower.borrowernumber)+' '+
                 (this.borrower.surname ? this.borrower.surname : '')+' '+
-                (this.borrower.firstname ? this.borrower.surname : '')
+                (this.borrower.firstname ? this.borrower.firstname : '')
             );
             this.getCardnumberElement().val((this.borrower.cardnumber ? this.borrower.cardnumber : ''));
         }
