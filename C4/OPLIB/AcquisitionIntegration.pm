@@ -21,6 +21,7 @@ use Modern::Perl;
 
 use POSIX qw/strftime/;
 use YAML::XS;
+use Carp;
 
 use Net::FTP;
 use Scalar::Util qw( blessed );
@@ -41,6 +42,23 @@ use C4::Members qw/GetMember/;
 use C4::Contract qw/GetContract/;
 use C4::Biblio qw/GetBiblioData/;
 
+use vars qw($VERSION @ISA @EXPORT); #This is required for getting data from marcxml files
+
+
+BEGIN {
+    $VERSION = 3.07.00.049;
+
+    require Exporter;
+    @ISA = qw( Exporter );
+
+    # to get something
+    push @EXPORT, qw(
+      &GetMarcGSTrate
+      &GetMarcDiscount
+      &MungeMarcPrice
+    );
+}
+
 =head sendBasketgroupToVendors
 
     C4::OPLIB::AcquisitionIntegration::SendBasketgroupToVendors($basketgroupid);
@@ -56,6 +74,7 @@ Currently supported vendors:
 
 sub SendBasketgroupToVendors {
     my $basketgroupid = shift;
+    my $branchcode = shift;
     my $basketgroup = GetBasketgroup( $basketgroupid );
 
     my $csvBuilder_kirjavalitys = [];
@@ -87,7 +106,7 @@ sub SendBasketgroupToVendors {
 
         #If we have orders for KV, then send them away!
         if (scalar(@$csvBuilder_kirjavalitys) > 0) {
-            if (sendCsvToKirjavalitys($csvBuilder_kirjavalitys, $basketgroup, $errorsBuilder)) {
+            if (sendCsvToKirjavalitys($csvBuilder_kirjavalitys, $basketgroup, $errorsBuilder, $branchcode)) {
                 markBasketgroupAsOrdered( $basketgroup );
             }
         }
@@ -159,7 +178,7 @@ sub queueBasketToKirjavalitysAsCsv {
 sub GetMarcGSTrate {
   my ( $record, $marcflavour ) = @_;
     if (!$record) {
-        carp 'GetMarcPrice called on undefined record';
+        carp 'GetMarcGSTrate called on undefined record';
         return;
     }
 
@@ -188,7 +207,7 @@ sub GetMarcGSTrate {
 sub GetMarcDiscount {
   my ( $record, $marcflavour ) = @_;
     if (!$record) {
-        carp 'GetMarcPrice called on undefined record';
+        carp 'GetMarcDiscount called on undefined record';
         return;
     }
 
@@ -281,10 +300,13 @@ sub sendCsvToKirjavalitys {
     my $csvBuilder = shift;
     my $basketgroup = shift;
     my $errorsBuilder = shift; #Collect all errors here for propagation to the UI
+    my $branchcode = shift; #Required for sending the order in correct directory
+    my $branch = substr($branchcode, 0, index($branchcode, '_'));
+    my $directory;
     my $now = strftime('%Y%m%d',localtime);
 
     ##Build the temporary csv for sending
-    my $file = '/tmp/jokunen_order_'.$now.'_basketgroup_'.$basketgroup->{'id'}.'.csv';
+    my $file = '/tmp/lumme_order_'.$now.'_basketgroup_'.$basketgroup->{'id'}.'.csv';
     my $ok = open(my $CSV, ">:encoding(latin1)", $file);
     unless($ok) {
         push @$errorsBuilder, "Couldn't write to the temp file $file for sending to Kirjavälitys";
@@ -292,6 +314,17 @@ sub sendCsvToKirjavalitys {
     }
     print $CSV join "\n",@$csvBuilder;
     close $CSV;
+
+    #Find the correct directory
+    if($branch eq 'HEI'){
+        $directory = '/heinavesi';
+    }elsif($branch eq 'PIE'){
+        $directory = '/pieksamaki';
+    }elsif($branch eq 'VAR'){
+        $directory = '/varkaus';
+    }else{
+        $directory = '';
+    }
 
     ##Send it away!
     my $ftpcon;
@@ -301,8 +334,8 @@ sub sendCsvToKirjavalitys {
         push @$errorsBuilder, $_->error();
     };
     if ($ftpcon) {
-        if (! $ftpcon->cwd('/Order') ) {
-            push @$errorsBuilder, "Cannot change to the Order folder with Kirjavälitys' ftp server: $@";
+        if (! $ftpcon->cwd($directory.'/Order') ) {
+            push @$errorsBuilder, $branchcode."Cannot change to the Order folder with Kirjavälitys' ftp server: $@";
             return undef;
         }
 

@@ -242,8 +242,16 @@ if ($op eq ""){
 
             # Getting the correct gstrate and discount percentages from marcxml file
             $orderinfo{gstrate} = GetMarcGSTrate($marcrecord, C4::Context->preference('marcflavour')) / 100;
-            #my $c = $c_discount ? $c_discount : GetMarcDiscount($marcrecord, C4::Context->preference('marcflavour')) / 100; Might not be needed anymore
-            my $c = $c_discount ? $c_discount : C4::OPLIB::AcquisitionIntegration::getDiscounts($patron->{branchcode}, $marcrecord, $bookseller->{discount}) / 100;
+
+            # The discount depends on bookseller
+            my $c;
+
+            if($bookseller->{bookselleremail} eq 'arvo.tilaus@btj.fi'){
+                $c = $c_discount ? $c_discount : C4::OPLIB::AcquisitionIntegration::getDiscounts($patron->{branchcode}, $marcrecord, $bookseller->{discount}) / 100;    
+            }else{
+                $c = $c_discount ? $c_discount : GetMarcDiscount($marcrecord, C4::Context->preference('marcflavour')) / 100;    
+            }
+
 
             if ( $bookseller->{listincgst} ) {
                 if ( $c_discount ) {

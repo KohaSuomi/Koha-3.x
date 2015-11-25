@@ -313,7 +313,7 @@ sub moveKirjavalitysSelectionListBatch {
     my $currentDir = $ftp->getCurrentFtpDirectory();
     $ftp->changeFtpDirectory($targetDirectory);
     $ftp->put($filePath);
-    $ftp->changeFtpDirectory($delDirectory); There might be need to activate these later
+    $ftp->changeFtpDirectory($delDirectory); #FIXME: These two rows must be uncommented for this to work perfectly
     $ftp->delete($fileName);
     print "$fileName\n";
 }
@@ -394,7 +394,10 @@ sub processBTJSelectionlistType {
                  #Thus we get the "Exiting subroutine via next" -warning. Because there are no actions after the catch-statement,
                  #this doesn't really hurt here, but just a remnder for anyone brave enough to venture further here.
             }
-            else { die "Exception not caught by try-catch:> ".$_;}
+            else { 
+                #Giving the command print instead of die allows as to continue while ignoring possible errors.
+                print "Exception not caught by try-catch:> ".$_;
+            }
         };
     }
     $ftp->quit();
@@ -492,7 +495,9 @@ sub processBTJBibliolistType {
                  #Thus we get the "Exiting subroutine via next" -warning. Because there are no actions after the catch-statement,
                  #this doesn't really hurt here, but just a remnder for anyone brave enough to venture further here.
             }
-            else { die "Exception not caught by try-catch:> ".$_;}
+            else { 
+                die "Exception not caught by try-catch:> ".$_;
+            }
         };
     }
 
