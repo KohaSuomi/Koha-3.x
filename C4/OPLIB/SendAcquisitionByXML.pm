@@ -32,11 +32,14 @@ use C4::Bookseller qw(GetBookSellerFromId);
 use C4::Templates qw(gettemplate);
 use C4::Acquisition qw/GetOrders GetBasketsByBasketgroup GetBasketgroup GetBasket ModBasketgroup GetContract/;
 use XML::Simple;
+use XML::Writer;
+use IO::File;
 use Data::Dumper;
 
 use Time::localtime;
 use HTML::Entities;
 
+use Encode;
 
 =head3 GetBasketGroupAsXML
 
@@ -64,11 +67,10 @@ sub GetBasketGroupAsXML{
     my $rows;
     my $data;
     my $element;
-
     
     my $basketgroup = GetBasketgroup( $basketgroupid );
     my $bookseller = GetBookSellerFromId( $basketgroup->{booksellerid} );
-    $data = {'nr' => $bookseller->{accountnumber}, 'name' => GetBranchName($basketgroup->{billingplace})};
+    $data = {'nr' => $bookseller->{accountnumber}, 'name' => encode('utf8', GetBranchName($basketgroup->{billingplace}))};
 
     for my $basket (@$baskets) {
         my @orders     = GetOrders( $$basket{basketno} );
@@ -96,8 +98,8 @@ sub GetBasketGroupAsXML{
 	            	'bind-code' => 'y'};
 
 	            $xml_data->{'isbn'} = ['![CDATA['.$order->{isbn}.']]'];
-                $xml_data->{'title'} = ['![CDATA['.$bd->{title}.']]'];
-                $xml_data->{'author'} = ['![CDATA['.$bd->{author}.']]'];
+                $xml_data->{'title'} = ['![CDATA['.encode('utf8', $bd->{title}).']]'];
+                $xml_data->{'author'} = ['![CDATA['.encode('utf8', $bd->{author}).']]'];
 	        }
             # my $row = {
             #     clientnumber => $bookseller->{accountnumber},
@@ -136,7 +138,77 @@ sub GetBasketGroupAsXML{
     my $xml_out = $xml->XMLout($rows, rootName => undef);
 
     return $xml_out;
+}
 
+sub sendBasketGroupAsXml{
+    my $basketgroupid = shift;
+    my $filename = 'tilaus' . $basketgroupid . '.xml';
+    my $baskets = GetBasketsByBasketgroup($basketgroupid);
+    my $basketgroup = GetBasketgroup( $basketgroupid );
+    my $bookseller = GetBookSellerFromId( $basketgroup->{booksellerid} );
+
+    my $output = new IO::File(">/tmp/".$filename);
+    my $writer = new XML::Writer(OUTPUT => $output);
+
+    my $branchname = encode('utf8', GetBranchName($basketgroup->{billingplace}));
+
+    $writer->xmlDecl( 'UTF-8' );
+
+    $writer->startTag('customer', 'name' => $branchname, 'nr' => $bookseller->{accountnumber});    
+
+    #Stuff starts here
+    for my $basket (@$baskets) {
+        my @orders     = GetOrders( $$basket{basketno} );
+        my $contract   = GetContract( $$basket{contractnumber} );
+        
+        foreach my $order (@orders) {
+            my $bd = GetBiblioData( $order->{'biblionumber'} );
+            my $marcxml = $bd->{marcxml};
+            my $allfons = getField($marcxml, '001');
+            if ($$basket{booksellerid} ne 388) {
+                $writer->startTag('t-number', 'nr' => '');
+                    $writer->startTag('order', 'artno' => $allfons, 
+                                      'no-of-items' => $order->{quantity}, 'record' => 'y', 'bind-code' => 'y');
+                    $writer->endTag();
+                $writer->endTag();
+            }#If order type is not addition
+            else{
+                $writer->startTag('addition-order', 'no-of-items' => $order->{quantity}, 'record' => 'y', 'bind-code' => 'y');
+                    $writer->startTag('author');
+                        $writer->characters('![CDATA['.encode('utf8', $bd->{author}).']]');
+                    $writer->endTag();
+                    $writer->startTag('title');
+                        $writer->characters('![CDATA['.encode('utf8', $bd->{title}).']]');
+                    $writer->endTag();
+                    $writer->startTag('isbn');
+                        $writer->characters('![CDATA['.$bd->{isbn}.']]');
+                    $writer->endTag();
+                $writer->endTag();
+            }#If order type is addition
+         }#Foreach order ends here
+    }#For baskets ends here
+    #Stuff ends here
+    $writer->endTag();
+    $writer->end();
+
+    my $msg = MIME::Lite->new(
+        From    => C4::Context->preference("KohaAdminEmailAddress"),
+        To      => 'ojuha013@edu.mamk.fi',#'johanna.raisa@mikkeli.fi',
+        Subject => 'Tilaus',
+        Data => 'Tilaustiedot',
+        Type    => 'multipart/mixed'
+    );
+
+    $msg->attach(
+        Type     => 'text/xml',
+        Filename => $filename,
+        Path => '/tmp/'.$filename,
+        Disposition => 'attachment'
+    );
+
+    $msg->send;
+
+    return 0;
 }
 
 sub getField {

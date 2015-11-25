@@ -337,7 +337,8 @@ if ( $op eq "add" ) {
 # Send this closed basketgroup to the bookseller using the booksellers desired method
 #
     my $basketgroupid = $input->param('basketgroupid');
-    my $errorsList = C4::OPLIB::AcquisitionIntegration::SendBasketgroupToVendors($basketgroupid);
+    my $patron = C4::Members::GetMember( borrowernumber => $loggedinuser );
+    my $errorsList = C4::OPLIB::AcquisitionIntegration::SendBasketgroupToVendors($basketgroupid, $patron->{branchcode});
 
 	$template->param(listclosed => 1);
 	$template->param(orderErrorList => $errorsList) if $errorsList;
@@ -361,27 +362,13 @@ if ( $op eq "add" ) {
     exit;
 }elsif ( $op eq "export_xml" ) {
 #
-# export a closed basketgroup in csv
+# export a closed basketgroup in xml
 #
     my $basketgroupid = $input->param('basketgroupid');
-    print $input->header(
-        -type       => 'text/xml',
-        -encoding => 'UTF-8',
-        -attachment => 'tilaus' . $basketgroupid . '.xml',
-    );
-    print C4::OPLIB::SendAcquisitionByXML::GetBasketGroupAsXML( $basketgroupid, $input );
+    my $booksellerid    = $input->param('booksellerid');
 
-    my $msg = MIME::Lite->new(
-    From    => C4::Context->preference("KohaAdminEmailAddress"),
-    To      => 'johanna.raisa@mikkeli.fi',
-    Subject => 'tilaus',
-    Type    => 'multipart/mixed',
-    );
-
-    $msg->attach(
-        Type     => 'text/xml',
-        Filename => 'tilaus' . $basketgroupid . '.xml',
-    );
+    C4::OPLIB::SendAcquisitionByXML::sendBasketGroupAsXml($basketgroupid);
+    print $input->redirect('/cgi-bin/koha/acqui/basketgroup.pl?booksellerid=' . $booksellerid);
 
     exit;
 }elsif( $op eq "delete"){
@@ -457,6 +444,7 @@ if ( $op eq "add" ) {
 	$template->param(  orderInterface => C4::OPLIB::AcquisitionIntegration::GetOrderInterface( $bookseller )  );
     displaybasketgroups($basketgroups, $bookseller, $baskets);
 }
+
 $template->param(listclosed => ((defined $input->param('listclosed')) && ($input->param('listclosed') eq '1'))? 1:0 );
 #prolly won't use all these, maybe just use print, the rest can be done inside validate
 output_html_with_http_headers $input, $cookie, $template->output;
