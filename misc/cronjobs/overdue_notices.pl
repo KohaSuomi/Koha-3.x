@@ -385,7 +385,7 @@ if ( defined $csvfilename ) {
     } else {
         open $csv_fh, ">", $csvfilename or die "unable to open $csvfilename: $!";
     }
-    if ( $csv->combine(qw(name surname address1 address2 zipcode city country email itemcount itemsinfo)) ) {
+    if ( $csv->combine(qw(name surname address1 address2 zipcode city country email branchcode itemcount itemsinfo)) ) {
         print $csv_fh $csv->string, "\n";
     } else {
         $verbose and warn 'combine failed on argument: ' . $csv->error_input;
@@ -483,7 +483,7 @@ END_SQL
             # <date> <itemcount> <firstname> <lastname> <address1> <address2> <address3> <city> <postcode> <country>
 
             my $borrower_sql = <<'END_SQL';
-SELECT distinct(issues.borrowernumber), firstname, surname, address, address2, city, zipcode, country, email, emailpro, B_email, smsalertnumber
+SELECT distinct(issues.borrowernumber), firstname, surname, address, address2, city, zipcode, country, email, emailpro, B_email, smsalertnumber, issues.branchcode
 FROM   issues,borrowers,categories
 WHERE  issues.borrowernumber=borrowers.borrowernumber
 AND    borrowers.categorycode=categories.categorycode
@@ -627,6 +627,7 @@ END_SQL
                               city           => $data->{'city'},
                               postcode       => $data->{'zipcode'},
                               country        => $data->{'country'},
+                              branchcode     => $data->{'branchcode'},
                               email          => $notice_email,
                               itemcount      => $itemcount,
                               titles         => $titles,
@@ -839,7 +840,7 @@ sub prepare_letter_for_printing {
     if ( exists $params->{'outputformat'} && $params->{'outputformat'} eq 'csv' ) {
         if ($csv->combine(
                 $params->{'firstname'}, $params->{'lastname'}, $params->{'address1'},  $params->{'address2'}, $params->{'postcode'},
-                $params->{'city'}, $params->{'country'}, $params->{'email'}, $params->{'itemcount'}, $params->{'titles'}
+                $params->{'city'}, $params->{'country'}, $params->{'email'}, $params->{'branchcode'}, $params->{'itemcount'}, $params->{'titles'}
             )
           ) {
             return $csv->string, "\n";
