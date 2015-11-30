@@ -246,7 +246,7 @@ if ($op eq ""){
             # The discount depends on bookseller
             my $c;
 
-            if($bookseller->{bookselleremail} eq 'arvo.tilaus@btj.fi'){
+            if($bookseller->{address1} eq 'arvo.tilaus@btj.fi'){
                 $c = $c_discount ? $c_discount : C4::OPLIB::AcquisitionIntegration::getDiscounts($patron->{branchcode}, $marcrecord, $bookseller->{discount}) / 100;    
             }else{
                 $c = $c_discount ? $c_discount : GetMarcDiscount($marcrecord, C4::Context->preference('marcflavour')) / 100;    
