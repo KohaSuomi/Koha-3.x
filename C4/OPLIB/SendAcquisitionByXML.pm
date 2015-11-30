@@ -165,7 +165,7 @@ sub sendBasketGroupAsXml{
             my $bd = GetBiblioData( $order->{'biblionumber'} );
             my $marcxml = $bd->{marcxml};
             my $allfons = getField($marcxml, '001');
-            if ($$basket{booksellerid} ne 388) {
+            if ($bookseller->{contnotes} ne 'addition') {
                 $writer->startTag('t-number', 'nr' => '');
                     $writer->startTag('order', 'artno' => $allfons, 
                                       'no-of-items' => $order->{quantity}, 'record' => 'y', 'bind-code' => 'y');
@@ -193,7 +193,7 @@ sub sendBasketGroupAsXml{
 
     my $msg = MIME::Lite->new(
         From    => C4::Context->preference("KohaAdminEmailAddress"),
-        To      => 'ojuha013@edu.mamk.fi',#'johanna.raisa@mikkeli.fi',
+        To      => 'johanna.raisa@mikkeli.fi',#'johanna.raisa@mikkeli.fi',
         Subject => 'Tilaus',
         Data => 'Tilaustiedot',
         Type    => 'multipart/mixed'
