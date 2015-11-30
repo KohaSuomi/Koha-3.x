@@ -41,11 +41,11 @@ use HTML::Entities;
 
 use Encode;
 
-=head3 GetBasketGroupAsXML
+=head3 sendBasketGroupAsXml
 
 =over
 
-&GetBasketGroupAsXML($basketgroupid);
+&sendBasketGroupAsXml;
 
 Export a basket group as XML
 
@@ -54,91 +54,6 @@ $cgi parameter is needed for column name translation
 =back
 
 =cut
-
-sub GetBasketGroupAsXML{
-    my ($basketgroupid, $cgi) = @_;
-    my $baskets = GetBasketsByBasketgroup($basketgroupid);
-
-    #my $template = C4::Templates::gettemplate('acqui/csv/basketgroup.tmpl', 'intranet', $cgi);
-
-    my $xml = XML::Simple->new();
-    my $xml_data = {};
-    my $item_count = 0;
-    my $rows;
-    my $data;
-    my $element;
-    
-    my $basketgroup = GetBasketgroup( $basketgroupid );
-    my $bookseller = GetBookSellerFromId( $basketgroup->{booksellerid} );
-    $data = {'nr' => $bookseller->{accountnumber}, 'name' => encode('utf8', GetBranchName($basketgroup->{billingplace}))};
-
-    for my $basket (@$baskets) {
-        my @orders     = GetOrders( $$basket{basketno} );
-        my $contract   = GetContract( $$basket{contractnumber} );
-        #my $bookseller = GetBookSellerFromId( $$basket{booksellerid} );
-        #my $basketgroup = GetBasketgroup( $$basket{basketgroupid} );
-        
-        foreach my $order (@orders) {
-            my $bd = GetBiblioData( $order->{'biblionumber'} );
-            my $marcxml = $bd->{marcxml};
-            my $allfons = getField($marcxml, '001');
-            if ($$basket{booksellerid} ne 388) {
-                $element = 't-number';
-            	$xml_data = {'nr' => ''};
-	            $xml_data->{'order'} = {
-	            	'artno' => $allfons, 
-	            	'no-of-items' => $order->{quantity},
-	            	'record' => 'y',
-	            	'bind-code' => 'y'};
-	        } else {
-                $element = 'addition-order';
-	        	$xml_data = {
-	            	'no-of-items' => $order->{quantity},
-	            	'record' => 'y',
-	            	'bind-code' => 'y'};
-
-	            $xml_data->{'isbn'} = ['![CDATA['.$order->{isbn}.']]'];
-                $xml_data->{'title'} = ['![CDATA['.encode('utf8', $bd->{title}).']]'];
-                $xml_data->{'author'} = ['![CDATA['.encode('utf8', $bd->{author}).']]'];
-	        }
-            # my $row = {
-            #     clientnumber => $bookseller->{accountnumber},
-            #     basketname => $basket->{basketname},
-            #     ordernumber => $order->{ordernumber},
-            #     author => $bd->{author},
-            #     title => $bd->{title},
-            #     publishercode => $bd->{publishercode},
-            #     publicationyear => $bd->{publicationyear},
-            #     collectiontitle => $bd->{collectiontitle},
-            #     isbn => $order->{isbn},
-            #     quantity => $order->{quantity},
-            #     rrp => $order->{rrp},
-            #     discount => $bookseller->{discount},
-            #     ecost => $order->{ecost},
-            #     notes => $order->{order_internalnote},
-            #     entrydate => $order->{entrydate},
-            #     booksellername => $bookseller->{name},
-            #     bookselleraddress => $bookseller->{address1},
-            #     booksellerpostal => $bookseller->{postal},
-            #     contractnumber => $contract->{contractnumber},
-            #     contractname => $contract->{contractname},
-            #     basketgroupdeliveryplace => C4::Branch::GetBranchName( $basketgroup->{deliveryplace} ),
-            #     basketgroupbillingplace => C4::Branch::GetBranchName( $basketgroup->{billingplace} ),
-            #     basketdeliveryplace => C4::Branch::GetBranchName( $basket->{deliveryplace} ),
-            #     basketbillingplace => C4::Branch::GetBranchName( $basket->{billingplace} ),
-            # };
-
-            
-            push (@{$data->{$element}}, $xml_data);
-         }
-         
-    }
-    push (@{$rows->{customer}}, $data);
-    warn "XML DATA:\n" . Dumper($rows);
-    my $xml_out = $xml->XMLout($rows, rootName => undef);
-
-    return $xml_out;
-}
 
 sub sendBasketGroupAsXml{
     my $basketgroupid = shift;
@@ -165,8 +80,10 @@ sub sendBasketGroupAsXml{
             my $bd = GetBiblioData( $order->{'biblionumber'} );
             my $marcxml = $bd->{marcxml};
             my $allfons = getField($marcxml, '001');
+            my $field971 = getField($marcxml, '971');
+            my $tnumber = getSubfield($field971, 'b');
             if ($bookseller->{contnotes} ne 'addition') {
-                $writer->startTag('t-number', 'nr' => '');
+                $writer->startTag('t-number', 'nr' => $tnumber);
                     $writer->startTag('order', 'artno' => $allfons, 
                                       'no-of-items' => $order->{quantity}, 'record' => 'y', 'bind-code' => 'y');
                     $writer->endTag();
@@ -216,6 +133,15 @@ sub getField {
 
     if ($marcxml =~ /^\s{2}<(data|control)field tag="$tag".*?>(.*?)<\/(data|control)field>$/sm) {
         return $2;
+    }
+    return 0;
+}
+
+sub getSubfield {
+    my ($fieldxml, $subfield) = @_;
+
+    if ($fieldxml =~ /^\s{4}<subfield code="$subfield">(.*?)<\/subfield>$/sm) {
+        return $1;
     }
     return 0;
 }
