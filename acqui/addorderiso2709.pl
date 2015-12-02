@@ -47,6 +47,7 @@ use C4::Members;
 use XML::Simple;
 use Data::Dumper;
 use C4::OPLIB::AcquisitionIntegration;
+use C4::OPLIB::SendAcquisitionByXML;
 
 my $input = new CGI;
 my ($template, $loggedinuser, $cookie, $userflags) = get_template_and_user({
@@ -377,8 +378,10 @@ sub import_biblios_list {
     return () unless $batch and $batch->{import_status} =~ /^staged$|^reverted$/;
     my $biblios = GetImportRecordsRange($import_batch_id,'','',undef);
     my @list = ();
+    my @itemgrouplist = ();
 
     foreach my $biblio (@$biblios) {
+        my $itemgroupboolean = 0;
         my $citation = $biblio->{'title'};
         $citation .= " $biblio->{'author'}" if $biblio->{'author'};
         $citation .= " (" if $biblio->{'issn'} or $biblio->{'isbn'};
@@ -400,6 +403,9 @@ sub import_biblios_list {
         );
         my ( $marcblob, $encoding ) = GetImportRecordMarc( $biblio->{'import_record_id'} );
         my $marcrecord = MARC::Record->new_from_usmarc($marcblob) || die "couldn't translate marc information";
+        my $marcxml = GetImportRecordMarcXML($biblio->{'import_record_id'});
+        my $xmlfield = getField($marcxml, '971');
+        my $batchitemgroup = getSubfield($xmlfield, 'd');
         my $infos = get_infos_syspref($marcrecord, ['price', 'quantity', 'budget_code', 'discount', 'sort1', 'sort2', 'selectionListName']);
         my $price = $infos->{price};
         my $quantity = $infos->{quantity};
@@ -422,9 +428,21 @@ sub import_biblios_list {
         $cellrecord{sort1} = $sort1 || '';
         $cellrecord{sort2} = $sort2 || '';
         $cellrecord{selectionListName} = $selectionListName || '';
+        $cellrecord{batchitemgroup} = $batchitemgroup || '';
 
         get_matched_cellrecord_items( \%cellrecord );
 
+        #Checking if the current batchitemgroup exists in the list
+        foreach my $batchig (@itemgrouplist){
+            if($batchig eq $batchitemgroup){
+                $itemgroupboolean = 1;
+            }
+        }
+
+        #Now, if the batchitemgroup didn't exist in the list, we add it into it
+        if($itemgroupboolean == 0){
+            push @itemgrouplist, $batchitemgroup;
+        }
 
         push @list, \%cellrecord;
     }
@@ -434,6 +452,7 @@ sub import_biblios_list {
     my $nomatch_action = GetImportBatchNoMatchAction($import_batch_id);
     my $item_action = GetImportBatchItemAction($import_batch_id);
     $template->param(biblio_list => \@list,
+                        item_group_list => \@itemgrouplist,
                         num_results => $num_records,
                         import_batch_id => $import_batch_id,
                         "overlay_action_${overlay_action}" => 1,

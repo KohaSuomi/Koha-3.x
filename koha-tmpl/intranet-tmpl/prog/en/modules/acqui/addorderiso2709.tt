@@ -184,9 +184,11 @@
                         [% FOREACH cur IN loop_currencies %]
                             <input type="hidden" name="[% cur.currency %]" value="[% cur.rate %]" />
                         [% END %]
-
+                        [% FOREACH itemgroup IN item_group_list %]
+                            <h3>[% itemgroup %]</h3>
                         [% lastSelectionListName = '' %]
                         [% FOREACH biblio IN biblio_list %]
+                        [% IF biblio.batchitemgroup == itemgroup %]
                         [% IF lastSelectionListName != biblio.selectionListName %]
                             <h3>[% biblio.selectionListName %]</h3>
                             <hr/>
@@ -269,6 +271,8 @@
                             </li>
                           </ol>
                         </fieldset>
+                        [% END %]
+                        [% END %]
                         [% END %]
                       </div>
                       <div id="items_info">
