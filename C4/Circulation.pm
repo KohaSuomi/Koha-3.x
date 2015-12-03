@@ -1807,11 +1807,25 @@ sub AddReturn {
     }
 
 	#HACKMAN HERE! Setting Items which are in acquisitions process, to available, when they are checked out.
-	if ($item->{notforloan} == -1) {
+	if ($item->{notforloan} < 0) {
 		#$item->{notforloan} = 0;
 		ModItem({ notforloan => 0 }, $item->{'biblionumber'}, $item->{'itemnumber'});
-		$messages->{'ended_acquisitions_process'} = 1;
+        
+        if($item->{notforloan} == -1){
+            $messages->{'ended_acquisitions_process'} = 1;    
+        }
 	}
+
+    #Setting Items which have their sublocation either EXHIBIT or TIGHT, to available, when they are checked out.
+    if($item->{'sub_location'} eq 'EXHIBIT' || $item->{'sub_location'} eq 'TIGHT'){
+        my $dbh = C4::Context->dbh;
+        my $query = "UPDATE items
+                     SET sub_location = null
+                     WHERE itemnumber = ?";
+
+        my $sth = $dbh->prepare($query);
+        $sth->execute($item->{'itemnumber'});
+    }
 
 
     # check if the return is allowed at this branch
