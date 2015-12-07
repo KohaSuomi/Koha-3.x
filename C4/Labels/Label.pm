@@ -195,7 +195,24 @@ sub _get_barcode_data {
             next FIELD_LIST;
         }
         elsif ( $f =~ /^($match_kohatable).*/ ) {
-            if ($item->{$f}) {
+            if(index($f, ' ') != -1){
+                my @array = split(' ', $f);
+                my $joinedstring = '';
+                my $i = 0;
+
+                foreach my $string(@array){
+                    if($i > 0){
+                        $joinedstring .= ' ';
+                    }
+
+                    $joinedstring .= $item->{$string};
+
+                    $i++;
+                }
+
+                print $joinedstring;
+                $datastring .= $joinedstring
+            }elsif ($item->{$f}) {
                 $datastring .= $item->{$f};
             } else {
                 $debug and warn sprintf("The '%s' field contains no data.", $f);
@@ -393,6 +410,8 @@ sub draw_label_text {
     for my $field (@$label_fields) {
         if ($field->{'code'} eq 'itemtype') {
             $field->{'data'} = C4::Context->preference('item-level_itypes') ? $item->{'itype'} : $item->{'itemtype'};
+        } elsif (($field->{'code'} eq 'itemcallnumber') or ($field->{'code'} eq 'genre')) { 
+            $field->{'data'} = _get_barcode_data($field->{'code'},$item,$record);
         }
         else {
             $field->{'data'} = _get_barcode_data($field->{'code'},$item,$record);
