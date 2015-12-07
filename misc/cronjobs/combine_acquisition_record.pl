@@ -45,10 +45,11 @@ foreach my $branch(@branches){
 	my @isbn;
 
 	#Getting every unique isbn numbers from ordered items
-	$query = "SELECT bi.isbn
+	$query = "SELECT bi.isbn, b.title
 			  FROM aqorders aq
 			  JOIN items i ON i.biblionumber = aq.biblionumber
-			  JOIN biblioitems bi ON bi.biblioitemnumber = i.biblioitemnumber 
+			  JOIN biblioitems bi ON bi.biblioitemnumber = i.biblioitemnumber
+			  JOIN biblio b ON b.biblionumber = i.biblionumber
 			  WHERE aq.entrydate >= ?
 			  AND i.homebranch LIKE concat(?, '%')
 			  GROUP BY bi.isbn";
@@ -56,11 +57,9 @@ foreach my $branch(@branches){
 	$sth = $dbh->prepare($query);
 	$sth->execute($datestring, $branch);
 
-	while(my $isbn = $sth->fetchrow_hashref){
-		push @isbn, $isbn->{'isbn'};
+	while(my $isbn = $sth->fetchrow_arrayref){
+		push @isbn, $isbn;
 	}
-
-	print "$branch\n";
 
 	#Finding all the ordered items with a specific isbn
 	foreach my $isbnnumber(@isbn){
@@ -69,28 +68,32 @@ foreach my $branch(@branches){
 		$query = "SELECT aq.biblionumber
 			  	  FROM aqorders aq
 			      JOIN items i ON i.biblionumber = aq.biblionumber
-			      JOIN biblioitems bi ON bi.biblioitemnumber = i.biblioitemnumber 
+			      JOIN biblioitems bi ON bi.biblioitemnumber = i.biblioitemnumber
+			      JOIN biblio b ON b.biblionumber = i.biblionumber
 			      WHERE aq.entrydate >= ?
 			      AND i.homebranch LIKE concat(?, '%')
-			      AND bi.isbn = ?";
+			      AND bi.isbn = ?
+			      AND b.title = ?";
 
 		$sth = $dbh->prepare($query);
-		$sth->execute($datestring, $branch, $isbnnumber);
+		$sth->execute($datestring, $branch, @$isbnnumber[0], @$isbnnumber[1]);
 
 		while(my $biblionumber = $sth->fetchrow_hashref){
 			push @biblionumbers, $biblionumber->{'biblionumber'};
 		}
 
-		#Next step is to find the smalles biblionumber in the current branch that holds
+		#Next step is to find the smallest biblionumber in the current branch that holds
 		#the current isbn number
 		$query = "SELECT min(bi.biblionumber)
 				  FROM biblioitems bi
 				  JOIN items i ON i.biblioitemnumber = bi.biblioitemnumber
+				  JOIN biblio b ON b.biblionumber = i.biblionumber
 				  WHERE bi.isbn = ?
-				  AND i.homebranch LIKE concat(?, '%')";
+				  AND i.homebranch LIKE concat(?, '%')
+				  AND b.title = ?";
 
 		$sth = $dbh->prepare($query);
-		$sth->execute($isbnnumber, $branch);
+		$sth->execute(@$isbnnumber[0], $branch, @$isbnnumber[1]);
 
 		my $minbiblionumber = $sth->fetchrow_arrayref;
 
