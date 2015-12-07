@@ -195,7 +195,24 @@ sub _get_barcode_data {
             next FIELD_LIST;
         }
         elsif ( $f =~ /^($match_kohatable).*/ ) {
-            if ($item->{$f}) {
+            if(index($f, ' ') != -1){
+                my @array = split(' ', $f);
+                my $joinedstring = '';
+                my $i = 0;
+
+                foreach my $string(@array){
+                    if($i > 0){
+                        $joinedstring .= ' ';
+                    }
+
+                    $joinedstring .= $item->{$string};
+
+                    $i++;
+                }
+
+                print $joinedstring;
+                $datastring .= $joinedstring
+            }elsif ($item->{$f}) {
                 $datastring .= $item->{$f};
             } else {
                 $debug and warn sprintf("The '%s' field contains no data.", $f);
@@ -389,14 +406,12 @@ sub draw_label_text {
     # FIXME - returns all items, so you can't get data from an embedded holdings field.
     # TODO - add a GetMarcBiblio1item(bibnum,itemnum) or a GetMarcItem(itemnum).
     my $cn_source = ($item->{'cn_source'} ? $item->{'cn_source'} : C4::Context->preference('DefaultClassificationSource'));
-    my $signum = {};
     LABEL_FIELDS:       # process data for requested fields on current label
     for my $field (@$label_fields) {
         if ($field->{'code'} eq 'itemtype') {
             $field->{'data'} = C4::Context->preference('item-level_itypes') ? $item->{'itype'} : $item->{'itemtype'};
         } elsif (($field->{'code'} eq 'itemcallnumber') or ($field->{'code'} eq 'genre')) { 
             $field->{'data'} = _get_barcode_data($field->{'code'},$item,$record);
-            $signum->{$field->{'code'}} = $field->{'data'};
         }
         else {
             $field->{'data'} = _get_barcode_data($field->{'code'},$item,$record);
@@ -415,9 +430,6 @@ sub draw_label_text {
         # LUMME #56, a feature for printing labels from Koha
         if ((grep {$field->{'code'} =~ m/$_/} @callnumber_list) and ($self->{'printing_type'} eq 'BIBBAR') and ($self->{'callnum_split'})) {
             $itemcallnumbers_size++;
-        }
-        if ($field->{'data'} eq $signum->{'itemcallnumber'} and $itemcallnumbers_size eq 2) {
-            $field_data = $signum->{'itemcallnumber'}.' '.$signum->{'genre'};
         }
         if($itemcallnumbers_size eq 2) {
             $text_lly = ($self->{'lly'} + ($self->{'height'} - $self->{'top_text_margin'})); # Reseting lines for spine labels
