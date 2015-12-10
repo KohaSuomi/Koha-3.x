@@ -25,6 +25,9 @@ while(my $file = readdir(DIR)){
     #To make sure we are dealing with a file
     next unless (-f "$path/$file");
 
+    #Check that the file is ends with .bz2
+    next unless ($file =~ m/\.bz2$/);
+
     #Getting files last modification date
     my $stat = (stat("$path/$file"))[8];
 
