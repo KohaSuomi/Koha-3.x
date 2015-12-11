@@ -37,6 +37,7 @@ use IO::File;
 use Data::Dumper;
 
 use Time::localtime;
+use Time::Local;
 use HTML::Entities;
 
 use Encode;
@@ -95,7 +96,15 @@ sub sendBasketGroupAsXml{
             my $allfons = getField($marcxml, '001');
             my $field971 = getField($marcxml, '971');
             my $tnumber = getSubfield($field971, 'b');
-            if ($bookseller->{contnotes} ne 'addition') {
+            my $preorderdate = getSubfield($field971, 'c');
+
+            my $year = substr($preorderdate, 0, 4);
+            my $month = substr($preorderdate, 4, 2);
+            my $day = substr($preorderdate, 6, 2);
+
+            my $timestamp = timelocal('59', '59', '23', $day, $month-1, $year);
+
+            if ($timestamp < time) {
                 $writer->startTag('t-number', 'nr' => $tnumber);
                     $writer->startTag('order', 'artno' => $allfons, 
                                       'no-of-items' => $order->{quantity}, 'record' => 'y', 'bind-code' => 'y');

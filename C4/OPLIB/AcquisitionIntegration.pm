@@ -32,6 +32,7 @@ use Koha::Exception::ConnectionFailed;
 use Koha::Exception::LoginFailed;
 use Koha::Exception::UnknownProtocol;
 use Koha::FTP;
+use Time::Local;
 
 use C4::Bookseller qw/GetBookSellerFromId/;
 use C4::Budgets qw/ConvertCurrency/;
@@ -440,16 +441,28 @@ sub getDiscounts {
                             Encode::FB_CROAK
                         )
                     );
-    
+
     for my $field ( $record->field('971') ) {
         for my $subfield_value  ($field->subfield('t')){
-            #check value
-            return $discount = $config->{$code}->{'t'.$subfield_value} if $config->{$code}->{'t'.$subfield_value};
+            
+            my $preorderdate = $field->subfield('c');
+
+            my $year = substr($preorderdate, 0, 4);
+            my $month = substr($preorderdate, 4, 2);
+            my $day = substr($preorderdate, 6, 2);
+
+            my $timestamp = timelocal('59', '59', '23', $day, $month-1, $year);
+
+
+            if($timestamp < time){
+                return $discount = $config->{$code}->{'t'.$subfield_value} if $config->{$code}->{'t'.$subfield_value};
+            }else{
+                return $discount = $config->{$code}->{'additiont'.$subfield_value} if $config->{$code}->{'additiont'.$subfield_value};
+            }
         }
     }
 
     return $bookseller;
-
 }
 
 
