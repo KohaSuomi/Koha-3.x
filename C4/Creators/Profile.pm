@@ -122,6 +122,18 @@ sub delete {
         warn sprintf('Database returned the following error on attempted DELETE: %s', $sth->errstr);
         return -1;
     }
+
+    #After the printer profile has been deleted we are going to update the creator templates so the deleted printer profile
+    #id doesn't cause errors with them
+
+    my $query2 = "UPDATE creator_templates SET profile_id = 0 WHERE profile_id = ?";
+    my $sth2 = C4::Context->dbh->prepare($query2);
+    $sth2->execute(@params[0]);
+    if ($sth2->err) {
+        warn sprintf('Database returned the following error on attempted UPDATE: %s', $sth2->errstr);
+        return -1;
+    }
+
     return 0;
 }
 
