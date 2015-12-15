@@ -191,6 +191,11 @@ sub tearDownTestContext {
         t::lib::TestObjects::SystemPreferenceFactory->deleteTestGroup($stash->{systempreference});
         delete $stash->{systempreference};
     }
+    if ($stash->{fines}) {
+        require t::lib::TestObjects::FinesFactory;
+        t::lib::TestObjects::FinesFactory->deleteTestGroup($stash->{fines});
+        delete $stash->{fines};
+    }
 }
 
 =head getHashKey
