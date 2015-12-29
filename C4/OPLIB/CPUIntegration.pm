@@ -167,7 +167,7 @@ sub SendPayment {
         if ($request->{_rc} != 200) {
             # Did not get HTTP 200, some error happened!
             $transaction->set({ status => "cancelled", description => $request->{_content} })->store();
-            return JSON->new->utf8->canonical(1)->encode({ error => $request->{_content}, Status => 89 });
+            return JSON->new->utf8->canonical(1)->encode({ error => $request->{_content}, Status => '89' });
         }
 
         my $response = JSON->new->utf8->canonical(1)->decode($request->{_content});
@@ -189,7 +189,7 @@ sub SendPayment {
     if ($@) {
         my $transaction = Koha::PaymentsTransactions->find($content->{Id});
         $transaction->set({ status => "cancelled", description => $@ })->store();
-        return JSON->new->utf8->canonical(1)->encode({ error => "Error: " . $@, Status => 88 });
+        return JSON->new->utf8->canonical(1)->encode({ error => "Error: " . $@, Status => '88' });
     }
 
     return $response;

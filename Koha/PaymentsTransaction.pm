@@ -91,6 +91,20 @@ ON payments_transactions_accountlines.accountlines_id = accountlines.accountline
 
 Completes the payment in Koha from the given transaction number.
 
+This subroutine will be called twice after payment is completed:
+    1. After response from long-polling AJAX-call at paycollect.pl
+    2. After payment report is received to REST API
+It is important that these two cases don't use the database at the
+exact same moment. Otherwise both could interpret that the payment
+is still incomplete, and will attempt to complete it! This would lead
+to double-Pay events in Koha. We will solve this issue by locking the
+payments_transactions table until one instance has read the current
+status of the payment and marked the payment as "processing". From this
+on all other instances will see that the payment is either "processing"
+or already has the same status as the instance is trying to set, which
+means that there is no reason to continue anymore - payment is already
+completed.
+
 =cut
 
 sub CompletePayment {
@@ -101,27 +115,45 @@ sub CompletePayment {
     my $branch              = C4::Context->userenv->{'branch'} if C4::Context->userenv;
     my $description = "";
     my $itemnumber;
+    my $old_status;
+    my $new_status;
 
     my $transaction = $self;
     return if not $transaction;
 
-    # It's important that we don't process this subroutine twice at the same time!
-    # Lock the table
-    $transaction = Koha::PaymentsTransactions->find($transaction->transaction_id);
-
-    my $old_status = $transaction->status;
-    my $new_status = $status->{status};
-
-    if ($old_status eq $new_status){
-        # trying to complete with same status, makes no sense
+    if ($transaction->status eq $status->{status}) {
         return;
     }
 
-    if ($old_status ne "processing"){
-        $transaction->set({ status => "processing" })->store();
-    } else {
-        # Another process is already processing the payment
-        return; 
+    # FAILSAFE - Run the code under eval block. If something goes wrong, release MySQL locks.
+    eval {
+        # It's important that we don't process this subroutine twice at the same time!
+        # Lock the table and refresh Koha Object
+        $dbh->do("LOCK TABLES payments_transactions WRITE, payments_transactions AS me WRITE");
+        $transaction = Koha::PaymentsTransactions->find($transaction->transaction_id);
+
+        $old_status = $transaction->status;
+        $new_status = $status->{status};
+
+        if ($old_status eq $new_status){
+            # trying to complete with same status, makes no sense
+            $dbh->do("UNLOCK TABLES");
+            die("Old payment status == new payment status, no reason to continue")
+        }
+
+        if ($old_status ne "processing"){
+            $transaction->set({ status => "processing" })->store();
+            $dbh->do("UNLOCK TABLES");
+        } else {
+            # Another process is already processing the payment
+            $dbh->do("UNLOCK TABLES");
+            die("Another process is already processing the payment");
+        }
+    };
+    if ($@) {
+        # In case of some issue, make sure the table doesn't stay locked.
+        $dbh->do("UNLOCK TABLES");
+        return; # Something went wrong. We don't want to continue.
     }
 
     # Defined accountlines_id means that the payment is already completed in Koha.

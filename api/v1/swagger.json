@@ -996,7 +996,7 @@
         },
         "Reference": {
           "description": "Receipt number for successful payments",
-          "type": "integer",
+          "type": "string",
           "required": false
         },
         "Hash": {
