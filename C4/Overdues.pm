@@ -258,8 +258,7 @@ sub CalcFine {
     #  unless it is of itemtypes VI, DV, DR, KP, CR, BR
     my $itemRow = GetItem( undef, $item->{barcode}, undef );
     my $pl = $itemRow->{permanent_location};
-    if ( ($pl eq 'KUV' || $pl eq 'LAP' || $pl eq 'LAK' || $pl eq 'LVA' || $pl eq 'NUO' || $pl eq 'NUA' || $pl eq 'NUV' || $pl eq 'OHE') &&
-        ( $itemtype ne 'VI' && $itemtype ne 'DV' && $itemtype ne 'DR' && $itemtype ne 'KP' && $itemtype ne 'CR' && $itemtype ne 'BR')) {
+    if ( ($pl eq 'KUV' || $pl eq 'LAP' || $pl eq 'LAK' || $pl eq 'LVA' || $pl eq 'NUO' || $pl eq 'NUA' || $pl eq 'NUV' || $pl eq 'OHE') ) {
             $data->{fine} = 0;
     }
 
