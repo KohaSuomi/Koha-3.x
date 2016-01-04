@@ -683,8 +683,8 @@ sub GetAllBorrowersWithUnpaidFines {
         SELECT b.*, SUM(a.amountoutstanding) AS amountoutstanding
         FROM borrowers b
             LEFT JOIN accountlines a ON b.borrowernumber = a.borrowernumber
-        WHERE a.amountoutstanding > 0
-        GROUP BY b.borrowernumber
+        GROUP BY b.borrowernumber    
+        HAVING SUM(a.amountoutstanding) > 0
         ORDER BY b.borrowernumber ASC
         "
     );
