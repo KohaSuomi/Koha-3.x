@@ -182,7 +182,7 @@ else {
 
 sub checkin {
     my ($self, $item_id, $trans_date, $return_date,
-	$current_loc, $item_props, $cancel) = @_;
+	$current_loc, $item_props, $cancel, $checked_in_ok) = @_;
     my ($patron, $item, $circ);
 
     $circ = new ILS::Transaction::Checkin;
@@ -206,10 +206,11 @@ else {
         $circ->screen_msg('Invalid Item');
     }
 	# It's ok to check it in if it exists, and if it was checked out
-	$circ->ok($item && $item->{patron});
+    # or it was not checked out but the checked_in_ok flag was set
+	$circ->ok( ( $checked_in_ok && $item ) || ( $item && $item->{patron} ) );
 
 	if (!defined($item->{patron})) {
-#		$circ->screen_msg("Item not checked out");
+		$circ->screen_msg("Item not checked out") unless $checked_in_ok;
 	} else {
 		if ($circ->ok) {
 			$circ->patron($patron = new ILS::Patron $item->{patron});
