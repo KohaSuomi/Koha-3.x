@@ -20,6 +20,7 @@
 
 package C4::Barcodes::ValueBuilder::incremental;
 use C4::Context;
+use YAML;
 my $DEBUG = 0;
 
 sub get_barcode {
@@ -80,9 +81,50 @@ my $DEBUG = 0;
 sub get_barcode {
     my ($args) = @_;
     my $nextnum;
-    my $query = "SELECT MAX(CAST(SUBSTRING(barcode,-4) AS signed)) from items where barcode REGEXP ?";
+    my $query = "select max(cast( substring_index(barcode, '-',-1) as signed)) from items where barcode like ?";
     my $sth=C4::Context->dbh->prepare($query);
-    $sth->execute("^[0-9][0-9][0-9]$args->{year}");
+    $sth->execute("$args->{year}%");
+    while (my ($count)= $sth->fetchrow_array) {
+        warn "Examining Record: $count" if $DEBUG;
+        $nextnum = $count if $count;
+    }
+    $nextnum++;
+    $nextnum = sprintf("%0*d", "4",$nextnum);
+    $nextnum = "$args->{year}-$nextnum";
+    return $nextnum;
+}
+
+package C4::Barcodes::ValueBuilder::hbyyyyincr;
+use C4::Context;
+use YAML qw/Load/;
+my $DEBUG = 0;
+
+sub get_barcode {
+    my ($args) = @_;
+    my $nextnum;
+    my $barcode;
+    my $branchcode = $args->{branchcode};
+    my $query;
+    my $sth;
+
+    # Getting the barcodePrefixes
+    my $branchPrefixes = C4::Context->preference("BarcodePrefix");
+    my $yaml = eval{
+        YAML::Load($branchPrefixes);
+    };
+
+    my $prefix = $yaml->{$branchcode}->{'prefix'} || '666';
+
+    if($branchcode){
+        $query = "SELECT MAX(CAST(SUBSTRING(barcode, -4) AS signed)) FROM items WHERE barcode REGEXP ?";
+        $sth = C4::Context->dbh->prepare($query);
+        $sth->execute("^$prefix$args->{year}");
+    }else{
+        $query = "SELECT MAX(CAST(SUBSTRING(barcode,-4) AS signed)) from items where barcode REGEXP ?";
+        $sth=C4::Context->dbh->prepare($query);
+        $sth->execute("^$prefix$args->{year}");
+    }
+    
     while (my ($count)= $sth->fetchrow_array) {
         warn "Examining Record: $count" if $DEBUG;
         $nextnum = $count if $count;
@@ -90,7 +132,9 @@ sub get_barcode {
 
     $nextnum++;
     $nextnum = sprintf("%0*d", "6",$nextnum);
-    #$nextnum = "$args->{year}$nextnum";
+
+    $barcode = $prefix;
+    $barcode .= $args->{year}.$nextnum;
 
     my $scr = "
         for (i=0 ; i<document.f.field_value.length ; i++) {
@@ -99,26 +143,18 @@ sub get_barcode {
             }
         }
 
+    var branchcode = document.f.field_value[fnum].value.substring(0,3);
     var json; //Variable which receives the results
-    var loc_url = '/cgi-bin/koha/cataloguing/barcode_ajax.pl'; //Location
+    var loc_url = '/cgi-bin/koha/cataloguing/barcode_ajax.pl?branchcode=' + branchcode; //Location
 
     \$.getJSON(loc_url, function(jsonData){
         json = jsonData;
         
-        if (document.f.field_value[fnum].value.substring(0,3) == 'MLI') {
-            \$('#' + id).val(491+'$args->{year}$nextnum');
-        }else if (document.f.field_value[fnum].value.substring(0,3) == 'MAN') {
-            \$('#' + id).val(507 + '$args->{year}$nextnum');
-        } else if (document.f.field_value[fnum].value.substring(0,3) == 'VAR') {
-            \$('#' + id).val(915 + '$args->{year}$nextnum');
-        }
-        else {
-            \$('#' + id).val(666 + '$args->{year}$nextnum');
-        }
+        \$('#' + id).val(json['barcode']);
     });//$.getJSON ends here
     ";
 
-    return $nextnum, $scr;
+    return $barcode, $scr;
 }
 
 1;
