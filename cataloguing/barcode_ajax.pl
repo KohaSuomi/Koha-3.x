@@ -36,6 +36,7 @@ use C4::Dates;
 use Cpanel::JSON::XS qw(encode_json decode_json);
 
 my $input = new CGI;
+my $branchcode = $input->param("branchcode");
 
 my ( $auth_status, $sessionID ) =
         check_cookie_auth(
@@ -53,14 +54,16 @@ my %args;
 ($args{year}, $args{mon}, $args{day}) = split('-', C4::Dates->today('iso'));
 ($args{tag},$args{subfield})       =  GetMarcFromKohaField("items.barcode", '');
 ($args{loctag},$args{locsubfield}) =  GetMarcFromKohaField("items.homebranch", '');
+$args{branchcode} = $branchcode if $branchcode;
 
-my $nextnum;
 my $scr;
 my $barcode;
 
 #Getting the new barcode number and saving it to hash
-($nextnum, $scr) = C4::Barcodes::ValueBuilder::annual::get_barcode(\%args);
-$barcode = {'nextnum' => $nextnum};
+($barcode, $scr) = C4::Barcodes::ValueBuilder::hbyyyyincr::get_barcode(\%args);
+
+$barcode = {'barcode' => $barcode};
+
 
 my $json = encode_json $barcode;
 
