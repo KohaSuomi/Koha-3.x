@@ -20,12 +20,15 @@ package Koha::BiblioDataElements;
 use Modern::Perl;
 use Carp;
 use DateTime;
+use DateTime::Format::HTTP;
 use Scalar::Util qw(blessed);
 use MARC::Record;
 use MARC::File::XML;
 
 use Koha::Database;
 use Koha::BiblioDataElement;
+
+use Koha::Exception::FeatureUnavailable;
 
 use base qw(Koha::Objects);
 
@@ -124,24 +127,23 @@ sub UpdateBiblioDataElement {
     Koha::BiblioDataElements::GetLatestDataElementUpdateTime($forceRebuild, $verbose);
 
 Finds the last time koha.biblio_data_elements has been UPDATED.
-If the table is empty, returns timestamp '0000-00-00 00:00:00' to force evaluation
-of all biblioitems.
-@PARAM1, Boolean, return timestamp '0000-00-00 00:00:00' to signal complete rebuild.
-@PARAM2, Int, verbosity level. See update_biblio_data_elements.pl-cronjob
+If the table is empty, returns undef
+@PARAM1, Int, verbosity level. See update_biblio_data_elements.pl-cronjob
+@RETURNS DateTime or undef, last modification time
 =cut
 sub GetLatestDataElementUpdateTime {
-    my ($forceRebuild, $verbose) = @_;
-    my $rebuildTimestamp = '0000-00-00 00:00:00';
-
-    return $rebuildTimestamp if $forceRebuild;
-
+    my ($verbose) = @_;
     my $dbh = C4::Context->dbh();
     my $sthLastModTime = $dbh->prepare("SELECT MAX(last_mod_time) as last_mod_time FROM biblio_data_elements;");
     $sthLastModTime->execute( );
     my $rv = $sthLastModTime->fetchrow_hashref();
-    my $lastModTime = ($rv && $rv->{last_mod_time}) ? $rv->{last_mod_time} : $rebuildTimestamp;
-    print "Latest koha.biblio_data_elements updating time '$lastModTime'\n" if $verbose > 0;
-    return $lastModTime;
+    my $lastModTime = ($rv && $rv->{last_mod_time}) ? $rv->{last_mod_time} : undef;
+    print "Latest koha.biblio_data_elements updating time '".($lastModTime || '')."'\n" if $verbose;
+    return $lastModTime unless $lastModTime;
+    $lastModTime = '1900-01-01 01:01:01' if $lastModTime =~ /^0000-00-00[T ]/;
+    my $dt = DateTime::Format::HTTP->parse_datetime($lastModTime);
+    $dt->set_time_zone( C4::Context->tz() );
+    return $dt;
 }
 
 =head _getBiblioitemsNeedingUpdate
@@ -161,7 +163,13 @@ sub _getBiblioitemsNeedingUpdate {
 
     print '#'.DateTime->now(time_zone => C4::Context->tz())->iso8601().'# Fetching biblioitems  #'."\n" if $verbose > 0;
 
-    my $lastModTime = GetLatestDataElementUpdateTime($forceRebuild, $verbose);
+    my $lastModTime;
+    if ($forceRebuild) {
+        $lastModTime = '0000-00-00 00:00:00';
+    }
+    else {
+        $lastModTime = GetLatestDataElementUpdateTime($verbose)->iso8601() || '0000-00-00 00:00:00';
+    }
 
     my $dbh = C4::Context->dbh();
     my $sthBiblioitems = $dbh->prepare("
@@ -178,6 +186,26 @@ sub _getBiblioitemsNeedingUpdate {
     print '#'.DateTime->now(time_zone => C4::Context->tz())->iso8601().'# Biblioitems fetched #'."\n" if $verbose > 0;
 
     return $biblioitems;
+}
+
+=head verifyFeatureIsInUse
+
+    my $ok = Koha::BiblioDataElements::verifyFeatureIsInUse();
+
+@RETURNS Flag, 1 if this feature is properly configured
+@THROWS Koha::Exception::FeatureUnavailable if this feature is not in use.
+=cut
+
+sub verifyFeatureIsInUse {
+    my $now = DateTime->now(time_zone => C4::Context->tz());
+    my $lastUpdateTime = Koha::BiblioDataElements::GetLatestDataElementUpdateTime() || '1900-01-01 01:01:01';
+    my $lastUpdateTimeDt = DateTime::Format::HTTP->parse_datetime($lastUpdateTime);
+    my $difference = $now->subtract_datetime( $lastUpdateTimeDt );
+    if ($difference->in_units( 'days' ) > 2) {
+        my @cc = caller(0);
+        Koha::Exception::FeatureUnavailable->throw(error => $cc[3]."():> koha.biblio_data_elements-table is stale. You must configure cronjob 'update_biblio_data_elements.pl' to run daily.");
+    }
+    return 1;
 }
 
 1;
