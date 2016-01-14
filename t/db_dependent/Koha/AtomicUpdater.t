@@ -61,6 +61,17 @@ my $atomicupdates = t::lib::TestObjects::AtomicUpdateFactory->createTestGroup([
     }
 }
 
+subtest "Followup naming convention" => \&followupNamingConvention;
+sub followupNamingConvention {
+    eval {
+        my $au = Koha::AtomicUpdate->new({filename => "Bug-535455-1-TestingFollowups.pl"});
+        is($au->issue_id, "Bug535455-1", "Followup Bug535455-1 recognized");
+    };
+    if ($@) {
+        ok(0, $@);
+    }
+}
+
 subtest "Create update order from Git repository" => \&createUpdateOrderFromGit;
 sub createUpdateOrderFromGit {
     eval {

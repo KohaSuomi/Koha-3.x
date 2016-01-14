@@ -31,18 +31,6 @@ sub type {
     return 'Atomicupdate';
 }
 
-=head @allowedIssueIdentifierPrefixes
-Define the prefixes you want to attach to your atomicupdate filenames here.
-This could be a syspref or in KOHA_CONF, but it is rather easy to just add more
-generally used issue number prefixes here.
-Nobody wants more sysprefs.
-=cut
-
-my @allowedIssueIdentifierPrefixes = (
-    'Bug',
-    '#',
-);
-
 =head new
 
     my $atomicUpdate = Koha::AtomicUpdate->new({filename => 'Bug54321-FixItPlease.pl'});
@@ -125,12 +113,19 @@ Extracts the unique issue identifier from the atomicupdate DB upgrade script.
 sub getIssueIdentifier {
     my ($self, $fileName) = @_;
 
-    foreach my $prefix (@allowedIssueIdentifierPrefixes) {
-        if ($fileName =~ m/$prefix[-:_ ]*?(\d+)/i) {
-            return ucfirst("$prefix$1");
+    my $allowedIssueIdentifierPrefixes = Koha::AtomicUpdater::getAllowedIssueIdentifierPrefixes();
+    foreach my $prefix (keys(%$allowedIssueIdentifierPrefixes)) {
+        if ($fileName =~ m/$prefix[-:_ ]*?(\d+(-\d+)?)/i) {
+            my $normalizer = $allowedIssueIdentifierPrefixes->{$prefix};
+            if ($normalizer eq 'ucfirst') {
+                return ucfirst("$prefix$1");
+            }
+            else {
+                return "$prefix$1";
+            }
         }
     }
-    Koha::Exception::Parse->throw(error => __PACKAGE__."->getIssueIdentifier($fileName):> couldn't parse the unique issue identifier from filename using allowed prefixes '@allowedIssueIdentifierPrefixes'");
+    Koha::Exception::Parse->throw(error => __PACKAGE__."->getIssueIdentifier($fileName):> couldn't parse the unique issue identifier from filename using allowed prefixes '%$allowedIssueIdentifierPrefixes'");
 }
 
 1;

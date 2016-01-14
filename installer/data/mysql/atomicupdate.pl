@@ -36,6 +36,7 @@ my $pending = 0;
 my $directory = '';
 my $git = '';
 my $single = '';
+my $configurationFile = '';
 
 GetOptions(
     'v|verbose:i'       => \$verbose,
@@ -49,6 +50,7 @@ GetOptions(
     'p|pending'         => \$pending,
     'g|git:s'           => \$git,
     's|single:s'        => \$single,
+    'c|config:s'        => \$configurationFile,
 );
 
 my $usage = << 'ENDUSAGE';
@@ -60,6 +62,18 @@ This script uses koha.atomicupdates-table to see if the update has already been
 applied.
 
 Also acts as a gateway to CRUD the koha.database_updates-table.
+
+Naming conventions for atomicupdate-scripts:
+--------------------------------------------
+All atomicupdate-scripts must follow this naming convention
+<prefix><issue_number><followup_number><issueDescription><file_type>
+eg.
+"Bug-1234-ThreeLittleMusketeers.pl"
+"Bug:1234-1-ThreeLittleMusketeersFollowup1.pl"
+"Bug 1234-2-ThreeLittleMusketeersFollowup2.pl"
+"Bug-1235-FeaturelessFeature.pl"
+See --config for allowed prefix values.
+
 
     -v --verbose        Integer, 1 is not so verbose, 3 is maximally verbose.
 
@@ -97,6 +111,25 @@ Also acts as a gateway to CRUD the koha.database_updates-table.
                         Eg. --git 1, to build with default values, or
                             --git /tmp/kohaclone/ to look for another repository
 
+    -c --config         The configuration file to load. Defaults to
+                        '$KOHA_PATH/installer/data/mysql/atomicupdate.conf'
+
+                        The configuration file is an YAML-file, and must have the
+                        following definitions:
+
+                        "Defines the prefixes used to identify the unique issue
+                         identifier. You can give a normalizer function to the
+                         identifier prefix."
+                        example:
+                        allowedIssueIdentifierPrefixes:
+                           Bug:
+                              ucfirst
+                           "#":
+                              normal
+                           KD:
+                              normal
+
+
 EXAMPLES:
 
     atomicupdate.pl -g 1 -a
@@ -125,6 +158,8 @@ a simple list of issue/commit identifiers, eg.
 
     Bug5454
     Bug12432
+    Bug12432-1
+    Bug12432-2
     Bug3218
     #45
 

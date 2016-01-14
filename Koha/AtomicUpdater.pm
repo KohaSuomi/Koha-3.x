@@ -23,6 +23,8 @@ use Scalar::Util qw(blessed);
 use Try::Tiny;
 use Data::Format::Pretty::Console qw(format_pretty);
 use Git;
+use YAML::XS;
+use File::Slurp;
 
 use Koha::Database;
 use Koha::Cache;
@@ -57,9 +59,11 @@ sub new {
 
     $self->{verbose} = $params->{verbose} || $self->{verbose} || 0;
     $self->{scriptDir} = $params->{scriptDir} || $self->{scriptDir} || C4::Context->config('intranetdir') . '/installer/data/mysql/atomicupdate/';
+    $self->{confFile} = $params->{confFile} || $self->{confFile} || C4::Context->config('intranetdir') . '/installer/data/mysql/atomicupdate.conf';
     $self->{gitRepo} = $params->{gitRepo} || $self->{gitRepo} || $ENV{KOHA_PATH};
     $self->{dryRun} = $params->{dryRun} || $self->{dryRun} || 0;
 
+    $self->_loadConfig();
     return $self;
 }
 
@@ -230,7 +234,7 @@ sub _getValidAtomicUpdateScripts {
     my %atomicUpdates;
     opendir( my $dirh, $self->{scriptDir} );
     foreach my $file ( sort readdir $dirh ) {
-        print "Looking at file $file\n" if $self->{verbose} > 2;
+        print "Looking at file '$file'\n" if $self->{verbose} > 2;
 
         my $atomicUpdate;
         try {
@@ -238,6 +242,7 @@ sub _getValidAtomicUpdateScripts {
         } catch {
             if (blessed($_)) {
                 if ($_->isa('Koha::Exception::File') || $_->isa('Koha::Exception::Parse')) {
+                    print "File-error for file '$file': ".$_->error()." \n" if $self->{verbose} > 2;
                     #We can ignore filename validation issues, since the directory has
                     #loads of other types of files as well. Like README . ..
                 }
@@ -366,6 +371,35 @@ sub _saveAsUpdateOrder {
     open(my $FH, ">:encoding(UTF-8)", $updateOrderFilepath) or die "Koha::AtomicUpdater->_saveAsUpdateOrder():> Couldn't open the updateOrderFile for writing\n$!\n";
     print $FH $text;
     close $FH;
+}
+
+=head %config
+Package static variable to the configurations Hash.
+=cut
+
+my $config;
+
+sub _loadConfig {
+    my ($self) = @_;
+
+    if (-e $self->{confFile}) {
+        my $yaml = File::Slurp::read_file( $self->{confFile}, { binmode => ':utf8' } ) ;
+        $config = YAML::XS::Load($yaml);
+    }
+}
+
+=head getAllowedIssueIdentifierPrefixes
+
+Koha::AtomicUpdater::getAllowedIssueIdentifierPrefixes();
+@RETURNS ARRAYRef, the prefixes allowed to be used in your atomicupdate filenames.
+
+=cut
+
+sub getAllowedIssueIdentifierPrefixes {
+    if(ref($config->{allowedIssueIdentifierPrefixes}) eq 'HASH' && scalar(%{$config->{allowedIssueIdentifierPrefixes}})) {
+        return $config->{allowedIssueIdentifierPrefixes};
+    }
+    return {"Bug" => "ucfirst", "#" => "normal"};
 }
 
 1;
