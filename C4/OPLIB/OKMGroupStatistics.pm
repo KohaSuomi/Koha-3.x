@@ -1,3 +1,20 @@
+# Copyright KohaSuomi
+#
+# This file is part of Koha.
+#
+# Koha is free software; you can redistribute it and/or modify it under the
+# terms of the GNU General Public License as published by the Free Software
+# Foundation; either version 3 of the License, or (at your option) any later
+# version.
+#
+# Koha is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+# A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with Koha; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
 package C4::OPLIB::OKMGroupStatistics;
 
 use Modern::Perl;
@@ -217,56 +234,6 @@ sub getPrintOrderElements {
     }
 
     return \@sb;
-}
-
-=head verifyStatisticalIntegrity
-
-    my $errors = $stats->verifyStatisticalIntegrity();
-
-@RETURNS Array of Strings, Error notifications for detected errors or undef if no errors are found.
-=cut
-
-sub verifyStatisticalIntegrity {
-    my $self = shift;
-    my $errors = [];
-
-    #SUM(Branches) == branches in categorygroup.
-    my $branchcodes = C4::Branch::GetBranchesInCategory( $self->{branchCategory} );
-    my $branchesCount = scalar(@$branchcodes);
-    my $statisticalBranchesCount =
-                $self->{mainLibraries} + $self->{branchLibraries} + $self->{institutionalLibraries} + $self->{bookmobiles} + $self->{bookboats};
-    if ($branchesCount != $statisticalBranchesCount) {
-        push @$errors, $self->{branchCategory}.": Statistized category's branch count $statisticalBranchesCount doesn't match assigned branches count $branchesCount.\n";
-    }
-
-    my $collectionCombinedCount = 0;
-    my $acquisitionsCombinedCount = 0;
-    my $issuesCombinedCount = 0;
-    foreach my $key (keys %$self) {
-        #Collection = SUM(collection categories);
-        if ($key =~ /^collection.+$/) { #It is a collection subgroup
-            $collectionCombinedCount += $self->{$key};
-        }
-        #Acquisitions = SUM(acquisitions categories);
-        if ($key =~ /^acquisitions.+$/) { #It is a acquisitions subgroup
-            $acquisitionsCombinedCount += $self->{$key};
-        }
-        #Issues = SUM(issues categories);
-        if ($key =~ /^issues.+$/) { #It is a issues subgroup
-            $issuesCombinedCount += $self->{$key};
-        }
-    }
-    if ($self->{collection} != $collectionCombinedCount) {
-        push @$errors, $self->{branchCategory}.": Complete collection ".$self->{collection}." doesn't match the sum of sub-collectiongroups $collectionCombinedCount.\n";
-    }
-    if ($self->{acquisitions} != $acquisitionsCombinedCount) {
-        push @$errors, $self->{branchCategory}.": All acquisitions ".$self->{acquisitions}." doesn't match the sum of sub-acquisitionsgroups $acquisitionsCombinedCount.\n";
-    }
-    if ($self->{issues} != $issuesCombinedCount) {
-        push @$errors, $self->{branchCategory}.": All issues ".$self->{issues}." doesn't match the sum of sub-issuegroups $issuesCombinedCount.\n";
-    }
-    return $errors if scalar(@$errors) > 0;
-    return undef;
 }
 
 1; #Jep hep gep

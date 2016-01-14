@@ -26,3 +26,22 @@ Tools:
           type: textarea
           class: code
         - Use parameter "Default" to define an item number for other types than defined.
+    -
+        -  "OKM statistics configuration and statistical type mappings<br/>
+            <p>Available statistical types:<br/>
+            <ul><li>'Books'</li>
+                <li>'SheetMusicAndScores'</li>
+                <li>'Recordings' (further divided to MusicalRecordings and OtherRecordings based on the MARC)</li>
+                <li>'Videos'</li>
+                <li>'CDROMs'</li>
+                <li>'DVDsAndBluRays'</li>
+                <li>'Other' (put serials and magazines here)</li>
+            </ul></p>"
+        -  "<p>Material is considered Juvenile material if it is in one of the shelving locations defined by the 'juvenileShelvingLocations'-parameter.</p>"
+        -  "<p>Execution of the OKM report generator can be blocked by the 'blockStatisticsGeneration'-flag, by setting it to 1. This is mainly useful to prevent people from running the statistics module before first configuring it.</p>"
+        - pref: OKM
+          type: textarea
+          class: code
+        - "Example YAML config"
+        - "<pre>--- \nblockStatisticsGeneration: 1\nitemTypeToStatisticalCategory: \n  BK: Books\n  CF: Others\n  CR: Serials\n  MU: Recordings\njuvenileShelvingLocations: \n  - CHILD\n  - AV\n\n</pre>"
+

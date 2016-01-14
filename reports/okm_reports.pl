@@ -22,6 +22,7 @@ use CGI qw/-utf8/;
 use C4::Auth qw/:DEFAULT get_session/;
 use C4::Output;
 use C4::OPLIB::OKM;
+use C4::OPLIB::OKMLogs;
 
 use Koha::DateUtils;
 
@@ -53,6 +54,14 @@ my $session = $cookie ? get_session($cookie->value) : undef;
 my $op = $input->param('op') || '';
 my $okm_statisticsId = $input->param('okm_statisticsId');
 
+#Create an OKM-object just to see if the configurations are intact.
+eval {
+    my $okmTest = C4::OPLIB::OKM->new(undef, '2015', undef, undef, undef);
+}; if ($@) {
+    $template->param('okm_conf_errors' => $@);
+}
+
+
 if ($op eq 'show') {
     my $okm = C4::OPLIB::OKM::Retrieve( $okm_statisticsId );
     my ($html, $csv, $errors);
@@ -76,12 +85,17 @@ if ($op eq 'delete') {
     C4::OPLIB::OKM::Delete($okm_statisticsId);
 }
 
+if ($op eq 'deleteLogs') {
+    C4::OPLIB::OKMLogs::deleteLogs();
+}
+
 my @bc = keys C4::OPLIB::OKM::getOKMBranchCategories();
 $template->param(
     okm_statisticsId => $okm_statisticsId,
     branchCategories => \@bc,
     quote => getRandomQuote(),
     ready_okm_reports => prettifyOKM_reports(),
+    okm_logs => C4::OPLIB::OKMLogs::loadLogs(),
 );
 
 

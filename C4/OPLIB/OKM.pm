@@ -1,3 +1,20 @@
+# Copyright KohaSuomi
+#
+# This file is part of Koha.
+#
+# Koha is free software; you can redistribute it and/or modify it under the
+# terms of the GNU General Public License as published by the Free Software
+# Foundation; either version 3 of the License, or (at your option) any later
+# version.
+#
+# Koha is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+# A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with Koha; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
 package C4::OPLIB::OKM;
 
 use Modern::Perl;
@@ -9,45 +26,50 @@ use Data::Dumper;
 use URI::Escape;
 use File::Temp;
 use File::Basename qw( dirname );
+use YAML::XS;
 
 use DateTime;
 
 use C4::Branch;
 use C4::Items;
+use C4::ItemType;
 use C4::OPLIB::OKMLibraryGroup;
-use C4::Context qw(dbh);
+use C4::OPLIB::OKMLogs;
+use C4::Context;
 use C4::Templates qw(gettemplate);
 
+use Koha::BiblioDataElements;
+
+use Koha::Exception::BadSystemPreference;
+use Koha::Exception::FeatureUnavailable;
 
 =head new
 
-    my $okm = C4::OPLIB::OKM->new($timeperiod, $limit, $individualBranches, $biblioCache, $verbose);
+    my $okm = C4::OPLIB::OKM->new($log, $timeperiod, $limit, $individualBranches, $verbose);
+    $okm->createStatistics();
 
+@PARAM1 ARRAYRef of Strings, OPTIONAL, all notifications are collected here in addition to being printed to STDOUT.
+                OKM creates an internal Array to store log entries, but you can reuse on big log for multiple OKMs by giving it to them explicitly.
 @PARAM4 String, a .csv-row with each element as a branchcode
                 'JOE_JOE,JOE_RAN,[...]'
                 or
                 '_A' which means ALL BRANCHES. Then the function fetches all the branchcodes from DB.
-@PARAM5 HASH, An empty hash, or the populated biblioCache. If you want to save the biblioCache,
-              use this parameter to persist a reference to it.
-              If an empty hash, it will be populated.
-              If an populated hash, it will be used as is.
-              If undefined, the parameter is ignored.
-@PARAM7 String, Overrides the shelving locations considered to contain juvenile material. By Default this module
-                considers items as juvenile material if they are in shelving locations with an
-                koha.authorised_values.imageurl =~ /okm_juvenile/.
-                This parameter is a .csv-row with each element as a shelving location code
-                'LAP,NUO,NUOV,[...]'
-                or undef to preserve default operation
 
 =cut
 
 sub new {
-    my ($class, $timeperiod, $limit, $individualBranches, $biblioCache, $verbose, $juvenileShelvingLocations) = @_;
+    my ($class, $log, $timeperiod, $limit, $individualBranches, $verbose) = @_;
 
     my $self = {};
     bless($self, $class);
 
     $self->{verbose} = $verbose if $verbose;
+    $self->{logs} = $log || [];
+    $self->loadConfiguration();
+
+    if ($self->isExecutionBlocked()) {
+        Koha::Exception::FeatureUnavailable->throw(error => __PACKAGE__.":> Execution prevented by the System preference 'OKM's 'blockStatisticsGeneration'-flag.");
+    }
 
     my $libraryGroups;
     if ($individualBranches) {
@@ -58,25 +80,12 @@ sub new {
         $libraryGroups = $self->setLibraryGroups(  $self->getOKMBranchCategoriesAndBranches()  );
     }
 
-    $self->{juvenileShelvingLocations} = $self->createJuvenileShelvingLocations($juvenileShelvingLocations) if $juvenileShelvingLocations;
-
     my ($startDate, $endDate) = StandardizeTimeperiodParameter($timeperiod);
     $self->{startDate} = $startDate;
     $self->{startDateISO} = $startDate->iso8601();
     $self->{endDate} = $endDate;
     $self->{endDateISO} = $endDate->iso8601();
     $self->{limit} = $limit; #Set the SQL LIMIT. Used in testing to generate statistics faster.
-
-    if( scalar(keys(%$biblioCache)) > 5 ) {
-        $self->setBiblioCache($biblioCache);
-    }
-    else {
-        $self->buildBiblioCache($biblioCache, $limit); #This will take some time
-    }
-
-    $self->createStatistics();
-
-    $self->releaseBiblioCache(); #As the biblio cache is a part of this OKM-object, we should release it before saving it to DB.
 
     return $self;
 }
@@ -90,7 +99,7 @@ sub createStatistics {
         my $libraryGroup = $libraryGroups->{$groupcode};
         print '    #'.DateTime->now()->iso8601()."# Starting $groupcode #\n" if $self->{verbose};
 
-        $self->statisticsBranchCounts( $libraryGroup, 1);
+        $self->statisticsBranchCounts( $libraryGroup, 1); #We have one main library here.
 
         my $itemBomb = $self->fetchItemsDataMountain($libraryGroup);
         foreach my $itemnumber (sort {$a <=> $b} keys %$itemBomb) {
@@ -118,11 +127,110 @@ sub _processItemsDataRow {
     my $stats = $libraryGroup->getStatistics();
 
     my $deleted = $row->{deleted}; #These inlcude also Issues for Items outside of this libraryGroup.
-    my $biblio = $self->getCachedBiblio($row->{biblionumber});
-    my $primaryLanguage = $biblio->{primaryLanguage};
+    my $primaryLanguage = $row->{primary_language};
     my $isChildrensMaterial = $self->isItemChildrens($row);
-    my $isFiction = $biblio->{isFiction};
-    my $isMusicalRecording = $biblio->{isMusicalRecording};
+    my $isFiction = $row->{fiction};
+    my $isMusicalRecording = $row->{musical};
+    my $isAcquired = (not($deleted)) ? $self->isItemAcquired($row) : undef; #If an Item is deleted, omit the acquisitions calculations because they wouldn't be accurate. Default to not acquired.
+    my $itemtype = $row->{itype};
+    my $issues = $row->{issuesQuery}->{issues} || 0;
+    my $serial = ($itemtype eq 'AL' || $itemtype eq 'SL') ? 1 : 0;
+
+    #Increase the collection for every Item found
+    $stats->{collection}++ if not($deleted) && not($serial);
+    $stats->{acquisitions}++ if $isAcquired && not($serial);
+    $stats->{issues} += $issues; #Serials are included in the cumulative issues.
+    $stats->{expenditureAcquisitions} += $row->{price} if $isAcquired && not($serial) && $row->{price};
+
+    my $statCat = $self->getItypeToOKMCategory($row->{itype});
+    unless ($statCat) {
+        $self->log("Couldn't get the statistical category for this item:\n".Data::Dumper::Dumper($row)."Using category 'Other'.");
+        $statCat = 'Other';
+    }
+    if ($statCat eq "Books") {
+
+        $stats->{'collection'.$statCat.'Total'}++ if not($deleted);
+        $stats->{'acquisitions'.$statCat.'Total'}++ if $isAcquired;
+        $stats->{'expenditureAcquisitions'.$statCat} += $row->{price} if $isAcquired && $row->{price};
+        $stats->{'issues'.$statCat.'Total'} += $issues;
+
+        if (not(defined($primaryLanguage)) || $primaryLanguage eq 'fin') {
+            $stats->{'collection'.$statCat.'Finnish'}++ if not($deleted);
+            $stats->{'acquisitions'.$statCat.'Finnish'}++ if $isAcquired;
+            $stats->{'issues'.$statCat.'Finnish'} += $issues;
+        }
+        elsif ($primaryLanguage eq 'swe') {
+            $stats->{'collection'.$statCat.'Swedish'}++ if not($deleted);
+            $stats->{'acquisitions'.$statCat.'Swedish'}++ if $isAcquired;
+            $stats->{'issues'.$statCat.'Swedish'} += $issues;
+        }
+        else {
+            $stats->{'collection'.$statCat.'OtherLanguage'}++ if not($deleted);
+            $stats->{'acquisitions'.$statCat.'OtherLanguage'}++ if $isAcquired;
+            $stats->{'issues'.$statCat.'OtherLanguage'} += $issues;
+        }
+
+        if ($isFiction) {
+            if ($isChildrensMaterial) {
+                $stats->{'collection'.$statCat.'FictionJuvenile'}++ if not($deleted);
+                $stats->{'acquisitions'.$statCat.'FictionJuvenile'}++ if $isAcquired;
+                $stats->{'issues'.$statCat.'FictionJuvenile'} += $issues;
+            }
+            else { #Adults fiction
+                $stats->{'collection'.$statCat.'FictionAdult'}++ if not($deleted);
+                $stats->{'acquisitions'.$statCat.'FictionAdult'}++ if $isAcquired;
+                $stats->{'issues'.$statCat.'FictionAdult'} += $issues;
+            }
+        }
+        else { #Non-Fiction
+            if ($isChildrensMaterial) {
+                $stats->{'collection'.$statCat.'NonFictionJuvenile'}++ if not($deleted);
+                $stats->{'acquisitions'.$statCat.'NonFictionJuvenile'}++ if $isAcquired;
+                $stats->{'issues'.$statCat.'NonFictionJuvenile'} += $issues;
+            }
+            else { #Adults Non-fiction
+                $stats->{'collection'.$statCat.'NonFictionAdult'}++ if not($deleted);
+                $stats->{'acquisitions'.$statCat.'NonFictionAdult'}++ if $isAcquired;
+                $stats->{'issues'.$statCat.'NonFictionAdult'} += $issues;
+            }
+        }
+    }
+    elsif ($statCat eq 'Recordings') {
+        if ($isMusicalRecording) {
+            $stats->{'collectionMusicalRecordings'}++ if not($deleted);
+            $stats->{'acquisitionsMusicalRecordings'}++ if $isAcquired;
+            $stats->{'issuesMusicalRecordings'} += $issues;
+        }
+        else {
+            $stats->{'collectionOtherRecordings'}++ if not($deleted);
+            $stats->{'acquisitionsOtherRecordings'}++ if $isAcquired;
+            $stats->{'issuesOtherRecordings'} += $issues;
+        }
+    }
+    elsif ($serial || $statCat eq 'Other') {
+        $stats->{'collectionOther'}++ if not($deleted) && not($serial);
+        $stats->{'acquisitionsOther'}++ if $isAcquired && not($serial);
+        $stats->{'issuesOther'} += $issues;
+        #Serials and magazines are collected from the subscriptions-table using statisticsSubscriptions()
+        #Don't count them for the collection or acquisitions. Serials must be included in the cumulative Issues.
+    }
+    else {
+        $stats->{'collection'.$statCat}++ if not($deleted);
+        $stats->{'acquisitions'.$statCat}++ if $isAcquired;
+        $stats->{'issues'.$statCat} += $issues;
+    }
+}
+
+sub _processItemsDataRow_old {
+    my ($self, $libraryGroup, $row) = @_;
+
+    my $stats = $libraryGroup->getStatistics();
+
+    my $deleted = $row->{deleted}; #These inlcude also Issues for Items outside of this libraryGroup.
+    my $primaryLanguage = $row->{primary_language};
+    my $isChildrensMaterial = $self->isItemChildrens($row);
+    my $isFiction = $row->{fiction};
+    my $isMusicalRecording = $row->{musical};
     my $isAcquired = (not($deleted)) ? $self->isItemAcquired($row) : undef; #If an Item is deleted, omit the acquisitions calculations because they wouldn't be accurate. Default to not acquired.
     my $itemtype = $row->{itype};
     my $issues = $row->{issuesQuery}->{issues} || 0;
@@ -141,7 +249,7 @@ sub _processItemsDataRow {
         $stats->{expenditureAcquisitionsBooks} += $row->{price} if $isAcquired && $row->{price};
         $stats->{issuesBooksTotal} += $issues;
 
-        if ($primaryLanguage eq 'fin' || not(defined($primaryLanguage))) {
+        if (not(defined($primaryLanguage)) || $primaryLanguage eq 'fin') {
             $stats->{collectionBooksFinnish}++ if not($deleted);
             $stats->{acquisitionsBooksFinnish}++ if $isAcquired;
             $stats->{issuesBooksFinnish} += $issues;
@@ -222,7 +330,7 @@ sub _processItemsDataRow {
         #Don't count them for the collection or acquisitions. Serials must be included in the cumulative Issues.
     }
     else {
-        print "\nUnmapped itemtype \n'$itemtype'\n with this statistical row:\n".Data::Dumper::Dumper($row);
+        $self->log("\nUnmapped itemtype \n'$itemtype'\n with this statistical row:\n".Data::Dumper::Dumper($row));
     }
 }
 
@@ -244,10 +352,13 @@ sub fetchItemsDataMountain {
     my $dbh = C4::Context->dbh();
     #Get all the Items' informations for Items residing in the libraryGroup.
     my $sthItems = $dbh->prepare(
-                "SELECT i.itemnumber, i.biblionumber, i.itype, i.location, i.price, ao.ordernumber, ao.datereceived, av.imageurl, i.dateaccessioned
+                "SELECT i.itemnumber, i.biblionumber, i.itype, i.location, i.price, ao.ordernumber, ao.datereceived, av.imageurl, i.dateaccessioned,
+                        bde.primary_language, bde.fiction, bde.musical
                  FROM items i LEFT JOIN aqorders_items ai ON i.itemnumber = ai.itemnumber
                               LEFT JOIN aqorders ao ON ai.ordernumber = ao.ordernumber LEFT JOIN statistics s ON s.itemnumber = i.itemnumber
                               LEFT JOIN authorised_values av ON av.authorised_value = i.permanent_location
+                              LEFT JOIN biblioitems bi ON i.biblionumber = bi.biblioitemnumber
+                              LEFT JOIN biblio_data_elements bde ON bi.biblioitemnumber = bde.biblioitemnumber
                  WHERE i.homebranch $in_libraryGroupBranches
                  GROUP BY i.itemnumber ORDER BY i.itemnumber $limit;");
 #    $sth->execute(  $self->{startDateISO}, $self->{endDateISO}  ); #This will take some time.....
@@ -256,9 +367,12 @@ sub fetchItemsDataMountain {
 
     #Get all the Deleted Items' informations. We need them for the statistical entries that have a deleted item.
     my $sthDeleteditems = $dbh->prepare(
-                "SELECT i.itemnumber, i.biblionumber, i.itype, i.location, i.price, av.imageurl, i.dateaccessioned, 1 as deleted
+                "SELECT i.itemnumber, i.biblionumber, i.itype, i.location, i.price, av.imageurl, i.dateaccessioned, 1 as deleted,
+                        bde.primary_language, bde.fiction, bde.musical
                  FROM deleteditems i
                               LEFT JOIN authorised_values av ON av.authorised_value = i.permanent_location
+                              LEFT JOIN biblioitems bi ON i.biblionumber = bi.biblioitemnumber
+                              LEFT JOIN biblio_data_elements bde ON bi.biblioitemnumber = bde.biblioitemnumber
                  WHERE i.homebranch $in_libraryGroupBranches
                  GROUP BY i.itemnumber ORDER BY i.itemnumber $limit;");
 #    $sth->execute(  $self->{startDateISO}, $self->{endDateISO}  ); #This will take some time.....
@@ -320,7 +434,7 @@ sub fetchItemsDataMountain {
             }
             else {
                 $itemBomb->{$itemnumber} = $id; #Take the deleted Item from the dead and reuse it.
-                print "OKM->fetchDataMountain(): Issues for deleted Item? Using deleted itemnumber '$itemnumber'.\n" if $self->{verbose};
+                #print "OKM->fetchDataMountain(): Issues for deleted Item? Using deleted itemnumber '$itemnumber'.\n" if $self->{verbose};
             }
         }
         unless ($is) {
@@ -510,34 +624,6 @@ sub createLibraryGroupsFromIndividualBranches {
     return $libraryGroups;
 }
 
-sub createJuvenileShelvingLocations {
-    my ($self, $juvenileShelvingLocations) = @_;
-
-    my @locations = split(',',$juvenileShelvingLocations);
-    my %locations;
-    for(my $i=0 ; $i<@locations ; $i++) {
-        my $loc = $locations[$i];
-        $loc =~ s/\s//g; #Trim all whitespace
-        $locations{$loc} = 1;
-    }
-    return \%locations;
-}
-
-sub verify {
-    my $self = shift;
-    my $groupsErrors = [];
-    my $libraryGroups = $self->getLibraryGroups();
-
-    foreach my $groupcode (sort keys %$libraryGroups) {
-        my $stats = $libraryGroups->{$groupcode}->getStatistics();
-        if (my $errors = $stats->verifyStatisticalIntegrity()) {
-            push @$groupsErrors, @$errors;
-        }
-    }
-    return $groupsErrors if scalar(@$groupsErrors) > 0;
-    return undef;
-}
-
 =head asHtml
 
     my $html = $okm->asHtml();
@@ -694,7 +780,7 @@ sub getOKMBranchCategoriesAndBranches {
         my $branchcodes = C4::Branch::GetBranchesInCategory( $categoryCode );
 
         if (not($branchcodes) || scalar(@$branchcodes) <= 0) {
-            warn "Statistical library group $categoryCode has no libraries, removing it from OKM statistics\n";
+            $self->log("Statistical library group $categoryCode has no libraries, removing it from OKM statistics");
             delete $libraryGroups->{$categoryCode};
             next();
         }
@@ -734,20 +820,13 @@ sub FindMarcField {
     assert($isChildrens == 1);
 
 @PARAM1 hash, containing the koha.items.location as location-key
-@OVERRIDE can be overriden by the $juvenileShelvingLocations-parameter to the constructor!
 =cut
 
 sub isItemChildrens {
     my ($self, $row) = @_;
-    my $juvenileShelvingLocations = $self->{juvenileShelvingLocations};
-    my $url = $row->{imageurl}; #Get the items.location -> authorised_values.imageurl
+    my $juvenileShelvingLocations = $self->{conf}->{juvenileShelvingLocations};
 
-    if ($juvenileShelvingLocations && ref $juvenileShelvingLocations eq 'HASH') {
-        return 1 if $row->{location} && $juvenileShelvingLocations->{$row->{location}};
-    }
-    else {
-        return 1 if ($url && $url =~ /okm_juvenile/);
-    }
+    return 1 if $row->{location} && $juvenileShelvingLocations->{$row->{location}};
     return 0;
 }
 
@@ -838,6 +917,7 @@ sub save {
     my $self = shift;
     my $dbh = C4::Context->dbh();
 
+    C4::OPLIB::OKMLogs::insertLogs($self->flushLogs());
     #Clean some cumbersome Entities which make serialization quite messy.
     $self->{endDate} = undef; #Like DateTime-objects which serialize quite badly.
     $self->{startDate} = undef;
@@ -949,94 +1029,116 @@ sub Delete {
     return undef;
 }
 
-=head getCachedBiblio
+=head _loadConfiguration
 
-    my $marcxml = $okm->getCachedBiblio($biblionumber);
+    $self->_loadConfiguration();
 
-Due to the insane amount of marcxml data that needs to be repeatedly fetched from the db, a simple
-caching mechanism is implemented to keep memory usage sane.
-We fetch marcxml's to the cache when requested and automatically check the required statistics
-from the marcxml, thus caching those calculations as well.
-The cache size is limited by the $self->{config}->{maxCacheSize}, thus removing old marcxmls from the
-cache when it gets too large.
+Loads the configuration YAML from sysprefs and parses it to a Hash.
 =cut
-sub getCachedBiblio {
-    my ($self, $biblionumber) = @_;
 
-    my $cache = $self->{biblioCache};
-    my $cacheSize = $self->{config}->{marcxmlCacheSize};
-
-    my ($marcxml, $biblio);
-    unless ($cache->{$biblionumber}) {
-        $self->{config}->{marcxmlCacheSize}++;
-        print '        #BiblioCache miss for bn:'.$biblionumber."\n" if $self->{verbose};
-
-        $biblio = {};
-        $cache->{$biblionumber} = $biblio;
-        $marcxml = C4::Biblio::GetXmlBiblio($biblionumber);
-        $marcxml = C4::Biblio::GetDeletedXmlBiblio($biblionumber) unless $marcxml;
-
-        CalculateBiblioStatistics($biblio, $marcxml) if $marcxml;
-        print '        #BiblioCache, no living or deleted MARCXML for bn:'.$biblionumber."\n" if $self->{verbose} && not($marcxml);
-    }
-
-    return $cache->{$biblionumber};
-}
-
-sub buildBiblioCache {
-    my ($self, $biblioCache, $limit) = @_;
-
-    if ($biblioCache) {
-        $self->{biblioCache} = $biblioCache;
-    }
-    else {
-        $self->{biblioCache} = {};
-    }
-    my $cache = $self->{biblioCache};
-
-    my $offset = 0; my $chunk = 100000; my $biblios;
-    do {
-        $biblios = $self->_getBiblioChunk( $offset, $chunk );
-        #Gather the desired statistical markers from the biblio chunk
-        foreach my $b (@$biblios) {
-            my $biblio = {};
-            CalculateBiblioStatistics($biblio, $b->{marcxml});
-            $cache->{$b->{biblionumber}} = $biblio;
-        }
-        $offset += $chunk;
-    } while ((not($limit) || $offset < $limit) && scalar(@$biblios) > 0); #Continue while we get results and are not LIMITed
-}
-sub _getBiblioChunk {
-    my ($self, $offset, $limit) = @_;
-    print '    #Building biblioCache '.$offset.'-'.($offset+$limit)."\n" if $self->{verbose};
-    my $dbh = C4::Context->dbh();
-    my $sql = "SELECT biblionumber, marcxml FROM biblioitems LIMIT ? OFFSET ?";
-    my $sth = $dbh->prepare($sql);
-    $sth->execute( $limit, $offset ); #This will take some time.....
-    my $biblios = $sth->fetchall_arrayref({});
-    return $biblios;
-}
-sub getBiblioCache {
+sub loadConfiguration {
     my ($self) = @_;
-    return $self->{biblioCache};
-}
-sub setBiblioCache {
-    my ($self, $biblioCache) = @_;
-    $self->{biblioCache} = $biblioCache;
-}
-sub releaseBiblioCache {
-    my $self = shift;
 
-    #Make sure not to deep delete here, because this cache might be referenced from somewhere else.
-    $self->{biblioCache} = {}; #We don't need to deep delete, since there are no circular references in the cache.
+    my $yaml = C4::Context->preference('OKM');
+    utf8::encode( $yaml );
+    $self->{conf} = YAML::XS::Load($yaml);
+
+    ##Make 'juvenileShelvingLocations' more searchable
+    my $juvShelLocs = $self->{conf}->{juvenileShelvingLocations};
+    $self->{conf}->{juvenileShelvingLocations} = {};
+    foreach my $loc (@{$juvShelLocs}) {
+        $self->{conf}->{juvenileShelvingLocations}->{$loc} = 1;
+    }
+
+    $self->_validateConfigurationAndPreconditions();
 }
 
-sub CalculateBiblioStatistics {
-    my ($biblio, $marcxml) = @_;
+=head _validateConfigurationAndPreconditions
+Since this is a bit complex feature. Check for correct configurations here.
+Also make sure system-wide preconditions and precalculations are in place.
+=cut
 
-    $biblio->{primaryLanguage} = FindMarcField('041','a', $marcxml);
-    $biblio->{isFiction} = IsItemFiction( $marcxml);
-    $biblio->{isMusicalRecording} = IsItemMusicalRecording( $marcxml);
+sub _validateConfigurationAndPreconditions {
+    my ($self) = @_;
+
+    ##Make sanity checks for the config and throw an error to tell the user that the config needs fixing.
+    my @statCatKeys = ();
+    my @juvenileShelLocKeys = ();
+    if (ref $self->{conf}->{itemTypeToStatisticalCategory} eq 'HASH') {
+        @statCatKeys = keys(%{$self->{conf}->{itemTypeToStatisticalCategory}});
+    }
+    if (ref $self->{conf}->{juvenileShelvingLocations} eq 'HASH') {
+        @juvenileShelLocKeys = keys($self->{conf}->{juvenileShelvingLocations});
+    }
+    unless (scalar(@statCatKeys)) {
+        my @cc = caller(0);
+        Koha::Exception::BadSystemPreference->throw(
+            error => $cc[3]."():> System preference 'OKM' is missing YAML-parameter 'itemTypeToStatisticalCategory'.\n".
+                     "It should look something like this: \n".
+                     "itemTypeToStatisticalCategory: \n".
+                     "  BK: Books \n".
+                     "  MU: Recordings \n");
+    }
+    unless (scalar(@juvenileShelLocKeys)) {
+        my @cc = caller(0);
+        Koha::Exception::BadSystemPreference->throw(
+            error => $cc[3]."():> System preference 'OKM' is missing YAML-parameter 'juvenileShelvingLocations'.\n".
+                     "It should look something like this: \n".
+                     "juvenileShelvingLocations: \n".
+                     "  - CHILD \n".
+                     "  - AV \n");
+    }
+
+    ##Check that all itemtypes and statistical categories are mapped
+    my @itypes = C4::ItemType->all();
+    my %statCategories = ( "Books" => 0, "SheetMusicAndScores" => 0,
+                        "Recordings" => 0, "Videos" => 0, "CDROMs" => 0,
+                        "DVDsAndBluRays" => 0, "Other" => 0);
+    foreach my $itype (@itypes) {
+        my $mapping = $self->getItypeToOKMCategory($itype->{itemtype});
+        unless ($mapping) { #Is itemtype mapped?
+            my @cc = caller(0);
+            Koha::Exception::BadSystemPreference->throw(error => $cc[3]."():> System preference 'OKM' has an unmapped itemtype '".$itype->{itemtype}."'. Put it under 'itemTypeToStatisticalCategory'.");
+        }
+        if(exists($statCategories{$mapping})) {
+            $statCategories{$mapping} = 1; #Mark this mapping as used.
+        }
+        else { #Do we have extra statistical mappings we dont care of?
+            my @cc = caller(0);
+            my @statCatKeys = keys(%statCategories);
+            Koha::Exception::BadSystemPreference->throw(error => $cc[3]."():> System preference 'OKM' has an unknown mapping '$mapping'. Allowed statistical categories under 'itemTypeToStatisticalCategory' are @statCatKeys");
+        }
+    }
+    #Check that all statistical categories are mapped
+    while (my ($k, $v) = each(%statCategories)) {
+        unless ($v) {
+            my @cc = caller(0);
+            Koha::Exception::BadSystemPreference->throw(error => $cc[3]."():> System preference 'OKM' has an unmapped statistical category '$k'. Map it to the 'itemTypeToStatisticalCategory'");
+        }
+    }
+
+    ##Check that koha.biblio_data_elements -table is being updated regularly.
+    Koha::BiblioDataElements::verifyFeatureIsInUse();
+}
+
+=head getItypeToOKMCategory
+
+    my $category = $okm->getItypeToOKMCategory('BK'); #Returns 'Books'
+
+Takes an Itemtype and converts it based on the mapping rules to an OKM statistical
+category type, like 'Books'.
+
+@PARAM1 String, itemtype
+@RETURNS String, OKM category type or undef
+=cut
+
+sub getItypeToOKMCategory {
+    my ($self, $itemtype) = @_;
+    return $self->{conf}->{itemTypeToStatisticalCategory}->{$itemtype};
+}
+
+sub isExecutionBlocked {
+    return shift->{conf}->{blockStatisticsGeneration};
 }
 
 =head StandardizeTimeperiodParameter
@@ -1102,5 +1204,24 @@ sub StandardizeTimeperiodParameter {
         return ($startDate, $endDate);
     }
     die "OKM->_standardizeTimeperiodParameter($timeperiod): Timeperiod '$timeperiod' could not be parsed.";
+}
+
+=head log
+
+    $okm->log("Something is wrong, why don't you fix it?");
+    my $logArray = $okm->getLog();
+
+=cut
+
+sub log {
+    my ($self, $message) = @_;
+    push @{$self->{logs}}, $message;
+    print $message."\n" if $self->{verbose};
+}
+sub flushLogs {
+    my ($self) = @_;
+    my $logs = $self->{logs};
+    delete $self->{logs};
+    return $logs;
 }
 1; #Happy happy joy joy!

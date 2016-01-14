@@ -1,5 +1,22 @@
 #!/usr/bin/perl
 
+# Copyright KohaSuomi
+#
+# This file is part of Koha.
+#
+# Koha is free software; you can redistribute it and/or modify it under the
+# terms of the GNU General Public License as published by the Free Software
+# Foundation; either version 3 of the License, or (at your option) any later
+# version.
+#
+# Koha is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+# A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with Koha; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
 use Modern::Perl;
 use open qw( :std :encoding(UTF-8) );
 binmode( STDOUT, ":encoding(UTF-8)" );
@@ -11,7 +28,7 @@ use C4::Branch;
 use C4::OPLIB::OKM;
 
 my $help;
-my ($limit, $rebuild, $asCsv, $asHtml, $individualBranches, $timeperiod, $rebuildAllStatistics, $verbose, $juvenileShelvingLocations);
+my ($limit, $rebuild, $asCsv, $asHtml, $individualBranches, $timeperiod, $rebuildAllStatistics, $verbose);
 
 GetOptions(
     'h|help'           => \$help,
@@ -23,7 +40,6 @@ GetOptions(
     'csv'              => \$asCsv,
     'rebuildAllStats:s'=> \$rebuildAllStatistics,
     'v|verbose'        => \$verbose,
-    'juvenileShelLocs:s' => \$juvenileShelvingLocations,
 );
 my $usage = << 'ENDUSAGE';
 
@@ -64,17 +80,10 @@ This script has the following parameters :
                     defined, and the other where all branches are their separate statistical rows.
                     Also give the year you want to statisticize.
                     Example: "generateOKMAnnualStatistics.pl --rebuildAllStats 2014"
-    --juvenileShelLocs
-                    Overrides the shelving locations considered to contain juvenile material. By Default OKM-module
-                    considers items as juvenile material if they are in shelving locations with an
-                    koha.authorised_values.imageurl =~ /okm_juvenile/.
-                    This parameter is a .csv-row with each element as a shelving location code
-                    'LAP,NUO,NUOV,[...]'
-                    or undef to preserve default operation
 
 EXAMPLES:
 
-    ./generateOKMAnnualStatistics.pl --rebuildAllStats 2014 --juvenileShelLocs 'KUV,LAP,LAK,LVA,NUO,NUA,NUV' -v --csv
+    ./generateOKMAnnualStatistics.pl --rebuildAllStats 2014 -v --csv
     ./generateOKMAnnualStatistics.pl --timeperiod '2014-01-01 - 2014-02-15' -l 1000 -r -v --csv
 
     #Generate monthly reports, using the bash 'date' to generate the previous month for OKM branchcategories
@@ -105,33 +114,33 @@ sub generateStatistics {
     }
     if (not($okm)) {
         print "#Regenerating statistics. This will take some time!#\n";
-        $okm = C4::OPLIB::OKM->new( $timeperiod, $limit, $individualBranches, undef, $verbose, $juvenileShelvingLocations );
+        $okm = C4::OPLIB::OKM->new( undef, $timeperiod, $limit, $individualBranches, $verbose );
+        $okm->createStatistics();
         $okm->save();
     }
 
-    my $errors = $okm->verify();
     if ($asCsv) {
         print $okm->asCsv();
     }
     if ($asHtml) {
         print $okm->asHtml();
     }
-    foreach (@$errors) {print $_."\n";}
 }
 
 sub rebuildAllStatistics {
 
     my ($yearStart, $yearEnd) = C4::OPLIB::OKM::StandardizeTimeperiodParameter($rebuildAllStatistics);
-    my $biblioCache = {}; #Store the humongous bibliocache used to calculate one round of OKM statistics. Calculating it takes minutes.
 
     ##Calculate OKM statistics for all branches for given year.
     print '#'.DateTime->now()->iso8601().'# Building statistics for all branches, year '.$yearStart->year()." #\n";
-    my $okm = C4::OPLIB::OKM->new( $yearStart->year(), $limit, '_A', $biblioCache, $verbose, $juvenileShelvingLocations );
+    my $okm = C4::OPLIB::OKM->new( undef, $yearStart->year(), $limit, '_A', $verbose );
+    $okm->createStatistics();
     $okm->save() if $okm;
 
     ##Calculate OKM statistics for OKM groups for given year.
     print '#'.DateTime->now()->iso8601().'# Building statistics for OKM librarygroups, year '.$yearStart->year()." #\n";
-    $okm = C4::OPLIB::OKM->new( $yearStart->year(), $limit, undef, $biblioCache, $verbose, $juvenileShelvingLocations );
+    $okm = C4::OPLIB::OKM->new( undef, $yearStart->year(), $limit, undef, $verbose );
+    $okm->createStatistics();
     $okm->save() if $okm;
 
     ##Calculate OKM statistics for all branches for each month.
@@ -143,7 +152,8 @@ sub rebuildAllStatistics {
                                                   );
         my $timeperiod = $startMonth->iso8601().' - '.$endMonth->iso8601();
         print '#'.DateTime->now()->iso8601().'# Building statistics for all branches, '.$startMonth->month_name()." #\n";
-        my $okm = C4::OPLIB::OKM->new( $timeperiod, $limit, '_A', $biblioCache, $verbose, $juvenileShelvingLocations );
+        my $okm = C4::OPLIB::OKM->new( undef, $timeperiod, $limit, '_A', $verbose );
+        $okm->createStatistics();
         $okm->save() if $okm;
 
         $startMonth = $startMonth->add(months => 1);
@@ -158,7 +168,8 @@ sub rebuildAllStatistics {
                                                   );
         my $timeperiod = $startMonth->iso8601().' - '.$endMonth->iso8601();
         print '#'.DateTime->now()->iso8601().'# Building statistics for OKM librarygroups, '.$startMonth->month_name()." #\n";
-        my $okm = C4::OPLIB::OKM->new( $timeperiod, $limit, undef, $biblioCache, $verbose, $juvenileShelvingLocations );
+        my $okm = C4::OPLIB::OKM->new( undef, $timeperiod, $limit, undef, $verbose );
+        $okm->createStatistics();
         $okm->save() if $okm;
 
         $startMonth = $startMonth->add(months => 1);

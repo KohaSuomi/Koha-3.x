@@ -1964,6 +1964,16 @@ CREATE TABLE `okm_statistics` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
+-- Table structure for table `okm_statistics_logs`
+--
+
+CREATE TABLE `okm_statistics_logs` (
+  `id` int(11) NOT NULL auto_increment,
+  `entry` text NOT NULL,                -- the simple log entry
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
 -- Table structure for table `reserves`
 --
 
