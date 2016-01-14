@@ -11,14 +11,12 @@ use Koha::BiblioDataElements;
 my $help;
 my $limit = '';
 my $verbose = 0;
-my $juvenileShelLocs;
 my $forceRebuild;
 
 GetOptions(
     'h|help'             => \$help,
     'l|limit:i'          => \$limit,
     'v|verbose:i'        => \$verbose,
-    'juvenileShelLocs:s' => \$juvenileShelLocs,
     'f|forceRebuild'     => \$forceRebuild,
 );
 my $usage = << 'ENDUSAGE';

@@ -165,19 +165,19 @@ sub _getBiblioitemsNeedingUpdate {
 
     my $lastModTime;
     if ($forceRebuild) {
-        $lastModTime = '0000-00-00 00:00:00';
+        $lastModTime = '1900-01-01 01:01:01';
     }
     else {
-        $lastModTime = GetLatestDataElementUpdateTime($verbose)->iso8601() || '0000-00-00 00:00:00';
+        $lastModTime = GetLatestDataElementUpdateTime($verbose)->iso8601() || '1900-01-01 01:01:01';
     }
 
     my $dbh = C4::Context->dbh();
     my $sthBiblioitems = $dbh->prepare("
             (SELECT biblioitemnumber, itemtype, marcxml, 0 as deleted FROM biblioitems
-             WHERE timestamp > ? $limit
+             WHERE timestamp >= ? $limit
             ) UNION (
              SELECT biblioitemnumber, itemtype, marcxml, 1 as deleted FROM deletedbiblioitems
-             WHERE timestamp > ? $limit
+             WHERE timestamp >= ? $limit
             )
     ");
     $sthBiblioitems->execute( $lastModTime, $lastModTime );
@@ -206,6 +206,19 @@ sub verifyFeatureIsInUse {
         Koha::Exception::FeatureUnavailable->throw(error => $cc[3]."():> koha.biblio_data_elements-table is stale. You must configure cronjob 'update_biblio_data_elements.pl' to run daily.");
     }
     return 1;
+}
+
+=head markForReindex
+
+    Koha::BiblioDataElements::markForReindex();
+
+Marks all BiblioDataElements to be updated during the next indexing.
+
+=cut
+
+sub markForReindex {
+    my $dbh = C4::Context->dbh();
+    $dbh->do("UPDATE biblio_data_elements SET last_mod_time = '1900-01-01 01:01:01'");
 }
 
 1;
