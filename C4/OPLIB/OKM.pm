@@ -1185,8 +1185,8 @@ sub StandardizeTimeperiodParameter {
     elsif ($timeperiod =~ 'lastyear') {
         $startDate = DateTime->now(time_zone => C4::Context->tz())->subtract(years => 1)->set_day(1);
         $endDate = ($startDate->is_leap_year()) ?
-                DateTime->from_day_of_year(year => $startDate->year(), day => 366, time_zone => C4::Context->tz()) :
-                DateTime->from_day_of_year(year => $startDate->year(), day => 365, time_zone => C4::Context->tz()) if $startDate;
+                DateTime->from_day_of_year(year => $startDate->year(), day_of_year => 366, time_zone => C4::Context->tz()) :
+                DateTime->from_day_of_year(year => $startDate->year(), day_of_year => 365, time_zone => C4::Context->tz()) if $startDate;
     }
     elsif ($timeperiod =~ 'lastmonth') {
         $startDate = DateTime->now(time_zone => C4::Context->tz())->subtract(months => 1)->set_day(1);
