@@ -121,39 +121,22 @@ sub CompletePayment {
     my $transaction = $self;
     return if not $transaction;
 
-    if ($transaction->status eq $status->{status}) {
+    # It's important that we don't process this subroutine twice at the same time!
+    $transaction = Koha::PaymentsTransactions->find($transaction->transaction_id);
+
+    $old_status = $transaction->status;
+    $new_status = $status->{status};
+
+    if ($old_status eq $new_status){
+        # Trying to complete with same status, makes no sense
         return;
     }
 
-    # FAILSAFE - Run the code under eval block. If something goes wrong, release MySQL locks.
-    eval {
-        # It's important that we don't process this subroutine twice at the same time!
-        # Lock the table and refresh Koha Object
-        $dbh->do("LOCK TABLES payments_transactions WRITE, payments_transactions AS me WRITE");
-        $transaction = Koha::PaymentsTransactions->find($transaction->transaction_id);
-
-        $old_status = $transaction->status;
-        $new_status = $status->{status};
-
-        if ($old_status eq $new_status){
-            # trying to complete with same status, makes no sense
-            $dbh->do("UNLOCK TABLES");
-            die("Old payment status == new payment status, no reason to continue")
-        }
-
-        if ($old_status ne "processing"){
-            $transaction->set({ status => "processing" })->store();
-            $dbh->do("UNLOCK TABLES");
-        } else {
-            # Another process is already processing the payment
-            $dbh->do("UNLOCK TABLES");
-            die("Another process is already processing the payment");
-        }
-    };
-    if ($@) {
-        # In case of some issue, make sure the table doesn't stay locked.
-        $dbh->do("UNLOCK TABLES");
-        return; # Something went wrong. We don't want to continue.
+    if ($old_status ne "processing"){
+        $transaction->set({ status => "processing" })->store();
+    } else {
+        # Another process is already processing the payment
+        return;
     }
 
     # Defined accountlines_id means that the payment is already completed in Koha.

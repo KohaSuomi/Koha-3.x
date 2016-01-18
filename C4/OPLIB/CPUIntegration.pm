@@ -103,9 +103,10 @@ sub InitializePayment {
 
     $payment->{NotificationAddress} = $notificationAddress; # url for report
     
+    $payment = _validate_cpu_hash($payment); # Remove semicolons
     $payment->{Hash}        = CalculatePaymentHash($payment);
 
-    $payment = _convert_cpu_strings_to_int($payment);
+    $payment = _validate_cpu_hash($payment); # Convert strings to int
     $payment->{"send_payment"} = "POST";
 
     return $payment;
@@ -132,7 +133,7 @@ sub SendPayment {
         delete $payment->{send_payment} if $payment->{send_payment};
 
         # Convert strings to integer for JSON
-        $payment = _convert_cpu_strings_to_int($payment);
+        $payment = _validate_cpu_hash($payment);
 
         # Construct JSON object
         $content = JSON->new->utf8->canonical(1)->encode($payment);
@@ -164,6 +165,16 @@ sub SendPayment {
 
         my $request = $ua->request($req);
 
+        # There is an issue where the call above fails for unknown reasons, but REST API got
+        # confirmation of successful payment. We need to be able to recognize payments
+        # that have been completed during $ua->request($req) by REST API and not set them to
+        # "cancelled" status even if $ua->request($req) returns some HTTP error code.
+        # At this point, payment should still be "pending". Refresh payment status.
+
+        $transaction = Koha::PaymentsTransactions->find($payment->{Id});
+        my $payment_already_paid = 1 if $transaction->status eq "paid"; # Already paid via REST API!
+        return JSON->new->utf8->canonical(1)->encode({ Status => '1' }) if $payment_already_paid;
+
         if ($request->{_rc} != 200) {
             # Did not get HTTP 200, some error happened!
             $transaction->set({ status => "cancelled", description => $request->{_content} })->store();
@@ -180,14 +191,13 @@ sub SendPayment {
             return JSON->new->utf8->canonical(1)->encode({ error => "Invalid hash", Status => $response->{Status} });
         }
 
-        # If paid, complete the payment in Koha
-        $transaction->CompletePayment(GetResponseString($response->{Status}));
-
         return JSON->new->utf8->canonical(1)->encode($response);
     };
 
     if ($@) {
         my $transaction = Koha::PaymentsTransactions->find($content->{Id});
+        my $payment_already_paid = 1 if $transaction->status eq "paid"; # Already paid via REST API!
+        return JSON->new->utf8->canonical(1)->encode({ Status => '1' }) if $payment_already_paid;
         $transaction->set({ status => "cancelled", description => $@ })->store();
         return JSON->new->utf8->canonical(1)->encode({ error => "Error: " . $@, Status => '88' });
     }
@@ -397,11 +407,20 @@ sub CalculateResponseHash {
     return $data;
 }
 
-sub _convert_cpu_strings_to_int {
+sub _validate_cpu_hash {
     my $invoice = shift;
+
+    # CPU does not like a semicolon. Go through the fields and make sure
+    # none of the fields contain ';' character (from CPU documentation)
+    foreach my $field (keys $invoice){
+        $invoice->{$field} =~ s/;/\x{037E}/g; # Replace semicolon with a Greek question mark (;)
+    }
 
     $invoice->{Mode} = int($invoice->{Mode});
     foreach my $product (@{ $invoice->{Products} }){
+        foreach my $product_field (keys $product){
+            $product->{$product_field} =~ s/;/\x{037E}/g; # Replace semicolon with a Greek question mark (;)
+        }
         $product->{Amount} = int($product->{Amount}) if $product->{Amount};
         $product->{Price} = int($product->{Price}) if $product->{Price};
     }
