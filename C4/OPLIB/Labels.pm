@@ -136,6 +136,32 @@ sub getLabelFromMap {
     return $ccodelevel;
 }
 
+sub getLabel {
+    my ($branchcode, $location, $itype, $ccode) = @_;
+
+    my $dbh = C4::Context->dbh();
+
+    my $sth = $dbh->prepare('SELECT olm.label
+                            FROM oplib_label_mappings olm
+                            LEFT JOIN authorised_values loc ON loc.id = olm.location
+                            LEFT JOIN authorised_values ccod ON ccod.id = olm.ccode
+                            WHERE (olm.branchcode = ? OR olm.branchcode IS NULL) AND
+                                  (loc.authorised_value = ? OR loc.authorised_value IS NULL) AND
+                                  (olm.itype = ? OR olm.itype IS NULL) AND
+                                  (ccod.authorised_value = ? OR ccod.authorised_value IS NULL)
+                            ORDER BY olm.branchcode, loc.authorised_value, olm.itype, ccod.authorised_value
+                            LIMIT 1');
+    $sth->execute( $branchcode, $location, $itype, $ccode );
+
+    if ( $sth->err ) {
+        my @cc = caller(0);
+        Koha::Exception::DB->throw(error => $cc[3]."(@_):> ".$sth->errstr);
+    }
+
+    my $row = $sth->fetchrow_hashref();
+    return ($row->{label}) ? $row->{label} : undef;
+}
+
 sub getAuthorised_value {
     my ($authorised_value, $id) = @_;
     
