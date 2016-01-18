@@ -17,6 +17,7 @@ INSERT INTO permission_modules (module, description) VALUES
 ('staffaccess','Allow staff members to modify permissions for other staff members'),
 ('coursereserves','Course reserves'),
 ('plugins', 'Koha plugins'),
-('lists', 'Lists')
+('lists', 'Lists'),
+('labels', 'Permissions related to getting all kinds of labels to bibliographic items')
 ;
 

@@ -804,6 +804,108 @@ sub _CheckShelfName {
     return $sth->rows>0? 0: 1;
 }
 
+##UGLYHACK WAITING FOR virtualshelves rewrite
+use Koha::Exception::BadParameter;
+use Koha::Exception::DB;
+use Koha::Exception::FeatureUnavailable;
+sub addItemToList {
+    my ($biblionumber, $listname, $borrowernumber, $itemnumber) = @_;
+    if ($listname eq 'labels printing') {
+        addItemToLabelPrintingList($biblionumber, $borrowernumber, $itemnumber);
+    }
+    else {
+        my @cc = caller(0);
+        Koha::Exception::FeatureUnavailable->throw(error => $cc[3]."():> Only listname 'labels printing' is supported at the moment");
+    }
+}
+sub addItemToLabelPrintingList {
+    my ($biblionumber, $borrowernumber, $itemnumber) = @_;
+    unless ($biblionumber && $borrowernumber && $itemnumber) {
+        my @cc = caller(0);
+        Koha::Exception::BadParameter->throw(error => $cc[3]."($biblionumber, $borrowernumber, $itemnumber):> One of the parameters is undefined.");
+    }
+
+    my $lpl;
+    unless ($lpl = getLabelPrintingList($borrowernumber)) {
+        _addLabelPrintingList($borrowernumber);
+        $lpl = getLabelPrintingList($borrowernumber);
+    }
+    my $shelfnumber = $lpl->{shelfnumber};
+
+    my $dbh = C4::Context->dbh;
+    my $query = qq(
+        INSERT INTO virtualshelfcontents
+            (shelfnumber, biblionumber, flags, borrowernumber)
+        VALUES (?, ?, ?, ?));
+    my $sth = $dbh->prepare($query);
+    $sth->execute( $shelfnumber, $biblionumber, $itemnumber, $borrowernumber);
+    $query = qq(UPDATE virtualshelves
+                SET lastmodified = CURRENT_TIMESTAMP
+                WHERE shelfnumber = ?);
+    $sth = $dbh->prepare($query);
+    $sth->execute( $shelfnumber );
+}
+sub _addLabelPrintingList {
+    my ($borrowernumber)= @_;
+    my $dbh = C4::Context->dbh;
+
+    my $query = qq(INSERT INTO virtualshelves
+        (shelfname,owner,category,sortfield,allow_add,allow_delete_own,allow_delete_other)
+        VALUES (?,?,?,?,?,?,?));
+
+    my $sth = $dbh->prepare($query);
+    $sth->execute(
+        'labels printing',
+        $borrowernumber,
+        1,
+        undef,
+        0,
+        1,
+        0 );
+    if ($sth->err) {
+        my @cc = caller(0);
+        Koha::Exception::DB->throw(error => $cc[3]."($borrowernumber):> DB INSERT failed: ".$sth->errstr);
+    }
+}
+sub getLabelPrintingListItems {
+    my ($borrowernumber) = @_;
+    my $dbh=C4::Context->dbh();
+    my $query =
+       "SELECT vc.*, i.*
+         FROM virtualshelfcontents vc
+         LEFT JOIN virtualshelves vs ON vs.shelfnumber = vc.shelfnumber
+         LEFT JOIN items i ON i.itemnumber=vc.flags
+         WHERE vc.borrowernumber=? AND vs.shelfname = 'labels printing' AND i.itemnumber IS NOT NULL";
+    my @params = ($borrowernumber);
+    my $sth3 = $dbh->prepare($query);
+    $sth3->execute(@params);
+    return $sth3->fetchall_arrayref({});
+}
+sub removeLabelPrintingListItems {
+    my ($borrowernumber) = @_;
+    my $dbh=C4::Context->dbh();
+    my $query =
+       "DELETE
+        FROM virtualshelfcontents
+        WHERE shelfnumber =
+            (SELECT vs.shelfnumber FROM virtualshelves vs WHERE vs.owner=? AND vs.shelfname = 'labels printing');";
+    my @params = ($borrowernumber);
+    my $sth3 = $dbh->prepare($query);
+    $sth3->execute(@params);
+}
+sub getLabelPrintingList {
+    my ($borrowernumber) = @_;
+    my $dbh = C4::Context->dbh;
+    my $query = qq(
+        SELECT *
+        FROM   virtualshelves
+        WHERE  owner=? AND shelfname = 'labels printing'
+    );
+    my $sth = $dbh->prepare($query);
+    $sth->execute($borrowernumber);
+    return $sth->fetchrow_hashref();
+}
+
 1;
 
 __END__

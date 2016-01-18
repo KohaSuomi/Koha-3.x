@@ -1,13 +1,12 @@
 #!/usr/bin/perl
 #
-# Copyright 2006 Katipo Communications.
-# Parts Copyright 2009 Foundations Bible College.
+# Copyright 2015 KohaSuomi
 #
 # This file is part of Koha.
 #
 # Koha is free software; you can redistribute it and/or modify it under the
 # terms of the GNU General Public License as published by the Free Software
-# Foundation; either version 2 of the License, or (at your option) any later
+# Foundation; either version 3 of the License, or (at your option) any later
 # version.
 #
 # Koha is distributed in the hope that it will be useful, but WITHOUT ANY
@@ -19,15 +18,20 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 use Modern::Perl;
-use utf8;
 use vars qw($debug);
 
 use CGI;
 use CGI::Cookie;
+use JSON::XS;
+use POSIX;
 
 use C4::Auth qw(get_template_and_user);
 use C4::Output qw(output_html_with_http_headers);
-use C4::Labels::OplibLabels;
+use C4::Labels::PdfCreator;
+use C4::Labels::SheetManager;
+use C4::Labels::DataSourceManager;
+use C4::VirtualShelves;
+use C4::Members;
 
 my $cgi = new CGI;
 my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
@@ -41,53 +45,76 @@ my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
     }
 );
 
-my $barcode = $cgi->param('barcode');
+#JSONify the loggedinuser for javascript
+my $json = JSON::XS->new();
+my $loggedinuserJSON;
+if ($loggedinuser) {
+    $loggedinuserJSON = $json->encode(C4::Members::GetMember(borrowernumber => $loggedinuser));
+}
+else {
+    $loggedinuserJSON = $json->encode({});
+}
+
+$template->param( loggedinuserJSON  => $loggedinuserJSON );
+$template->param( dataSourceFunctions => $json->encode( C4::Labels::DataSourceManager::getAvailableDataSourceFunctions() ) );
+$template->param( dataFormatFunctions => $json->encode( C4::Labels::DataSourceManager::getAvailableDataFormatFunctions() ) );
+$template->param( fonts => C4::Fonts::getAvailableFontsNicely() );
+
+my $op = $cgi->param('op') || ''; #operation code
+my $barcodes = $cgi->param('barcodes');
+unless ($barcodes) {
+    $barcodes = [];
+    my $items = C4::VirtualShelves::getLabelPrintingListItems($loggedinuser);
+    if (ref $items eq 'ARRAY') {
+        foreach my $i (@$items) {
+            push(@$barcodes, $i->{barcode});
+        }
+        $template->param(barcodesTextArea => join("\n",@$barcodes));
+    }
+}
 my $ignoreErrors = $cgi->param('ignoreErrors');
-my $margins = {}; #collect the awsum print margins! yay!
 my $marginsCookie = exists $cgi->{'.cookies'}->{'label_margins'} ? $cgi->{'.cookies'}->{'label_margins'} : $cgi->cookie(-name => 'label_margins', -value => '', -expires => '+3M');
+my $sheetId = $cgi->param('sheetId') || $marginsCookie->{value}->[2] || 0;
 
 #When we are using lableprinter by printing labels, we always get the leftMargin parameter, even when the input field is empty
-my $leftMargin = $cgi->param('leftMargin');
-if (defined $leftMargin && $leftMargin != 0 && $leftMargin ne '') {
-    $margins->{left} = $cgi->param('leftMargin');
-    $marginsCookie->{value}->[0] = $margins->{left};
-}
-elsif (defined $leftMargin) {
-    $marginsCookie->{value}->[0] = '';
-}
-#When we are entering the oplib-label-creator, we have no leftMargin and rely on the cookie to remember the setting
-elsif (length $marginsCookie->{value}->[0] > 0) {
-    $margins->{left} = $marginsCookie->{value}->[0];
-}
-
-if ($margins->{left}) {
-    $template->param('margins', $margins);
-}
-
+my $leftMargin = (defined($cgi->param('leftMargin')) ? $cgi->param('leftMargin') : $marginsCookie->{value}->[0] || 0);
+my $topMargin  = (defined($cgi->param('topMargin'))  ? $cgi->param('topMargin')  : $marginsCookie->{value}->[1] || 0);
+my $margins = {left => $leftMargin || 0, top => $topMargin || 0};
+$marginsCookie->{value}->[0] = $leftMargin;
+$marginsCookie->{value}->[1] = $topMargin;
+$marginsCookie->{value}->[2] = $sheetId;
+$template->param(margins => $margins);
+$template->param(sheetId => $sheetId);
 
 ##Barcodes have been submitted! How awesome!
-##Separate the barcodes into an array. Then create labels out of them!
-if ($barcode) {
+##Separate the barcodes into an array and sanitate
+if ($barcodes) {
 
     #Sanitate the barcodes! Always sanitate input!! Mon dieu!
-    my $barcodes = [split( /\n/, $barcode )];
+    $barcodes = [split( /\n/, $barcodes )];
     for(my $i=0 ; $i<@$barcodes ; $i++){
         $barcodes->[$i] =~ s/^\s*//; #Trim barcode for whitespace.
         $barcodes->[$i] =~ s/\s*$//; #Otherwise very hard to debug!?!!?!?!?
     }
+}
 
-    my ($labelPdfDirectory, $fileName, $badBarcodeErrors) = C4::Labels::OplibLabels::populateAndCreateLabelSheets($barcodes, $margins);
-    my $filePathAndName = $labelPdfDirectory.$fileName;
+if ($op eq "printLabels") {
+    my $dir = '/tmp/';
+    my $file = 'printLabel'.strftime('%Y%m%d%H%M%S',localtime).'.pdf';
+    my $sheet = C4::Labels::SheetManager::getSheet($sheetId);
+    my $creator = C4::Labels::PdfCreator->new({margins => $margins, sheet => $sheet, file => $dir.$file});
+    my ($labelPdfDirectory, $fileName, $badBarcodeErrors) = $creator->create($barcodes);
+    my $filePathAndName = $dir.$file;
 
     if ($badBarcodeErrors) {
         $template->param('badBarcodeErrors', $badBarcodeErrors);
-        $template->param('barcode', $barcode); #return barcodes if error happens!
+        $template->param('barcode', $barcodes); #return barcodes if error happens!
         #Being nice might not be such a great idea after all :( $template->param('ignoreErrorsChecked', 'true'); #Be nice and readily check the ignoreErrors-checkbox!
     }
 
     #If we have no errors or want to ignore them, go ahead and share the pdf!
     if (!($badBarcodeErrors) || $ignoreErrors) {
-        sendPdf($cgi, $fileName, $filePathAndName);
+        sendPdf($cgi, $file, $filePathAndName);
         return 1;
     }
 }
@@ -99,12 +126,13 @@ sub sendPdf {
       #############################################
     ### Send the pdf to the user as an attachment ###
     print $cgi->header( -type       => 'application/pdf',
-                        -cookie     => [$marginsCookie],
+                        -cookie     => [$marginsCookie, $cookie],
                         -encoding   => 'utf-8',
                         -charset    => 'utf-8',
                         -attachment => $fileName,
                       ) if $marginsCookie;
     print $cgi->header( -type       => 'application/pdf',
+                        -cookie     => [$cookie],
                         -encoding   => 'utf-8',
                         -charset    => 'utf-8',
                         -attachment => $fileName,

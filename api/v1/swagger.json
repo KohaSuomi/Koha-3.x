@@ -326,6 +326,54 @@
         }
       }
     },
+    "/lists/{listname}/contents": {
+      "post": {
+        "x-mojo-controller": "Koha::REST::V1::Lists::Contents",
+        "x-koha-permission": {
+          "catalogue": "*"
+        },
+        "operationId": "addToList",
+        "tags": ["lists"],
+        "parameters": [
+          { "$ref": "#/parameters/listnamePathParam" },
+          { "$ref": "#/parameters/listContent" }
+        ],
+        "produces": ["application/json"],
+        "responses": {
+          "200": {
+            "description": "The list article",
+            "schema": { "$ref": "#/definitions/listContent" }
+          },
+          "404": {
+            "description": "The given list doesn't exist",
+            "schema": { "$ref": "#/definitions/error" }
+          }
+        }
+      },
+      "delete": {
+        "x-mojo-controller": "Koha::REST::V1::Lists::Contents",
+        "x-koha-permission": {
+          "catalogue": "*"
+        },
+        "operationId": "deleteContents",
+        "tags": ["lists"],
+        "parameters": [
+          { "$ref": "#/parameters/listnamePathParam" },
+          { "$ref": "#/parameters/listContent" }
+        ],
+        "produces": ["application/json"],
+        "responses": {
+          "200": {
+            "description": "All list articles are deleted",
+            "schema": { "$ref": "#/definitions/listContent" }
+          },
+          "404": {
+            "description": "The given list doesn't exist",
+            "schema": { "$ref": "#/definitions/error" }
+          }
+        }
+      }
+    },
     "/auth/session": {
       "get": {
         "x-mojo-controller": "Koha::REST::V1::Auth",
@@ -672,6 +720,245 @@
           }
         }
       }
+    },
+    "/labels/sheets": {
+      "get": {
+        "x-mojo-controller": "Koha::REST::V1::Labels::Sheets",
+        "operationId": "listSheets",
+        "x-koha-permission": {
+          "labels": "sheets_get"
+        },
+        "tags": ["labels"],
+        "produces": [
+          "application/json"
+        ],
+        "summary": "Get a list of label positioning sheets.",
+        "description": "Not designed for external use. Use this to see the structure of the sheet-objects.",
+        "responses": {
+          "200": {
+            "description": "A list of sheets",
+            "schema": {
+              "type": "array",
+              "items": {
+                  "type": "string"
+              }
+            }
+          },
+          "404": {
+            "description": "No sheets in Koha",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          }
+        }
+      },
+      "post": {
+        "x-mojo-controller": "Koha::REST::V1::Labels::Sheets",
+        "operationId": "createSheet",
+        "x-koha-permission": {
+          "labels": "sheets_new"
+        },
+        "tags": ["labels"],
+        "produces": [
+          "text/plain"
+        ],
+        "summary": "Create a new label positioning sheet",
+        "parameters": [
+          {
+            "name": "sheet",
+            "in": "formData",
+            "description": "A JSON object of the sheet, containing the items, regions and elements.",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "The created sheet",
+            "schema": { "type": "string" }
+          },
+          "400": {
+            "description": "Missing or wrong parameters",
+            "schema": { "$ref": "#/definitions/error" }
+          },
+          "500": {
+            "description": "Internal server error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          }
+        }
+      },
+      "put": {
+        "x-mojo-controller": "Koha::REST::V1::Labels::Sheets",
+        "operationId": "updateSheet",
+        "x-koha-permission": {
+          "labels": "sheets_mod"
+        },
+        "tags": ["labels"],
+        "produces": [
+          "application/json"
+        ],
+        "summary": "Modify a label positioning sheet",
+        "parameters": [
+          {
+            "name": "sheet",
+            "in": "formData",
+            "description": "A JSON object of the sheet, containing the items, regions and elements.",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "The modified sheet",
+            "schema": { "type" : "string" }
+          },
+          "400": {
+            "description": "Missing or wrong parameters",
+            "schema": { "$ref": "#/definitions/error" }
+          },
+          "404": {
+            "description": "Sheet not found",
+            "schema": { "$ref": "#/definitions/error" }
+          },
+          "500": {
+            "description": "Internal server error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          }
+        }
+      }
+    },
+    "/labels/sheets/version": {
+      "get": {
+        "x-mojo-controller": "Koha::REST::V1::Labels::Sheets",
+        "operationId": "listSheetVersions",
+        "x-koha-permission": {
+          "labels": "sheets_get"
+        },
+        "tags": ["labels"],
+        "produces": [
+          "application/json"
+        ],
+        "summary": "Get a list of label positioning sheet ids and versions.",
+        "responses": {
+          "200": {
+            "description": "A list of sheet ids and versions",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "id",
+                  "version"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "integer"
+                  },
+                  "version": {
+                    "type": "number",
+                    "format": "float"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No sheets in Koha",
+            "schema": { "$ref": "#/definitions/error" }
+          },
+          "500": {
+            "description": "Internal server error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          }
+        }
+      }
+    },
+    "/labels/sheets/{sheet_identifier}/{sheet_version}": {
+      "delete": {
+        "x-mojo-controller": "Koha::REST::V1::Labels::Sheets",
+        "operationId": "deleteSheet",
+        "x-koha-permission": {
+          "labels": "sheets_del"
+        },
+        "tags": ["labels"],
+        "parameters": [
+          { "$ref": "#/parameters/sheet_identifierPathParam" },
+          { "$ref": "#/parameters/sheet_versionPathParam" }
+        ],
+        "produces": [
+          ""
+        ],
+        "summary": "Delete a label positioning sheet",
+        "description": "By default only deletes the newest version, exposing the older version.",
+        "responses": {
+         "204": {
+            "description": "Deleting the message succeeded.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "404": {
+            "description": "Sheet not found",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          }
+        }
+      },
+      "get": {
+        "x-mojo-controller": "Koha::REST::V1::Labels::Sheets",
+        "operationId": "getSheet",
+        "x-koha-permission": {
+          "labels": "sheets_get"
+        },
+        "tags": ["labels"],
+        "parameters": [
+          { "$ref": "#/parameters/sheet_identifierPathParam" },
+          { "$ref": "#/parameters/sheet_versionPathParam" }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "summary": "Get a label positioning sheet",
+        "responses": {
+          "200": {
+            "description": "The sheet",
+            "schema": {
+              "type" : "object"
+            }
+          },
+          "404": {
+            "description": "Sheet not found",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          }
+        }
+      }
     }
   },
   "definitions": {
@@ -690,6 +977,15 @@
         "firstname": {
           "description": "borrower's first name"
         }
+      }
+    },
+    "listContent": {
+      "type": "object",
+      "properties": {
+        "listContentNumber": { "$ref": "#/definitions/listContentNumber" },
+        "biblionumber": { "$ref": "#/definitions/biblionumber" },
+        "itemnumber": { "$ref": "#/definitions/itemnumber" },
+        "borrowernumber": { "$ref" : "#/definitions/borrowernumber" }
       }
     },
     "holds": {
@@ -899,7 +1195,20 @@
       "required": ["sessionid"]
     },
     "borrowernumber": {
+      "type": "integer",
       "description": "Borrower internal identifier"
+    },
+    "biblionumber": {
+      "type": "integer",
+      "description": "Biblio internal identifier"
+    },
+    "itemnumber": {
+      "type": "integer",
+      "description": "Item internal identifier"
+    },
+    "listContentNumber": {
+      "type": "integer",
+      "description": "The internal identifier for this list article"
     },
     "message": {
       "type": "object",
@@ -1041,6 +1350,22 @@
       "required": "true",
       "type": "integer"
     },
+    "listnamePathParam": {
+      "name": "listname",
+      "in": "path",
+      "description": "list name",
+      "required": "true",
+      "type": "string"
+    },
+    "listContent": {
+      "name": "listContent",
+      "description": "The list article",
+      "in": "body",
+      "required": "true",
+      "schema" : {
+        "$ref": "#/definitions/listContent"
+      }
+    },
     "holdingbranchQueryParam": {
       "name": "holdingbranch",
       "in": "query",
@@ -1067,6 +1392,21 @@
       "description": "Internal invoice identifier",
       "required": "true",
       "type": "integer"
+    },
+    "sheet_identifierPathParam": {
+      "name": "sheet_identifier",
+      "in": "path",
+      "description": "Internal sheet identifier",
+      "required": "true",
+      "type": "integer"
+    },
+    "sheet_versionPathParam": {
+      "name": "sheet_version",
+      "in": "path",
+      "description": "Sheet version number. If omited, operations target the newest version. Set to '631373.00' to affect all versions.",
+      "required": "false",
+      "type": "number",
+      "format": "float"
     },
     "session": {
       "name": "session",

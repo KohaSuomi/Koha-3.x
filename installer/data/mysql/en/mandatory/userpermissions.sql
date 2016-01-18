@@ -81,5 +81,9 @@ INSERT INTO permissions (module, code, description) VALUES
    ( 'plugins',         'tool', 'Use tool plugins'),
    ( 'plugins',         'report', 'Use report plugins'),
    ( 'plugins',         'configure', 'Configure plugins'),
-   ( 'lists',           'delete_public_lists', 'Delete public lists')
+   ( 'lists',           'delete_public_lists', 'Delete public lists'),
+   ( 'labels',          'sheets_get',                                  'Allow viewing all label sheets'),
+   ( 'labels',          'sheets_new',                                  'Allow creating all label sheets'),
+   ( 'labels',          'sheets_mod',                                  'Allow modifying all label sheets'),
+   ( 'labels',          'sheets_del',                                  'Allow deleting all label sheets')
  ;

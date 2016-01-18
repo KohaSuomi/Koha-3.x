@@ -19,6 +19,11 @@ our $PERL_DEPS = {
         'required' => '1',
         'min_ver'  => '1.41'
     },
+    'Text::ParseWords' => {
+        'usage'        => 'Core',
+        'required'     => '1',
+        'min_ver'      => '3.28'
+    },
     'Storable' => {
         'usage'    => 'Core',
         'required' => '1',
