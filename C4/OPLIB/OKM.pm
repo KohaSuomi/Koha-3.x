@@ -733,6 +733,11 @@ sub statisticsDiscards {
 }
 sub statisticsActiveBorrowers {
     my ($self, $libraryGroup) = (@_);
+    #_statisticsOurBorrowersWhoHaveCirculatedInAnyBranch($self, $libraryGroup);
+    _statisticsBorrowersWhoCirculatedInOurBranches($self, $libraryGroup);
+}
+sub _statisticsOurActiveBorrowersWhoHaveCirculatedInAnyBranch {
+    my ($self, $libraryGroup) = (@_);
     my @cc = caller(0);
     print '    #'.DateTime->now()->iso8601()."# Starting ".$cc[3]." #\n" if $self->{verbose};
 
@@ -748,6 +753,31 @@ sub statisticsActiveBorrowers {
                  )
                  AS stat ON stat.borrowernumber = b.borrowernumber
                  WHERE b.branchcode $in_libraryGroupBranches $limit");
+    $sth->execute( $self->{startDateISO}, $self->{endDateISO} );
+    if ($sth->err) {
+        Koha::Exception::DB->throw(error => $cc[3]."():> ".$sth->errstr);
+    }
+    my $activeBorrowers = $sth->fetchrow;
+
+    my $stats = $libraryGroup->getStatistics();
+    $stats->{activeBorrowers} = $activeBorrowers;
+    print '    #'.DateTime->now()->iso8601()."# Leaving ".$cc[3]." #\n" if $self->{verbose};
+}
+sub _statisticsBorrowersWhoCirculatedInOurBranches {
+    my ($self, $libraryGroup) = (@_);
+    my @cc = caller(0);
+    print '    #'.DateTime->now()->iso8601()."# Starting ".$cc[3]." #\n" if $self->{verbose};
+
+    my $dbh = C4::Context->dbh();
+    my $in_libraryGroupBranches = $libraryGroup->getBranchcodesINClause();
+    my $limit = $self->getLimit();
+    my $sth = $dbh->prepare("
+        SELECT COUNT(DISTINCT(borrowernumber))
+        FROM statistics s
+        WHERE s.type IN ('issue','renew') AND
+              s.datetime BETWEEN ? AND ? AND
+              s.branch $in_libraryGroupBranches $limit
+    ");
     $sth->execute( $self->{startDateISO}, $self->{endDateISO} );
     if ($sth->err) {
         Koha::Exception::DB->throw(error => $cc[3]."():> ".$sth->errstr);
