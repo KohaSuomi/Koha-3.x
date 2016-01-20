@@ -21,10 +21,12 @@ use Modern::Perl;
 use Carp;
 use DateTime;
 use DateTime::Format::HTTP;
+use Try::Tiny;
 use Scalar::Util qw(blessed);
 use MARC::Record;
 use MARC::File::XML;
 
+use C4::Biblio::Chunker;
 use Koha::Database;
 use Koha::BiblioDataElement;
 
@@ -52,23 +54,52 @@ Extracts biblio_data_elements from those MARCXMLs'.
 =cut
 
 sub UpdateBiblioDataElements {
-    my ($forceRebuild, $limit, $verbose) = @_;
+    my ($forceRebuild, $limit, $verbose, $oldDbi) = @_;
 
     $verbose = 0 unless $verbose; #Prevent undefined comparison errors
 
-    my $biblioitems = _getBiblioitemsNeedingUpdate($forceRebuild, $limit, $verbose);
-
-    if ($biblioitems && ref $biblioitems eq 'ARRAY') {
-        print "Found '".scalar(@$biblioitems)."' biblioitems-records to update.\n" if $verbose > 0;
-        foreach my $biblioitem (@$biblioitems) {
-            UpdateBiblioDataElement($biblioitem);
-        }
+    if ($forceRebuild) {
+        forceRebuild($limit, $verbose, $oldDbi);
     }
-    elsif ($verbose > 0) {
-        print "Nothing to UPDATE\n";
+    else {
+        try {
+            my $biblioitems = _getBiblioitemsNeedingUpdate($limit, $verbose);
+
+            if ($biblioitems && ref $biblioitems eq 'ARRAY') {
+                print "Found '".scalar(@$biblioitems)."' biblioitems-records to update.\n" if $verbose > 0;
+                foreach my $biblioitem (@$biblioitems) {
+                    UpdateBiblioDataElement($biblioitem, $verbose, $oldDbi);
+                }
+            }
+            elsif ($verbose > 0) {
+                print "Nothing to UPDATE\n";
+            }
+        } catch {
+            if (blessed($_) && $_->isa('Koha::Exception::FeatureUnavailable')) {
+                forceRebuild($limit, $verbose, $oldDbi);
+            }
+            elsif (blessed($_)) {
+                $_->rethrow();
+            }
+            else {
+                die $_;
+            }
+        };
     }
 }
 
+sub forceRebuild {
+    my ($limit, $verbose, $oldDbi) = @_;
+
+    $verbose = 0 unless $verbose; #Prevent undefined comparison errors
+
+    my $chunker = C4::Biblio::Chunker->new(undef, $limit, undef, $verbose);
+    while (my $biblioitems = $chunker->getChunk(undef, $limit)) {
+        foreach my $biblioitem (@$biblioitems) {
+            UpdateBiblioDataElement($biblioitem, $verbose, $oldDbi);
+        }
+    }
+}
 =head UpdateBiblioDataElement
 
     Koha::BiblioDataElements::UpdateBiblioDataElement($biblioitem, $verbose);
@@ -80,7 +111,7 @@ Takes biblioitems and MARCXML and picks the needed data_elements to the koha.bib
 =cut
 
 sub UpdateBiblioDataElement {
-    my ($biblioitem, $verbose) = @_;
+    my ($biblioitem, $verbose, $oldDbi) = @_;
     $verbose = 0 unless $verbose; #Prevent undef errors
 
     #Get the bibliodataelement from input which can be a Koha::Object or a HASH from DBI
@@ -91,26 +122,40 @@ sub UpdateBiblioDataElement {
     my $itemtype;
     my $biblioitemnumber;
     if (blessed $biblioitem && $biblioitem->isa('Koha::Object')) {
-        my @bde = Koha::BiblioDataElements->search({biblioitemnumber => $biblioitem->biblioitemnumber()});
-        $bde = $bde[0];
+        if ($oldDbi) {
+            $bde = Koha::BiblioDataElement::DBI_getBiblioDataElement($biblioitem->biblioitemnumber());
+        }
+        else {
+            my @bde = Koha::BiblioDataElements->search({biblioitemnumber => $biblioitem->biblioitemnumber()});
+            $bde = $bde[0];
+        }
+
         $marcxml = $biblioitem->marcxml();
         $deleted = $biblioitem->deleted();
         $itemtype = $biblioitem->itemtype();
         $biblioitemnumber = $biblioitem->biblioitemnumber();
     }
     else {
-        my @bde = Koha::BiblioDataElements->search({biblioitemnumber => $biblioitem->{biblioitemnumber}});
-        $bde = $bde[0];
+        if ($oldDbi) {
+            $bde = Koha::BiblioDataElement::DBI_getBiblioDataElement($biblioitem->{biblioitemnumber});
+        }
+        else {
+            my @bde = Koha::BiblioDataElements->search({biblioitemnumber => $biblioitem->{biblioitemnumber}});
+            $bde = $bde[0];
+        }
+
         $marcxml = $biblioitem->{marcxml};
         $deleted = $biblioitem->{deleted};
         $itemtype = $biblioitem->{itemtype};
         $biblioitemnumber = $biblioitem->{biblioitemnumber};
     }
-    $bde = Koha::BiblioDataElement->new({biblioitemnumber => $biblioitemnumber}) unless $bde;
+    $bde = Koha::BiblioDataElement->new({biblioitemnumber => $biblioitemnumber}) if (not($bde) && not($oldDbi));
 
     #Make a MARC::Record out of the XML.
     my $record = eval { MARC::Record::new_from_xml( $marcxml, "utf8", C4::Context->preference('marcflavour') ) };
-    print $@;
+    if ($@) {
+        die $@;
+    }
 
     #Start creating data_elements.
     $bde->isFiction($record);
@@ -119,7 +164,13 @@ sub UpdateBiblioDataElement {
     $bde->setItemtype($itemtype);
     $bde->isSerial($itemtype);
     $bde->setLanguages($record);
-    $bde->store();
+    if ($oldDbi) {
+        Koha::BiblioDataElement::DBI_insertBiblioDataElement($bde, $biblioitemnumber) unless $bde->{biblioitemnumber};
+        Koha::BiblioDataElement::DBI_updateBiblioDataElement($bde) if $bde->{biblioitemnumber};
+    }
+    else {
+        $bde->store();
+    }
 }
 
 =head GetLatestDataElementUpdateTime
@@ -129,7 +180,7 @@ sub UpdateBiblioDataElement {
 Finds the last time koha.biblio_data_elements has been UPDATED.
 If the table is empty, returns undef
 @PARAM1, Int, verbosity level. See update_biblio_data_elements.pl-cronjob
-@RETURNS DateTime or undef, last modification time
+@RETURNS DateTime or undef
 =cut
 sub GetLatestDataElementUpdateTime {
     my ($verbose) = @_;
@@ -138,9 +189,8 @@ sub GetLatestDataElementUpdateTime {
     $sthLastModTime->execute( );
     my $rv = $sthLastModTime->fetchrow_hashref();
     my $lastModTime = ($rv && $rv->{last_mod_time}) ? $rv->{last_mod_time} : undef;
-    print "Latest koha.biblio_data_elements updating time '".($lastModTime || '')."'\n" if $verbose;
-    return $lastModTime unless $lastModTime;
-    $lastModTime = '1900-01-01 01:01:01' if $lastModTime =~ /^0000-00-00[T ]/;
+    print "Latest koha.biblio_data_elements updating time '".($lastModTime || '')."'\n" if $verbose > 0;
+    return $lastModTime if(not($lastModTime) || $lastModTime =~ /^0000-00-00/);
     my $dt = DateTime::Format::HTTP->parse_datetime($lastModTime);
     $dt->set_time_zone( C4::Context->tz() );
     return $dt;
@@ -151,7 +201,8 @@ Finds the biblioitems whose timestamp (time last modified) is bigger than the bi
 =cut
 
 sub _getBiblioitemsNeedingUpdate {
-    my ($forceRebuild, $limit, $verbose) = @_;
+    my ($limit, $verbose) = @_;
+    my @cc = caller(0);
 
     if ($limit) {
         $limit = " LIMIT $limit ";
@@ -163,16 +214,10 @@ sub _getBiblioitemsNeedingUpdate {
 
     print '#'.DateTime->now(time_zone => C4::Context->tz())->iso8601().'# Fetching biblioitems  #'."\n" if $verbose > 0;
 
-    my $lastModTime;
-    if ($forceRebuild) {
-        $lastModTime = '1900-01-01 01:01:01';
-    }
-    else {
-        $lastModTime = GetLatestDataElementUpdateTime($verbose)->iso8601() || '1900-01-01 01:01:01';
-    }
+    my $lastModTime = GetLatestDataElementUpdateTime($verbose)->iso8601() || Koha::Exception::FeatureUnavailable->throw($cc[3]."():> You must do a complete rebuilding since none of the biblios have been indexed yet.");
 
     my $dbh = C4::Context->dbh();
-    my $sthBiblioitems = $dbh->prepare("
+    my $sth = $dbh->prepare("
             (SELECT biblioitemnumber, itemtype, marcxml, 0 as deleted FROM biblioitems
              WHERE timestamp >= ? $limit
             ) UNION (
@@ -180,8 +225,11 @@ sub _getBiblioitemsNeedingUpdate {
              WHERE timestamp >= ? $limit
             )
     ");
-    $sthBiblioitems->execute( $lastModTime, $lastModTime );
-    my $biblioitems = $sthBiblioitems->fetchall_arrayref({});
+    $sth->execute( $lastModTime, $lastModTime );
+    if ($sth->err) {
+        Koha::Exception::DB->throw(error => $cc[3]."():> ".$sth->errstr);
+    }
+    my $biblioitems = $sth->fetchall_arrayref({});
 
     print '#'.DateTime->now(time_zone => C4::Context->tz())->iso8601().'# Biblioitems fetched #'."\n" if $verbose > 0;
 
@@ -190,15 +238,19 @@ sub _getBiblioitemsNeedingUpdate {
 
 =head verifyFeatureIsInUse
 
-    my $ok = Koha::BiblioDataElements::verifyFeatureIsInUse();
+    my $ok = Koha::BiblioDataElements::verifyFeatureIsInUse($verbose);
 
+@PARAM1 Integer, see --verbose in update_biblio_data_elements.pl
 @RETURNS Flag, 1 if this feature is properly configured
 @THROWS Koha::Exception::FeatureUnavailable if this feature is not in use.
 =cut
 
 sub verifyFeatureIsInUse {
+    my ($verbose) = @_;
+    $verbose = 0 unless $verbose;
+
     my $now = DateTime->now(time_zone => C4::Context->tz());
-    my $lastUpdateTime = Koha::BiblioDataElements::GetLatestDataElementUpdateTime() || '1900-01-01 01:01:01';
+    my $lastUpdateTime = Koha::BiblioDataElements::GetLatestDataElementUpdateTime($verbose) || '1900-01-01 01:01:01';
     my $lastUpdateTimeDt = DateTime::Format::HTTP->parse_datetime($lastUpdateTime);
     my $difference = $now->subtract_datetime( $lastUpdateTimeDt );
     if ($difference->in_units( 'days' ) > 2) {

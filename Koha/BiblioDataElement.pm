@@ -22,6 +22,8 @@ use Carp;
 
 use Koha::Database;
 
+use Koha::Exception::DB;
+
 use base qw(Koha::Object);
 
 sub type {
@@ -30,43 +32,45 @@ sub type {
 
 sub isFiction {
     my ($self, $record) = @_;
+    my $col = 'fiction';
+    my $val = 0;
 
     my $sf = $record->subfield('084','a');
     if ($sf && $sf =~/^8[1-5].*/) { #ykl numbers 81.* to 85.* are fiction.
-        $self->set({fiction => 1});
+        $val = 1;
     }
-    else {
-        $self->set({fiction => 0});
-    }
+    ($self->{dbi}) ? $self->{$col} = $val : $self->set({$col => $val});
 }
 
 sub isMusicalRecording {
     my ($self, $record) = @_;
+    my $col = 'musical';
+    my $val = 0;
 
     my $sf = $record->subfield('084','a');
     if ($sf && $sf =~/^78.*/) { #ykl number 78 is a musical recording.
-        $self->set({musical => 1});
+        $val = 1;
     }
-    else {
-        $self->set({musical => 0});
-    }
+    ($self->{dbi}) ? $self->{$col} = $val : $self->set({$col => $val});
 }
 
 sub isSerial {
     my ($self, $itemtype) = @_;
+    my $col = 'serial';
+    my $val = 0;
+
     my $serial = ($itemtype && ($itemtype eq 'AL' || $itemtype eq 'SL')) ? 1 : 0;
     if ($serial) {
-        $self->set({serial => 1});
+        $val = 1;
     }
-    else {
-        $self->set({serial => 0});
-    }
+    ($self->{dbi}) ? $self->{$col} = $val : $self->set({$col => $val});
 }
 
 sub setItemtype {
     my ($self, $itemtype) = @_;
+    my $col = 'itemtype';
 
-    $self->set({itemtype => $itemtype});
+    ($self->{dbi}) ? $self->{$col} = $itemtype : $self->set({$col => $itemtype});
 }
 
 =head setLanguages
@@ -83,7 +87,8 @@ Warns if multiple primary languages are found.
 sub setLanguages {
     my ($self, $record) = @_;
 
-    my $primaryLanguage; #Did we find the primary language?
+    my $primaryLanguage = 'FIN'; #Did we find the primary language?
+    my $languages = '';
     my @sb; #StrinBuilder to efficiently collect language Strings and concatenate them
     my $f041 = $record->field('041');
 
@@ -93,31 +98,96 @@ sub setLanguages {
 
         foreach my $sf (@sfs) {
             unless (ref $sf eq 'ARRAY' && $sf->[0] && $sf->[1]) { #Code to fail :)
-                print "Biblioitemnumber '".$self->biblioitemnumber()."' has a bad language subfield\n";
                 next;
             }
             push @sb, $sf->[0].':'.$sf->[1];
             if ($sf->[0] eq 'a') { #We got the primary language subfield
-                if ($primaryLanguage) {
-                    print "Biblioitemnumber '".$self->biblioitemnumber()."' has a duplicate primary language subfield 'a'\n";
-                }
-                else {
-                    $primaryLanguage = $sf->[1];
-                    $self->set({primary_language => $primaryLanguage});
-                }
+                $primaryLanguage = $sf->[1];
+                ($self->{dbi}) ? $self->{'primary_language'} = $primaryLanguage : $self->set({'primary_language' => $primaryLanguage});
             }
         }
+        $languages = join(',',@sb) if scalar(@sb);
     }
 
-    $self->set({languages => join(',',@sb)}) if scalar(@sb);
-    $self->set({primary_language => 'FIN'}) unless $primaryLanguage; #Defaults to FIN for obvious reasons :)
+    ($self->{dbi}) ? $self->{'languages'} = $languages : $self->set({'languages' => $languages});
+    ($self->{dbi}) ? $self->{'primary_language'} = $primaryLanguage : $self->set({'primary_language' => $primaryLanguage});
 }
 
 sub setDeleted {
     my ($self, $deleted) = @_;
+    my $col = 'deleted';
 
-    $self->set({deleted => 1}) if $deleted;
-    $self->set({deleted => undef}) unless $deleted;
+    ($self->{dbi}) ? $self->{$col} = $deleted : $self->set({$col => $deleted});
+}
+
+
+=head PERFORMANCE IMPROVEMENT TESTS USING DBI
+
+    THIS MODULE IS SUPER SLOW, LOOKING TO SPEED IT USING plain DBI
+
+=cut
+
+sub DBI_new {
+    my ($class, $bdeHash, $biblioitemnumber) = @_;
+    unless ($bdeHash && ref $bdeHash eq 'HASH') {
+        $bdeHash = {};
+    }
+    bless($bdeHash, $class);
+    $bdeHash->{dbi} = 1;
+    return $bdeHash;
+}
+
+sub DBI_getBiblioDataElement {
+    my ($biblioitemnumber) = @_;
+    my $dbh = C4::Context->dbh();
+    my $sth = $dbh->prepare("
+        SELECT * FROM biblio_data_elements
+        WHERE biblioitemnumber = ?;
+    ");
+    $sth->execute( $biblioitemnumber );
+    if ($sth->err) {
+        my @cc = caller(0);
+        Koha::Exception::DB->throw(error => $cc[3]."():> ".$sth->errstr);
+    }
+    my $bde = $sth->fetchrow_hashref();
+    return Koha::BiblioDataElement->DBI_new($bde, $biblioitemnumber);
+}
+
+sub DBI_updateBiblioDataElement {
+    my ($bde) = @_;
+    my $dbh = C4::Context->dbh();
+    my $sth = $dbh->prepare("
+        UPDATE biblio_data_elements
+        SET deleted = ?,
+            primary_language = ?,
+            languages = ?,
+            fiction = ?,
+            musical = ?,
+            itemtype = ?,
+            serial = ?
+        WHERE biblioitemnumber = ?;
+    ");
+    $sth->execute( $bde->{deleted}, $bde->{primary_language}, $bde->{languages}, $bde->{fiction}, $bde->{musical}, $bde->{itemtype}, $bde->{serial}, $bde->{biblioitemnumber} );
+    if ($sth->err) {
+        my @cc = caller(0);
+        Koha::Exception::DB->throw(error => $cc[3]."():> ".$sth->errstr);
+    }
+}
+
+sub DBI_insertBiblioDataElement {
+    my ($bde, $biblioitemnumber) = @_;
+    my $dbh = C4::Context->dbh();
+    my $sth = $dbh->prepare("
+        INSERT INTO biblio_data_elements
+            (biblioitemnumber, deleted, primary_language, languages, fiction, musical, itemtype, serial)
+            VALUES
+            (?               , ?      , ?               , ?        , ?      , ?      , ?       , ?     );
+    ");
+    $sth->execute( $biblioitemnumber, $bde->{deleted}, $bde->{primary_language}, $bde->{languages}, $bde->{fiction}, $bde->{musical}, $bde->{itemtype}, $bde->{serial} );
+    if ($sth->err) {
+        my @cc = caller(0);
+        Koha::Exception::DB->throw(error => $cc[3]."():> ".$sth->errstr);
+    }
 }
 
 1;
