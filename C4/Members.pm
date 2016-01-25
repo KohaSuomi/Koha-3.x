@@ -2547,7 +2547,11 @@ sub FineSlip {
 
     $returns = GetTodaysReturnsForBorrower($borrowernumber, $branch);
 
-Return a list of items borrower has checked-in today in branch.
+Return a list of items borrower has checked-in today in any branch.
+
+@PARAM1 Integer
+@PARAM2 String branchcode, disabled currently, always returns check-ins for all
+                           branches.
 
 =cut
 
@@ -2560,12 +2564,13 @@ sub GetTodaysReturnsForBorrower {
        SELECT itemnumber
        FROM old_issues
        WHERE DATE(returndate) = ?
-         AND borrowernumber = ?
-         AND branchcode = ?
-    ";
+         AND borrowernumber = ?".
+#         AND branchcode = ? #Disable limiting by branch since it causes client-facing issues. Retain the feature code so others can extrapolate this feature is it is deemed necessary after all.
+    "";
 
     my $sth = $dbh->prepare($query);
-    $sth->execute($date, $borrowernumber, $branch);
+#    $sth->execute($date, $borrowernumber, $branch);
+    $sth->execute($date, $borrowernumber);
     my @results;
 
     while ( my $data = $sth->fetchrow_hashref ) {
