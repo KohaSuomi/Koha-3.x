@@ -237,8 +237,20 @@
                         </div>
                     <!-- RANK LIMITS -->
                     </div> <!-- / .span3 -->
+                    <div class="span3">
+                        <div id="linked-resources">
+                            <fieldset>
+                                <legend>Limit to linked resources:</legend>
+                                <select name="limit" size="2" multiple>
+                                    <option value="only_host_items">Host items</option>
+                                    <option value="only_component_parts">Component parts</option>
+                                </select>
+                            </fieldset>
+                        </div>
+                    </div>
                 </div> <!-- / .row-fluid -->
 
+                
                 [% IF ( expanded_options ) %]
                     <div class="row-fluid">
                         [% IF ( usmarc ) %]
