@@ -157,22 +157,19 @@ sub validateAndPopulateDefaultValues {
         croak __PACKAGE__.":> Mandatory parameter 'isbn' missing.";
     }
 
-    my $borrowers = t::lib::TestObjects::BorrowerFactory->createTestGroup(
+    my $borrower = t::lib::TestObjects::BorrowerFactory->createTestGroup(
                                 {cardnumber => $object->{cardnumber}},
                                 undef, @$stashes);
-    my $borrower = $borrowers->{ $object->{cardnumber} };
     $object->{borrower} = $borrower if $borrower;
 
-    my $biblios = t::lib::TestObjects::BiblioFactory->createTestGroup({"biblio.title" => "Test holds' Biblio",
+    my $biblio = t::lib::TestObjects::BiblioFactory->createTestGroup({"biblio.title" => "Test holds' Biblio",
                                                                            "biblioitems.isbn" => $object->{isbn}},
                                                                           undef, @$stashes);
-    my $biblio = $biblios->{ $object->{isbn} || '971-972-call-me' }; #Get default isbn or the given one
     $object->{biblio} = $biblio if $biblio;
 
     #Get test Item
     if ($object->{barcode}) {
-        my $items = t::lib::TestObjects::ItemFactory->createTestGroup({barcode => $object->{barcode}, isbn => $object->{isbn}}, undef, @$stashes);
-        my $item  = $items->{ $object->{barcode} };
+        my $item = t::lib::TestObjects::ItemFactory->createTestGroup({barcode => $object->{barcode}, isbn => $object->{isbn}}, undef, @$stashes);
         $object->{item} = $item;
     }
 

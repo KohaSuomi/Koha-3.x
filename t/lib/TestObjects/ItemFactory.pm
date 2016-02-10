@@ -65,14 +65,10 @@ sub handleTestObject {
 
     #Look for the parent biblio, if we don't find one, create a default one.
     my ($biblionumber, $biblioitemnumber, $itemnumber);
-    my $biblios = t::lib::TestObjects::BiblioFactory->createTestGroup({"biblio.title" => "Test Items' Biblio",
+    my $biblio = t::lib::TestObjects::BiblioFactory->createTestGroup({"biblio.title" => "Test Items' Biblio",
                                                                        "biblioitems.isbn" => $object->{isbn},
                                                                        "biblio.biblionumber" => $object->{biblionumber}},
                                                                           undef, @$stashes);
-    my $biblio;
-    foreach my $k (keys %$biblios) {
-        $biblio = $biblios->{$k};
-    }
     $object->{biblionumber} = $biblio->{biblionumber};
     $object->{biblio} = $biblio;
 

@@ -26,6 +26,8 @@ use DateTime;
 use Koha::DateUtils;
 
 use t::lib::TestObjects::ObjectFactory;
+use t::lib::TestObjects::Labels::SheetFactory;
+use C4::Labels::SheetManager;
 use t::lib::TestObjects::Serial::SubscriptionFactory;
 use Koha::Serial::Subscriptions;
 use t::lib::TestObjects::BorrowerFactory;
@@ -55,31 +57,93 @@ my $year = $now->year();
 
 
 ########## SubscriptionFactory subtests ##########
+subtest "t::lib::TestObjects::Labels::SheetFactory" => \&testLabelsSheetFactory;
+sub testLabelsSheetFactory {
+    my $subtestContext = {};
+    my $sheet;
+
+    eval {
+    $sheet = t::lib::TestObjects::Labels::SheetFactory->createTestGroup(
+                                                   {name => 'Simplex',
+                                                   },
+                                                    undef, $subtestContext);
+    C4::Labels::SheetManager::putNewSheetToDB($sheet);
+
+    is($sheet->getName(),
+       'Simplex',
+       "Sheet name");
+    is($sheet->getVersion(),
+       0.3,
+       "Sheet version");
+
+    my $borrower = Koha::Borrowers->cast('sheetAuthor'); #Get the default sheet author
+    is($sheet->getAuthor()->{borrowernumber},
+       $borrower->borrowernumber,
+       "Author defaults");
+
+    my $items = $sheet->getItems();
+    is(scalar(@$items),
+       1,
+       "Items count");
+    my $item = $items->[0];
+    is($item->getIndex(),
+       1,
+       "Item index");
+
+    my $regions = $item->getRegions();
+    is(scalar(@$regions),
+       1,
+       "Regions count");
+
+    my $sameSheet = C4::Labels::SheetManager::getSheet($sheet->getId(), $sheet->getVersion());
+
+    is($sameSheet->getName(),
+       $sheet->getName(),
+       "Sheet persisted to DB, test name");
+    is($sameSheet->getVersion(),
+       $sheet->getVersion(),
+       "Sheet persisted to DB, test version");
+
+    };
+    if ($@) {
+        ok(0, "Subtest crashed with error:\n$@\n");
+        t::lib::TestObjects::ObjectFactory->tearDownTestContext($subtestContext);
+    }
+    else {
+        t::lib::TestObjects::ObjectFactory->tearDownTestContext($subtestContext);
+        my $deletedSheet = C4::Labels::SheetManager::getSheet($sheet->getId(), $sheet->getVersion());
+        is($deletedSheet, undef, "Sheet torn down");
+    }
+}
+
+
+
+########## SubscriptionFactory subtests ##########
 subtest "t::lib::TestObjects::SubscriptionFactory" => \&testSubscriptionFactory;
 sub testSubscriptionFactory {
     my $subtestContext = {};
     my $biblionumber; #Get the biblionumber the test Subscription is for.
 
     eval {
-    my $subscriptions = t::lib::TestObjects::Serial::SubscriptionFactory->createTestGroup(
+    my $subscription = t::lib::TestObjects::Serial::SubscriptionFactory->createTestGroup(
                                                    {internalnotes => 'TSUB1',
                                                     receiveSerials => 5,
                                                     staffdisplaycount => 10,
                                                     opacdisplaycount => 15,
                                                    },
                                                     undef, $subtestContext);
-    $biblionumber = $subscriptions->{TSUB1}->biblionumber;
+    $biblionumber = $subscription->biblionumber;
 
     C4::Context->interface('opac');
-    is($subscriptions->{TSUB1}->opacdisplaycount,
+    is($subscription->opacdisplaycount,
        15,
        "Get opacdisplaycount.");
     C4::Context->interface('opac');
-    is($subscriptions->{TSUB1}->staffdisplaycount,
+    is($subscription->staffdisplaycount,
        10,
        "Get staffdisplaycount.");
 
-    my $serials = $subscriptions->{TSUB1}->serials();
+    my $serials = $subscription->serials();
     ok($serials->[0]->pattern_x == $year &&
        $serials->[0]->pattern_y == 1 &&
        $serials->[0]->pattern_z == 1,
@@ -113,7 +177,7 @@ subtest 't::lib::TestObjects::HoldFactory' => \&testHoldFactory;
 sub testHoldFactory {
     my $subtestContext = {};
     ##Create and Delete using dependencies in the $testContext instantiated in previous subtests.
-    my $holds = t::lib::TestObjects::HoldFactory->createTestGroup(
+    my $hold = t::lib::TestObjects::HoldFactory->createTestGroup(
                         {cardnumber        => '1A01',
                          isbn              => '971',
                          barcode           => '1N01',
@@ -122,10 +186,10 @@ sub testHoldFactory {
                         },
                         ['cardnumber','isbn','barcode'], $subtestContext);
 
-    is($holds->{'1A01-971-1N01'}->{branchcode},
+    is($hold->{branchcode},
        'CPL',
        "Hold '1A01-971-1N01' pickup location is 'CPL'.");
-    is($holds->{'1A01-971-1N01'}->{waitingdate},
+    is($hold->{waitingdate},
        '2015-01-15',
        "Hold '1A01-971-1N01' waiting date is '2015-01-15'.");
 
@@ -157,7 +221,7 @@ sub testHoldFactory {
 
     t::lib::TestObjects::HoldFactory->deleteTestGroup($subtestContext->{hold});
 
-    my $holds_deleted = C4::Reserves::GetReservesFromBiblionumber({biblionumber => $holds->{'1A01-971-1N01'}->{biblio}->{biblionumber}});
+    my $holds_deleted = C4::Reserves::GetReservesFromBiblionumber({biblionumber => $hold->{biblio}->{biblionumber}});
     ok (not(@$holds_deleted), "Holds deleted");
 };
 

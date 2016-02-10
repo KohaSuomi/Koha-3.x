@@ -55,6 +55,8 @@ See the createTestGroup() documentation in the implementing Factory-class for ho
 the table columns need to be given.
 
 @PARAM1 ARRAYRef of HASHRefs of desired Object constructor parameters
+        or
+        HASHRef of desired Object constructor parameters
 @PARAM2 koha.<object>-column which is used as the test context HASH key to find individual Objects,
                 usually defaults to to one of the UNIQUE database keys.
 @PARAM3-5 HASHRef of test contexts. You can save the given Objects to multiple
@@ -64,6 +66,8 @@ the table columns need to be given.
                 { $hashKey => {#borrower1 HASH},
                   $hashKey => {#borrower2 HASH},
                 }
+         or
+         Object, single object reference if the constructors parameters were given as a HASHRef instead
 =cut
 
 sub createTestGroup {
@@ -72,7 +76,12 @@ sub createTestGroup {
     $class->_validateStashes(@$stashes);
     $hashKey = $class->getDefaultHashKey() unless $hashKey;
 
-    $objects = [$objects] unless ref($objects) eq 'ARRAY';
+    my $retType = 'HASHRef';
+    unless (ref($objects) eq 'ARRAY') {
+        $objects = [$objects];
+        $retType = 'SCALAR';
+    }
+
     my %objects;
     foreach my $o (@$objects) {
         $class->validateAndPopulateDefaultValues($o, $hashKey, $stashes);
@@ -91,7 +100,14 @@ sub createTestGroup {
 
     $class->_persistToStashes(\%objects, $class->getHashGroupName(), @$stashes);
 
-    return \%objects;
+    if ($retType eq 'HASHRef') {
+        return \%objects;
+    }
+    else {
+        foreach my $key (keys %objects) {
+            return $objects{$key};
+        }
+    }
 }
 
 =head getHashGroupName
@@ -150,6 +166,11 @@ sub tearDownTestContext {
         require t::lib::TestObjects::Acquisition::BooksellerFactory;
         t::lib::TestObjects::Acquisition::BooksellerFactory->deleteTestGroup($stash->{'acquisition-bookseller'});
         delete $stash->{'acquisition-bookseller'};
+    }
+    if ($stash->{'labels-sheet'}) {
+        require t::lib::TestObjects::Labels::SheetFactory;
+        t::lib::TestObjects::Labels::SheetFactory->deleteTestGroup($stash->{'labels-sheet'});
+        delete $stash->{'labels-sheet'};
     }
     if ($stash->{checkout}) {
         require t::lib::TestObjects::CheckoutFactory;
