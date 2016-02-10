@@ -870,6 +870,10 @@
       "description": "Library assigned ID number for Borrowers",
       "type": "string"
     },
+    "branchcode": {
+      "type": "string",
+      "description": "Code identifying a library"
+    },
     "session": {
       "type": "object",
       "properties": {
