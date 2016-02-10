@@ -22,7 +22,7 @@ sub list_borrower_holds {
         return $c->$cb({error => "Borrower not found"}, 404);
     }
 
-    my @holds = C4::Reserves::GetReservesFromBorrowernumber($borrowernumber);
+    my @holds = map {C4::Reserves::swaggerizeHold($_)} C4::Reserves::GetReservesFromBorrowernumber($borrowernumber);
 
     unless (scalar(@holds)) {
         return $c->$cb({error => "Borrower has no Holds"}, 404);
@@ -37,7 +37,7 @@ sub add_borrower_hold {
     $body->{borrowernumber} = $args->{borrowernumber};
 
     try {
-        my $hold = C4::Reserves::PlaceHold($body);
+        my $hold = C4::Reserves::swaggerizeHold( C4::Reserves::PlaceHold($body) );
         return $c->$cb($hold, 201);
     } catch {
         if (blessed($_)) {
@@ -61,13 +61,10 @@ sub add_borrower_hold {
                     error => $_->error()
                 }, 500);
             }
-            else {
-                $_->rethrow();
-            }
         }
-        else {
-            die $_;
-        }
+        return $c->$cb({
+            error => "$_"
+        }, 500);
     };
 }
 

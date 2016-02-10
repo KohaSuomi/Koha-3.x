@@ -1,0 +1,20 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "$ref": "info.json"
+  },
+  "x-mojo-around-action": "Koha::REST::V1::koha_authenticate",
+  "basePath": "/api/v1",
+  "paths": {
+    "$ref": "paths.json"
+  },
+  "definitions": {
+    "$ref": "definitions.json"
+  },
+  "parameters": {
+    "$ref": "parameters.json"
+  },
+  "securityDefinitions": {
+    "$ref": "securityDefinitions.json"
+  }
+}

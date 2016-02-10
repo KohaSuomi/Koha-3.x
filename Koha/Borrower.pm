@@ -101,6 +101,24 @@ sub getApiKey {
     return $object;
 }
 
+=head swaggerize
+
+    my $swag_borrower = Koha::Borrower->swaggerize();
+
+Turns a ambivalent and confusing Perl-object into a typed object ready for API traversal.
+Casts object properties to satisfy Swagger2 data types.
+
+=cut
+
+sub swaggerize {
+    my ($self) = @_;
+    my $swag = $self->unblessed;
+
+    $swag->{borrowernumber} = 0+$swag->{borrowernumber};
+
+    return $swag;
+}
+
 =head1 AUTHOR
 
 Kyle M Hall <kyle@bywatersolutions.com>

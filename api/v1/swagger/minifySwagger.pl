@@ -25,14 +25,12 @@ my $help = 0;
 my $verbose = 0;
 my $swaggerFile = "swagger.json";
 my $swaggerMinifiedFile = "swagger.min.json";
-my $validate = 0;
 
 GetOptions(
     'h|help'                      => \$help,
     'v|verbose:i'                 => \$verbose,
     's|source:s'                  => \$swaggerFile,
     'd|destination:s'             => \$swaggerMinifiedFile,
-    'V|validate'                  => \$validate,
 );
 
 my $usage = <<USAGE;
@@ -61,9 +59,6 @@ This is a convenience to make the minification process as easy as possible.
   -d --destination      Where to write the minified Swagger2-spec?
                         Defaults to "swagger.min.json"
 
-  -V --validate         Instead of minimizing, validates the schema and prints
-                        errors to stdout.
-
 EXAMPLES:
 
     perl minifySwagger.pl -v 1 -s api/v1/swagger/swagger.json -d swag.json
@@ -84,11 +79,10 @@ require Swagger2; #When you import the Swagger2-libraries, the environment varia
 my $swagger = Swagger2->new($swaggerFile);
 $swagger = $swagger->expand; #Fetch all JSON-Schema references
 
-if ($validate) {
-  my @errors = $swagger->validate;
-  print join("\n", "Swagger2: Invalid spec:", @errors)."\n" if @errors;
-}
+my @errors = $swagger->validate;
+print join("\n", "Swagger2: Invalid spec:", @errors)."\n" if @errors;
+exit 1 if @errors;
 
 open(SWOUT, ">:encoding(UTF-8)", $swaggerMinifiedFile) or die "$0: Couldn't open the minified Swagger2 output file:\n  $!";
-print SWOUT $swagger->to_string() if not($validate);
+print SWOUT $swagger->to_string();
 close(SWOUT);

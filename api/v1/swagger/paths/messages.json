@@ -1,0 +1,244 @@
+{
+  "/messages": {
+    "get": {
+      "x-mojo-controller": "Koha::REST::V1::Messages",
+      "operationId": "listMessages",
+      "x-koha-permission": {
+        "messages": "get_message"
+      },
+      "tags": ["messages"],
+      "produces": [
+        "application/json"
+      ],
+      "responses": {
+        "200": {
+          "description": "A list of messages",
+          "schema": {
+            "type": "array",
+            "items": {
+              "$ref" : "../definitions/message.json"
+            }
+          }
+        },
+        "404": {
+          "description": "Messages not found",
+          "schema": {
+            "$ref": "../definitions/error.json"
+          }
+        }
+      }
+    },
+    "post": {
+      "x-mojo-controller": "Koha::REST::V1::Messages",
+      "operationId": "createMessage",
+      "x-koha-permission": {
+        "messages": "create_message"
+      },
+      "tags": ["messages"],
+      "parameters": [
+        {
+          "name": "body",
+          "in": "body",
+          "description": "A JSON object containing informations about the new message",
+          "required": true,
+          "schema": { "$ref": "../definitions/message.json" }
+        }
+      ],
+      "produces": [
+        "application/json"
+      ],
+      "responses": {
+        "201": {
+          "description": "A message",
+          "schema": {
+              "$ref": "../definitions/message.json"
+          }
+        },
+        "400": {
+          "description": "Missing or wrong parameters",
+          "schema": { "$ref": "../definitions/error.json" }
+        }
+      }
+    }
+  },
+  "/messages/{messagenumber}": {
+    "put": {
+      "x-mojo-controller": "Koha::REST::V1::Messages",
+      "operationId": "updateMessage",
+      "x-koha-permission": {
+        "messages": "update_message"
+      },
+      "tags": ["messages"],
+      "parameters": [
+        {
+          "name": "body",
+          "in": "body",
+          "description": "A JSON object containing informations about the new message",
+          "required": false,
+          "schema": { "$ref": "../definitions/message.json" }
+        },
+        {
+          "$ref": "../parameters.json#/messagenumberPathParam"
+        }
+      ],
+      "produces": [
+        "application/json"
+      ],
+      "responses": {
+        "200": {
+          "description": "A message",
+          "schema": {
+            "$ref" : "../definitions/message.json"
+          }
+        },
+        "400": {
+          "description": "Missing or wrong parameters",
+          "schema": { "$ref": "../definitions/error.json" }
+        },
+        "404": {
+          "description": "Message not found",
+          "schema": {
+            "$ref": "../definitions/error.json"
+          }
+        }
+      }
+    },
+    "delete": {
+      "x-mojo-controller": "Koha::REST::V1::Messages",
+      "operationId": "deleteMessage",
+      "x-koha-permission": {
+        "messages": "delete_message"
+      },
+      "tags": ["messages"],
+      "parameters": [
+        {
+          "$ref": "../parameters.json#/messagenumberPathParam"
+        }
+      ],
+      "produces": [
+        "application/json"
+      ],
+      "responses": {
+        "204": {
+          "description": "Deleting the message succeeded.",
+          "schema": {
+            "type": "string"
+          }
+        },
+        "404": {
+          "description": "Message not found.",
+          "schema": {
+            "$ref": "../definitions/error.json"
+          }
+        }
+      }
+    },
+    "get": {
+      "x-mojo-controller": "Koha::REST::V1::Messages",
+      "operationId": "getMessage",
+      "x-koha-permission": {
+        "messages": "get_message"
+      },
+      "tags": ["messages"],
+      "parameters": [
+        {
+          "$ref": "../parameters.json#/messagenumberPathParam"
+        }
+      ],
+      "produces": [
+        "application/json"
+      ],
+      "responses": {
+        "200": {
+          "description": "A message",
+          "schema": {
+            "$ref" : "../definitions/message.json"
+          }
+        },
+        "404": {
+          "description": "Message not found",
+          "schema": {
+            "$ref": "../definitions/error.json"
+          }
+        }
+      }
+    }
+  },
+  "/messages/{messagenumber}/resend": {
+    "post": {
+      "x-mojo-controller": "Koha::REST::V1::Messages",
+      "operationId": "createResend",
+      "description": "Resends a message.",
+      "x-koha-permission": {
+        "messages": "resend_message"
+      },
+      "tags": ["messages"],
+      "parameters": [
+        {
+          "$ref": "../parameters.json#/messagenumberPathParam"
+        }
+      ],
+      "produces": [
+        "application/json"
+      ],
+      "responses": {
+        "204": {
+          "description": "Resending the message succeeded.",
+          "schema": {
+            "type": "string"
+          }
+        },
+        "404": {
+          "description": "Message not found",
+          "schema": {
+            "$ref": "../definitions/error.json"
+          }
+        }
+      }
+    }
+  },
+  "/messages/{messagenumber}/report/labyrintti": {
+    "post": {
+      "x-mojo-controller": "Koha::REST::V1::Messages::Reports",
+      "operationId": "createLabyrinttiReport",
+      "tags": ["messages"],
+      "parameters": [
+        {
+          "$ref": "../parameters.json#/messagenumberPathParam"
+        },
+        {
+          "name": "status",
+          "in": "formData",
+          "type": "string",
+          "description": "Status of the delivery",
+          "required": true
+        },
+        {
+          "name": "message",
+          "in": "formData",
+          "type": "string",
+          "description": "Delivery notes",
+          "required": true
+        }
+      ],
+      "consumes": ["application/x-www-form-urlencoded"],
+      "produces": [
+        "application/json"
+      ],
+      "responses": {
+        "200": {
+          "description": "Response for receiving the report.",
+          "schema": {
+            "type": "string"
+          }
+        },
+        "404": {
+          "description": "Message not found",
+          "schema": {
+            "$ref": "../definitions/error.json"
+          }
+        }
+      }
+    }
+  }
+}

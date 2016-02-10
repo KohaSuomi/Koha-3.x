@@ -1,0 +1,170 @@
+{
+  "biblionumberPathParam": {
+    "name": "biblionumber",
+    "in": "path",
+    "description": "Internal biblio identifier",
+    "required": true,
+    "type": "integer"
+  },
+  "biblionumberQueryParam": {
+    "name": "biblionumber",
+    "in": "query",
+    "description": "Internal biblio identifier",
+    "required": true,
+    "type": "integer"
+  },
+  "borrowernumberPathParam": {
+    "name": "borrowernumber",
+    "in": "path",
+    "description": "Internal borrower identifier",
+    "required": true,
+    "type": "integer"
+  },
+  "borrowernumberPostParam": {
+    "name": "borrowernumber",
+    "in": "formData",
+    "description": "Internal borrower identifier",
+    "required": false,
+    "type": "integer"
+  },
+  "borrowernumberQueryParam": {
+    "name": "borrowernumber",
+    "in": "query",
+    "description": "The internal id of the Borrower, unique value",
+    "required": false,
+    "type": "integer"
+  },
+  "cardnumberPostParam": {
+    "name": "cardnumber",
+    "in": "formData",
+    "description": "Borrower's card's barcode/identifier",
+    "required": false,
+    "type": "string"
+  },
+  "cardnumberQueryParam": {
+    "name": "cardnumber",
+    "in": "query",
+    "description": "The cardnumber of the Borrower, unique value",
+    "required": false,
+    "type": "string"
+  },
+  "invoicenumberPathParam": {
+    "name": "invoicenumber",
+    "in": "path",
+    "description": "Internal invoice identifier",
+    "required": true,
+    "type": "integer"
+  },
+  "limitQueryParam": {
+    "name": "limit",
+    "in": "query",
+    "description": "Limit the resultset to this many results.",
+    "required": false,
+    "type": "integer"
+  },
+  "listContent": {
+    "name": "listContent",
+    "description": "The list article",
+    "in": "body",
+    "required": true,
+    "schema" : {
+      "$ref": "definitions/listContent.json"
+    }
+  },
+  "listnamePathParam": {
+    "name": "listname",
+    "in": "path",
+    "description": "list name",
+    "required": true,
+    "type": "string"
+  },
+  "holdingbranchQueryParam": {
+    "name": "holdingbranch",
+    "in": "query",
+    "description": "The code of the branch where the Items have been last seen.",
+    "required": false,
+    "type": "string"
+  },
+  "messagenumberPathParam": {
+    "name": "messagenumber",
+    "in": "path",
+    "description": "Internal message identifier",
+    "required": true,
+    "type": "integer"
+  },
+  "passwordPostParam": {
+    "name": "password",
+    "in": "formData",
+    "description": "Password",
+    "required": true,
+    "type": "string",
+    "format": "password"
+  },
+  "pattern_xQueryParam": {
+    "name": "pattern_x",
+    "in": "query",
+    "description": "The first serial issue enumeration field, typically the year.",
+    "required": false,
+    "type": "string"
+  },
+  "pattern_yQueryParam": {
+    "name": "pattern_y",
+    "in": "query",
+    "description": "the second enumeration, eg volume.",
+    "required": false,
+    "type": "string"
+  },
+  "pattern_zQueryParam": {
+    "name": "pattern_z",
+    "in": "query",
+    "description": "the third enumeration field.",
+    "required": false,
+    "type": "string"
+  },
+  "sheet_identifierPathParam": {
+    "name": "sheet_identifier",
+    "in": "path",
+    "description": "Internal sheet identifier",
+    "required": true,
+    "type": "integer"
+  },
+  "sheet_versionPathParam": {
+    "name": "sheet_version",
+    "in": "path",
+    "description": "Sheet version number. If omitted, operations target the newest version. Set to '631373.00' to affect all versions.",
+    "x-mojo-placeholder": "#",
+    "type": "number",
+    "format": "float",
+    "required": true
+  },
+  "sessionTestedBodyParam": {
+    "name": "session",
+    "description": "The CGISESSID Cookie used to authenticate a session",
+    "in": "body",
+    "required": true,
+    "schema" : {
+      "$ref": "definitions/sessionTested.json"
+    }
+  },
+  "serialStatusQueryParam": {
+    "name": "serialStatus",
+    "in": "query",
+    "description": "Status of a serial. 1 = Expected, 2 = Received, 3 = Late, 4 = Not issued, 7 = Claimed.",
+    "required": false,
+    "type": "integer"
+  },
+  "useridPostParam": {
+    "name": "userid",
+    "in": "formData",
+    "description": "The userid of the Borrower, unique value",
+    "required": false,
+    "type": "string"
+  },
+  "useridQueryParam": {
+    "name": "userid",
+    "in": "query",
+    "description": "The userid of the Borrower, unique value",
+    "required": false,
+    "type": "string"
+  }
+}

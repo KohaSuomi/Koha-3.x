@@ -1,0 +1,84 @@
+{
+  "borrower": {
+    "$ref": "definitions/borrower.json"
+  },
+  "listContent": {
+    "$ref": "definitions/listContent.json"
+  },
+  "holds": {
+    "type": "array",
+    "items": {"$ref": "definitions/hold.json"}
+  },
+  "hold": {
+    "$ref": "definitions/hold.json"
+  },
+  "newBorrowerHoldBody": {
+    "$ref": "definitions/newBorrowerHoldBody.json"
+  },
+  "borrowerStatus": {
+    "$ref": "definitions/borrowerStatus.json"
+  },
+  "session": {
+    "$ref": "definitions/session.json"
+  },
+  "sessionTested": {
+    "$ref": "definitions/sessionTested.json"
+  },
+  "message": {
+    "$ref": "definitions/message.json"
+  },
+  "error": {
+    "$ref": "definitions/error.json"
+  },
+
+
+  "biblionumber": {
+    "type": "integer",
+    "description": "Biblio internal identifier"
+  },
+  "borrowernumber": {
+    "type": "integer",
+    "description": "Borrower internal identifier"
+  },
+  "branchcode": {
+    "type": "string",
+    "description": "Code identifying a library"
+  },
+  "cardnumber": {
+    "description": "Library assigned ID number for Borrowers",
+    "type": "string"
+  },
+  "email": {
+    "description": "borrower's primary email address",
+    "type": "string",
+    "format": "email"
+  },
+  "firstname": {
+    "description": "User's first name",
+    "type": "string"
+  },
+  "itemnumber": {
+    "type": "integer",
+    "description": "Item internal identifier"
+  },
+  "itemnumberNull": {
+    "type": ["integer", "null"],
+    "description": "Item internal identifier"
+  },
+  "labelSheets": {
+    "type": "array",
+    "items": { "$ref": "definitions/labelSheet.json" }
+  },
+  "listContentNumber": {
+    "type": "integer",
+    "description": "The internal identifier for this list article"
+  },
+  "reserve_id": {
+    "description": "Internal reserve identifier",
+    "type": "number"
+  },
+  "sessionid": {
+    "description": "Koha Session identifier",
+    "type": "string"
+  }
+}

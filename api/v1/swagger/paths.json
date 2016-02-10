@@ -1,0 +1,56 @@
+{
+  "/serialitems": {
+    "$ref": "paths/serials.json#/~1serialitems"
+  },
+  "/serials/collection": {
+    "$ref": "paths/serials.json#/~1serials~1collection"
+  },
+  "/biblios/{biblionumber}": {
+    "$ref": "paths/biblios.json#/~1biblios~1{biblionumber}"
+  },
+  "/borrowers": {
+    "$ref": "paths/borrowers.json#/~1borrowers"
+  },
+  "/borrowers/status": {
+    "$ref": "paths/borrowers.json#/~1borrowers~1status"
+  },
+  "/borrowers/{borrowernumber}": {
+    "$ref": "paths/borrowers.json#/~1borrowers~1{borrowernumber}"
+  },
+  "/borrowers/{borrowernumber}/holds": {
+    "$ref": "paths/borrowers.json#/~1borrowers~1{borrowernumber}~1holds"
+  },
+  "/pos/cpu/{invoicenumber}": {
+    "$ref": "paths/pos/cpu.json#/~1pos~1cpu~1{invoicenumber}"
+  },
+  "/pos/cpu/{invoicenumber}/report": {
+    "$ref": "paths/pos/cpu.json#/~1pos~1cpu~1{invoicenumber}~1report"
+  },
+  "/lists/{listname}/contents": {
+    "$ref": "paths/lists.json#/~1lists~1{listname}~1contents"
+  },
+  "/auth/session": {
+    "$ref": "paths/auth.json#/~1auth~1session"
+  },
+  "/messages": {
+    "$ref": "paths/messages.json#/~1messages"
+  },
+  "/messages/{messagenumber}": {
+    "$ref": "paths/messages.json#/~1messages~1{messagenumber}"
+  },
+  "/messages/{messagenumber}/resend": {
+    "$ref": "paths/messages.json#/~1messages~1{messagenumber}~1resend"
+  },
+  "/messages/{messagenumber}/report/labyrintti": {
+    "$ref": "paths/messages.json#/~1messages~1{messagenumber}~1report~1labyrintti"
+  },
+  "/labels/sheets": {
+    "$ref": "paths/labels.json#/~1labels~1sheets"
+  },
+  "/labels/sheets/version": {
+    "$ref": "paths/labels.json#/~1labels~1sheets~1version"
+  },
+  "/labels/sheets/{sheet_identifier}/{sheet_version}": {
+    "$ref": "paths/labels.json#/~1labels~1sheets~1{sheet_identifier}~1{sheet_version}"
+  }
+}

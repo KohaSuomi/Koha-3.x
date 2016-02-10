@@ -58,6 +58,45 @@ sub _instantiateSheet {
     return $sheet;
 }
 
+=head listSheetVersions
+
+@RETURNS ARRAYRef of HASHRefs, All the metadata from label_sheets except the big sheet-object.
+
+=cut
+
+sub listSheetVersions {
+    my $dbh = C4::Context->dbh();
+    my $sth = $dbh->prepare("SELECT id, name, version, author, timestamp FROM label_sheets ORDER BY id ASC, version DESC");
+    eval {
+        $sth->execute();
+    };
+    if ($@ || $sth->err) {
+        my @cal = caller(0);
+        Koha::Exception::DB->throw(error => $cal[3].'():>'.($@ || $sth->errstr));
+    }
+    return $sth->fetchall_arrayref({});
+}
+
+sub swaggerizeSheetVersion {
+    my ($sv) = @_;
+
+    unless (ref($sv) eq 'HASH') {
+        my @cc = caller(1);
+        Koha::Exception::BadParameter->throw(error => "Subroutine ".$cc[3]." tries to swaggerizeSheetVersion($sv) a non-HASH value?");
+    }
+
+    $sv->{id}      += 0   if $sv->{id};
+    $sv->{version} += 0.0 if $sv->{id};
+    $sv->{author}  += 0   if $sv->{author};
+
+    if ($sv->{timestamp}) {
+        my $dt = DateTime::Format::MySQL->parse_datetime( $sv->{timestamp} );
+        $dt->set_time_zone( C4::Context->tz() );
+        $sv->{timestamp}  = DateTime::Format::RFC3339->new()->format_datetime($dt);
+    }
+    return $sv;
+}
+
 =head getSheetsFromDB
 
 @RETURNS ARRAYRef of HASHRefs

@@ -1,0 +1,91 @@
+{
+  "/serialitems": {
+    "get": {
+      "x-mojo-controller": "Koha::REST::V1::Serials",
+      "operationId": "getSerialItems",
+      "tags": ["serials"],
+      "summary": "Fetches SerialItems representing Serials (without an Item-object) and Magazines (with an Item-object)",
+      "description": "You cannot return all SerialItems, but you must filter your search with GET-parameters.",
+      "produces": [
+        "application/json"
+      ],
+      "parameters": [
+        {  "$ref": "../parameters.json#/biblionumberQueryParam" },
+        {  "$ref": "../parameters.json#/pattern_xQueryParam" },
+        {  "$ref": "../parameters.json#/pattern_yQueryParam" },
+        {  "$ref": "../parameters.json#/pattern_zQueryParam" },
+        {  "$ref": "../parameters.json#/holdingbranchQueryParam" },
+        {  "$ref": "../parameters.json#/serialStatusQueryParam" },
+        {  "$ref": "../parameters.json#/limitQueryParam" }
+      ],
+      "responses": {
+        "200": {
+          "description": "Fetching the objects succeeded.",
+          "schema": {
+            "type": "object"
+          }
+        },
+        "404": {
+          "description": "No objects match the search request",
+          "schema": {
+            "$ref": "../definitions/error.json"
+          }
+        },
+        "400": {
+          "description": "Bad search parameters.",
+          "schema": {
+            "$ref": "../definitions/error.json"
+          }
+        },
+        "500": {
+          "description": "Server-side error. I am sorry :(",
+          "schema": {
+            "$ref": "../definitions/error.json"
+          }
+        }
+      }
+    }
+  },
+  "/serials/collection": {
+    "get": {
+      "x-mojo-controller": "Koha::REST::V1::Serials",
+      "operationId": "getCollection",
+      "tags": ["serials"],
+      "summary": "Fetches a volume overview of all serials in the system, and a count of how many have been received.",
+      "description": "Fetches a volume overview of all serials in the system, and a count of how many have been received.",
+      "produces": [
+        "application/json"
+      ],
+      "parameters": [
+        {  "$ref": "../parameters.json#/biblionumberQueryParam" },
+        {  "$ref": "../parameters.json#/serialStatusQueryParam" }
+      ],
+      "responses": {
+        "200": {
+          "description": "Fetching the objects succeeded.",
+          "schema": {
+            "type": "object"
+          }
+        },
+        "404": {
+          "description": "No objects match the search request",
+          "schema": {
+            "$ref": "../definitions/error.json"
+          }
+        },
+        "400": {
+          "description": "Bad search parameters.",
+          "schema": {
+            "$ref": "../definitions/error.json"
+          }
+        },
+        "500": {
+          "description": "Server-side error. I am sorry :(",
+          "schema": {
+            "$ref": "../definitions/error.json"
+          }
+        }
+      }
+    }
+  }
+}

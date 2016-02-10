@@ -1,0 +1,209 @@
+{
+  "/labels/sheets": {
+    "get": {
+      "x-mojo-controller": "Koha::REST::V1::Labels::Sheets",
+      "operationId": "listSheets",
+      "x-koha-permission": {
+        "labels": "sheets_get"
+      },
+      "tags": ["labels"],
+      "produces": [
+        "application/json"
+      ],
+      "summary": "Get a list of label positioning sheets.",
+      "description": "Not designed for external use. Use this to see the structure of the sheet-objects.",
+      "responses": {
+        "200": {
+          "description": "A list of sheets",
+          "schema": {
+            "$ref": "../definitions.json#/labelSheets"
+          }
+        },
+        "404": {
+          "description": "No sheets in Koha",
+          "schema": {
+            "$ref": "../definitions/error.json"
+          }
+        },
+        "500": {
+          "description": "Internal server error",
+          "schema": {
+            "$ref": "../definitions/error.json"
+          }
+        }
+      }
+    },
+    "post": {
+      "x-mojo-controller": "Koha::REST::V1::Labels::Sheets",
+      "operationId": "createSheet",
+      "x-koha-permission": {
+        "labels": "sheets_new"
+      },
+      "tags": ["labels"],
+      "produces": [
+        "text/plain"
+      ],
+      "summary": "Create a new label positioning sheet",
+      "parameters": [
+        { "$ref": "../parameters/labelSheetPostParam.json" }
+      ],
+      "responses": {
+        "201": {
+          "description": "The created sheet",
+          "schema": { "$ref": "../definitions/labelSheet.json" }
+        },
+        "400": {
+          "description": "Missing or wrong parameters",
+          "schema": { "$ref": "../definitions/error.json" }
+        },
+        "500": {
+          "description": "Internal server error",
+          "schema": {
+            "$ref": "../definitions/error.json"
+          }
+        }
+      }
+    },
+    "put": {
+      "x-mojo-controller": "Koha::REST::V1::Labels::Sheets",
+      "operationId": "updateSheet",
+      "x-koha-permission": {
+        "labels": "sheets_mod"
+      },
+      "tags": ["labels"],
+      "produces": [
+        "application/json"
+      ],
+      "summary": "Modify a label positioning sheet",
+      "parameters": [
+        { "$ref": "../parameters/labelSheetPostParam.json" }
+      ],
+      "responses": {
+        "201": {
+          "description": "The modified sheet",
+          "schema": { "$ref": "../definitions/labelSheet.json" }
+        },
+        "400": {
+          "description": "Missing or wrong parameters",
+          "schema": { "$ref": "../definitions/error.json" }
+        },
+        "404": {
+          "description": "Sheet not found",
+          "schema": { "$ref": "../definitions/error.json" }
+        },
+        "500": {
+          "description": "Internal server error",
+          "schema": {
+            "$ref": "../definitions/error.json"
+          }
+        }
+      }
+    }
+  },
+  "/labels/sheets/version": {
+    "get": {
+      "x-mojo-controller": "Koha::REST::V1::Labels::Sheets",
+      "operationId": "listSheetVersions",
+      "x-koha-permission": {
+        "labels": "sheets_get"
+      },
+      "tags": ["labels"],
+      "produces": [
+        "application/json"
+      ],
+      "summary": "Get a list of label positioning sheet ids and versions.",
+      "responses": {
+        "200": {
+          "description": "A list of sheet metadata",
+          "schema": {
+            "type": "array",
+            "items": {
+              "$ref": "../definitions/labelSheetVersion.json"
+            }
+          }
+        },
+        "404": {
+          "description": "No sheets in Koha",
+          "schema": { "$ref": "../definitions/error.json" }
+        },
+        "500": {
+          "description": "Internal server error",
+          "schema": {
+            "$ref": "../definitions/error.json"
+          }
+        }
+      }
+    }
+  },
+  "/labels/sheets/{sheet_identifier}/{sheet_version}": {
+    "delete": {
+      "x-mojo-controller": "Koha::REST::V1::Labels::Sheets",
+      "operationId": "deleteSheet",
+      "x-koha-permission": {
+        "labels": "sheets_del"
+      },
+      "tags": ["labels"],
+      "parameters": [
+        { "$ref": "../parameters.json#/sheet_identifierPathParam" },
+        { "$ref": "../parameters.json#/sheet_versionPathParam" }
+      ],
+      "produces": [
+        ""
+      ],
+      "summary": "Delete a label positioning sheet",
+      "description": "By default only deletes the newest version, exposing the older version.",
+      "responses": {
+        "204": {
+          "description": "Deleting the message succeeded.",
+          "schema": { "$ref": "../definitions/labelSheet.json" }
+        },
+        "404": {
+          "description": "Sheet not found",
+          "schema": {
+            "$ref": "../definitions/error.json"
+          }
+        },
+        "500": {
+          "description": "Internal server error",
+          "schema": {
+            "$ref": "../definitions/error.json"
+          }
+        }
+      }
+    },
+    "get": {
+      "x-mojo-controller": "Koha::REST::V1::Labels::Sheets",
+      "operationId": "getSheet",
+      "x-koha-permission": {
+        "labels": "sheets_get"
+      },
+      "tags": ["labels"],
+      "parameters": [
+        { "$ref": "../parameters.json#/sheet_identifierPathParam" },
+        { "$ref": "../parameters.json#/sheet_versionPathParam" }
+      ],
+      "produces": [
+        "application/json"
+      ],
+      "summary": "Get a label positioning sheet",
+      "responses": {
+        "200": {
+          "description": "The sheet",
+          "schema": { "$ref": "../definitions/labelSheet.json" }
+        },
+        "404": {
+          "description": "Sheet not found",
+          "schema": {
+            "$ref": "../definitions/error.json"
+          }
+        },
+        "500": {
+          "description": "Internal server error",
+          "schema": {
+            "$ref": "../definitions/error.json"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "name": "sheet",
+  "in": "formData",
+  "description": "A JSON object of the sheet, containing the items, regions and elements.",
+  "required": true,
+  "description": "Stringified label positioning sheet. Implemented like this to quickly skip Swagger2 validation",
+  "type": "string"
+}

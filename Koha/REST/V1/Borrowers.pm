@@ -13,28 +13,35 @@ use Koha::Database;
 
 sub list_borrowers {
     my ($c, $args, $cb) = @_;
+    try {
+        my $resultset = Koha::Database->new()->schema()->resultset('Borrower');
+        my @bor = $resultset->search({'-or' => $args},{rows => 20});
+        @bor = map {Koha::Borrower::swaggerize(  Koha::Borrowers->_wrap($_)  )} @bor;
 
-    my $resultset = Koha::Database->new()->schema()->resultset('Borrower');
-    my @bor = $resultset->search({'-or' => $args},{rows => 20});
-    my @results;
-    foreach my $b (@bor) {
-        my $bo = {$b->get_columns()};
-        push @results, $bo;
-    }
-
-    $c->$cb(\@results, 200);
+        $c->$cb(\@bor, 200);
+    } catch {
+        return $c->$cb({
+            error => "$_"
+        }, 500);
+    };
 }
 
 sub get_borrower {
     my ($c, $args, $cb) = @_;
 
-    my $borrower = Koha::Borrowers->find($args->{borrowernumber});
+    try {
+        my $borrower = Koha::Borrowers->find($args->{borrowernumber});
 
-    if ($borrower) {
-        return $c->$cb($borrower->unblessed, 200);
-    }
+        if ($borrower) {
+            return $c->$cb($borrower->swaggerize, 200);
+        }
 
-    $c->$cb({error => "Borrower not found"}, 404);
+        $c->$cb({error => "Borrower not found"}, 404);
+    } catch {
+        return $c->$cb({
+            error => "$_"
+        }, 500);
+    };
 }
 
 sub status {
@@ -44,28 +51,25 @@ sub status {
     try {
         $borrower = Koha::Auth::Challenge::Password::challenge($args->{uname}, $args->{passwd});
     } catch {
-        if (blessed($_)){
-            if ($_->isa('Koha::Exception::LoginFailed')) {
-                $error = $_;
-            }
-            else {
-                $_->rethrow();
-            }
+        if (blessed($_) && $_->isa('Koha::Exception::LoginFailed')) {
+            $error = $_;
         }
         else {
-            die $_;
+            return $c->$cb({
+                error => "$_"
+            }, 500);
         }
     };
     return $c->$cb({error => $error->error}, 400) if $error;
 
     my $ilsBorrower = ILS::Patron->new($borrower->userid);
 
-    my $payload = { borrowernumber => $borrower->borrowernumber,
+    my $payload = { borrowernumber => 0 + $borrower->borrowernumber,
                     cardnumber     => $borrower->cardnumber || '',
                     surname        => $borrower->surname || '',
                     firstname      => $borrower->firstname || '',
                     homebranch     => $borrower->branchcode || '',
-                    fines          => 0 + $ilsBorrower->fines_amount || 0,
+                    fines          => ($ilsBorrower->fines_amount) ? 0 + $ilsBorrower->fines_amount : 0,
                     language       => 'fin' || '',
                     charge_privileges_denied => ($ilsBorrower->charge_ok)      ? Mojo::JSON->false : Mojo::JSON->true,
                     renewal_privileges_denied => ($ilsBorrower->renew_ok)      ? Mojo::JSON->false : Mojo::JSON->true,

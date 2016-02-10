@@ -1,0 +1,22 @@
+{
+  "type": "object",
+  "properties": {
+    "biblionumber": { "$ref": "../definitions.json#/biblionumber" },
+    "itemnumber": { "$ref": "../definitions.json#/itemnumberNull" },
+    "branchcode": {
+      "description": "Pickup location",
+      "type": "string"
+    },
+    "expirationdate": {
+      "description": "Reserve end date",
+      "type": "string",
+      "format": "date"
+    },
+    "suspend_until": {
+      "description": "Suspend the Hold until this date, so the Hold won't get caught but advances in queue.",
+      "type": "string",
+      "format": "date"
+    }
+  },
+  "required": ["biblionumber"]
+}

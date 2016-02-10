@@ -17,14 +17,10 @@ Lists all messages from message_queue.
 sub list_messages {
     my ($c, $args, $cb) = @_;
 
-    my $messages = C4::Letters::GetQueuedMessages();
+    my $messages = C4::Letters::swaggerize( C4::Letters::GetQueuedMessages() );
 
     if (@$messages > 0) {
-        my $return_messages;
-        foreach my $message (@$messages){
-            push @$return_messages, _set_default_values({ message => $message });
-        }
-        return $c->$cb($return_messages , 200);
+        return $c->$cb($messages , 200);
     }
     $c->$cb({ error => "No messages found." }, 404);
 }
@@ -84,7 +80,7 @@ sub create_message {
         # Get the newly created message and return it
         $message = C4::Letters::GetMessage( $message );
 
-        $message = _set_default_values({ message => $message });
+        $message = C4::Letters::swaggerize($message);
 
         &logaction(
         "NOTICES",
@@ -138,7 +134,7 @@ sub update_message {
     $message = C4::Letters::GetMessage($args->{'messagenumber'});
 
     if ($message){
-        $message = _set_default_values({ message => $message });
+        $message = C4::Letters::swaggerize($message);
 
         &logaction(
         "NOTICES",
@@ -192,7 +188,7 @@ sub get_message {
     my $message = C4::Letters::GetMessage($args->{'messagenumber'});
 
     if ($message) {
-        my $message = _set_default_values({ message => $message });
+        my $message = C4::Letters::swaggerize($message);
 
         return $c->$cb($message, 200);
     }
@@ -232,35 +228,7 @@ sub create_resend {
 
 
 
-=head2 _set_default_values({ message => $message })
-
-=cut
-sub _set_default_values {
-    my $params = shift;
-
-    return unless exists $params->{'message'} or not defined $params->{'message'};
-
-    # Convert the returned message into C4::Letters::EnqueueLetter format
-    return {
-        message_id => int($params->{'message'}->{'message_id'}),
-        borrowernumber => int($params->{'message'}->{'borrowernumber'}),
-        subject => $params->{'message'}->{'subject'} || '',
-        content => $params->{'message'}->{'content'} || '',
-        letter_code => $params->{'message'}->{'letter_code'} || '',
-        content_type => $params->{'message'}->{'content_type'} || '',
-        metadata => $params->{'message'}->{'metadata'} || '',
-        message_transport_type => $params->{'message'}->{'message_transport_type'} || '',
-        to_address => $params->{'message'}->{'to_address'} || '',
-        from_address => $params->{'message'}->{'from_address'} || '',
-        delivery_note => $params->{'message'}->{'delivery_note'} || '',
-        status => $params->{'message'}->{'status'} || '',
-        time_queued => $params->{'message'}->{'time_queued'} || ''
-    };
-}
-
-
-
-=head2 _convert_to_message({ message => $message })
+=head2 _convert_to_enqueue({ message => $message })
 
 Due to inconsistent naming in C4::Letters::EnqueueLetter, we use the
 database format and convert it in this function into the format that

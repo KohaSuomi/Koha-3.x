@@ -124,13 +124,42 @@ sub get_sheet {
     try {
         my $id = $args->{sheet_identifier};
         my $version = $args->{sheet_version};
-        my $sheetRow = C4::Labels::SheetManager::getSheetFromDB( $id, $version );
+        my $sheetRow = C4::Labels::SheetManager::getSheetFromDB( $id, undef, $version ); #id name version
 
         if ($sheetRow) {
             return $c->$cb($sheetRow->{sheet} , 200);
         }
         else {
             Koha::Exception::UnknownObject->throw(error => "No sheet found");
+        }
+    } catch {
+        if (blessed($_) && $_->isa('Koha::Exception::UnknownObject')) {
+            return $c->$cb( {error => $_->error()}, 404 );
+        }
+        if (blessed($_) && $_->isa('Koha::Exception::DB')) {
+            return $c->$cb( {error => $_->error()}, 500 );
+        }
+        elsif (blessed($_)) {
+            $_->rethrow();
+        }
+        else {
+            die $_;
+        }
+    };
+}
+
+sub list_sheet_versions {
+    my ($c, $args, $cb) = @_;
+
+    try {
+        my $sheetMetaData = C4::Labels::SheetManager::listSheetVersions();
+        my @sheetMetaData = map {C4::Labels::SheetManager::swaggerizeSheetVersion($_)} @$sheetMetaData if ($sheetMetaData && ref($sheetMetaData) eq 'ARRAY');
+
+        if (scalar(@sheetMetaData)) {
+            return $c->$cb(\@sheetMetaData, 200);
+        }
+        else {
+            Koha::Exception::UnknownObject->throw(error => "No sheets found");
         }
     } catch {
         if (blessed($_) && $_->isa('Koha::Exception::UnknownObject')) {

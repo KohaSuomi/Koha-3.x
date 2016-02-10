@@ -1,0 +1,4 @@
+{
+  "description": "Stringified label positioning sheet. Implemented like this to quickly skip Swagger2 validation",
+  "type": "string"
+}

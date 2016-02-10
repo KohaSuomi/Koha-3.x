@@ -1,0 +1,178 @@
+{
+  "/borrowers": {
+    "get": {
+      "x-mojo-controller": "Koha::REST::V1::Borrowers",
+      "x-koha-permission": {
+        "borrowers": "*"
+      },
+      "operationId": "listBorrowers",
+      "tags": ["borrowers"],
+      "summary": "Searches for Borrowers",
+      "description": "Search borrowers from Koha, optionally filter the search with specific parameters. All parameters given, must be present in the returned Borrower-objects. If no search parameters are given, all borrowers are returned! This is certainly not what you want.",
+      "produces": [
+        "application/json"
+      ],
+      "parameters": [
+        {  "$ref": "../parameters.json#/cardnumberQueryParam" },
+        {  "$ref": "../parameters.json#/useridQueryParam" },
+        {  "$ref": "../parameters.json#/borrowernumberQueryParam" }
+      ],
+      "responses": {
+        "200": {
+          "description": "A list of borrowers",
+          "schema": {
+            "type": "array",
+            "items": {
+              "$ref": "../definitions/borrower.json"
+            }
+          }
+        }
+      }
+    }
+  },
+  "/borrowers/status": {
+    "get": {
+      "x-mojo-controller": "Koha::REST::V1::Borrowers",
+      "operationId": "status",
+      "tags": ["borrowers"],
+      "summary": "Returns the Borrower's details and statuses",
+      "description": "This endpoint doesn't need other authentication than the proper username and password, and can be used anonymously.<br/>Note: Does not authenticate the Borrower to Koha!",
+      "produces": [
+        "application/json",
+        "application/xml"
+      ],
+      "parameters": [
+        {
+          "name": "uname",
+          "description": "The Username the Borrower uses to authenticate",
+          "in": "formData",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "passwd",
+          "description": "The Password the Borrower uses to authenticate",
+          "in": "formData",
+          "required": true,
+          "type": "string"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Borrower information",
+          "schema": {
+            "$ref": "../definitions.json#/borrowerStatus"
+          }
+        },
+        "400": {
+          "description": "Password authentication failed using username or password",
+          "schema": {
+            "$ref": "../definitions/error.json"
+          }
+        }
+      }
+    }
+  },
+  "/borrowers/{borrowernumber}": {
+    "get": {
+      "x-mojo-controller": "Koha::REST::V1::Borrowers",
+      "x-koha-permission": {
+        "borrowers": "*"
+      },
+      "operationId": "getBorrower",
+      "tags": ["borrowers"],
+      "summary": "Get a borrower",
+      "parameters": [
+        {
+          "$ref": "../parameters.json#/borrowernumberPathParam"
+        }
+      ],
+      "produces": [
+        "application/json"
+      ],
+      "responses": {
+        "200": {
+          "description": "A borrower",
+          "schema": {
+            "$ref": "../definitions/borrower.json"
+          }
+        },
+        "404": {
+          "description": "Borrower not found",
+          "schema": {
+            "$ref": "../definitions/error.json"
+          }
+        }
+      }
+    }
+  },
+  "/borrowers/{borrowernumber}/holds": {
+    "get": {
+      "x-mojo-controller": "Koha::REST::V1::Borrowers::Holds",
+      "x-koha-permission": {
+        "borrowers": "*"
+      },
+      "operationId": "listBorrowerHolds",
+      "tags": ["borrowers", "holds"],
+      "summary": "Get all holds for the given borrower",
+      "parameters": [
+        { "$ref": "../parameters.json#/borrowernumberPathParam" }
+      ],
+      "produces": ["application/json"],
+      "responses": {
+        "200": {
+          "description": "A list of holds",
+          "schema": { "$ref": "../definitions.json#/holds" }
+        },
+        "404": {
+          "description": "Borrower not found",
+          "schema": { "$ref": "../definitions/error.json" }
+        }
+      }
+    },
+    "post": {
+      "x-mojo-controller": "Koha::REST::V1::Borrowers::Holds",
+      "x-koha-permission": {
+        "circulate": "*"
+      },
+      "operationId": "addBorrowerHold",
+      "tags": ["borrowers", "holds"],
+      "summary": "Place a hold for a borrower",
+      "description": "Places holds for a borrower. Be careful not to accidentally submit multiple holds, since this behaviour is accepted.",
+      "parameters": [
+        { "$ref": "../parameters.json#/borrowernumberPathParam" },
+        {
+          "name": "body",
+          "in": "body",
+          "description": "A Hold-object",
+          "required": true,
+          "schema": { "$ref": "../definitions/newBorrowerHoldBody.json" }
+        }
+      ],
+      "consumes": ["application/json"],
+      "produces": ["application/json"],
+      "responses": {
+        "201": {
+          "description": "Created hold",
+          "schema": { "$ref": "../definitions/hold.json" }
+        },
+        "400": {
+          "description": "Missing or wrong parameters",
+          "schema": { "$ref": "../definitions/error.json" }
+        },
+        "403": {
+          "description": "Hold not allowed",
+          "schema": { "$ref": "../definitions/error.json" }
+        },
+        "404": {
+          "description": "Borrower not found",
+          "schema": { "$ref": "../definitions/error.json" }
+        },
+        "500": {
+          "description": "Internal error",
+          "schema": { "$ref": "../definitions/error.json" }
+        }
+      }
+    }
+  }
+}

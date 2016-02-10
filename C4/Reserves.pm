@@ -41,6 +41,8 @@ use Koha::DateUtils;
 use Koha::Calendar;
 
 use DateTime;
+use DateTime::Format::RFC3339;
+use DateTime::Format::MySQL;
 
 use List::MoreUtils qw( firstidx );
 use Scalar::Util qw(blessed);
@@ -247,6 +249,39 @@ sub AddReserve {
     return $reserve_id;
 }
 
+=head swaggerizeHold
+
+    my $holds = C4::Reserves::swaggerizeHolds( C4::Reserves::GetReservesFromBorrowernumber($borrowernumber) );
+
+Turns Hold-HASHRefs into a type-converted HASH ready for squeezing through an API.
+@PARAM1 ARRAYRef of HASHRefs, Hold-HASHRef
+        or HASHRef, Hold-HASHRef
+@RETURNS ARRAYRef if ARRAYRef was given
+         or HASHRef,
+
+@THROWS Koha::Exception::BadParameter, if the given parameter is not an ARRAYRef or HASHRef
+=cut
+
+sub swaggerizeHold {
+    my ($hold) = @_;
+    return undef unless $hold;
+
+    my ($hold) = @_;
+    $hold->{biblionumber}   += 0;
+    $hold->{borrowernumber} += 0;
+    $hold->{itemnumber}     += 0 if $hold->{itemnumber};
+    $hold->{reserve_id}     += 0 if $hold->{reserve_id};
+    $hold->{priority}       += 0 if defined($hold->{priority});
+
+    if ($hold->{timestamp}) {
+        my $dt = DateTime::Format::MySQL->parse_datetime( $hold->{timestamp} );
+        $dt->set_time_zone( C4::Context->tz() );
+        $hold->{timestamp}      = DateTime::Format::RFC3339->new()->format_datetime($dt);
+    }
+
+    return $hold;
+}
+
 =head2 GetReserve
 
     $res = GetReserve( $reserve_id );
@@ -282,6 +317,7 @@ sub GetReserve {
     {String} 'pickupBranch', MANDATORY
     {Date String ISO8601} 'expirationDate', OPTIONAL
     {Date String ISO8601} 'suspend_until', OPTIONAL
+@RETURNS HASHRef of the recently added hold.
 
 @THROWS Koha::Exception::BadParameter if proper parameters are lacking.
 @THROWS Koha::Exception::DB if there is something wrong when inserting the hold to the database.
@@ -320,6 +356,9 @@ sub PlaceHold {
 
     $biblionumber ||= $item_biblionumber;
     my $biblio = C4::Biblio::GetBiblio($biblionumber);
+    unless ($biblio) {
+        Koha::Exception::UnknownObject->throw(error => 'Biblio not found');
+    }
 
     my $can_reserve =
       $itemnumber
@@ -480,6 +519,8 @@ sub GetReservesFromBorrowernumber {
   if ($canReserve eq 'OK') { #We can reserve this Item! }
 
 See CanItemBeReserved() for possible return values.
+  This subroutine introduces error codes:
+      'noItems', if the Biblio has no Items.
 
 =cut
 
@@ -493,7 +534,7 @@ sub CanBookBeReserved{
     push (@$items,@hostitems);
     }
 
-	my $canReserve;
+    my $canReserve = 'noItems';
     foreach my $item (@$items){
 		$canReserve = CanItemBeReserved($borrowernumber, $item);
         return 'OK' if $canReserve eq 'OK';

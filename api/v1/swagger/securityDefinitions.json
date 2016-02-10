@@ -1,0 +1,8 @@
+{
+  "multi_key_auth": {
+    "type": "apiKey",
+    "name": "Authorization",
+    "in": "header",
+    "description": "Example: 'Authorization: Koha 1:0f049b5ba2f04da7e719b7166dd9e1b0efacf23747798f19efe51eb6e437f84c'\n\nConstructing the Authorization header\n\n-You brand the authorization header with 'Koha'\n-Then you give the userid/cardnumber of the user authenticating.\n-Then the hashed signature.\n\nThe signature is a HMAC-SHA256-HEX hash of several elements of the request,\nseparated by spaces:\n - HTTP method (uppercase)\n - userid/cardnumber\n - X-Koha-Date-header\nSigned with the Borrowers API key\n\n\nPseudocode example:\n\nSignature = HMAC-SHA256-HEX('HTTPS' + ' ' +\n                            '/api/v1/borrowers/12?howdoyoudo=voodoo' + ' ' +\n                            'admin69' + ' ' +\n                            '760818212' + ' ' +\n                            'frJIUN8DYpKDtOLCwo//yllqDzg='\n                           );\n"
+  }
+}

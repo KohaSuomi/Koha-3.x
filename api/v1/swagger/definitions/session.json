@@ -1,0 +1,19 @@
+{
+  "type": "object",
+  "properties": {
+    "email": {
+      "$ref": "../definitions.json#/email"
+    },
+    "lastname": {
+      "description": "borrower's last name",
+      "type": "string"
+    },
+    "firstname": {
+      "$ref": "../definitions.json#/firstname"
+    },
+    "sessionid": {
+      "$ref": "../definitions.json#/sessionid"
+    }
+  },
+  "required": ["email", "lastname", "firstname"]
+}

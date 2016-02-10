@@ -1,0 +1,12 @@
+{
+  "title": "Koha REST API",
+  "version": "1",
+  "license": {
+    "name": "GPL v3",
+    "url": "http://www.gnu.org/licenses/gpl.txt"
+  },
+  "contact": {
+    "name": "Koha Team",
+    "url": "http://koha-community.org/"
+  }
+}

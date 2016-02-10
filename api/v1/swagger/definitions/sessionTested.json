@@ -1,0 +1,10 @@
+{
+  "type": "object",
+  "properties": {
+    "sessionid": {
+      "description": "The Koha sessionid to be tested",
+      "type": "string"
+    }
+  },
+  "required": ["sessionid"]
+}

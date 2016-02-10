@@ -1,0 +1,27 @@
+{
+  "type": "object",
+  "properties": {
+    "id": {
+      "description": "Sheet internal identifier",
+      "type": "integer"
+    },
+    "version": {
+      "description": "Sheet version number.",
+      "type": "number",
+      "format": "float"
+    },
+    "name": {
+      "description": "The sheet's given name. This can change between versions, so trust the id to uniquely identify.",
+      "type": "string"
+    },
+    "author": {
+      "$ref": "../definitions.json#/borrowernumber"
+    },
+    "timestamp": {
+      "description": "date-time of last modification",
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": ["id", "version", "name", "author", "timestamp"]
+}

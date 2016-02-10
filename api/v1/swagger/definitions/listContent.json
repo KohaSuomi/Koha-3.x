@@ -1,0 +1,9 @@
+{
+  "type": "object",
+  "properties": {
+    "listContentNumber": { "$ref": "../definitions.json#/listContentNumber" },
+    "biblionumber": { "$ref": "../definitions.json#/biblionumber" },
+    "itemnumber": { "$ref": "../definitions.json#/itemnumber" },
+    "borrowernumber": { "$ref" : "../definitions.json#/borrowernumber" }
+  }
+}

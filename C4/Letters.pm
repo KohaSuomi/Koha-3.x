@@ -1058,6 +1058,50 @@ sub ResendMessage {
     return 0;
 }
 
+=head swaggerize
+
+    my $messageQueues = C4::Letters::swaggerize( C4::Letters::GetQueuedMessages($borrowernumber) );
+
+Turns MessageQueue-HASHRefs into a type-converted HASH ready for squeezing through an API.
+@PARAM1 ARRAYRef of HASHRefs, MessageQueue-HASHRef
+        or HASHRef, MessageQueue-HASHRef
+@RETURNS ARRAYRef if ARRAYRef was given
+         or HASHRef,
+
+@THROWS Koha::Exception::BadParameter, if the given parameter is not an ARRAYRef or HASHRef
+=cut
+
+sub swaggerize {
+    my ($messageQueues) = @_;
+    return undef unless $messageQueues;
+
+    sub _swagrock {
+        my ($h) = @_;
+        $h->{message_id}     += 0 if $h->{message_id};
+        $h->{borrowernumber} += 0 if $h->{borrowernumber};
+
+        if ($h->{time_queued}) {
+            my $dt = DateTime::Format::MySQL->parse_datetime( $h->{time_queued} );
+            $dt->set_time_zone( C4::Context->tz() );
+            $h->{time_queued}      = DateTime::Format::RFC3339->new()->format_datetime($dt);
+        }
+        return $h;
+    }
+    unless (ref($messageQueues) eq 'HASH' || ref($messageQueues) eq 'ARRAY') {
+        my @cc = caller(0);
+        Koha::Exception::BadParameter->throw(error => $cc[3]."():> \$messageQueues '$messageQueues' is not a HASHRef or an ARRAYRef");
+    }
+
+    if (ref($messageQueues) eq 'ARRAY') {
+        @$messageQueues = map {_swagrock($_)} @$messageQueues;
+    }
+    else {
+        $messageQueues = _swagrock($messageQueues);
+    }
+
+    return $messageQueues;
+}
+
 =head2 _add_attachements
 
 named parameters:

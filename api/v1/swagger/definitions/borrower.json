@@ -1,0 +1,19 @@
+{
+  "type": "object",
+  "properties": {
+    "borrowernumber": {
+      "$ref": "../definitions.json#/borrowernumber"
+    },
+    "cardnumber": {
+      "description": "library assigned ID number for borrowers",
+      "type": "string"
+    },
+    "surname": {
+      "description": "borrower's last name",
+      "type": "string"
+    },
+    "firstname": {
+      "$ref": "../definitions.json#/firstname"
+    }
+  }
+}

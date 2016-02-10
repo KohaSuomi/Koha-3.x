@@ -72,7 +72,7 @@ sub startup {
     $self->types->type(json => 'application/json; charset=utf8');
 
     $self->plugin(Swagger2 => {
-        url => $self->home->rel_file("api/v1/swagger.json"),
+        url => $self->home->rel_file("api/v1/swagger/swagger.min.json"),
     });
 }
 
@@ -106,6 +106,8 @@ sub setKohaParamLogging {
         $self->app->log(); #Default to STDERR
         print __PACKAGE__."::startup():> No logfile given, defaulting to STDERR. Define your logfile and loglevel to the MOJO_LOGFILES and MOJO_LOGLEVEL environmental variables. If you want foreground logging, set the MOJO_LOGFILES as undef.\n";
     }
+    #Define the API debugging level to prevent undef warnings
+    $ENV{"KOHA_REST_API_DEBUG"} = 0 unless $ENV{"KOHA_REST_API_DEBUG"};
 }
 
 =head _koha_authenticate

@@ -1,0 +1,73 @@
+{
+  "type": "object",
+  "properties": {
+    "reserve_id":     { "$ref": "../definitions.json#/reserve_id" },
+    "borrowernumber": { "$ref": "../definitions.json#/borrowernumber" },
+    "reservedate": {
+      "description": "the date the reserve was placed",
+      "type": "string"
+    },
+    "biblionumber": { "$ref": "../definitions.json#/biblionumber" },
+    "constrainttype": {
+      "description": "type of constraint",
+      "type": "string"
+    },
+    "branchcode": { "$ref": "../definitions.json#/branchcode" },
+    "notificationdate": {
+      "description": "currently unused",
+      "type": ["string", "null"],
+      "format": "date"
+    },
+    "reminderdate": {
+      "description": "currently unused",
+      "type": ["string", "null"],
+      "format": "date"
+    },
+    "cancellationdate": {
+      "description": "the date the reserve was cancelled",
+      "type": ["string", "null"],
+      "format": "date"
+    },
+    "reservenotes": {
+      "description": "notes related to this reserve",
+      "type": ["string", "null"]
+    },
+    "priority": {
+      "description": "where in the queue the patron sits",
+      "type": ["integer", "null"]
+    },
+    "found": {
+      "description": "a one letter code defining what the status of the reserve is after it has been confirmed",
+      "type": ["string", "null"]
+    },
+    "timestamp": {
+      "description": "date and time the reserve was last updated",
+      "type": "string",
+      "format": "date-time"
+    },
+    "itemnumber": { "$ref": "../definitions.json#/itemnumberNull" },
+    "waitingdate": {
+      "description": "the date the item was marked as waiting for the patron at the library",
+      "type": ["string", "null"],
+      "format": "date"
+    },
+    "expirationdate": {
+      "description": "the date the reserve expires",
+      "type": ["string", "null"],
+      "format": "date"
+    },
+    "lowestPriority": {
+      "description": "",
+      "type": "string"
+    },
+    "suspend": {
+      "description": "",
+      "type": "string"
+    },
+    "suspend_until": {
+      "description": "",
+      "type": ["string", "null"],
+      "format": "date"
+    }
+  }
+}

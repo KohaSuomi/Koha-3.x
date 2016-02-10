@@ -1,5 +1,22 @@
 package t::db_dependent::Api::V1::Biblios;
 
+# Copyright 2016 KohaSuomi
+#
+# This file is part of Koha.
+#
+# Koha is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Koha is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Koha; if not, see <http://www.gnu.org/licenses>.
+
 use Modern::Perl;
 use Test::More;
 
@@ -12,27 +29,27 @@ sub delete_n_204 {
     my $testContext = $restTest->get_testContext(); #Test context will be automatically cleaned after this subtest has been executed.
     my $activeUser = $restTest->get_activeBorrower();
 
+    my ($path, $biblio, $biblionumber, $record);
+
     #Create the test context.
-    my $biblios = t::lib::TestObjects::BiblioFactory->createTestGroup(
+    $biblio = t::lib::TestObjects::BiblioFactory->createTestGroup(
                         {'biblio.title' => 'The significant chore of building test faculties',
                          'biblio.author'   => 'Programmer, Broken',
                          'biblio.copyrightdate' => '2015',
                          'biblioitems.isbn'     => '951967151337',
                          'biblioitems.itemtype' => 'BK',
                         }, undef, $testContext);
-    my $biblionumber = $biblios->{'951967151337'}->{biblionumber};
+    $biblionumber = $biblio->{biblionumber};
 
     #Execute request
-    my $path = $restTest->get_routePath();
-    $path =~ s/\{biblionumber\}/$biblionumber/;
+    $path = $restTest->get_routePath($biblionumber);
     $driver->delete_ok($path => {Accept => 'text/json'});
+    $restTest->catchSwagger2Errors($driver);
     $driver->status_is(204);
 
     #Confirm result
-    my $record = C4::Biblio::GetBiblio( $biblios->{'951967151337'}->{biblionumber} );
+    $record = C4::Biblio::GetBiblio( $biblio->{biblionumber} );
     ok(not($record), "Biblio deletion confirmed");
-
-    return 1;
 }
 
 sub delete_n_404 {
@@ -40,25 +57,25 @@ sub delete_n_404 {
     my $testContext = $restTest->get_testContext(); #Test context will be automatically cleaned after this subtest has been executed.
     my $activeUser = $restTest->get_activeBorrower();
 
+    my ($path, $biblio, $biblionumber, $record);
+
     #Create the test context.
-    my $biblios = t::lib::TestObjects::BiblioFactory->createTestGroup(
+    $biblio = t::lib::TestObjects::BiblioFactory->createTestGroup(
                         {'biblio.title' => 'The significant chore of building test faculties',
                          'biblio.author'   => 'Programmer, Broken',
                          'biblio.copyrightdate' => '2015',
                          'biblioitems.isbn'     => '951967151337',
                          'biblioitems.itemtype' => 'BK',
                         }, undef, $testContext);
-    my $biblionumber = $biblios->{'951967151337'}->{biblionumber};
+    $biblionumber = $biblio->{biblionumber};
     C4::Biblio::DelBiblio($biblionumber);
     #Now we have a biblionumber which certainly doesn't exists!
 
     #Execute request
-    my $path = $restTest->get_routePath();
-    $path =~ s/\{biblionumber\}/$biblionumber/;
+    $path = $restTest->get_routePath($biblionumber);
     $driver->delete_ok($path => {Accept => 'text/json'});
+    $restTest->catchSwagger2Errors($driver);
     $driver->status_is(404);
-
-    return 1;
 }
 
 sub delete_n_400 {
@@ -66,31 +83,31 @@ sub delete_n_400 {
     my $testContext = $restTest->get_testContext(); #Test context will be automatically cleaned after this subtest has been executed.
     my $activeUser = $restTest->get_activeBorrower();
 
+    my ($path, $biblio, $biblionumber, $record, $item);
+
     #Create the test context.
-    my $biblios = t::lib::TestObjects::BiblioFactory->createTestGroup(
+    $biblio = t::lib::TestObjects::BiblioFactory->createTestGroup(
                         {'biblio.title' => 'The significant chore of building test faculties',
                          'biblio.author'   => 'Programmer, Broken',
                          'biblio.copyrightdate' => '2015',
                          'biblioitems.isbn'     => '951967151337',
                          'biblioitems.itemtype' => 'BK',
                         }, undef, $testContext);
-    my $biblionumber = $biblios->{'951967151337'}->{biblionumber};
-    my $items = t::lib::TestObjects::ItemFactory->createTestGroup([
+    $biblionumber = $biblio->{biblionumber};
+    $item = t::lib::TestObjects::ItemFactory->createTestGroup(
                                 {biblionumber => $biblionumber,
                                  barcode => '11N01'}
-                                ], undef, $testContext);
+                                , undef, $testContext);
 
     #Execute request
-    my $path = $restTest->get_routePath();
-    $path =~ s/\{biblionumber\}/$biblionumber/;
+    $path = $restTest->get_routePath($biblionumber);
     $driver->delete_ok($path => {Accept => 'text/json'});
+    $restTest->catchSwagger2Errors($driver);
     $driver->status_is(400);
 
     #Confirm result
-    my $record = C4::Biblio::GetBiblio( $biblios->{'951967151337'}->{biblionumber} );
+    $record = C4::Biblio::GetBiblio( $biblio->{biblionumber} );
     ok($record, "Biblio deletion aborted due to attached Items");
-
-    return 1;
 }
 
 1;
