@@ -1816,7 +1816,7 @@ sub haspermission {
         if ($subperm eq '*') {
             return 0 unless ( ref( $flags->{$module} ) );
         } else {
-            return 0 unless ( $flags->{$module} == 1 or
+            return 0 unless ( (exists($flags->{$module}) && $flags->{$module} == 1) or
                                 ( ref($flags->{$module}) and
                                   exists $flags->{$module}->{$subperm} and
                                   $flags->{$module}->{$subperm} == 1

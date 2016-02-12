@@ -174,7 +174,7 @@ sub setUserEnvironment {
     $session->param( 'lasttime',     time() );
 
     #Finally configure the userenv.
-    C4::Context->set_userenv(
+    C4::Context::set_userenv(
         $session->param('number'),       $session->param('id'),
         $session->param('cardnumber'),   $session->param('firstname'),
         $session->param('surname'),      $session->param('branch'),
