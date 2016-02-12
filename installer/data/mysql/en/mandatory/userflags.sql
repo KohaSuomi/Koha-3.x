@@ -12,6 +12,7 @@ INSERT INTO permission_modules (module, description) VALUES
 ('management','Set library management parameters (deprecated)'),
 ('tools','Use all tools (expand for granular tools permissions)'),
 ('editauthorities','Edit authorities'),
+('auth','Permission regarding authentications and allowing to authenticate other users.'),
 ('serials','Manage serial subscriptions'),
 ('reports','Allow access to the reports module'),
 ('staffaccess','Allow staff members to modify permissions for other staff members'),

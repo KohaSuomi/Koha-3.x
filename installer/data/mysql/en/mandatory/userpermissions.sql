@@ -62,6 +62,7 @@ INSERT INTO permissions (module, code, description) VALUES
    ( 'tools',           'marc_modification_templates', 'Manage marc modification templates'),
    ( 'tools',           'records_batchdel', 'Perform batch deletion of records (bibliographic or authority)'),
    ( 'editauthorities', 'edit_authorities', 'Edit authorities'),
+   ( 'auth',            'get_session', 'Allow querying if the given session is active, and get very basic user details for the session; email, lastname, firstname'),
    ( 'serials',         'check_expiration', 'Check the expiration of a serial'),
    ( 'serials',         'claim_serials', 'Claim missing serials'),
    ( 'serials',         'create_subscription', 'Create a new subscription'),
