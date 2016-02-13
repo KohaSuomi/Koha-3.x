@@ -18,6 +18,7 @@ INSERT INTO permission_modules (module, description) VALUES
 ('coursereserves','Course reserves'),
 ('plugins', 'Koha plugins'),
 ('lists', 'Lists'),
-('labels', 'Permissions related to getting all kinds of labels to bibliographic items')
+('labels', 'Permissions related to getting all kinds of labels to bibliographic items'),
+('messages', 'Permission regarding notifications and messages in message queue.')
 ;
 
