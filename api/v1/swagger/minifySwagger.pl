@@ -83,6 +83,16 @@ my @errors = $swagger->validate;
 print join("\n", "Swagger2: Invalid spec:", @errors)."\n" if @errors;
 exit 1 if @errors;
 
-open(SWOUT, ">:encoding(UTF-8)", $swaggerMinifiedFile) or die "$0: Couldn't open the minified Swagger2 output file:\n  $!";
+removeNonSwagger2Values($swagger);
+
+open(SWOUT, ">:encoding(UTF-8)", $swaggerMinifiedFile) or die "$0: Couldn't open the minified Swagger2 output file '$swaggerMinifiedFile':\n  $!";
 print SWOUT $swagger->to_string();
 close(SWOUT);
+
+##For some reason stringifying the Swagger2-spec adds non-valid parameters, like "/id"
+sub removeNonSwagger2Values {
+    my ($swagger) = @_;
+
+    my $data = $swagger->api_spec->data;
+    delete($data->{id});
+}
