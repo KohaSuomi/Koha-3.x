@@ -60,7 +60,7 @@ sub handleTestObject {
     my ($class, $object, $stashes) = @_;
 
     ##First see if the given Record already exists in the DB. For testing purposes we use the isbn as the UNIQUE identifier.
-    my $atomicupdate = Koha::AtomicUpdater->find({issue_id => $object->{issue_id}});
+    my $atomicupdate = Koha::AtomicUpdater->find($object->{issue_id});
     unless ($atomicupdate) {
         my $atomicupdater = Koha::AtomicUpdater->new();
         $atomicupdate = $atomicupdater->addAtomicUpdate($object);

@@ -35,17 +35,51 @@ use base qw(Koha::Objects);
 use Koha::Exception::File;
 use Koha::Exception::Parse;
 use Koha::Exception::BadParameter;
+use Koha::Exception::DuplicateObject;
 
 sub type {
     return 'Atomicupdate';
 }
-
 sub object_class {
     return 'Koha::AtomicUpdate';
 }
-
 sub _get_castable_unique_columns {
     return ['atomicupdate_id'];
+}
+
+=head find
+@OVERLOADS
+    my $$atomicUpdate = $atomicUpdater->find($issue_id || $atomicupdate_id);
+
+@PARAM1 Scalar, issue_id or atomicupdate_id
+@RETURNS Koha::AtomicUpdate
+@THROWS Koha::Exception::BadParameter, if @PARAM1 is not a scalar
+        Koha::Exception::DuplicateObject, if @PARAM1 matches both the issue_id and atomicupdate_id,
+                                          you should change your issue naming convention.
+=cut
+
+sub find {
+    my ( $self, $id ) = @_;
+    return unless $id;
+    if (ref($id)) {
+        my @cc1 = caller(1);
+        my @cc0 = caller(0);
+        Koha::Exception::BadParameter->throw(error => $cc1[3]."() -> ".$cc0[3]."():> Given \$id '$id' is not a scalar.");
+    }
+
+    my @results = $self->_resultset()->search({'-or' => [
+                                            {issue_id => $id},
+                                            {atomicupdate_id => $id}
+                                        ]});
+    return unless @results;
+    if (scalar(@results > 1)) {
+        my @cc1 = caller(1);
+        my @cc0 = caller(0);
+        Koha::Exception::DuplicateObject->throw(error => $cc1[3]."() -> ".$cc0[3]."():> Given \$id '$id' matches multiple issue_ids and atomicupdate_ids. Aborting because couldn't get a uniquely identifying AtomicUpdate.");
+    }
+
+    my $object = $self->object_class()->_new_from_dbic( $results[0] );
+    return $object;
 }
 
 my $updateOrderFilename = '_updateorder';
@@ -92,7 +126,7 @@ sub addAtomicUpdate {
 
     my $atomicupdate = Koha::AtomicUpdate->new($params);
     $atomicupdate->store();
-    $atomicupdate = $self->find({issue_id => $atomicupdate->issue_id});
+    $atomicupdate = $self->find($atomicupdate->issue_id);
     return $atomicupdate;
 }
 
