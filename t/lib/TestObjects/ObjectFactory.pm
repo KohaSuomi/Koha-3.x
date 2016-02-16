@@ -202,9 +202,9 @@ sub tearDownTestContext {
         t::lib::TestObjects::HoldFactory->deleteTestGroup($stash->{hold});
         delete $stash->{hold};
     }
-    if ($stash->{letterTemplate}) {
+    if ($stash->{lettertemplate}) {
         require t::lib::TestObjects::LetterTemplateFactory;
-        t::lib::TestObjects::LetterTemplateFactory->deleteTestGroup($stash->{letterTemplate});
+        t::lib::TestObjects::LetterTemplateFactory->deleteTestGroup($stash->{lettertemplate});
         delete $stash->{letterTemplate};
     }
     if ($stash->{systempreference}) {

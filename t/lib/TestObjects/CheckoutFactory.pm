@@ -23,12 +23,11 @@ use Carp;
 use DateTime;
 
 use C4::Circulation;
-use C4::Members;
-use C4::Items;
 use Koha::Borrowers;
 use Koha::Items;
 use Koha::Checkouts;
 
+use t::lib::TestContext;
 use t::lib::TestObjects::BorrowerFactory;
 use t::lib::TestObjects::ItemFactory;
 
@@ -95,22 +94,14 @@ sub handleTestObject {
     my ($class, $checkoutParams, $stashes) = @_;
 
     #If running this test factory from unit tests or bare script, the context might not have been initialized.
-    unless (C4::Context->userenv()) {
-        C4::Context->_new_userenv('testGroupsTest');
-        C4::Context->set_userenv(undef, undef, undef,
-                           undef, undef,
-                           'CPL', undef, undef,
-                           undef, undef, undef);
+    unless (C4::Context->userenv()) { #Defensive programming to help debug misconfiguration
+        t::lib::TestContext::setUserenv();
     }
     my $oldContextBranch = C4::Context->userenv()->{branch};
 
-    my $borrower = Koha::Borrowers->find({cardnumber => $checkoutParams->{cardnumber}});
-    unless($borrower) {
-        my $borrowers = t::lib::TestObjects::BorrowerFactory->createTestGroup(
+    my $borrower = t::lib::TestObjects::BorrowerFactory->createTestGroup(
                                 {cardnumber => $checkoutParams->{cardnumber}},
                                 undef, @$stashes);
-        $borrower = $borrowers->{ $checkoutParams->{cardnumber} };
-    }
 
     my $item =     Koha::Items->find({barcode => $checkoutParams->{barcode}});
     unless($item) {

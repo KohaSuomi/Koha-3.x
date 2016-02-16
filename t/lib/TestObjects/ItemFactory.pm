@@ -21,7 +21,7 @@ package t::lib::TestObjects::ItemFactory;
 use Modern::Perl;
 use Carp;
 
-use C4::Items;
+#Somehow introducing this breaks CheckoutFactory #use C4::Items; #This seems to work fine without it.
 use Koha::Biblios;
 use Koha::BiblioItems;
 use Koha::Items;
