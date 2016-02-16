@@ -1841,7 +1841,7 @@ CREATE TABLE `payments_transactions` ( -- information related to payments via PO
 --
 
 DROP TABLE IF EXISTS `payments_transactions_accountlines`;
-CREATE TABLE `payments_transactions` ( -- related accountlines for payments (transactions)
+CREATE TABLE `payments_transactions_accountlines` ( -- related accountlines for payments (transactions)
   transactions_accountlines_id int(11) NOT NULL auto_increment,
   transaction_id int(11) NOT NULL, -- referenced transaction_id from payments_transactions
   accountlines_id int(11) NOT NULL, -- referenced accountlines_id from accountlines
