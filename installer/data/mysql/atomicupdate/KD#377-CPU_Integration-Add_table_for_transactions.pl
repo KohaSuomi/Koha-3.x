@@ -8,7 +8,7 @@ use Koha::AtomicUpdater;
 my $dbh = C4::Context->dbh;
 my $atomicUpdater = Koha::AtomicUpdater->new();
 
-unless($atomicUpdater->find('KD#377')) {
+unless($atomicUpdater->find('#377')) {
     $dbh->do("
             CREATE TABLE payments_transactions (
                 transaction_id int(11) NOT NULL auto_increment,
