@@ -137,8 +137,9 @@ sub koha_authenticate {
         my ($borrower, $cookie) = Koha::Auth::authenticate($c, $opObj->{"x-koha-permission"}, $authParams);
 
     } catch {
-      my $e = $_;
-      if (blessed($e)) {
+        my $e = $_;
+        die $e unless(blessed($e) && $e->can('rethrow'));
+
         my $swagger2DocumentationUrl = _findConfigurationParameterFromAnyConfigurationFile($c->app->config(), 'swagger2DocumentationUrl') || '';
 
         if ($e->isa('Koha::Exception::NoPermission') ||
@@ -166,10 +167,6 @@ sub koha_authenticate {
         else {
           $e->rethrow();
         }
-      }
-      else {
-        die $e;
-      }
     };
     return $next->($c) unless ($error || $data || $statusCode);
     return $c->render_swagger(
