@@ -260,9 +260,11 @@ sub receiveDefaultSerials {
                                      2, #Status => 2 == Received
                                      $waitingSerial->{notes},
                                     );
-        my $item = t::lib::TestObjects::ItemFactory->createTestGroup({barcode => $waitingSerial->{serialid}."-".Koha::DateUtils::dt_from_string($waitingSerial->{publisheddate})->ymd('-'),
+        my $item = t::lib::TestObjects::ItemFactory->createTestGroup({ barcode => $waitingSerial->{serialid}."-".Koha::DateUtils::dt_from_string($waitingSerial->{publisheddate})->ymd('-'),
                                                                        enumchron => $waitingSerial->{serialseq},
                                                                        biblionumber => $subscription->biblionumber,
+                                                                       homebranch => $subscription->branchcode,
+                                                                       location => $subscription->location,
                                                                     }, undef, @$stashes);
         C4::Serials::AddItem2Serial( $waitingSerial->{serialid},
                                      $item->itemnumber, );
