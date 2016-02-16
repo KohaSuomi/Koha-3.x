@@ -112,8 +112,8 @@ sub validateAndPopulateDefaultValues {
     my ($self, $item, $hashKey) = @_;
     $self->SUPER::validateAndPopulateDefaultValues($item, $hashKey);
 
-    $item->{homebranch}     = 'CPL' unless $item->{homebranch};
-    $item->{holdingbranch}  = 'CPL' unless $item->{holdingbranch};
+    $item->{homebranch}     = $item->{homebranch} || 'CPL';
+    $item->{holdingbranch}  = $item->{holdingbranch} || $item->{homebranch} || 'CPL';
     $item->{itemcallnumber} = 'PRE 84.FAN POST' unless $item->{itemcallnumber};
 }
 
