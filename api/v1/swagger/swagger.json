@@ -9,7 +9,16 @@
     "$ref": "paths.json"
   },
   "definitions": {
-    "$ref": "definitions.json"
+    "x-koha-hack": {
+      "type": "null",
+      "description": "Definitions is left empty because online.swagger.io/validator/debug doesn't allow non-object primitive types with multivalue type, eg 'type = [string, null]', in /definitions/*\nThese are referenced directly wherever they are used so there is no need for /definitions anyway.",
+      "properties": {
+        "error": {
+          "description": "http://online.swagger.io/validator/debug  doesn't like our schema if we simply define 'definitions': {'$ref': 'definitions.json'}\n use the minified version instead",
+          "type": "string"
+        }
+      }
+    }
   },
   "parameters": {
     "$ref": "parameters.json"
