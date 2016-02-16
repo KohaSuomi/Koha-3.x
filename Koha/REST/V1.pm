@@ -67,6 +67,7 @@ sub startup {
 
     $self->setKohaParamLogging();
     $self->setKohaParamConfig();
+    $self->minifySwagger();
 
     # Force charset=utf8 in Content-Type header for JSON responses
     $self->types->type(json => 'application/json; charset=utf8');
@@ -108,6 +109,19 @@ sub setKohaParamLogging {
     }
     #Define the API debugging level to prevent undef warnings
     $ENV{"KOHA_REST_API_DEBUG"} = 0 unless $ENV{"KOHA_REST_API_DEBUG"};
+}
+
+sub minifySwagger {
+    my ($self) = @_;
+
+    my $swaggerPath = $ENV{KOHA_PATH}.'/api/v1/swagger/';
+    my $pathToMinifier = $swaggerPath.'minifySwagger.pl';
+    my $pathToSwaggerJson = $swaggerPath.'swagger.json';
+    my $pathToSwaggerMinJson = $swaggerPath.'swagger.min.json';
+    my $output = `perl $pathToMinifier -s $pathToSwaggerJson -d $pathToSwaggerMinJson`;
+    if ($output) {
+        die $output;
+    }
 }
 
 =head _koha_authenticate
