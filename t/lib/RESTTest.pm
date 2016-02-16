@@ -37,15 +37,12 @@ use Koha::Exception::BadParameter;
 
 =cut
 
-our $testImplementationMainPackage = 't::db_dependent';
-
 sub new {
     my ($class, $params) = @_;
 
     bless($params, $class);
     _validateParams($params);
 
-    $params->set_testImplementationMainPackage($testImplementationMainPackage) unless $params->get_testImplementationMainPackage();
     $params->set_testContext({});
 
     #We need to create the package and subroutine path to dynamically check that test-subroutines are defined for the specified paths.
@@ -62,6 +59,9 @@ sub _validateParams {
     my ($params) = @_;
 
     ##Actually check the params
+    unless ($params->{testImplementationMainPackage}) {
+        Koha::Exception::BadParameter->throw(error => "RESTTest->new():> no 'testImplementationMainPackage'-parameter given! It must be the root package from where to look for test implementations, eg. 't::db_dependent'");
+    }
     unless ($params->{basePath}) {
         $params->{basePath} = '/api/v1';
     }
@@ -104,17 +104,15 @@ sub _buildPackageAndSubroutineName {
     my ($self) = @_;
 
     my $bp = $self->get_basePath();
-    $bp =~ s!^/!!;
-    my @bp = map {ucfirst($_)} split('/', $bp);
-    $bp = join('::', @bp);
+    my @bp = split('/', $bp);
+    shift(@bp);
+    $bp = join('::', map {ucfirst($_)} @bp );
 
     my ($sModule, $sPathTail) = ($1, $2) if $self->get_pathsObjectPath() =~ /^\/(\w+)\/?(.*)$/;
     $sPathTail =~ s/\{.*?\}/_n_/g;
     $sPathTail =~ s/\///g;
 
-    my $testPackageName = $testImplementationMainPackage.'::'. #typically t::db_dependent::api
-                             ucfirst($bp).'::'. #version, v1
-                             ucfirst($sModule); #borrowers, etc.
+    my $testPackageName = join('::',$self->get_testImplementationMainPackage, $bp, ucfirst($sModule));
     $self->set_packageName($testPackageName);
 
     my $testSubroutineName = $self->get_httpVerb(). #eg. get
@@ -123,13 +121,103 @@ sub _buildPackageAndSubroutineName {
     $self->set_subroutineName($testSubroutineName);
 }
 
+=head get_routePath
+
+    my $path = $restTest->get_routePath({borrowernumber => 911,
+                                         itemnumber => 112});
+
+Returns the full path to make a request to. Optionally substitutes path parameters.
+@PARAM1 HASHRef, {pathparameter => value, ...} substitutes pathparameters with values
+        or SCALAR, <pathparameter>, substitutes all pathparameters with this value
+
+=cut
+
 sub get_routePath {
-    my $self = shift;
-    return $self->get_basePath().$self->get_pathsObjectPath();
+    my ($self, $substitutions) = @_;
+    my $path = $self->get_basePath().$self->get_pathsObjectPath();
+
+    sub __substitute {
+        my ($path, $k, $v, $global) = @_;
+        if ($global) {
+            $path =~ s!{$k?}!$v!g;
+        }
+        else {
+            $path =~ s!{$k?}!$v!;
+        }
+        return $path;
+    }
+
+    if (ref($substitutions) eq 'HASH') {
+        while (my ($k,$v) = each(%$substitutions)) {
+            $path = __substitute($path, $k, $v, 'g');
+        }
+    }
+    elsif (ref($substitutions) eq 'ARRAY') {
+        foreach my $substitution (@$substitutions) {
+            $path = __substitute($path, '.+', $substitution, undef);
+        }
+    }
+    elsif ($substitutions) {
+        $path = __substitute($path, '.+', $substitutions);
+    }
+
+    return $path;
 }
 sub get_requiredPermissions {
     my ($self) = @_;
     return $self->get_operationObject()->{'x-koha-permission'};
+}
+
+sub catchSwagger2Errors {
+    my ($self, $driver) = @_;
+    #Check should we display warnings?
+    if ($self->get_httpStatusCode =~ /^2\d\d$/) { #Any 2xx status codes should not have errors/warnings so display them always
+        #proceed
+    }
+    elsif ($ENV{KOHA_REST_API_DEBUG} > 0) { #Any other status codes test for failure scenarios, and their correct behaviour is to fail so we don't spam unnecessarily
+        #proceed if debug is activated
+    }
+    else {
+        return 1; #No warnings
+    }
+
+    my ($json, $body, $res);
+    $res = $driver->tx->res if $driver->isa('Test::Mojo');
+    $res = $driver->res if $driver->isa('Mojo::Transaction');
+    $json = $res->json;
+    $body = $res->body unless $json;
+
+    ###Try to figure out what kind of an error we have, if any
+    if ($json && ref($json) eq 'HASH') {
+        #These are from the Swagger2-subsystem and are always an ARRAY of HASHes
+        if($json->{errors} && ref($json->{errors}) eq 'ARRAY' && ref($json->{errors}->[0]) eq 'HASH') {
+            my @cc = caller(1);
+            foreach my $err (@{$json->{errors}}) {
+                warn $cc[3].'():> '.$err->{message}." AT path: '".$err->{path}."'\n";
+            }
+        }
+        #These are thrown from the Mojolicous routes created by Swagger2, and should be text.
+        elsif (my $error = $json->{error} || $json->{err}) {
+            my @cc = caller(1);
+            warn $cc[3]."():> $error\n";
+        }
+    }
+    elsif ($body && $body =~ /^\Q<!DOCTYPE html>\E/) {
+        use Mojo::DOM;
+        my $dom = Mojo::DOM->new($body);
+        my $error;
+        if ($dom->at("#error")) {
+            $error = $dom->at("#error")->text;
+        }
+        elsif ($dom->at("#wrapperlicious")) {
+            $error =  $dom->at("#wrapperlicious")->to_string;
+        }
+        else {
+            $error = 'BAD ERROR HANDLING IN '.__PACKAGE__.' HELP ME!';
+        }
+        my @cc = caller(1);
+        warn $cc[3]."():> $error\n";
+    }
 }
 
 1;

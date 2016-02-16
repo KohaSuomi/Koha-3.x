@@ -1,5 +1,22 @@
 package t::lib::Swagger2TestRunner;
 
+# Copyright 2016 KohaSuomi
+#
+# This file is part of Koha.
+#
+# Koha is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# Koha is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Koha; if not, see <http://www.gnu.org/licenses>.
+
 use Modern::Perl;
 use Test::More;
 
@@ -48,6 +65,7 @@ sub new {
     my $swagger = Swagger2->new->load( _getSwagger2Syspref() )->expand;
     $self->{swagger} = $swagger;
     $self->{testContext} = {}; #Collect all objects created for testing here for easy test context tearDown.
+    $self->{testImplementationMainPackage} = 't::db_dependent';
 
     return $self;
 }
@@ -79,7 +97,7 @@ sub getTests {
     my ($self) = @_;
 
     my $tests = [];
-    my $specification = $self->{swagger}->{tree}->{data};
+    my $specification = $self->{swagger}->api_spec->data;
     my $pathsObject = $specification->{paths};
     my $basePath = $specification->{basePath};
 
@@ -88,15 +106,18 @@ sub getTests {
 
     #Find the response object which encompasses all documented permutations of API calls.
     foreach my $pathsObject_path (grep {$_ if $_ !~ /^x-/i } sort keys(%$pathsObject)) { #Pick only Path Item Objects
-        next unless _testPathsObject_pathAgainstTestKeywords($pathsObject_path, $self->{testKeywords});
+        next unless $self->_testPathsObject_pathAgainstTestKeywords($basePath, $pathsObject_path);
 
         my $pathItemObject = $pathsObject->{$pathsObject_path};
         foreach my $httpVerb (grep {$_ if $_ =~ /(get|put|post|delete|options|head|patch)/i} sort keys(%$pathItemObject)) { #Pick only Operation Objects
+            next unless $self->_testVerb($httpVerb);
+
             my $operationObject = $pathItemObject->{$httpVerb};
             foreach my $httpStatusCode (grep {$_ if $_ !~ /^x-/i } sort keys(%{$operationObject->{responses}})) { #Pick only Response Objects from the Responses Object.
                 my $responseObject = $operationObject->{responses}->{$httpStatusCode};
 
-                my $subtest = t::lib::RESTTest->new({basePath => $basePath,
+                my $subtest = t::lib::RESTTest->new({testImplementationMainPackage => $self->{testImplementationMainPackage},
+                                                     basePath => $basePath,
                                                      pathsObjectPath => $pathsObject_path,
                                                      httpVerb => $httpVerb,
                                                      httpStatusCode => $httpStatusCode,
@@ -125,9 +146,17 @@ sub runTests {
 
     print "testREST():> Starting testing >>>\n";
     my ($driver) = t::lib::WebDriverFactory::getUserAgentDrivers('mojolicious');
+    my $previousTestPackageName = '';
     foreach my $subtest (@$tests) {
         my $testPackageName = $subtest->get_packageName();
         my $testSubroutineName = $subtest->get_subroutineName();
+
+        if ($ENV{KOHA_REST_API_DEBUG} > 1 && $testPackageName ne $previousTestPackageName) {
+            print "\n******************************************************\n";
+            print "*** Starting $testPackageName ***\n";
+            print "*******************************\n";
+        }
+
         eval "require $testPackageName";
         if ($@) {
             warn "$@\n";
@@ -154,13 +183,15 @@ sub runTests {
 
             $self->_tearDownTestContext( $subtest, $driver );
         }
+
+        $previousTestPackageName = $testPackageName;
     }
     t::lib::TestObjects::ObjectFactory->tearDownTestContext($self->{testContext}); #Clear the global REST test context.
     done_testing;
 }
 
 sub _getSwagger2Syspref {
-    my $swagger2DefinitionLocation = $ENV{KOHA_PATH}.'/api/v1/swagger.json';
+    my $swagger2DefinitionLocation = $ENV{KOHA_PATH}.'/api/v1/swagger/swagger.min.json';
     unless (-f $swagger2DefinitionLocation) {
         Koha::Exception::FeatureUnavailable->throw(error => "Swagger2TestRunner():> Couldn't find the Swagger2 definitions file from '$swagger2DefinitionLocation'. You must have a swagger.json-file to use the test runner.");
     }
@@ -174,7 +205,7 @@ Gets the universal active test Borrower used in all REST tests as the Borrower c
 sub _getTestBorrower {
     my ($testContext) = @_;
     my $borrowerFactory = t::lib::TestObjects::BorrowerFactory->new();
-    my $borrowers = $borrowerFactory->createTestGroup([
+    my $borrower = $borrowerFactory->createTestGroup(
             {firstname  => 'TestRunner',
              surname    => 'AI',
              cardnumber => '11A000',
@@ -185,9 +216,8 @@ sub _getTestBorrower {
              email      => 'bionicman@example.com',
              categorycode => 'PT',
              dateofbirth => DateTime->now(time_zone => C4::Context->tz())->subtract(years => 21)->iso8601(), #I am always 21!
-            },
-        ], undef, $testContext);
-    return $borrowers->{'11A000'};
+            }, undef, $testContext);
+    return $borrower;
 }
 
 =head _testPathsObject_pathAgainstTestKeywords
@@ -195,29 +225,47 @@ Implements the 'testKeywords'-parameter introduced in the constructor '->new()'.
 =cut
 
 sub _testPathsObject_pathAgainstTestKeywords {
-    my ($pathsObject_path, $keywords) = @_;
+    my ($self, $basePath, $pathsObject_path) = @_;
+    my $keywords = $self->{testKeywords};
     return 1 unless $keywords;
+
+    #normalize full rest endpoint test implementation path
+    my $fullUrl = $basePath.'/'.$pathsObject_path;
+    $fullUrl =~ s!(::|/)+!_!g;
+
     foreach my $kw (@$keywords) {
         my ($exclude, $include, $only);
         if ($kw =~ /^\^(.+?)$/) {
             $exclude = $1;
+            $exclude =~ s!::|/!_!g;
         }
         elsif ($kw =~ /^\@(.+?)$/) {
             $only = $1;
+            $only =~ s!::|/!_!g;
         }
         else {
             $include = $kw;
+            $include =~ s!::|/!_!g;
         }
 
         if ($include) {
-            return undef unless $pathsObject_path =~ m/\Q$include/;
+            return undef unless $fullUrl =~ m/\Q$include/;
         }
         elsif ($exclude) {
-            return undef if $pathsObject_path =~ m/\Q$exclude/;
+            return undef if $fullUrl =~ m/\Q$exclude/;
         }
         elsif ($only) {
-            return undef unless $pathsObject_path =~ m/^\Q$only\E$/;
+            return undef unless $fullUrl =~ m/^\Q$only\E$/;
         }
+    }
+    return 1;
+}
+
+sub _testVerb {
+    my ($self, $verb) = @_;
+
+    if ($self->{verb} && not($self->{verb} =~ /^$verb$/i)) {
+        return 0;
     }
     return 1;
 }
@@ -235,10 +283,23 @@ sub _prepareTestContext {
     my $permissionManager = Koha::Auth::PermissionManager->new();
     $permissionManager->grantPermissions($subtest->get_activeBorrower(), $permissionsRequired);
 
-    #Prepare authentication headers
-    $driver->ua->once(start => sub { #Subscribe only once to this event, we need fresh headers on every HTTP request.
+    _prepareApiKeyAuthenticationHeaders($driver, $subtest->get_activeBorrower(), $subtest->get_httpVerb());
+}
+
+=head _prepareApiKeyAuthenticationHeaders
+
+    t::lib::Swagger2TestRunner::_prepareApiKeyAuthenticationHeaders($Mojo::Test, $Koha::Borrower, $httpVerb);
+    $Mojo::Test->unsubscribe('start'); #Stop putting headers to requests.
+
+Sets the authentication headers for the given parameters to the Mojo::UserAgent used to run the tests.
+
+=cut
+
+sub _prepareApiKeyAuthenticationHeaders {
+    my ($driver, $borrower, $httpVerb) = @_;
+    $driver->ua->on(start => sub { #Add fresh headers on every HTTP request.
         my ($ua, $tx) = @_;
-        my $headers = Koha::Auth::Challenge::RESTV1::prepareAuthenticationHeaders($subtest->get_activeBorrower(), undef, $subtest->get_httpVerb());
+        my $headers = Koha::Auth::Challenge::RESTV1::prepareAuthenticationHeaders($borrower, undef, $httpVerb);
         $tx->req->headers->add('X-Koha-Date' => $headers->{'X-Koha-Date'});
         $tx->req->headers->add('Authorization' => $headers->{Authorization});
     });
@@ -260,7 +321,7 @@ sub _tearDownTestContext {
 
     t::lib::TestObjects::ObjectFactory->tearDownTestContext($testContext);
 
-    sleep 1; #Wait for Test::Mojo to clean up and reattach event handlers in it's asynchronous internals.
+    $driver->ua->unsubscribe('start'); #Unsubscribe from setting the HTTP Headers.
 }
 
 =head _replaceAnyPermission
