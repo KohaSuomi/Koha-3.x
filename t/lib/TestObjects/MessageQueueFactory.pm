@@ -21,10 +21,13 @@ package t::lib::TestObjects::MessageQueueFactory;
 use Modern::Perl;
 use Carp;
 use Scalar::Util qw(blessed);
+use Try::Tiny;
 
 use C4::Members;
 use C4::Letters;
 use Koha::Borrowers;
+
+use t::lib::TestObjects::BorrowerFactory;
 
 use base qw(t::lib::TestObjects::ObjectFactory);
 
@@ -73,15 +76,30 @@ See t::lib::TestObjects::ObjectFactory for more documentation
 sub handleTestObject {
     my ($class, $notice, $stashes) = @_;
 
-    my $borrower = Koha::Borrowers->cast($notice->{cardnumber});
+    my ($borrower, $letter, $message_id);
+    try {
+        $borrower = Koha::Borrowers->cast($notice->{cardnumber});
+    } catch {
+        if (blessed($_)) {
+            if ($_->isa('Koha::Exception::UnknownObject')) {
+                $borrower = t::lib::TestObjects::BorrowerFactory->createTestGroup({cardnumber => $notice->{cardnumber}}, undef, @$stashes);
+            }
+            else {
+                $_->rethrow();
+            }
+        }
+        else {
+            die $_;
+        }
+    };
 
-    my $letter = {
+    $letter = {
         title => $notice->{subject} || '',
         content => $notice->{content},
         content_type => $notice->{content_type},
         letter_code => $notice->{letter_code},
     };
-    my $message_id = C4::Letters::EnqueueLetter({
+    $message_id = C4::Letters::EnqueueLetter({
         letter                 => $letter,
         borrowernumber         => $borrower->borrowernumber,
         message_transport_type => $notice->{message_transport_type},
@@ -89,7 +107,9 @@ sub handleTestObject {
         from_address           => $notice->{from_address},
     });
 
-    $notice->{message_id} = $message_id;
+    #return the persisted MessageQueue with linked objects referenced
+    $notice = C4::Letters::GetMessage($message_id);
+    $notice->{borrower} = $borrower;
 
     return $notice;
 }
@@ -113,8 +133,9 @@ sub validateAndPopulateDefaultValues {
     }
 
     # Other required fields
+    $object->{subject} = "Hello world" unless defined $object->{subject};
     $object->{message_transport_type} = 'email' unless defined $object->{message_transport_type};
-    $object->{content} => "Example message content" unless defined $object->{content};
+    $object->{content} = "Example message content" unless defined $object->{content};
 }
 
 =head deleteTestGroup
