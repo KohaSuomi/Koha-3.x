@@ -21,7 +21,7 @@ sub get_transaction {
     
     return $c->$cb({
                     transaction_id        => $transaction->transaction_id,
-                    borrowernumber        => $transaction->borrowernumber,
+                    borrowernumber        => int($transaction->borrowernumber),
                     status                => $transaction->status,
                     timestamp             => $transaction->timestamp,
                     description           => $transaction->description || "",
