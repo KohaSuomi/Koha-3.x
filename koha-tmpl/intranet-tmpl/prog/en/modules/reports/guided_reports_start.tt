@@ -161,7 +161,7 @@ $(document).ready(function(){
 
 [% IF (create || editsql || save) %]
     $("#select_group").change(function() {
-        if($(this).attr('checked')) {
+        if($(this).prop('checked') == true) {
             $("#group_input").attr('disabled', 'disabled');
             $("#groupdesc_input").attr('disabled', 'disabled');
             $("#group_select").attr('disabled', false);
