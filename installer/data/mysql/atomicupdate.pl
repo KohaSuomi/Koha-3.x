@@ -202,3 +202,6 @@ if ($pending) {
 if ($apply) {
     $atomicupdater->applyAtomicUpdates();
 }
+if ($single) {
+    $atomicupdater->applyAtomicUpdate($single);
+}
