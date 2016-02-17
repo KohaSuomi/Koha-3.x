@@ -43,7 +43,7 @@ sub select {
     ##Evaluate 'or'-segments in order.
     foreach my $or (@$ors) {
         my $payload = _evalSegment($or, $params);
-        my $val = join(', ', @$payload);
+        my $val = join(' ', @$payload);
         return $val if $val;
     }
 }
