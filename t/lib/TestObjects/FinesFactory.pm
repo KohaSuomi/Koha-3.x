@@ -147,8 +147,9 @@ sub deleteTestGroup {
 
     my $schema = Koha::Database->new_schema();
     while( my ($key, $val) = each %$acct) {
-        if ($schema->resultset('Accountline')->find({"accountno" => $val->{accountno}, "borrowernumber" => $val->{borrowernumber} })) {
-            $schema->resultset('Accountline')->find({"accountno" => $val->{accountno}, "borrowernumber" => $val->{borrowernumber} })->delete();
+        my $borrowernumber = Koha::Borrowers->find({ cardnumber => $val->{cardnumber} })->borrowernumber;
+        if ($schema->resultset('Accountline')->find({"accountno" => $val->{accountno}, "borrowernumber" => $borrowernumber })) {
+            $schema->resultset('Accountline')->find({"accountno" => $val->{accountno}, "borrowernumber" => $borrowernumber })->delete();
         }
     }
 }
