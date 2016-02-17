@@ -24,14 +24,13 @@
 # Short-Description: Hypnotoad Mojolicious Server for handling Koha API requests
 ### END INIT INFO
 
-USER=kivilahtio
+USER=koha
 loggedInUser=`whoami`
 NAME=koha-api-daemon
-KOHA_PATH=/home/koha/kohaclone/
 ## See Koha/REST/V1.pm for more info about the environmental variables.
 export MOJO_CONFIG=$KOHA_PATH/api/v1/hypnotoad.conf
 #You get 3 logfiles here, .log, .stderr, .stdout
-export MOJO_LOGFILES=/home/koha/koha-dev/var/log/kohaapi.mojo
+export MOJO_LOGFILES=__LOG_DIR__/kohaapi.mojo
 export MOJO_LOGLEVEL=debug
 
 ##ABOUT CHANGING THE process name/command visible by programs like 'top' and 'ps'.
