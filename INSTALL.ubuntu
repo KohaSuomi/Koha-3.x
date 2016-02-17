@@ -428,6 +428,7 @@ Now enable the Apache modules this config needs, enable Koha's
 virtual host configuration, and restart Apache.
     sudo a2enmod rewrite
     sudo a2enmod deflate
+    sudo a2enmod proxy
     sudo a2ensite koha
     sudo service apache2 restart
 
@@ -480,6 +481,59 @@ FILE PARTIAL (ADD):
 # gets set when this process runs.
 */5 * * * *	$KOHA_PATH/misc/migration_tools/rebuild_zebra.pl -b -a -z &> /dev/null
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+SETUP REST API
+=================================================================
+
+REST API is a formal and fast mechanism for allowing 3rd parties to easily
+work with Koha's capabilities. It is also used internally as a 3rd generation
+web server to enhance Koha's usability.
+
+Start REST API on Boot
+=================================================================
+
+IF YOU ARE DOING A STANDARD INSTALLATION, use this command:
+    sudo ln -s /usr/share/koha/bin/koha-api-daemon.sh \
+        /etc/init.d/koha-api-daemon
+
+IF YOU ARE DOING A DEV INSTALLATION, use this command:
+    sudo ln -s ~/koha-dev/bin/koha-api-daemon.sh \
+        /etc/init.d/koha-api-daemon
+
+If you are not running Koha as a 'koha'-user, you might have to change the
+configured user in /etc/init.d/koha-api-daemon
+
+FOR EITHER INSTALLATION:
+    sudo update-rc.d koha-api-daemon defaults
+    sudo service koha-api-daemon start
+    #wait a few seconds, then run this command. There is something wrong with
+    #the internal magic between REST API and Koha and it needs an extra nudge
+    #to get started.
+    sudo service koha-api-daemon start
+
+Later if you deploy changes to the REST API, you can refresh the changes simply with
+
+    sudo service koha-api-daemon start
+
+without stopping and starting the REST API.
+
+Deploy Swagger-UI to browse the API capabilities
+=================================================================
+
+Swagger-UI is a nice tool which creates an interactive html-document everybody
+can use to see and try how the REST API works.
+
+IF YOU ARE DOING A STANDARD INSTALLATION, you are on your own
+
+IF YOU ARE DOING A DEV INSTALLATION, use this command:
+    cd /home/koha
+    git clone https://github.com/KohaSuomi/swagger-ui.git
+
+The swagger-ui is automatically linked to that directory from the Koha
+installation.
+You can now access the Swagger-UI by going to
+    http(s)://<your-domain>/api/v1/doc
 
 
 SETUP ADDITIONAL LANGUAGES
