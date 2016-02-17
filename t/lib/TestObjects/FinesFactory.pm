@@ -21,12 +21,15 @@ package t::lib::TestObjects::FinesFactory;
 use Modern::Perl;
 use Carp;
 use Scalar::Util qw(blessed);
+use Try::Tiny;
 
 use C4::Members;
 use C4::Accounts;
 use Koha::Borrowers;
 
 use base qw(t::lib::TestObjects::ObjectFactory);
+
+use t::lib::TestObjects::BorrowerFactory;
 
 use Koha::Exception::ObjectExists;
 
@@ -72,7 +75,22 @@ See t::lib::TestObjects::ObjectFactory for more documentation
 sub handleTestObject {
     my ($class, $fine, $stashes) = @_;
 
-    my $borrower = Koha::Borrowers->cast($fine->{cardnumber});
+    my $borrower;
+    try {
+        $borrower = Koha::Borrowers->cast($fine->{cardnumber});
+    } catch {
+        if (blessed($_)) {
+            if ($_->isa('Koha::Exception::UnknownObject')) {
+                $borrower = t::lib::TestObjects::BorrowerFactory->createTestGroup({cardnumber => $fine->{cardnumber}}, undef, @$stashes);
+            }
+            else {
+                $_->rethrow();
+            }
+        }
+        else {
+            die $_;
+        }
+    };
 
     my $accountno = C4::Accounts::getnextacctno($borrower->borrowernumber);
 
