@@ -274,8 +274,8 @@ our $PERL_DEPS = {
     },
     'DateTime::Format::RFC3339' => {
         'usage'    => 'Core',
-        'required' => '1.20',
-        'min_ver'  => '1.20'
+        'required' => '1.2.0',
+        'min_ver'  => '1.2.0'
     },
     'DateTime::Set' => {
         'usage'    => 'Core',
