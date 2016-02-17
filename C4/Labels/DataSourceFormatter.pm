@@ -162,6 +162,11 @@ sub public_twoLiner {
 
     _printLines(_formatLines($element, $data->{text}, 'twoLiner'));
 }
+sub public_twoLinerShrink {
+    my ($data, $element) = @_;
+
+    _printLines(_formatLines($element, $data->{text}, 'twoLinerShrink'));
+}
 
 sub _formatLines {
     #Set parameters and default values
@@ -186,11 +191,28 @@ sub _formatLines {
             push(@lines, $line);
         }
         elsif ($mutator eq 'twoLiner') {
-            ($fontSize, undef) = prFontSize( $fontSize*0.7 ); #Shrink the font to take less space
-
-            ($cuttingPos, $line) = _fitText($width, $fontSize, $text); #Make a new measurement with the new font size
+            ($cuttingPos, $line) = _fitText($width, $fontSize, $text);
             push(@lines, $line);
             if ($cuttingPos) { #When the text is measured again in smaller font we might not have to cut it at all!
+                $line = _fitText(  $width, $fontSize, substr($text, $cuttingPos)  ); #Cut the second row text from the first row text
+                push(@lines, $line);
+            }
+        }
+        elsif ($mutator eq 'twoLinerShrink') {
+            ##First find a font size which fits multiple rows best
+            my $i = 0; #Iteration counter to prevent an endless loop
+            my $minFontSize = $fontSize*0.7; #Shrink a maximum of 30%
+            my $maxShrinkIterations = $fontSize - $minFontSize;
+            ($cuttingPos, $line) = _fitText(($width*2-$fontSize/2), $fontSize, $text); #Measure if we can fit this into two rows
+            while($cuttingPos && $i++ < $maxShrinkIterations) {
+                ($fontSize, undef) = prFontSize( $fontSize-1 ); #Shrink the font to take less space
+                ($cuttingPos, $line) = _fitText(($width*2-$fontSize/2), $fontSize, $text);
+            }
+
+            ##Push first row
+            ($cuttingPos, $line) = _fitText($width, $fontSize, $text);
+            push(@lines, $line);
+            if ($cuttingPos) { ##Push second row
                 $line = _fitText(  $width, $fontSize, substr($text, $cuttingPos)  ); #Cut the second row text from the first row text
                 push(@lines, $line);
             }

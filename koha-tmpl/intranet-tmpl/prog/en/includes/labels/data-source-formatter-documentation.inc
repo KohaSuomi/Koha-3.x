@@ -52,7 +52,15 @@
     <span class="title">Two-liner</span>
     <span class="comment">
         Tries to print the given data elements as one line.<br/>
-        If that fails, shrinks the font size by 30% and splits the text to two lines,
+        If that fails, formatter splits the text to two lines,
+        removing characters that still wouldn't fit to the given width.
+    </span>
+</div>
+<div class="dsfod-doc" id="dsfod-twoLinerShrink">
+    <span class="title">Two-liner</span>
+    <span class="comment">
+        Tries to print the given data elements as one line.<br/>
+        If that fails, shrinks the font size by a maximum 30% and splits the text to two lines,
         removing characters that still wouldn't fit to the given width.
     </span>
 </div>

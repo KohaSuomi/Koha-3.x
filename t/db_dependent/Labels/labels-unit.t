@@ -106,33 +106,56 @@ sub dataSourceFormatterFormatLines {
 
     #twoLiner()
     ($pos, $lines, $fontSize, $font, $colour) = C4::Labels::DataSourceFormatter::_formatLines($element, $veryLongText, 'twoLiner');
-    is($lines->[0].' <and> '.$fontSize,
-       'Bared on your <and> 14',
-       "twoLiner() first row cut and font shrunk by 30%");
-    is($lines->[1].' <and> '.$fontSize,
-       " tomb, I'm a p <and> 14",
-       "twoLiner() second row cut and font shrunk by 30%");
-    ($pos, $lines, $fontSize, $font, $colour) = C4::Labels::DataSourceFormatter::_formatLines($element, $longText, 'twoLiner');
-    is($lines->[0].' <and> '.$fontSize,
-       'Archangel, Da <and> 14',
+    is($lines->[0],
+       'Bared on ',
        "twoLiner() first row cut");
-    is($lines->[1].' <and> '.$fontSize,
-       'rk Angel <and> 14',
-       "twoLiner() second fits");
-    ($pos, $lines, $fontSize, $font, $colour) = C4::Labels::DataSourceFormatter::_formatLines($element, $mediumText, 'twoLiner');
-    is($lines->[0].' <and> '.$fontSize,
-       "$mediumText <and> 14",
-       "twoLiner() first row cut to fit");
     is($lines->[1],
-       undef,
-       "twoLiner() no second row");
+       "your tom",
+       "twoLiner() second row cut");
+    ($pos, $lines, $fontSize, $font, $colour) = C4::Labels::DataSourceFormatter::_formatLines($element, $mediumText, 'twoLiner');
+    is($lines->[0],
+       'Black god',
+       "twoLiner() first row cut");
+    is($lines->[1],
+       'dess',
+       "twoLiner() second fits");
     ($pos, $lines, $fontSize, $font, $colour) = C4::Labels::DataSourceFormatter::_formatLines($element, $shortText, 'twoLiner');
-    is($lines->[0].' <and> '.$fontSize,
-       "$shortText <and> 20",
+    is($lines->[0],
+       $shortText,
        "twoLiner() first row fits");
     is($lines->[1],
        undef,
        "twoLiner() no second row");
+
+    #twoLinerShrink()
+    ($pos, $lines, $fontSize, $font, $colour) = C4::Labels::DataSourceFormatter::_formatLines($element, $veryLongText, 'twoLinerShrink');
+    is($lines->[0].' <and> '.$fontSize,
+       'Bared on your <and> 14',
+       "twoLinerShrink() first row cut and font shrunk by 30%");
+    is($lines->[1].' <and> '.$fontSize,
+       " tomb, I'm a p <and> 14",
+       "twoLinerShrink() second row cut and font shrunk by 30%");
+    ($pos, $lines, $fontSize, $font, $colour) = C4::Labels::DataSourceFormatter::_formatLines($element, $longText, 'twoLinerShrink');
+    is($lines->[0].' <and> '.$fontSize,
+       'Archangel,  <and> 17',
+       "twoLinerShrink() first row cut");
+    is($lines->[1].' <and> '.$fontSize,
+       'Dark Angel <and> 17',
+       "twoLinerShrink() second fits");
+    ($pos, $lines, $fontSize, $font, $colour) = C4::Labels::DataSourceFormatter::_formatLines($element, $mediumText, 'twoLinerShrink');
+    is($lines->[0].' <and> '.$fontSize,
+       "Black god <and> 20",
+       "twoLinerShrink() first row cut to fit");
+    is($lines->[1],
+       "dess",
+       "twoLinerShrink() no second row");
+    ($pos, $lines, $fontSize, $font, $colour) = C4::Labels::DataSourceFormatter::_formatLines($element, $shortText, 'twoLinerShrink');
+    is($lines->[0].' <and> '.$fontSize,
+       "$shortText <and> 20",
+       "twoLinerShrink() first row fits");
+    is($lines->[1],
+       undef,
+       "twoLinerShrink() no second row");
 
     };
     if ($@) {
