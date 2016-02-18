@@ -79,16 +79,12 @@ sub handleTestObject {
     try {
         $borrower = Koha::Borrowers->cast($fine->{cardnumber});
     } catch {
-        if (blessed($_)) {
-            if ($_->isa('Koha::Exception::UnknownObject')) {
-                $borrower = t::lib::TestObjects::BorrowerFactory->createTestGroup({cardnumber => $fine->{cardnumber}}, undef, @$stashes);
-            }
-            else {
-                $_->rethrow();
-            }
+        die $_ unless (blessed($_) && $_->can('rethrow'));
+        if ($_->isa('Koha::Exception::UnknownObject')) {
+            $borrower = t::lib::TestObjects::BorrowerFactory->createTestGroup({cardnumber => $fine->{cardnumber}}, undef, @$stashes);
         }
         else {
-            die $_;
+            $_->rethrow();
         }
     };
 
@@ -147,9 +143,8 @@ sub deleteTestGroup {
 
     my $schema = Koha::Database->new_schema();
     while( my ($key, $val) = each %$acct) {
-        my $borrowernumber = Koha::Borrowers->find({ cardnumber => $val->{cardnumber} })->borrowernumber;
-        if ($schema->resultset('Accountline')->find({"accountno" => $val->{accountno}, "borrowernumber" => $borrowernumber })) {
-            $schema->resultset('Accountline')->find({"accountno" => $val->{accountno}, "borrowernumber" => $borrowernumber })->delete();
+        if ($schema->resultset('Accountline')->find({"note" => $val->{note} })) {
+            $schema->resultset('Accountline')->find({"note" => $val->{note} })->delete();
         }
     }
 }
