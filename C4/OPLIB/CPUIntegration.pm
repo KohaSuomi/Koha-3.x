@@ -413,13 +413,13 @@ sub _validate_cpu_hash {
     # CPU does not like a semicolon. Go through the fields and make sure
     # none of the fields contain ';' character (from CPU documentation)
     foreach my $field (keys $invoice){
-        $invoice->{$field} =~ s/;//g; # Remove semicolon
+        $invoice->{$field} =~ s/;//g if defined $invoice->{$field}; # Remove semicolon
     }
 
     $invoice->{Mode} = int($invoice->{Mode});
     foreach my $product (@{ $invoice->{Products} }){
         foreach my $product_field (keys $product){
-            $product->{$product_field} =~ s/;//g; # Remove semicolon
+            $product->{$product_field} =~ s/;//g if defined $invoice->{$product_field}; # Remove semicolon
         }
         $product->{Amount} = int($product->{Amount}) if $product->{Amount};
         $product->{Price} = int($product->{Price}) if $product->{Price};
