@@ -20,6 +20,5 @@
       "description": "Hash for response parameters",
       "type": "string"
     }
-  },
-  "required": ["Reference"]
+  }
 }
