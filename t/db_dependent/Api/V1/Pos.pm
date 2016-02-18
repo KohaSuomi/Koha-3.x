@@ -162,6 +162,14 @@ sub getcpu_n_200 {
             },
         ], undef, $testContext);
 
+    # Create a new fine for the Borrower
+    my $finesfactory = t::lib::TestObjects::FinesFactory->createTestGroup({
+        amount => 10.0,
+        cardnumber => '1A23',
+        accounttype => 'FU',
+        note => 'unique identifier',
+    }, undef, $testContext);
+
     # Create payment
     my $payment = C4::OPLIB::CPUIntegration::InitializePayment({
         borrowernumber => Koha::Borrowers->find({ cardnumber => '1A23' })->borrowernumber,
