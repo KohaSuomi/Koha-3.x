@@ -78,8 +78,11 @@ sub setItemtype {
     $bde->setLanguage($record);
 
 Sets the languages- and primary_language-columns.
-Primary language defaults to FIN if 041$a is not defined.
-Warns if multiple primary languages are found.
+Primary language defaults to FIN if 041$a is not defined, or if there are multiple
+041$a including one or more 'FIN'.
+If no 'FIN' is found, we next default to 'SWE', if that is not present
+we take the first instance of 041$a
+
 @PARAM1, MARC::Record
 
 =cut
@@ -92,6 +95,8 @@ sub setLanguages {
     my @sb; #StrinBuilder to efficiently collect language Strings and concatenate them
     my $f041 = $record->field('041');
 
+    ##Starting looking for default languages and first instance of subfield 'a'
+    my ($firstA, $finFound, $sweFound);
     if ($f041) {
         my @sfs = $f041->subfields();
         @sfs = sort {$a->[0] cmp $b->[0]} @sfs;
@@ -101,13 +106,22 @@ sub setLanguages {
                 next;
             }
             push @sb, $sf->[0].':'.$sf->[1];
+
             if ($sf->[0] eq 'a') { #We got the primary language subfield
                 $primaryLanguage = $sf->[1];
-                ($self->{dbi}) ? $self->{'primary_language'} = $primaryLanguage : $self->set({'primary_language' => $primaryLanguage});
+                $firstA = $primaryLanguage unless $firstA;
+
+                if ($primaryLanguage eq 'fin') {
+                    $finFound = $primaryLanguage;
+                }
+                elsif ($primaryLanguage eq 'swe') {
+                    $sweFound = $primaryLanguage;
+                }
             }
         }
         $languages = join(',',@sb) if scalar(@sb);
     }
+    $primaryLanguage = $finFound || $sweFound || $firstA;
 
     ($self->{dbi}) ? $self->{'languages'} = $languages : $self->set({'languages' => $languages});
     ($self->{dbi}) ? $self->{'primary_language'} = $primaryLanguage : $self->set({'primary_language' => $primaryLanguage});
