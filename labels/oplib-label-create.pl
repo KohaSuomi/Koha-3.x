@@ -24,6 +24,8 @@ use CGI;
 use CGI::Cookie;
 use JSON::XS;
 use POSIX;
+use Try::Tiny;
+use Scalar::Util qw(blessed);
 
 use C4::Auth qw(get_template_and_user);
 use C4::Output qw(output_html_with_http_headers);
@@ -32,6 +34,7 @@ use C4::Labels::SheetManager;
 use C4::Labels::DataSourceManager;
 use C4::VirtualShelves;
 use C4::Members;
+use Koha::Exception::Labels::UnknownItems;
 
 my $cgi = new CGI;
 my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
@@ -72,7 +75,6 @@ unless ($barcodes) {
         $template->param(barcodesTextArea => join("\n",@$barcodes));
     }
 }
-my $ignoreErrors = $cgi->param('ignoreErrors');
 my $marginsCookie = exists $cgi->{'.cookies'}->{'label_margins'} ? $cgi->{'.cookies'}->{'label_margins'} : $cgi->cookie(-name => 'label_margins', -value => '', -expires => '+3M');
 my $sheetId = $cgi->param('sheetId') || $marginsCookie->{value}->[2] || 0;
 
@@ -101,22 +103,26 @@ if ($barcodes) {
 if ($op eq "printLabels") {
     my $dir = '/tmp/';
     my $file = 'printLabel'.strftime('%Y%m%d%H%M%S',localtime).'.pdf';
-    my $sheet = C4::Labels::SheetManager::getSheet($sheetId);
-    my $creator = C4::Labels::PdfCreator->new({margins => $margins, sheet => $sheet, file => $dir.$file});
-    my ($labelPdfDirectory, $fileName, $badBarcodeErrors) = $creator->create($barcodes);
-    my $filePathAndName = $dir.$file;
 
-    if ($badBarcodeErrors) {
-        $template->param('badBarcodeErrors', $badBarcodeErrors);
-        $template->param('barcode', $barcodes); #return barcodes if error happens!
-        #Being nice might not be such a great idea after all :( $template->param('ignoreErrorsChecked', 'true'); #Be nice and readily check the ignoreErrors-checkbox!
-    }
+    try {
+        my $sheet = C4::Labels::SheetManager::getSheet($sheetId);
+        my $creator = C4::Labels::PdfCreator->new({margins => $margins, sheet => $sheet, file => $dir.$file});
+        my $filePath = $creator->create($barcodes);
 
-    #If we have no errors or want to ignore them, go ahead and share the pdf!
-    if (!($badBarcodeErrors) || $ignoreErrors) {
+        my $filePathAndName = $dir.$file;
         sendPdf($cgi, $file, $filePathAndName);
         return 1;
-    }
+
+    } catch {
+        die "$_" unless(blessed($_) && $_->can('rethrow'));
+        if ($_->isa('Koha::Exception::Labels::UnknownItems')) {
+            $template->param('badBarcodeErrors', $_->badBunch);
+            $template->param('barcode', $barcodes); #return barcodes if error happens!
+        }
+        else {
+            $_->rethrow();
+        }
+    };
 }
 
 output_html_with_http_headers $cgi, $marginsCookie, $template->output;

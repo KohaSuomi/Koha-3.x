@@ -29,6 +29,7 @@ use C4::Labels::DataSourceManager;
 use Koha::Exception::BadParameter;
 use Koha::Exception::UnknownObject;
 use Koha::Exception::DB;
+use Koha::Exception::Labels::UnknownItems;
 
 =head new
 
@@ -63,9 +64,7 @@ in css3 start from top left, thus the sheet coordinates need to be inverted some
 
 sub create {
     my ($self, $itemBarcodes) = @_;
-    unless(ref($itemBarcodes) eq 'ARRAY') {
-        Koha::Exception::BadParameter->throw(error => __PACKAGE__.":: Parameter 'itemBarcodes' is not an ARRAYRef");
-    }
+    my $items = $self->_normalizeBarcodesToItems($itemBarcodes);
 
     ##Start .pdf creation.
     my $filePath = $self->getFile()->stringify();
@@ -107,7 +106,7 @@ sub create {
     }
 
     prEnd();
-    return ($filePath, undef);
+    return ($filePath);
 }
 sub printBoundingBox {
     my ($self, $object) = @_;
@@ -238,5 +237,48 @@ sub setFile {
     $self->{file} = $file;
 }
 sub getFile { return shift->{file}; }
+
+=head _normalizeBarcodesToItems
+
+    my $items = _normalizeBarcodesToItems($barcodesAry);
+
+Gets a bunch of Items/barcodes and casts them all to C4::Items.
+If casting is impossible, collects bad barcodes and throws an error.
+@PARAM1, ARRAYRef, HASHRefs of Items or scalars of koha.items.barcodes
+@THROWS Koha::Exception::UnknownObject if some Items were not found
+@THROWS Koha::Exception::BadParameter if @PARAM1 is invalid.
+
+=cut
+
+sub _normalizeBarcodesToItems {
+    my ($self, $barcodesAry) = @_;
+    unless(ref($barcodesAry) eq 'ARRAY') {
+        my @cc = caller(1);
+        Koha::Exception::BadParameter->throw(error => $cc[3]."($barcodesAry):> Parameter 1 is not an ARRAYRef");
+    }
+
+    my @errors;
+    for (my $i=0 ; $i<scalar(@$barcodesAry) ; $i++) {
+        my $ibc = $barcodesAry->[$i];
+        my $item;
+        if (ref($ibc) eq 'HASH' && $ibc->{barcode}) {
+            #This is an C4::Item most certainly so accept it as it is
+            $item = $ibc;
+        }
+        elsif ($ibc) {
+            #This is a barcode so fetch an item by barcode
+            $item = C4::Items::GetItem(undef, $ibc, undef);
+        }
+        unless($item) {
+            push(@errors, $ibc);
+        }
+        $barcodesAry->[$i] = $item;
+    }
+
+    if (scalar(@errors)) {
+        Koha::Exception::Labels::UnknownItems->throw(badBunch => \@errors);
+    }
+    return $barcodesAry;
+}
 
 return 1;

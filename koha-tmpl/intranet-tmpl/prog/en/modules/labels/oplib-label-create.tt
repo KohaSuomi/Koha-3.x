@@ -31,8 +31,7 @@
                                   [% END %]
                                   </b>
                                   <br />
-                                  Correct faulty barcodes or check the 'Ignore errors'-checkbox and resubmit.<br />
-                                  Faulty barcodes will automatically be removed.
+                                  Please correct the faulty barcodes
                               </div>
                               [% END %]
                               <div>
@@ -43,8 +42,6 @@
                                       <br /> <span class="hint">Add an empty row for stickers that need to be skipped.</span>
                                       <br />
                                       <br /> <input type="submit" id="printLabels" value="Print us!">
-                                      <br />
-                                      <br /> Ignore errors <input type="checkbox" id="ignoreErrors">
                                       <br />
                                       <br /> <span class="hint">If you have trouble printing the .pdf, make sure you are printing the .pdf as is, without any scaling. You should adjust margins only if non-scaling printing doesn't work.</span>
                                       [% IF barcodesTextArea %]
