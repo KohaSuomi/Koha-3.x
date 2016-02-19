@@ -59,6 +59,7 @@
         <thead>
             <tr>
                 <th>Report ID</th>
+                <th>Creation time</th>
                 <th>Start date</th>
                 <th>End date</th>
                 <th>Statistical groups</th>
@@ -70,6 +71,7 @@
             [% FOREACH okm_report IN ready_okm_reports %]
                 <tr[% IF okm_report.selected %] class="highlighted-row"[% END %]>
                     <td>[% okm_report.id %]</td>
+                    <td>[% okm_report.timestamp %]</td>
                     <td>[% okm_report.startdate %]</td>
                     <td>[% okm_report.enddate %]</td>
                     <td>
