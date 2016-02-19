@@ -1406,7 +1406,7 @@ sub StandardizeTimeperiodParameter {
                             DateTime->from_day_of_year(year => $1, day_of_year => 366, time_zone => C4::Context->tz()) :
                             DateTime->from_day_of_year(year => $1, day_of_year => 365, time_zone => C4::Context->tz());
     }
-    elsif ($timeperiod =~ /^\d\d$/) {
+    elsif ($timeperiod =~ /^(\d\d)$/) {
         $startDate = DateTime->new( year => DateTime->now()->year(),
                                     month => $1,
                                     day => 1,
@@ -1418,7 +1418,7 @@ sub StandardizeTimeperiodParameter {
                                               ) if $startDate;
     }
     elsif ($timeperiod =~ 'lastyear') {
-        $startDate = DateTime->now(time_zone => C4::Context->tz())->subtract(years => 1)->set_day(1);
+        $startDate = DateTime->now(time_zone => C4::Context->tz())->subtract(years => 1)->set_month(1)->set_day(1);
         $endDate = ($startDate->is_leap_year()) ?
                 DateTime->from_day_of_year(year => $startDate->year(), day_of_year => 366, time_zone => C4::Context->tz()) :
                 DateTime->from_day_of_year(year => $startDate->year(), day_of_year => 365, time_zone => C4::Context->tz()) if $startDate;
@@ -1432,6 +1432,13 @@ sub StandardizeTimeperiodParameter {
     }
 
     if ($startDate && $endDate) {
+        #Check if startdate is smaller than enddate, if not fix it.
+        if (DateTime->compare($startDate, $endDate) == 1) {
+            my $temp = $startDate;
+            $startDate = $endDate;
+            $endDate = $temp;
+        }
+
         #Make sure the HMS portion also starts from 0 and ends at the end of day. The DB usually does timeformat casting in such a way that missing
         #complete DATETIME elements causes issues when they are automaticlly set to 0.
         $startDate->truncate(to => 'day');
