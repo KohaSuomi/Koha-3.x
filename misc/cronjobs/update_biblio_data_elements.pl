@@ -12,14 +12,14 @@ my $help;
 my $limit = '';
 my $verbose = 0;
 my $forceRebuild;
-my $oldDbi = 0;
+my $oldDbi = 0; #We actually default to oldDbi, the selection is reversed after parameter handling
 
 GetOptions(
     'h|help'             => \$help,
     'l|limit:i'          => \$limit,
     'v|verbose:i'        => \$verbose,
     'f|forceRebuild'     => \$forceRebuild,
-    'x|dbix'             => \$oldDbi,
+    'k|koha'             => \$oldDbi,
 );
 $oldDbi = ($oldDbi) ? 0 : 1; #reverse selection cuz I'm lazy
 
@@ -51,7 +51,8 @@ This script has the following parameters :
 
     -f --forceRebuild Rebuild data_elements for all biblioitems.
 
-    -x --dbix         Use DBIx as the database access library instead of the much faster DBI.
+    -k --koha         Use Koha::Object as the database access library instead of
+                      the much faster DBI.
                       This is to compare performances to debug performance issues.
 
 ENDUSAGE
