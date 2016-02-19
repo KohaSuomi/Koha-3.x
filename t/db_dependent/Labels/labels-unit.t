@@ -76,6 +76,7 @@ sub dataSourceFormatterFormatLines {
     my $veryLongText = "Bared on your tomb, I'm a prayer for your loneliness, And would you ever soon, Come above onto me? For once upon a time, On the binds of your loneliness, I could always find the right slot for your sacred key";
     my $longText = "Archangel, Dark Angel";
     my $mediumText = "Black goddess";
+    my $mediumTextWhitespace = "Black                     goddess";
     my $shortText = "Succubi";
     my $tinyText = "CoF";
     my ($pos, $lines, $fontSize, $font, $colour);
@@ -127,13 +128,24 @@ sub dataSourceFormatterFormatLines {
        undef,
        "twoLiner() no second row");
 
+    #trim leading whitespace
+    ($pos, $lines, $fontSize, $font, $colour) = C4::Labels::DataSourceFormatter::_formatLines($element, $mediumTextWhitespace, 'twoLiner');
+    is($lines->[0],
+       'Black       ',
+       "twoLiner() whitespace trimming first row cut");
+    is($lines->[1],
+       'goddess',
+       "twoLiner() whitespace trimming second fits");
+
     #twoLinerShrink()
     ($pos, $lines, $fontSize, $font, $colour) = C4::Labels::DataSourceFormatter::_formatLines($element, $veryLongText, 'twoLinerShrink');
     is($lines->[0].' <and> '.$fontSize,
        'Bared on your <and> 14',
        "twoLinerShrink() first row cut and font shrunk by 30%");
+    ok(not(   $lines->[1] =~ /^\s+/   ),
+       "twoLinerShrink() second row has leading whitespace trimmed");
     is($lines->[1].' <and> '.$fontSize,
-       " tomb, I'm a p <and> 14",
+       "tomb, I'm a pr <and> 14",
        "twoLinerShrink() second row cut and font shrunk by 30%");
     ($pos, $lines, $fontSize, $font, $colour) = C4::Labels::DataSourceFormatter::_formatLines($element, $longText, 'twoLinerShrink');
     is($lines->[0].' <and> '.$fontSize,
@@ -183,22 +195,22 @@ sub C4LabelsDataSourceSelector {
        'I wish I met your mother',
        $dataSource);
 
-    $dataSource = 'biblio.title && biblio.author || 245$a';
+    $dataSource = 'biblio.title && "," && biblio.author || 245$a';
     $element->setDataSource($dataSource);
     is(C4::Labels::DataSourceManager::executeDataSource($element, $itemBarcodes[0]),
-       'I wish I met your mother, Pertti Kurikka',
+       'I wish I met your mother , Pertti Kurikka',
        $dataSource);
 
     $dataSource = 'homebranch.branchcode && 100$a';
     $element->setDataSource($dataSource);
     is(C4::Labels::DataSourceManager::executeDataSource($element, $itemBarcodes[0]),
-       'CPL, Pertti Kurikka',
+       'CPL Pertti Kurikka',
        $dataSource);
 
     $dataSource = '"freetext" and biblio.copyrightdate && 100$a';
     $element->setDataSource($dataSource);
     is(C4::Labels::DataSourceManager::executeDataSource($element, $itemBarcodes[0]),
-       'freetext, 1960, Pertti Kurikka',
+       'freetext 1960 Pertti Kurikka',
        $dataSource);
 
     $dataSource = 'signum()';

@@ -267,6 +267,8 @@ $shorteningPosition is undef if no cutting happened.
 sub _fitText {
     my ($availableWidth, $fontSize, $text) = @_;
 
+    #Remove leading whitespace
+    $text =~ s/^\s+//;
     my $tooLong; #A boolean (flag) if we had to shorten the text
 
     #my $textWidth = sprintf(  '%1$d', prStrWidth( $text, 'Helvetica', $fontSize )  );
