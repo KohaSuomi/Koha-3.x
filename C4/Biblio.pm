@@ -288,6 +288,31 @@ sub AddBiblio {
     return ( $biblionumber, $biblioitemnumber );
 }
 
+=head2 UpsertBiblio
+
+    my $biblio = C4::Biblio::UpsertBiblio($record, $frameworkcode);
+
+Adds a new biblio if no matching biblio is found, otherwise overwrites the existing biblio.
+Currently matches using the ISBN-field from field 020$a. This is only useful for simple testing
+and currently is not meant to be used in production code.
+
+=cut
+
+sub UpsertBiblio {
+    my $record          = shift;
+    my $frameworkcode   = shift;
+    my $options         = @_ ? shift : undef;
+
+    my ( $tagid, $subfieldid ) = GetMarcFromKohaField( "biblioitems.isbn" );
+    my $isbn = $record->subfield($tagid, $subfieldid);
+    my $oldRecord = C4::Biblio::GetMarcFromISBN($isbn) if $isbn;
+    return $oldRecord if $oldRecord;
+
+    my ($biblionumber, $biblioitemnumber) = C4::Biblio::AddBiblio($record, $frameworkcode);
+    $record = C4::Biblio::GetMarcBiblio($biblionumber);
+    return $record;
+}
+
 =head2 ModBiblio
 
   ModBiblio( $record,$biblionumber,$frameworkcode);
@@ -1102,6 +1127,23 @@ sub GetBiblio {
     }
     return;
 }    # sub GetBiblio
+
+=head2 GetMarcFromISBN
+
+  my $record = C4::Biblio::GetMarcFromISBN($isbn);
+
+=cut
+
+sub GetMarcFromISBN {
+    my ($isbn) = @_;
+    my $dbh            = C4::Context->dbh;
+    my $sth            = $dbh->prepare("SELECT marcxml FROM biblioitems WHERE isbn = ?");
+    $sth->execute($isbn);
+    if ( my $data = $sth->fetchrow_hashref ) {
+        return $data;
+    }
+    return;
+}
 
 =head2 GetBiblioItemInfosOf
 
