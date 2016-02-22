@@ -25,6 +25,7 @@ use CGI;
 use C4::Context;
 use C4::Auth;
 use C4::Output;
+use C4::Breeding;
 
 sub StringSearch  {
 	my ($searchstring,$type)=@_;
@@ -90,14 +91,8 @@ if ( $op eq 'add_form' ) {
 
     #---- if primkey exists, it's a modify action, so read values to modify...
     my $data;
-    if ($searchfield) {
-        my $dbh = C4::Context->dbh;
-        my $sth = $dbh->prepare(
-"select host,port,db,userid,password,name,id,checked,rank,syntax,encoding,timeout,recordtype from z3950servers where (name = ?) order by rank,name"
-        );
-        $sth->execute($searchfield);
-        $data = $sth->fetchrow_hashref;
-        $sth->finish;
+    if (defined($searchfield)) {
+        $data = C4::Breeding::getZ3950server({name => $searchfield});
     }
     $template->param( $_ => $data->{$_} )
       for (qw( host port db userid password checked rank timeout encoding ));
@@ -107,58 +102,25 @@ if ( $op eq 'add_form' ) {
 ################## ADD_VALIDATE ##################################
     # called by add_form, used to insert/modify data in DB
 } elsif ($op eq 'add_validate') {
-	my $dbh=C4::Context->dbh;
-	my $sth=$dbh->prepare("select * from z3950servers where name=?");
-	$sth->execute($input->param('searchfield'));
-	my $checked = $input->param('checked') ? 1 : 0;
-	if ($sth->rows) {
-        $template->param(confirm_update => 1);
-             $sth=$dbh->prepare("update z3950servers set host=?, port=?, db=?, userid=?, password=?, name=?, checked=?, rank=?,syntax=?,encoding=?,timeout=?,recordtype=? where name=?");
-		$sth->execute($input->param('host'),
-		      $input->param('port'),
-		      $input->param('db'),
-		      $input->param('userid'),
-		      $input->param('password'),
-		      $input->param('searchfield'),
-		      $checked,
-		      $input->param('rank'),
-			  $input->param('syntax'),
-              $input->param('encoding'),
-              $input->param('timeout'),
-              $input->param('recordtype'),
-		      $input->param('searchfield'),
-		      );
-	} 
-	else {
-        $template->param(confirm_add => 1);
-		$sth=$dbh->prepare(
-		  "INSERT INTO z3950servers " .
-              "(host,port,db,userid,password,name,checked,rank,syntax,encoding,timeout,recordtype) " .
-               "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)" );
-        $sth->execute(
-            $input->param('host'),     $input->param('port'),
-            $input->param('db'),       $input->param('userid'),
-            $input->param('password'), $input->param('searchfield'),
-            $checked,                  $input->param('rank'),
-            $input->param('syntax'),   $input->param('encoding'),
-            $input->param('timeout'),  $input->param('recordtype')
-        );
-    }
-    $sth->finish;
+    my $params = castCGIToZ3950serverParams($input);
+    my $dbh=C4::Context->dbh;
+    my ($sth, $sql, $server);
 
+    $server = C4::Breeding::getZ3950server(  $params->{id} ? {id => $params->{id}} : {name => $params->{name}}  );
+    if ($server) {
+        C4::Breeding::updateZ3950server($params);
+        $template->param(confirm_update => 1);
+    }
+    else {
+        C4::Breeding::addZ3950server($params);
+        $template->param(confirm_add => 1);
+    }
     # END $OP eq ADD_VALIDATE
 ################## DELETE_CONFIRM ##################################
 # called by default form, used to confirm deletion of data in DB
 } elsif ($op eq 'delete_confirm') {
     $template->param( delete_confirm => 1 );
-    my $dbh = C4::Context->dbh;
-
-    my $sth2 = $dbh->prepare(
-"select host,port,db,userid,password,name,id,checked,rank,syntax,encoding,timeout,recordtype from z3950servers where (name = ?) order by rank,name"
-    );
-    $sth2->execute($searchfield);
-    my $data = $sth2->fetchrow_hashref;
-    $sth2->finish;
+    my $data = C4::Breeding::getZ3950server({name => $searchfield});
 
     $template->param(
         host       => $data->{'host'},
@@ -179,10 +141,8 @@ if ( $op eq 'add_form' ) {
 # called by delete_confirm, used to effectively confirm deletion of data in DB
 } elsif ($op eq 'delete_confirmed') {
 	$template->param(delete_confirmed => 1);
-	my $dbh=C4::Context->dbh;
-	my $sth=$dbh->prepare("delete from z3950servers where name=?");
-	$sth->execute($searchfield);
-	$sth->finish;
+    my $server = C4::Breeding::getZ3950server({name => $searchfield});
+    C4::Breeding::deleteZ3950server($server->{id});
 													# END $OP eq DELETE_CONFIRMED
 ################## DEFAULT ##################################
 } else { # DEFAULT
@@ -219,3 +179,23 @@ if ( $op eq 'add_form' ) {
 	}
 } #---- END $OP eq DEFAULT
 output_html_with_http_headers $input, $cookie, $template->output;
+
+sub castCGIToZ3950serverParams {
+    my ($cgi) = @_;
+
+    my $params = {};
+    $params->{'host'} =        $input->param('host'),
+    $params->{'port'} =        $input->param('port'),
+    $params->{'db'} =          $input->param('db'),
+    $params->{'userid'} =      $input->param('userid'),
+    $params->{'password'} =    $input->param('password'),
+    $params->{'name'} =        $input->param('searchfield'),
+    $params->{'checked'} =     $input->param('checked') ? 1 : 0,
+    $params->{'rank'} =        $input->param('rank'),
+    $params->{'syntax'} =      $input->param('syntax'),
+    $params->{'encoding'} =    $input->param('encoding'),
+    $params->{'timeout'} =     $input->param('timeout'),
+    $params->{'recordtype'} =  $input->param('recordtype'),
+    $params->{'searchfield'} = $input->param('searchfield'),
+    return $params;
+}

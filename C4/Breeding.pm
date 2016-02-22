@@ -20,6 +20,7 @@ package C4::Breeding;
 
 use strict;
 use warnings;
+use Data::Dumper;
 
 use C4::Biblio;
 use C4::Koha;
@@ -27,6 +28,10 @@ use C4::Charset;
 use MARC::File::USMARC;
 use C4::ImportBatch;
 use C4::AuthoritiesMarc; #GuessAuthTypeCode, FindDuplicateAuthority
+
+use Koha::Exception::DB;
+use Koha::Exception::DuplicateObject;
+use Koha::Exception::BadParameter;
 
 use vars qw($VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);
 
@@ -675,6 +680,164 @@ sub Z3950SearchAuth {
     );
 }
 
+=head getZ3950server
+
+    my $servers = C4::Breeding::listZ3950servers({id => 443, name => "geigei"});
+
+@RETURNS ARRAYRef of z3950servers-rows
+
+=cut
+
+sub listZ3950servers {
+    my ($params) = @_;
+    my $dbh=C4::Context->dbh;
+    my ($sth, $sql);
+
+    $sql = "SELECT * FROM z3950servers ";
+    my @params;
+    my @andedColumns;
+    if (ref($params) eq 'HASH') {
+        while (my ($column, $value) = each(%$params)) {
+            push(@andedColumns, "$column = ?");
+            push(@params, $value);
+        }
+    }
+    if (@params) {
+        $sql .= 'WHERE '.join(' AND ', @andedColumns);
+    }
+    $sql .= ' ORDER BY rank,name';
+
+    eval {
+        $sth = $dbh->prepare($sql);
+        $sth->execute( @params );
+    };
+    if ($@ || $sth->err) {
+        my @cc = caller(0);
+        my $paramsStr = Data::Dumper::Dumper($params);
+        Koha::Exception::DB->throw(error => $cc[3].'():>'.($@ || $sth->errstr)."\nWith search terms\n$paramsStr\n");
+    }
+    return $sth->fetchall_arrayref({});
+}
+
+=head getZ3950server
+
+    my $server = C4::Breeding::getZ3950server({id => 443, name => "geigei"});
+
+=cut
+
+sub getZ3950server {
+    my ($params) = @_;
+    my $servers = listZ3950servers($params);
+
+    if (not(ref($servers) eq 'ARRAY') || not(scalar(@$servers))) {
+        return undef;
+    }
+    elsif (scalar(@$servers) > 1) {
+        my @cc = caller(0);
+        my $paramsStr = Data::Dumper::Dumper($params);
+        Koha::Exception::DuplicateObject->throw(error => $cc[3]."():> Too many Z3950 servers found with search terms\n$paramsStr\n");
+    }
+    return $servers->[0];
+}
+
+sub updateZ3950server {
+    my ($params) = @_;
+    my $dbh=C4::Context->dbh;
+    my ($sth, $sql);
+
+    unless($params->{name}) {
+        my @cc = caller(0);
+        Koha::Exception::BadParameter->throw(  error => $cc[3]."():> Missing attribute 'name'!"  );
+    }
+
+    eval {
+        $sth=$dbh->prepare("update z3950servers set host=?, port=?, db=?, userid=?, password=?, name=?, checked=?, rank=?,syntax=?,encoding=?,timeout=?,recordtype=? where name=?");
+        $sth->execute(
+            $params->{'host'},
+            $params->{'port'},
+            $params->{'db'},
+            $params->{'userid'},
+            $params->{'password'},
+            $params->{'name'},
+            $params->{'checked'} ? 1 : 0,
+            $params->{'rank'},
+            $params->{'syntax'},
+            $params->{'encoding'},
+            $params->{'timeout'},
+            $params->{'recordtype'},
+            $params->{'name'},
+        );
+    };
+    if ($@ || $sth->err) {
+        my @cc = caller(0);
+        Koha::Exception::DB->throw(error => $cc[3].'():>'.($@ || $sth->errstr));
+    }
+}
+
+sub addZ3950server {
+    my ($params) = @_;
+    my $dbh=C4::Context->dbh;
+    my ($sth, $sql);
+
+    unless($params->{name}) {
+        my @cc = caller(0);
+        Koha::Exception::BadParameter->throw(  error => $cc[3]."():> Missing attribute 'name'!"  );
+    }
+
+    eval {
+        $sth=$dbh->prepare(
+          "INSERT INTO z3950servers " .
+              "        (host,port,db,userid,password,name,checked,rank,syntax,encoding,timeout,recordtype) " .
+               "VALUES (?,   ?,   ?, ?,     ?,       ?,   ?,      ?,   ?,     ?,       ?,      ?)" );
+        $sth->execute(
+            $params->{'host'},
+            $params->{'port'},
+            $params->{'db'},
+            $params->{'userid'},
+            $params->{'password'},
+            $params->{'name'},
+            $params->{'checked'} ? 1 : 0,
+            $params->{'rank'},
+            $params->{'syntax'},
+            $params->{'encoding'},
+            $params->{'timeout'},
+            $params->{'recordtype'},
+        );
+    };
+    if ($@ || $sth->err) {
+        my @cc = caller(0);
+        Koha::Exception::DB->throw(error => $cc[3].'():>'.($@ || $sth->errstr));
+    }
+}
+
+sub upsertZ3950server {
+    my ($params) = @_;
+    my $dbh=C4::Context->dbh;
+    my ($sth, $sql, $server);
+
+    $server = getZ3950server(  $params->{id} ? {id => $params->{id}} : {name => $params->{name}}  );
+    if ($server) {
+        C4::Breeding::updateZ3950server($params);
+    }
+    else {
+        C4::Breeding::addZ3950server($params);
+    }
+}
+
+sub deleteZ3950server {
+    my ($id) = @_;
+    my $dbh=C4::Context->dbh;
+    my ($sth, $sql);
+
+    eval {
+        $sth=$dbh->prepare("DELETE FROM z3950servers WHERE id=?");
+        $sth->execute($id);
+    };
+    if ($@ || $sth->err) {
+        my @cc = caller(0);
+        Koha::Exception::DB->throw(error => $cc[3].'():>'.($@ || $sth->errstr));
+    }
+}
+
 1;
 __END__
-
