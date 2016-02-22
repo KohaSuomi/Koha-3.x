@@ -140,7 +140,7 @@ sub Z3950Search {
     my ($pars, $template, $getAll)= @_;
 
     my @id= @{$pars->{id}};
-    my $page= $pars->{page};
+    my $page= $pars->{page} || 1;
     my $biblionumber= $pars->{biblionumber};
     my $isbn= $pars->{isbn};
     my $issn= $pars->{issn};
@@ -153,6 +153,9 @@ sub Z3950Search {
     my $controlnumber= $pars->{controlnumber};
     my $srchany= $pars->{srchany};
     my $stdid= $pars->{stdid};
+    my $controlNumber = $pars->{controlNumber};
+    my $recordControlNumber = $pars->{recordControlNumber};
+    my $controlNumberIdentifier = $pars->{controlNumberIdentifier};
 
     my $show_next       = 0;
     my $total_pages     = 0;
@@ -214,6 +217,19 @@ sub Z3950Search {
         $query .= " \@attr 1=1007 \"$stdid\" ";
         $nterms++;
     }
+    if ($controlNumber) {
+        $query .= " \@attr 1=9001 \"$controlNumber\" ";
+        $nterms++;
+    }
+    if ($recordControlNumber) {
+        $query .= " \@attr 1=1045 \"$recordControlNumber\" ";
+        $nterms++;
+    }
+    if ($controlNumberIdentifier) {
+        $query .= " \@attr 1=1097 \"$controlNumberIdentifier\" ";
+        $nterms++;
+    }
+
     for my $i (1..$nterms-1) {
         $query = "\@and " . $query;
     }
@@ -386,6 +402,52 @@ sub _isbn_replace {
     $isbn =~ s/\|/ \| /g;
     $isbn =~ s/\(/ \(/g;
     return $isbn;
+}
+
+=head translateZOOMErrors
+
+    my $errconn = C4::Breeding::translateZOOMError($errconn);
+
+@PARAM1  ArrayRef of ZOOM error HashRefs, HashRefs include keys:
+                                            server => "server.you.tried.to.reach.com",
+                                            error  => 10000 || 10007
+@RETURNS @PARAM1 with a injected clear text descriptions (in "description"-key) to the ZOOM error HashRefs.
+@THROWS what translateZOOMError() throws
+
+=cut
+
+sub translateZOOMErrors {
+    my ($errconns) = @_;
+
+    foreach my $err (@$errconns) {
+        my $desc = C4::Breeding::translateZOOMError( $err->{error} );
+        $err->{description} = $desc.' to '.$err->{server};
+    }
+    return $errconns;
+}
+
+=head translateZOOMError
+
+    my $description = C4::Breeding::translateZOOMError($errorCode);
+
+@PARAM1 Int, ZOOM error code like 10007
+@RETURNS String, clear text error description
+@THROWS Koha::Exception::BadParameter if the given error code is not known.
+
+=cut
+
+sub translateZOOMError {
+    my ($code) = @_;
+    if ($code == 10000) {
+        return 'Connection failed';
+    }
+    elsif ($code == 10007) {
+        return 'Connection timeout';
+    }
+    else {
+        my @cc = caller(0);
+        Koha::Exception::BadParameter->throw(error => $cc[3]."():> \$error number '$code' is unmapped.");
+    }
 }
 
 =head2 ImportBreedingAuth
@@ -770,7 +832,8 @@ sub updateZ3950server {
     };
     if ($@ || $sth->err) {
         my @cc = caller(0);
-        Koha::Exception::DB->throw(error => $cc[3].'():>'.($@ || $sth->errstr));
+        my $paramsStr = Data::Dumper::Dumper($params);
+        Koha::Exception::DB->throw(error => $cc[3].'():>'.($@ || $sth->errstr)."\nCannot update with params\n$paramsStr\n");
     }
 }
 

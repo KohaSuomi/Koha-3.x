@@ -1,0 +1,48 @@
+{
+  "/reports/batchOverlays": {
+    "get": {
+      "x-mojo-controller": "Koha::REST::V1::Reports::BatchOverlays",
+      "operationId": "listReportContainers",
+      "tags": ["reports", "batch overlay"],
+      "produces": ["application/json"],
+      "responses": {
+        "200": {
+          "description": "The list of batch overlay report containers",
+          "schema": {
+            "type": "array",
+            "items": {"$ref": "../definitions/batchOverlay/reportContainer.json"}
+          }
+        },
+        "404": {
+          "description": "No batch overlay report containers available, yet.",
+          "schema": { "$ref": "../definitions/error.json" }
+        }
+      }
+    }
+  },
+  "/reports/batchOverlays/{reportContainerId}/reports": {
+    "get": {
+      "x-mojo-controller": "Koha::REST::V1::Reports::BatchOverlays",
+      "operationId": "listReports",
+      "tags": ["reports", "batch overlay"],
+      "parameters": [
+        { "$ref": "../parameters.json#/batchOverlayReportContainerIdPathParam" },
+        { "$ref": "../parameters.json#/showAllExceptionsGetParam" }
+      ],
+      "produces": ["application/json"],
+      "responses": {
+        "200": {
+          "description": "The list of reports contained within the given report container",
+          "schema": {
+            "type": "array",
+            "items": {"$ref": "../definitions/batchOverlay/report.json"}
+          }
+        },
+        "404": {
+          "description": "No batch overlay reports found.",
+          "schema": { "$ref": "../definitions/error.json" }
+        }
+      }
+    }
+  }
+}

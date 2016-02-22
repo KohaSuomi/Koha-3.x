@@ -8,7 +8,7 @@
       "operationId": "deleteBiblio",
       "tags": ["biblios"],
       "summary": "Deletes the given Bibliographic Record",
-      "description": "Can fail if there are dependecies to the Biblio.",
+      "description": "Can fail if there are dependecies to the Biblio. This is a duplicate of DELETE /records/{biblionumber} and behaves the same.",
       "produces": [
         ""
       ],

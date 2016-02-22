@@ -28,6 +28,8 @@ use C4::Charset;
 use C4::AuthoritiesMarc;
 use C4::MarcModificationTemplates;
 
+use Koha::Exception::DB;
+
 use vars qw($VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);
 
 BEGIN {
@@ -894,6 +896,21 @@ sub CleanBatch {
 
     C4::Context->dbh->do('DELETE FROM import_records WHERE import_batch_id = ?', {}, $batch_id);
     SetImportBatchStatus($batch_id, 'cleaned');
+}
+
+sub DeleteImportBatch {
+    my ($file_name) = @_;
+    my $dbh=C4::Context->dbh;
+    my ($sth, $sql);
+
+    eval {
+        $sth=$dbh->prepare("DELETE FROM import_batches WHERE file_name = ?");
+        $sth->execute($file_name);
+    };
+    if ($@ || $sth->err) {
+        my @cc = caller(0);
+        Koha::Exception::DB->throw(error => $cc[3].'():>'.($@ || $sth->errstr));
+    }
 }
 
 =head2 GetAllImportBatches

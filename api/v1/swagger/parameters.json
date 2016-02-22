@@ -1,4 +1,11 @@
 {
+  "batchOverlayReportContainerIdPathParam": {
+    "name": "reportContainerId",
+    "in": "path",
+    "description": "Internal biblio identifier",
+    "required": true,
+    "type": "integer"
+  },
   "biblionumberPathParam": {
     "name": "biblionumber",
     "in": "path",
@@ -85,6 +92,13 @@
     "required": false,
     "type": "string"
   },
+  "marcPostParam": {
+    "name": "marcxml",
+    "in": "formData",
+    "description": "MARCXML serialized into a form variable. Swagger2-spec forbids sending pure XML objects in the body so we work around the limitation",
+    "required": true,
+    "type": "string"
+  },
   "messagenumberPathParam": {
     "name": "messagenumber",
     "in": "path",
@@ -136,6 +150,13 @@
     "type": "number",
     "format": "float",
     "required": true
+  },
+  "showAllExceptionsGetParam": {
+    "name": "showAllExceptions",
+    "in": "query",
+    "description": "Show all exception categories or default to showing only the most important ones.",
+    "required": false,
+    "type": "boolean"
   },
   "sessionTestedBodyParam": {
     "name": "session",

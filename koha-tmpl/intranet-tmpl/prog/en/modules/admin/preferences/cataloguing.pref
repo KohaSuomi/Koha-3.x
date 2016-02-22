@@ -208,3 +208,8 @@ Cataloging:
                   yes: "do"
                   no: "don't"
             - attempt to match aggressively by trying all variations of the ISBNs in the imported record as a phrase in the ISBN fields of already cataloged records.  Note that this preference has no effect if UseQueryParser is on.
+        -
+            - A YAML configuration about what rules are used when overlaying biblios from remote repositories
+            - pref: BatchOverlayRules
+              type: textarea
+            - "See 'help' at <a href='/cgi-bin/koha/cataloguing/batchOverlay.pl'>cataloguing/batchOverlay.pl</a> for how to configure this feature."

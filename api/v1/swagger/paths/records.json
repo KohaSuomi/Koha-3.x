@@ -1,0 +1,110 @@
+{
+  "/records": {
+    "post": {
+      "x-mojo-controller": "Koha::REST::V1::Records",
+      "x-koha-permission": {
+        "editcatalogue": "add_catalogue"
+      },
+      "operationId": "addRecord",
+      "tags": ["records"],
+      "summary": "Adds the given MARCXML-record",
+      "description": "This is to add a new biblio from a MARCXML record. If you want to operate on primitive bibliographic data, use the /biblios -endpoint instead",
+      "produces": [
+        "applications/json"
+      ],
+      "parameters": [
+        { "$ref": "../parameters.json#/marcPostParam" }
+      ],
+      "responses": {
+        "200": {
+          "description": "Adding the Record succeeded.",
+          "schema": {
+            "$ref": "../definitions/marcRecord.json"
+          }
+        },
+        "400": {
+          "description": "Client did something bad. Encoding was not utf8, or MARCXML was not valid",
+          "schema": {
+            "$ref": "../definitions/error.json"
+          }
+        },
+        "500": {
+          "description": "Koha did something naughty.",
+          "schema": {
+            "$ref": "../definitions/error.json"
+          }
+        }
+      }
+    }
+  },
+  "/records/{biblionumber}": {
+    "get": {
+      "x-mojo-controller": "Koha::REST::V1::Records",
+      "x-koha-permission": {
+        "editcatalogue": "*"
+      },
+      "operationId": "getRecord",
+      "tags": ["records"],
+      "summary": "Gets the given MARCXML-record",
+      "description": "This is to get a MARCXML record for a biblio. If you want to operate on primitive bibliographic data, use the /biblios -endpoint instead",
+      "produces": [
+        "application/json"
+      ],
+      "parameters": [
+        { "$ref": "../parameters.json#/biblionumberPathParam" }
+      ],
+      "responses": {
+        "200": {
+          "description": "Getting the Record succeeded.",
+          "schema": {
+            "$ref": "../definitions/marcRecord.json"
+          }
+        },
+        "404": {
+          "description": "No such biblionumber in the database",
+          "schema": {
+            "$ref": "../definitions/error.json"
+          }
+        }
+      }
+    },
+    "delete": {
+      "x-mojo-controller": "Koha::REST::V1::Records",
+      "x-koha-permission": {
+        "editcatalogue": "delete_catalogue"
+      },
+      "operationId": "deleteRecord",
+      "tags": ["records"],
+      "summary": "Deletes the given Bibliographic Record",
+      "description": "Can fail if there are dependecies to the Biblio. This is a duplicate of DELETE /biblios/{biblionumber} and behaves the same.",
+      "produces": [
+        ""
+      ],
+      "parameters": [
+        {
+          "$ref": "../parameters.json#/biblionumberPathParam"
+        }
+      ],
+      "responses": {
+        "204": {
+          "description": "Deleting the Record succeeded.",
+          "schema": {
+            "type": "string"
+          }
+        },
+        "404": {
+          "description": "No such Bibliographic record found",
+          "schema": {
+            "$ref": "../definitions/error.json"
+          }
+        },
+        "400": {
+          "description": "Cannot delete the Bibliographic Record due to constraints. A constraint can be for example the presence of dependant Items.",
+          "schema": {
+            "$ref": "../definitions/error.json"
+          }
+        }
+      }
+    }
+  }
+}

@@ -302,15 +302,27 @@ sub UpsertBiblio {
     my $record          = shift;
     my $frameworkcode   = shift;
     my $options         = @_ ? shift : undef;
+    my $dbh = C4::Context->dbh;
 
     my ( $tagid, $subfieldid ) = GetMarcFromKohaField( "biblioitems.isbn" );
     my $isbn = $record->subfield($tagid, $subfieldid);
-    my $oldRecord = C4::Biblio::GetMarcFromISBN($isbn) if $isbn;
-    return $oldRecord if $oldRecord;
 
-    my ($biblionumber, $biblioitemnumber) = C4::Biblio::AddBiblio($record, $frameworkcode);
+    my $query = "SELECT biblionumber, biblioitemnumber FROM biblioitems WHERE isbn = ?";
+    my $sth = $dbh->prepare($query);
+    $sth->execute($isbn);
+    my ($biblionumber, $biblioitemnumber) = $sth->fetchrow;
+    $sth->finish;
+
+    my $oldRecord = C4::Biblio::GetMarcBiblio($biblionumber) if $biblionumber;
+    if ($oldRecord) {
+        C4::Biblio::ModBiblio($record, $biblionumber, $frameworkcode);
+        $record = C4::Biblio::GetMarcBiblio($biblionumber);
+        return ($record, $biblionumber, $biblioitemnumber);
+    }
+
+    ($biblionumber, $biblioitemnumber) = C4::Biblio::AddBiblio($record, $frameworkcode);
     $record = C4::Biblio::GetMarcBiblio($biblionumber);
-    return $record;
+    return ($record, $biblionumber, $biblioitemnumber);
 }
 
 =head2 ModBiblio
@@ -1757,6 +1769,13 @@ sub GetAuthorisedValueDesc {
     }
 }
 
+sub GetMarcBiblionumber {
+    my ($record) = @_;
+    my ( $tagid_biblionumber, $subfieldid_biblionumber ) = C4::Biblio::GetMarcFromKohaField( "biblio.biblionumber" );
+    my $bn = $record->subfield( $tagid_biblionumber, $subfieldid_biblionumber );
+    return $bn;
+}
+
 sub GetMarcTitle {
     my ($record) = @_;
     my $title = $record->subfield('245','a') || $record->subfield('240','a') || $record->subfield('130','a');
@@ -1871,6 +1890,78 @@ sub GetMarcControlnumber {
         }
     }
     return $controlnumber;
+}
+
+=head2 GetMarcKohaDefaultItemType
+
+  $itype = GetMarcKohaDefaultItemType($record);
+
+=cut
+
+sub GetMarcKohaDefaultItemType {
+    my ($record) = @_;
+    my ( $tagid, $subfieldid ) = C4::Biblio::GetMarcFromKohaField( "biblioitems.itemtype" );
+    my $itype = $record->subfield( $tagid, $subfieldid );
+    return $itype;
+}
+
+=head2 SetMarcKohaDefaultItemType
+
+  $record = SetMarcKohaDefaultItemType($record, $itype);
+
+=cut
+
+sub SetMarcKohaDefaultItemType {
+    my ($record, $itype) = @_;
+    my ( $tagid, $subfieldid ) = C4::Biblio::GetMarcFromKohaField( "biblioitems.itemtype" );
+    my $f = $record->field($tagid);
+
+    if ($f) {
+        $f->update( $subfieldid => $itype );
+    }
+    else {
+        my $f = MARC::Field->new( $tagid, '', '', $subfieldid => $itype);
+        $record->append_fields( $f );
+    }
+
+    return $record;
+}
+
+=head2 GetMarcKohaFramework
+
+  $fw = GetMarcKohaFramework($record);
+
+=cut
+
+sub GetMarcKohaFramework {
+    my ($record) = @_;
+    my ( $tagid, $subfieldid ) = C4::Biblio::GetMarcFromKohaField( "biblio.frameworkcode" );
+    die "biblio.frameworkcode is missing from KohaToMarcMapping" unless(defined($tagid) && defined($subfieldid));
+    my $fw = $record->subfield( $tagid, $subfieldid );
+    return $fw;
+}
+
+=head2 SetMarcKohaFramework
+
+  $record = SetMarcKohaFramework($record, $fw);
+
+=cut
+
+sub SetMarcKohaFramework {
+    my ($record, $fw) = @_;
+    my ( $tagid, $subfieldid ) = C4::Biblio::GetMarcFromKohaField( "biblio.frameworkcode" );
+    die "biblio.frameworkcode is missing from KohaToMarcMapping" unless(defined($tagid) && defined($subfieldid));
+    my $f = $record->field($tagid);
+
+    if ($f) {
+        $f->update( $subfieldid => $fw );
+    }
+    else {
+        my $f = MARC::Field->new( $tagid, '', '', $subfieldid => $fw);
+        $record->append_fields( $f );
+    }
+
+    return $record;
 }
 
 =head2 GetMarcISBN
@@ -4189,10 +4280,10 @@ sub _getComponentParts {
 
     my ($error, $componentPartRecordXMLs, $resultSetSize);
     if ($parentsField001 && $parentsField003) {
-        ($error, $componentPartRecordXMLs, $resultSetSize) = C4::Search::SimpleSearch("rcn=$parentsField001 and cni=$parentsField003");
+        ($error, $componentPartRecordXMLs, $resultSetSize) = C4::Search::SimpleSearch("rcn='$parentsField001' and cni='$parentsField003'");
     }
     elsif ($parentsField001) {
-        ($error, $componentPartRecordXMLs, $resultSetSize) = C4::Search::SimpleSearch("rcn=$parentsField001");
+        ($error, $componentPartRecordXMLs, $resultSetSize) = C4::Search::SimpleSearch("rcn='$parentsField001'");
     }
     else {
         warn "Record with no field 001 or 003 found! This is an outrage!" unless $parentrecord;

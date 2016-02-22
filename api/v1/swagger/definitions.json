@@ -32,6 +32,12 @@
   },
 
 
+  "batchOverlayReportContainerId": {
+    "type": "integer"
+  },
+  "batchOverlayReportId": {
+    "type": "integer"
+  },
   "biblionumber": {
     "type": "integer",
     "description": "Biblio internal identifier"
@@ -57,6 +63,10 @@
     "description": "User's first name",
     "type": "string"
   },
+  "identifier": {
+    "type": "integer",
+    "description": "Internal identifier"
+  },
   "itemnumber": {
     "type": "integer",
     "description": "Item internal identifier"
@@ -72,6 +82,10 @@
   "listContentNumber": {
     "type": "integer",
     "description": "The internal identifier for this list article"
+  },
+  "marcxml": {
+    "type": "string",
+    "description": "MARCXML serialized into a form variable. Swagger2-spec forbids sending pure XML objects in the body so we work around the limitation"
   },
   "reserve_id": {
     "description": "Internal reserve identifier",
