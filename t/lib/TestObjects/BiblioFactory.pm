@@ -20,6 +20,9 @@ package t::lib::TestObjects::BiblioFactory;
 
 use Modern::Perl;
 use Carp;
+use Scalar::Util qw(blessed);
+use MARC::Record;
+use MARC::File::XML;
 
 use C4::Biblio;
 use Koha::Database;
@@ -37,6 +40,9 @@ sub getObjectType {
 
 =head t::lib::TestObjects::createTestGroup
 
+    my $record = t::lib::TestObjects::BiblioFactory->createTestGroup(
+                        $marcxml || $MARC::Record, undef, $testContext1, $testContext2, $testContext3);
+
     my $records = t::lib::TestObjects::BiblioFactory->createTestGroup([
                         {'biblio.title' => 'I wish I met your mother',
                          'biblio.author'   => 'Pertti Kurikka',
@@ -47,8 +53,14 @@ sub getObjectType {
                         },
                     ], undef, $testContext1, $testContext2, $testContext3);
 
+Factory takes either a HASH of database table keys, or a MARCXML or a MARC::Record.
+
 Calls C4::Biblio::TransformKohaToMarc() to make a MARC::Record and add it to
-the DB. Returns a HASH of MARC::Records.
+the DB
+or
+transforms a MARC::Record into database tables.
+Returns a HASH of MARC::Records or a single MARC::Record depedning if input is an ARRAY or a single object.
+
 The HASH is keyed with the 'biblioitems.isbn', or the given $hashKey. Using for example
 'biblioitems.isbn' is very much recommended to make linking objects more easy in test cases.
 The biblionumber is injected to the MARC::Record-object to be easily accessable,
@@ -69,26 +81,92 @@ See t::lib::TestObjects::ObjectFactory for more documentation
 sub handleTestObject {
     my ($class, $object, $stashes) = @_;
 
-    ##First see if the given Record already exists in the DB. For testing purposes we use the isbn as the UNIQUE identifier.
-    my $resultset = Koha::Database->new()->schema()->resultset('Biblioitem');
-    my $existingBiblio = $resultset->search({isbn => $object->{"biblioitems.isbn"}})->next();
-    $existingBiblio = $resultset->search({biblionumber => $object->{"biblio.biblionumber"}})->next() unless $existingBiblio;
-    my ($record, $biblionumber, $biblioitemnumber);
-    unless ($existingBiblio) {
-        $record = C4::Biblio::TransformKohaToMarc($object);
-        ($biblionumber, $biblioitemnumber) = C4::Biblio::AddBiblio($record,'');
+    my $record;
+    #Turn the given MARCXML or MARC::Record into a input object.
+    if ($object->{record} && $object->{record} =~ /<record/) { #This is MARCXML
+        $object = MARC::Record::new_from_xml( $object->{record}, "utf8", 'marc21' );
+    }
+    if (blessed($object) && $object->isa('MARC::Record')) {
+        ($record, $object) = $class->handleMARCXML($object);
     }
     else {
-        $record = C4::Biblio::GetMarcBiblio($existingBiblio->biblionumber->biblionumber); #Funny!
+        ($record, $object) = $class->handleObject($object);
     }
 
     #Clone all the parameters of $object to $record
     foreach my $key (keys(%$object)) {
         $record->{$key} = $object->{$key};
     }
-    $record->{biblionumber} = $biblionumber || $existingBiblio->biblionumber->biblionumber;
 
     return $record;
+}
+
+sub handleMARCXML {
+    my ($class, $record) = @_;
+    my ($biblionumber, $biblioitemnumber);
+    my $object = C4::Biblio::TransformMarcToKoha(undef, $record, '', undef);
+    $object->{record} = $record;
+
+    $object->{'biblio.title'} = $object->{title};
+    delete $object->{title};
+    $object->{'biblioitems.isbn'} = $object->{isbn};
+    delete $object->{isbn};
+
+    $class->_validateCriticalFields($object);
+
+    my $existingBiblio = $class->existingObjectFound($object);
+
+    unless ($existingBiblio) {
+        ($biblionumber, $biblioitemnumber) = C4::Biblio::AddBiblio($record,'');
+        $record->{biblionumber} = $biblionumber;
+    }
+    else {
+        ($record, $biblionumber, $biblioitemnumber) = C4::Biblio::UpsertBiblio($record, '');
+        $record->{biblionumber} = $biblionumber;
+    }
+    return ($record, $object);
+}
+
+sub handleObject {
+    my ($class, $object) = @_;
+    my ($record, $biblionumber, $biblioitemnumber);
+
+    $class->_validateCriticalFields($object);
+
+    my $existingBiblio = $class->existingObjectFound($object);
+
+    unless ($existingBiblio) {
+        $record = C4::Biblio::TransformKohaToMarc($object);
+        ($biblionumber, $biblioitemnumber) = C4::Biblio::AddBiblio($record,'');
+        $record->{biblionumber} = $biblionumber;
+    }
+    else {
+        my $bn = $existingBiblio->biblionumber->biblionumber;
+        $record = C4::Biblio::GetMarcBiblio($bn); #Funny!
+        $record->{biblionumber} = $bn;
+    }
+    return ($record, $object);
+}
+
+sub existingObjectFound {
+    my ($class, $object) = @_;
+    ##First see if the given Record already exists in the DB. For testing purposes we use the isbn as the UNIQUE identifier.
+    my $resultset = Koha::Database->new()->schema()->resultset('Biblioitem');
+    my $existingBiblio = $resultset->search({isbn => $object->{"biblioitems.isbn"}})->next();
+    $existingBiblio = $resultset->search({biblionumber => $object->{"biblio.biblionumber"}})->next() unless $existingBiblio;
+    return $existingBiblio;
+}
+
+sub _validateCriticalFields {
+    my ($class, $object) = @_;
+
+    unless (ref($object) eq 'HASH' && scalar(%$object)) {
+        Koha::Exception::BadParameter->throw(error => __PACKAGE__."->createTestGroup():> Given \$object is empty. You must provide some minimum data to build a Biblio, preferably with somekind of a unique identifier.");
+    }
+    unless ($object->{'biblio.title'}) {
+        Koha::Exception::BadParameter->throw(error => __PACKAGE__."->createTestGroup():> 'biblio.title' is a mandatory parameter!");
+    }
+    $object->{'biblioitems.isbn'} = '971-972-call-me' unless $object->{'biblioitems.isbn'};
 }
 
 =head getHashKey
@@ -120,16 +198,6 @@ and populates defaults for missing values.
 
 sub validateAndPopulateDefaultValues {
     my ($self, $object, $hashKey) = @_;
-
-    unless (ref($object) eq 'HASH' && scalar(%$object)) {
-        Koha::Exception::BadParameter->throw(error => __PACKAGE__."->createTestGroup():> Given \$object is empty. You must provide some minimum data to build a Biblio, preferably with somekind of a unique identifier.");
-    }
-    unless ($object->{'biblio.title'}) {
-        Koha::Exception::BadParameter->throw(error => __PACKAGE__."->createTestGroup():> 'biblio.title' is a mandatory parameter!");
-    }
-    $object->{'biblioitems.isbn'} = '971-972-call-me' unless $object->{'biblioitems.isbn'};
-
-    $self->SUPER::validateAndPopulateDefaultValues($object, $hashKey);
 }
 
 =head
