@@ -64,7 +64,7 @@ in css3 start from top left, thus the sheet coordinates need to be inverted some
 
 sub create {
     my ($self, $itemBarcodes) = @_;
-    my $items = $self->_normalizeBarcodesToItems($itemBarcodes);
+    my $items = $self->_normalizeBarcodesToItems($itemBarcodes); #Check if we have bad items.
 
     ##Start .pdf creation.
     my $filePath = $self->getFile()->stringify();
@@ -269,7 +269,10 @@ sub _normalizeBarcodesToItems {
             #This is a barcode so fetch an item by barcode
             $item = C4::Items::GetItem(undef, $ibc, undef);
         }
-        unless($item) {
+        else {
+            $item = '';
+        }
+        unless(defined($item)) {
             push(@errors, $ibc);
         }
         $barcodesAry->[$i] = $item;
