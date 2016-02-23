@@ -2041,6 +2041,21 @@ sub AddReturn {
             $messages->{'NeedsTransfer'} = 1;   # TODO: instead of 1, specify branchcode that the transfer SHOULD go to, $item->{homebranch}
         }
     }
+    #This elsif-clause copypastes the upper if-clause. This is horrible and I cry, but cannot refactor this mess now :( due to Koha upstream master stuff looming.
+    elsif (($doreturn or $messages->{'NotIssued'})
+        and !$resfound and ($branch ne $hbr)
+        and not($messages->{'WrongTransfer'})
+        && $floatingType){ #So if we would otherwise transfer, but we have a floating rule overriding it.
+                           #We can infer that the transfer was averted because of a floating rule.
+        #Make sure we dont log the same floating denial multiple times
+        #So first check if we already logged this operation.
+        my $logs = C4::Log::GetLogs(DateTime->now(time_zone => C4::Context->tz),
+                                    DateTime->now(time_zone => C4::Context->tz),
+                                    undef, ['FLOATING'], undef, $item->{'itemnumber'}, "$branch -> $hbr denied");
+        if (not($logs) || (ref($logs) eq 'ARRAY' && scalar(@$logs) == 0)) {
+            C4::Log::logaction("FLOATING", $floatingType, $item->{'itemnumber'}, "$branch -> $hbr denied");
+        }
+    }
     return ( $doreturn, $messages, $issue, $borrower );
 }
 
