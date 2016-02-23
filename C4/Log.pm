@@ -23,9 +23,11 @@ package C4::Log;
 
 use strict;
 use warnings;
+use Scalar::Util qw(blessed);
 
 use C4::Context;
 use C4::Dates qw(format_date);
+use DateTime;
 
 use vars qw($VERSION @ISA @EXPORT);
 
@@ -202,8 +204,20 @@ sub GetLogs {
     my $object   = shift;
     my $info     = shift;
    
-    my $iso_datefrom = C4::Dates->new($datefrom,C4::Context->preference("dateformat"))->output('iso');
-    my $iso_dateto = C4::Dates->new($dateto,C4::Context->preference("dateformat"))->output('iso');
+    my $iso_datefrom;
+    if (blessed($datefrom) && $datefrom->isa('DateTime')) {
+        $iso_datefrom = $datefrom->ymd();
+    }
+    else {
+        $iso_datefrom = C4::Dates->new($datefrom,C4::Context->preference("dateformat"))->output('iso');
+    }
+    my $iso_dateto;
+    if (blessed($dateto) && $dateto->isa('DateTime')) {
+        $iso_dateto = $dateto->ymd();
+    }
+    else {
+        $iso_dateto = C4::Dates->new($dateto,C4::Context->preference("dateformat"))->output('iso');
+    }
 
     my $dbh = C4::Context->dbh;
     my $query = "
@@ -215,7 +229,7 @@ sub GetLogs {
     my @parameters;
     $query .= " AND DATE_FORMAT(timestamp, '%Y-%m-%d') >= \"".$iso_datefrom."\" " if $iso_datefrom;   #fix me - mysql specific
     $query .= " AND DATE_FORMAT(timestamp, '%Y-%m-%d') <= \"".$iso_dateto."\" " if $iso_dateto;
-    if($user ne "") {
+    if($user) {
     	$query .= " AND user = ? ";
     	push(@parameters,$user);
     }
