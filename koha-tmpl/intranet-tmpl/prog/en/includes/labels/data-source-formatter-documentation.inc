@@ -57,7 +57,7 @@
     </span>
 </div>
 <div class="dsfod-doc" id="dsfod-twoLinerShrink">
-    <span class="title">Two-liner</span>
+    <span class="title">Shrinking two-liner</span>
     <span class="comment">
         Tries to print the given data elements as one line.<br/>
         If that fails, shrinks the font size by a maximum 30% and splits the text to two lines,

@@ -35,6 +35,12 @@
         Selects the signum.
     </span>
 </div>
+<div class="dsfd-doc" id="dsfd-signumVaara">
+    <span class="title">Signum Vaara-kirjastot style</span>
+    <span class="comment">
+        Selects the signum from the Item's itemcallnumber-field's first token.
+    </span>
+</div>
 <div class="dsfd-doc" id="dsfd-title">
     <span class="title">Title</span>
     <span class="comment">

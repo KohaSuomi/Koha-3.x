@@ -93,6 +93,15 @@ sub public_signum {
     return undef;
 }
 
+sub public_signumVaara {
+    my ($params) = @_;
+    my $item = $params->[0]->{item};
+
+    my $itemcallnumber = $item->{itemcallnumber}; #PKM 84.4 MAG
+    my @parts = split(/\s+/, $itemcallnumber);
+    return ($parts[2]) ? $parts[2] : undef;
+}
+
 sub public_title {
     my ($params) = @_;
     my $record = $params->[1];
@@ -172,7 +181,7 @@ sub public_yklVaara {
 
     my $itemcallnumber = $item->{itemcallnumber}; #PKM 84.4 MAG
     my @parts = split(/\s+/, $itemcallnumber);
-    return $parts[1];
+    return ($parts[1]) ? $parts[1] : undef;
 }
 
 1;
