@@ -191,15 +191,24 @@ sub SendPayment {
             return JSON->new->utf8->canonical(1)->encode({ error => "Invalid hash", Status => $response->{Status} });
         }
 
+        # Check if CPU returns us a server error
+        my $response_str = GetResponseString($response->{Status});
+        if (defined $response_str->{description}) {
+            $transaction->set({ status => "cancelled", description => $response_str->{description} })->store();
+            return JSON->new->utf8->canonical(1)->encode({ error => $response_str->{description}, Status => $response->{Status} });
+        }
+
         return JSON->new->utf8->canonical(1)->encode($response);
     };
 
     if ($@) {
+        my $error = $@;
+        $content = JSON->new->utf8->canonical(1)->decode($content) unless ref($content) eq 'HASH';
         my $transaction = Koha::PaymentsTransactions->find($content->{Id});
         my $payment_already_paid = 1 if $transaction->status eq "paid"; # Already paid via REST API!
         return JSON->new->utf8->canonical(1)->encode({ Status => '1' }) if $payment_already_paid;
-        $transaction->set({ status => "cancelled", description => $@ })->store();
-        return JSON->new->utf8->canonical(1)->encode({ error => "Error: " . $@, Status => '88' });
+        $transaction->set({ status => "cancelled", description => $error })->store();
+        return JSON->new->utf8->canonical(1)->encode({ error => "Error: " . $error, Status => '88' });
     }
 
     return $response;
