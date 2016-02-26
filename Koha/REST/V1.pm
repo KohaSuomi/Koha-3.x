@@ -75,6 +75,8 @@ sub startup {
     $self->plugin(Swagger2 => {
         url => $self->home->rel_file("api/v1/swagger/swagger.min.json"),
     });
+
+    Mojo::IOLoop->next_tick(sub { $0 = 'hypnokoha' });
 }
 
 sub setKohaParamConfig {
