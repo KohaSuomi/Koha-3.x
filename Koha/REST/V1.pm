@@ -96,8 +96,8 @@ sub setKohaParamLogging {
     #Log to a filename with loglevel configured in environment variables
     if ($ENV{MOJO_LOGFILES}) {
         $self->app->log( Mojo::Log->new( path => $ENV{MOJO_LOGFILES}.'.log', level => ($ENV{MOJO_LOGLEVEL} || 'error') ) );
-        open(STDOUT,'>>',$ENV{MOJO_LOGFILES}.'.stdout') or die __PACKAGE__."::startup():> Couldn't open the STDOUT logfile for appending.\n".$!;
-        open(STDERR,'>>',$ENV{MOJO_LOGFILES}.'.stderr') or die __PACKAGE__."::startup():> Couldn't open the STDERR logfile for appending.\n".$!;
+        open(STDOUT,'>>',$ENV{MOJO_LOGFILES}.'.stdout') or die __PACKAGE__."::startup():> Couldn't open the STDOUT logfile '".$ENV{MOJO_LOGFILES}.'.stdout'."' for appending.\n".$!;
+        open(STDERR,'>>',$ENV{MOJO_LOGFILES}.'.stderr') or die __PACKAGE__."::startup():> Couldn't open the STDERR logfile '".$ENV{MOJO_LOGFILES}.'.stderr'."' for appending.\n".$!;
     }
     #Stop complaining about missing logging config
     if (exists($ENV{MOJO_LOGFILES})) {
