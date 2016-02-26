@@ -212,6 +212,11 @@ sub tearDownTestContext {
         t::lib::TestObjects::SystemPreferenceFactory->deleteTestGroup($stash->{systempreference});
         delete $stash->{systempreference};
     }
+    if ($stash->{matcher}) {
+        require t::lib::TestObjects::MatcherFactory;
+        t::lib::TestObjects::MatcherFactory->deleteTestGroup($stash->{matcher});
+        delete $stash->{matcher};
+    }
     if ($stash->{messagequeue}) {
         require t::lib::TestObjects::MessageQueueFactory;
         t::lib::TestObjects::MessageQueueFactory->deleteTestGroup($stash->{messagequeue});
