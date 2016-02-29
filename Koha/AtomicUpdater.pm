@@ -134,7 +134,7 @@ sub removeAtomicUpdate {
     my ($self, $issueId) = @_;
     print "Deleting atomicupdate '$issueId'\n" if $self->{verbose} > 2;
 
-    my $atomicupdate = $self->find({issue_id => $issueId});
+    my $atomicupdate = $self->find($issueId);
     if ($atomicupdate) {
         $atomicupdate->delete;
         print "Deleted atomicupdate '$issueId'\n" if $self->{verbose} > 2;
