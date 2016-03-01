@@ -20,12 +20,12 @@ sub cpu_report {
     my $invoicenumber = $args->{'invoicenumber'};
     $args = $args->{body};
 
-    # Check that the request is valid
-    return $c->$cb({ error => "Invalid Hash" }, 400) if C4::OPLIB::CPUIntegration::CalculateResponseHash($args) ne $args->{Hash};
-
     # Find the transaction
     my $transaction = Koha::PaymentsTransactions->find($invoicenumber);
     return $c->$cb({ error => "Transaction not found"}, 404) if not $transaction;
+
+    # Check that the request is valid
+    return $c->$cb({ error => "Invalid Hash" }, 400) if C4::OPLIB::CPUIntegration::CalculateResponseHash($args) ne $args->{Hash};
 
     my $report_status = C4::OPLIB::CPUIntegration::GetResponseString($args->{Status});
     $transaction->CompletePayment($report_status);

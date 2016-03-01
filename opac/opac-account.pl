@@ -25,7 +25,10 @@ use C4::Members;
 use C4::Circulation;
 use C4::Auth;
 use C4::Output;
+use C4::Budgets qw(GetCurrency);
 use warnings;
+
+use C4::OPLIB::CPUIntegration;
 
 my $query = new CGI;
 my ( $template, $borrowernumber, $cookie ) = get_template_and_user(
@@ -71,7 +74,10 @@ foreach my $row (@$accts) {
 $template->param (
     ACCOUNT_LINES => $accts,
     total => sprintf( "%.2f", $total ),
-	accountview => 1
+	accountview => 1,
+    currency => C4::Budgets::GetCurrency(),
+    online_payments_enabled => C4::OPLIB::CPUIntegration->isOnlinePaymentsEnabled(C4::Branch::mybranch()),
+    minimumSum => C4::Context->preference("OnlinePaymentMinTotal"),
 );
 
 output_html_with_http_headers $query, $cookie, $template->output;

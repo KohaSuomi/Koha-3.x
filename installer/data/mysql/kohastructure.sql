@@ -1827,6 +1827,7 @@ CREATE TABLE `payments_transactions` ( -- information related to payments via PO
   timestamp timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, -- timestamp for payment initialization
   description TEXT NOT NULL, -- additional description that can hold notes. Prints into the accountlines Pay event once the payment is completed
   price_in_cents int(11) NOT NULL, -- total price of the payment in cents
+  is_self_payment int(11) NOT NULL DEFAULT 0, -- describes the type of the payment: 0 for pos integration (paid via librarian), 1 for online payments (self payment)
   PRIMARY KEY (transaction_id),
   FOREIGN KEY (accountlines_id)
     REFERENCES accountlines(accountlines_id)

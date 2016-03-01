@@ -10,11 +10,12 @@ use C4::Log;
 use Data::Dumper qw(Dumper);
 use Digest::SHA qw(sha256_hex);
 use Encode;
-use Net::SSL;
+use IO::Socket::SSL;
 use YAML::XS;
 
 use Koha::Borrower;
 use Koha::Borrowers;
+use Koha::Items;
 use Koha::PaymentsTransaction;
 use Koha::PaymentsTransactions;
 
@@ -42,34 +43,48 @@ sub InitializePayment {
 
     my $transaction = $args->{transaction};
 
+    my $mode = (not $transaction->is_self_payment) ? 'pos' : 'online_payments';
+
     # Hash containing CPU format of payment
     my $payment;
-    $payment->{Office} = $args->{office};
+    $payment->{Office} = $args->{office} if $mode eq 'pos';
 
     my $borrower = Koha::Borrowers->cast($transaction->borrowernumber);
 
     my $description = $borrower->surname . ", " . $borrower->firstname . " (".$borrower->cardnumber.")";
 
     $payment->{ApiVersion}  = "2.0";
-    $payment->{Source}      = C4::Context->config('pos')->{'CPU'}->{'source'};
+    $payment->{Source}      = C4::Context->config($mode)->{'CPU'}->{'source'};
     $payment->{Id}          = $transaction->transaction_id;
-    $payment->{Mode}        = C4::Context->config('pos')->{'CPU'}->{'mode'};
+    $payment->{Mode}        = C4::Context->config($mode)->{'CPU'}->{'mode'};
     $payment->{Description} = $description;
     $payment->{Products} =  AccountTypesToItemNumbers(
-                                _convert_to_cpu_products($transaction->GetProducts()), C4::Branch::mybranch()
+                                _convert_to_cpu_products(
+                                    $transaction->GetProducts()),
+                                    C4::Branch::mybranch(),
+                                    ($mode eq "online_payments") ? 1 : 0
                             );
 
-    my $notificationAddress = C4::Context->config('pos')->{'CPU'}->{'notificationAddress'};
+    # Online payment specific parameters
+    if ($mode eq 'online_payments') {
+        #delete $payment->{Office}; # not needed in online payments
+        $payment->{Email} = $borrower->email;
+        $payment->{FirstName} = $borrower->firstname;
+        $payment->{LastName} = $borrower->surname;
+        $payment->{ReturnAddress} = C4::Context->config($mode)->{'CPU'}->{'returnAddress'};
+    }
+
+    my $notificationAddress = C4::Context->config($mode)->{'CPU'}->{'notificationAddress'};
     my $transactionNumber = $transaction->transaction_id;
     $notificationAddress =~ s/{invoicenumber}/$transactionNumber/g;
 
     $payment->{NotificationAddress} = $notificationAddress; # url for report
-    
+
     $payment = _validate_cpu_hash($payment); # Remove semicolons
     $payment->{Hash}        = CalculatePaymentHash($payment);
 
     $payment = _validate_cpu_hash($payment); # Convert strings to int
-    $payment->{"send_payment"} = "POST";
+    $payment->{"send_payment"} = "POST" if $mode eq 'pos';
 
     return $payment;
 }
@@ -101,28 +116,26 @@ sub SendPayment {
         $content = JSON->new->utf8->canonical(1)->encode($payment);
 
         my $transaction = Koha::PaymentsTransactions->find($payment->{Id});
-
-        if (C4::Context->config('pos')->{'CPU'}->{'ssl_cert'}) {
-            # Define SSL certificate
-            $ENV{HTTPS_CERT_FILE} = C4::Context->config('pos')->{'CPU'}->{'ssl_cert'};
-            $ENV{HTTPS_KEY_FILE}  = C4::Context->config('pos')->{'CPU'}->{'ssl_key'};
-            $ENV{HTTPS_CA_FILE} = C4::Context->config('pos')->{'CPU'}->{'ssl_ca_file'};
-        }
+        my $mode = (not $transaction->is_self_payment) ? 'pos' : 'online_payments';
 
         my $ua = LWP::UserAgent->new;
 
-        if (C4::Context->config('pos')->{'CPU'}->{'ssl_cert'}) {
-            $ua->ssl_opts({
+        if (C4::Context->config($mode)->{'CPU'}->{'ssl_cert'}) {
+            $ua->ssl_opts(
                 SSL_use_cert    => 1,
-            });
+                SSL_cert_file   => C4::Context->config($mode)->{'CPU'}->{'ssl_cert'},
+                SSL_key_file    => C4::Context->config($mode)->{'CPU'}->{'ssl_key'},
+                SSL_ca_file     => C4::Context->config($mode)->{'CPU'}->{'ssl_ca_file'},
+                verify_hostname => 1,
+            );
         }
 
         $ua->timeout(500);
 
-        my $req = HTTP::Request->new(POST => C4::Context->config('pos')->{'CPU'}->{'url'});
+        my $req = HTTP::Request->new(POST => C4::Context->config($mode)->{'CPU'}->{'url'});
         $req->header('content-type' => 'application/json');
-        $req->content($content);
 
+        $req->content($content);
         $transaction->set({ status => "pending" })->store();
 
         my $request = $ua->request($req);
@@ -271,45 +284,76 @@ sub hasBranchEnabledIntegration {
 
 =head2 AccountTypesToItemNumbers
 
-  AccountTypesToItemNumbers($products, $branch);
+  AccountTypesToItemNumbers($products, $branch, $is_online_payment);
 
 Maps Koha-itemtypes (accountlines.accounttype) to CPU itemnumbers.
 
-This is defined in system preference "cpuitemnumbers".
+This is defined in system preference "cpuitemnumbers" for POS integration,
+and "cpuitemnumbers_online_shop" for online (self) payments.
+
+If $is_online_payment is true, we will map itemnumbers according to the
+"cpuitemnumbers_online_shop" (Online payments). Otherwise, we will map
+the itemnumbers for each branch defined in "cpuitemnumbers" syspref (POS integration).
 
 Products is an array of Product (HASH) that are in the format of CPU-document.
+Additionally, a product can have _itemnumber to define product code by item's home branch.
 
 Returns an ARRAY of products (HASH).
 
 =cut
 sub AccountTypesToItemNumbers {
-    my ($products, $branch) = @_;
+    my ($products, $branch, $is_online_payment) = @_;
 
-    # Load YAML conf from syspref cpuitemnumbers
-    my $pref = C4::Context->preference("cpuitemnumbers");
-    Koha::Exception::NoSystemPreference->throw( error => "YAML configuration in system preference 'cpuitemnumbers' is not defined! Cannot assign item numbers for accounttypes." ) unless $pref;
-    my $config = YAML::XS::Load(
-                        Encode::encode(
-                            'UTF-8',
-                            $pref,
-                            Encode::FB_CROAK
-                        ));
+    my ($pref, $config);
 
-    Koha::Exception::NoSystemPreference->throw( error => "No item number configuration for branch '".$branch."'. Configure system preference 'cpuitemnumbers'") unless $config->{$branch};
+    if ($is_online_payment) {
+        # Online payments:
+        # Load YAML conf from syspref
+        $pref = C4::Context->preference("cpuitemnumbers_online_shop");
+        Koha::Exception::NoSystemPreference->throw( error => "YAML configuration in system preference 'cpuitemnumbers_online_shop' is not defined! Cannot assign item numbers for accounttypes." ) unless $pref;
+        $config = YAML::XS::Load(
+                            Encode::encode(
+                                'UTF-8',
+                                $pref,
+                                Encode::FB_CROAK
+                            ));
+        $branch = "Default" unless ($config->{$branch});
+    } else {
+        # POS integration:
+        # Load YAML conf from syspref cpuitemnumbers
+        $pref = C4::Context->preference("cpuitemnumbers");
+        Koha::Exception::NoSystemPreference->throw( error => "YAML configuration in system preference 'cpuitemnumbers' is not defined! Cannot assign item numbers for accounttypes." ) unless $pref;
+        $config = YAML::XS::Load(
+                            Encode::encode(
+                                'UTF-8',
+                                $pref,
+                                Encode::FB_CROAK
+                            ));
+
+        Koha::Exception::NoSystemPreference->throw( error => "No item number configuration for branch '".$branch."'. Configure system preference 'cpuitemnumbers'") unless $config->{$branch};
+    }
 
     my $modified_products;
 
     for my $product (@$products){
         my $mapped_product = $product;
-
+        my $tmp_branch = $branch;
+        # Use the home branch of item instead of home branch of Patron in online payments
+        if ($is_online_payment && defined $product->{'_itemnumber'}){ # In order to enable same feature for POS integration, simply remove "$is_online_payment"
+            my $item = Koha::Items->find($product->{'_itemnumber'});
+            if ($item && $item->homebranch && exists $config->{$item->homebranch}){
+                $tmp_branch = $item->homebranch;
+            }
+            delete $product->{'_itemnumber'}; # delete itemnumber - it is NOT a parameter that CPU wants
+        }
         # If accounttype is mapped to an item number
-        if ($config->{$branch}->{$product->{Code}}) {
-            $mapped_product->{Code} = $config->{$branch}->{$product->{Code}}
+        if ($config->{$tmp_branch}->{$product->{Code}}) {
+            $mapped_product->{Code} = $config->{$tmp_branch}->{$product->{Code}}
         } else {
             # Else, try to use accounttype "Default"
-            Koha::Exception::NoSystemPreference->throw( error => "Could not assign item number to accounttype '".$product->{Code}."'. Configure system preference 'cpuitemnumbers' with parameters 'Default'.") unless $config->{$branch}->{'Default'};
+            Koha::Exception::NoSystemPreference->throw( error => "Could not assign item number to accounttype '".$product->{Code}."'. Configure system preference 'cpuitemnumbers' or 'cpuitemnumbers_online_shop' with parameters 'Default'.") unless $config->{$tmp_branch}->{'Default'};
 
-            $mapped_product->{Code} = $config->{$branch}->{'Default'};
+            $mapped_product->{Code} = $config->{$tmp_branch}->{'Default'};
         }
 
         push @$modified_products, $mapped_product;
@@ -329,6 +373,15 @@ Calculates SHA-256 hash from our payment hash. Returns the SHA-256 string.
 
 sub CalculatePaymentHash {
     my $invoice = shift;
+
+    # FIXME:
+    # CPU had incorrect algorithm for calculating payment hash in POS integration. A fix from their side will be
+    # done. After their fix, we can simply use _calc_payment_hash() for both POS integration and online payments.
+    return (defined $invoice->{ReturnAddress}) ? _calc_payment_hash($invoice) : _calc_pos_payment_hash($invoice);
+}
+
+sub _calc_pos_payment_hash {
+    my $invoice = shift;
     my $data;
 
     foreach my $param (sort keys $invoice){
@@ -345,11 +398,59 @@ sub CalculatePaymentHash {
             }
             $value =~ s/&$//g
         }
-
         $data .= $value . "&";
     }
 
     $data .= C4::Context->config('pos')->{'CPU'}->{'secretKey'};
+    $data = Encode::encode_utf8($data);
+    return Digest::SHA::sha256_hex($data);
+}
+
+sub _calc_payment_hash {
+    my $invoice = shift;
+    my $data;
+
+    my $mode = (defined $invoice->{ReturnAddress}) ? "online_payments" : "pos";
+
+    $data .= (defined $invoice->{ApiVersion}) ? "&" . $invoice->{ApiVersion} : "&"
+        if exists $invoice->{ApiVersion};
+    $data .= (defined $invoice->{Source}) ? "&" . $invoice->{Source} : "&"
+        if exists $invoice->{Source};
+    $data .= (defined $invoice->{Id}) ? "&" . $invoice->{Id} : "&"
+        if exists $invoice->{Id};
+    $data .= (defined $invoice->{Mode}) ? "&" . $invoice->{Mode} : "&"
+        if exists $invoice->{Mode};
+    $data .= (defined $invoice->{Office}) ? "&" . $invoice->{Office} : "&"
+        if exists $invoice->{Office};
+    $data .= (defined $invoice->{Action}) ? "&" . $invoice->{Action} : "&"
+        if exists $invoice->{Action};
+    $data .= (defined $invoice->{Description}) ? "&" . $invoice->{Description} : "&"
+        if exists $invoice->{Description};
+    foreach my $product (@{ $invoice->{Products} }) {
+        $data .= (defined $product->{Code}) ? "&" . $product->{Code} : "&"
+        if exists $product->{Code};
+        $data .= (defined $product->{Amount}) ? "&" . $product->{Amount} : "&"
+        if exists $product->{Amount};
+        $data .= (defined $product->{Price}) ? "&" . $product->{Price} : "&"
+        if exists $product->{Price};
+        $data .= (defined $product->{Description}) ? "&" . $product->{Description} : "&"
+        if exists $product->{Description};
+        $data .= (defined $product->{Taxcode}) ? "&" . $product->{Taxcode} : "&"
+        if exists $product->{Taxcode};
+    }
+    $data .= (defined $invoice->{Email}) ? "&" . $invoice->{Email} : "&"
+        if exists $invoice->{Email};
+        $data .= (defined $invoice->{FirstName}) ? "&" . $invoice->{FirstName} : "&"
+        if exists $invoice->{FirstName};
+        $data .= (defined $invoice->{LastName}) ? "&" . $invoice->{LastName} : "&"
+        if exists $invoice->{LastName};
+        $data .= (defined $invoice->{ReturnAddress}) ? "&" . $invoice->{ReturnAddress} : "&"
+        if exists $invoice->{ReturnAddress};
+        $data .= (defined $invoice->{NotificationAddress}) ? "&" . $invoice->{NotificationAddress} : "&"
+        if exists $invoice->{NotificationAddress};
+
+    $data =~ s/^&//g; # Remove first &
+    $data .= "&" . C4::Context->config($mode)->{'CPU'}->{'secretKey'};
     $data = Encode::encode_utf8($data);
     return Digest::SHA::sha256_hex($data);
 }
@@ -366,16 +467,52 @@ sub CalculateResponseHash {
     my $resp = shift;
     my $data = "";
 
+    my $transaction = Koha::PaymentsTransactions->find($resp->{Id});
+    return if not $transaction;
+    my $mode = (not $transaction->is_self_payment) ? 'pos' : 'online_payments';
+
     $data .= $resp->{Source} if defined $resp->{Source};
     $data .= "&" . $resp->{Id} if defined $resp->{Id};
     $data .= "&" . $resp->{Status} if defined $resp->{Status};
-    $data .= "&" . $resp->{Reference} if defined $resp->{Reference};
-    $data .= "&" . C4::Context->config('pos')->{'CPU'}->{'secretKey'};
+    $data .= "&" if exists $resp->{Reference};
+    $data .= $resp->{Reference} if defined $resp->{Reference};
+    $data .= "&" . $resp->{PaymentAddress} if defined $resp->{PaymentAddress};
+    $data .= "&" . C4::Context->config($mode)->{'CPU'}->{'secretKey'};
 
     $data =~ s/^&//g;
 
     $data = Digest::SHA::sha256_hex($data);
     return $data;
+}
+
+=head2 isOnlinePaymentsEnabled
+
+  isOnlinePaymentsEnabled($branch);
+
+Checks if CPU Online Payments is enabled for $branch
+
+If yes, returns accounttype to itemnumber mapping.
+
+=cut
+
+sub isOnlinePaymentsEnabled {
+    my ($class, $branch) = @_;
+
+    my $pref = C4::Context->preference("cpuitemnumbers_online_shop");
+
+    if ($pref) {
+        my $conf = eval {
+            my $config = YAML::XS::Load(
+                                Encode::encode(
+                                    'UTF-8',
+                                    $pref,
+                                    Encode::FB_CROAK
+                                ));
+            return $config->{$branch} if $config->{$branch};
+            return $config->{'Default'} if $config->{'Default'};
+        };
+        return $conf;
+    }
 }
 
 sub _convert_to_cpu_products {
@@ -385,13 +522,14 @@ sub _convert_to_cpu_products {
     foreach my $product (@$products){
         my $tmp;
 
-        {
-            no bignum;
-            $tmp->{Amount} = 1;
-        }
+        #{
+        #    no bignum;
+        #    $tmp->{Amount} = 1;
+        #}
         $tmp->{Price} = $product->{price};
         $tmp->{Description} = $product->{description};
         $tmp->{Code} = $product->{accounttype};
+        $tmp->{_itemnumber} = $product->{itemnumber} if $product->{itemnumber};
 
         push @$CPU_products, $tmp;
     }
@@ -404,15 +542,27 @@ sub _validate_cpu_hash {
 
     # CPU does not like a semicolon. Go through the fields and make sure
     # none of the fields contain ';' character (from CPU documentation)
+    # Also it seems that fields should be trim()med or they could cause problems
+    # in SHA2 hash calculation at payment server
     foreach my $field (keys $invoice){
         $invoice->{$field} =~ s/;//g if defined $invoice->{$field}; # Remove semicolon
+        $invoice->{$field} =~ s/^\s+|\s+$//g if defined $invoice->{$field}; # Trim both ends
+        my $tmp_field = $invoice->{$field};
+        $tmp_field = substr($invoice->{$field}, 0, 99) if (ref($invoice->{$field}) ne "ARRAY") and ($field ne "ReturnAddress") and ($field ne "NotificationAddress");
+        $tmp_field =~ s/^\s+|\s+$//g if defined $tmp_field; # Trim again, because after substr there can be again whitelines around left & right
+        $invoice->{$field} = $tmp_field;
     }
 
     $invoice->{Mode} = int($invoice->{Mode});
     foreach my $product (@{ $invoice->{Products} }){
         foreach my $product_field (keys $product){
             $product->{$product_field} =~ s/;//g if defined $invoice->{$product_field}; # Remove semicolon
+            $product->{$product_field} =~ s/'//g if defined $invoice->{$product_field}; # Remove '
+            $product->{$product_field} =~ s/^\s+|\s+$//g if defined $invoice->{$product_field}; # Trim both ends
+            $product->{$product_field} = substr($product->{$product_field}, 0, 99);
+            $product->{$product_field} =~ s/^\s+|\s+$//g if defined $invoice->{$product_field}; # Trim again
         }
+        $product->{Description} = "-" if $product->{'Description'} eq "";
         $product->{Amount} = int($product->{Amount}) if $product->{Amount};
         $product->{Price} = int($product->{Price}) if $product->{Price};
     }

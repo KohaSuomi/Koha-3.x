@@ -497,6 +497,11 @@ our $PERL_DEPS = {
         'required' => '0',
         'min_ver'  => '0.04',
     },
+    'IO::Socket::SSL' => {
+        'usage'    => 'Online Payments',
+        'required' => '0',
+        'min_ver'  => '2.027'
+    },
     'POSIX' => {
         'usage'    => 'Core',
         'required' => '1',

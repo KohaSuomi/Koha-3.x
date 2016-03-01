@@ -1,6 +1,6 @@
 package Koha::PaymentsTransaction;
 
-# Copyright Open Source Freedom Fighters
+# Copyright 2016 KohaSuomi
 #
 # This file is part of Koha.
 #
@@ -28,8 +28,6 @@ use C4::Stats;
 
 use Koha::Database;
 use Koha::Exception::BadParameter;
-
-use bignum;
 
 use base qw(Koha::Object);
 
@@ -136,7 +134,7 @@ sub GetProducts {
     my ($self) = @_;
 
     my $dbh = C4::Context->dbh;
-    my $sql = "SELECT accountlines.accounttype, payments_transactions_accountlines.paid_price_cents, accountlines.description FROM accountlines INNER JOIN payments_transactions_accountlines
+    my $sql = "SELECT accountlines.accounttype, payments_transactions_accountlines.paid_price_cents, accountlines.description, accountlines.itemnumber FROM accountlines INNER JOIN payments_transactions_accountlines
 ON payments_transactions_accountlines.accountlines_id = accountlines.accountlines_id AND payments_transactions_accountlines.transaction_id=?";
     my $sth = $dbh->prepare($sql);
     $sth->execute($self->transaction_id);
@@ -148,6 +146,7 @@ ON payments_transactions_accountlines.accountlines_id = accountlines.accountline
         $product->{accounttype} = $accountline->{'accounttype'};
         $product->{price} = $accountline->{'paid_price_cents'};
         $product->{description} = $accountline->{'description'};
+        $product->{itemnumber} = $accountline->{'itemnumber'};
         push @products, $product;
     }
 
@@ -156,23 +155,12 @@ ON payments_transactions_accountlines.accountlines_id = accountlines.accountline
 
 =head2 CompletePayment
 
-  &CompletePayment($transaction_number);
+  &CompletePayment("paid");
 
-Completes the payment in Koha from the given transaction number.
+Completes the payment in Koha with the given status.
 
-This subroutine will be called twice after payment is completed:
-    1. After response from long-polling AJAX-call at paycollect.pl
-    2. After payment report is received to REST API
-It is important that these two cases don't use the database at the
-exact same moment. Otherwise both could interpret that the payment
-is still incomplete, and will attempt to complete it! This would lead
-to double-Pay events in Koha. We will solve this issue by locking the
-payments_transactions table until one instance has read the current
-status of the payment and marked the payment as "processing". From this
-on all other instances will see that the payment is either "processing"
-or already has the same status as the instance is trying to set, which
-means that there is no reason to continue anymore - payment is already
-completed.
+"paid" = complete payment and modify accountlines accordingly
+"cancelled" = cancel payment and leave accountlines untouched
 
 =cut
 
@@ -190,11 +178,16 @@ sub CompletePayment {
     my $transaction = $self;
     return if not $transaction;
 
+    if ($status ne "paid" and $status ne "cancelled") {
+        warn "Invalid status $status. Call subroutine with 'cancelled' or 'paid' status";
+        return;
+    }
+
     # It's important that we don't process this subroutine twice at the same time!
     $transaction = Koha::PaymentsTransactions->find($transaction->transaction_id);
 
     $old_status = $transaction->status;
-    $new_status = $status->{status};
+    $new_status = $status;
 
     if ($old_status eq $new_status){
         # Trying to complete with same status, makes no sense
@@ -340,12 +333,12 @@ sub RevertPayment {
 sub _convert_to_cents {
     my ($price) = @_;
 
-    return int($price*100); # transform into cents
+    return sprintf "%.0f", $price*100; # convert into cents
 }
 
 sub _convert_to_euros {
     my ($price) = @_;
 
-    return $price/100;
+    return sprintf "%.6f", $price/100; # convert into euros/dollars
 }
 1;

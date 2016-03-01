@@ -65,6 +65,12 @@ __PACKAGE__->table("payments_transactions");
   data_type: 'integer'
   is_nullable: 0
 
+=head2 is_self_payment
+
+  data_type: 'integer'
+  default_value: 0
+  is_nullable: 0
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -94,6 +100,8 @@ __PACKAGE__->add_columns(
   { data_type => "text", is_nullable => 0 },
   "price_in_cents",
   { data_type => "integer", is_nullable => 0 },
+  "is_self_payment",
+  { data_type => "integer", default_value => 0, is_nullable => 0 },
 );
 
 =head1 PRIMARY KEY
@@ -161,8 +169,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07039 @ 2015-12-10 17:49:20
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:TtY1X7ynTADbZtcFxzeKeg
+# Created by DBIx::Class::Schema::Loader v0.07039 @ 2016-03-03 11:03:08
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:k12/ZqDRPKF2mo2C1qyIfA
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

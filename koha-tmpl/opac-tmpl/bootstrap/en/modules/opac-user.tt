@@ -92,7 +92,7 @@
                                     <li id="lost"><strong>Please note: </strong> Your library card has been marked as lost or stolen. If this is an error, please contact the library.</li>
                                 [% END %]
                                 [% IF ( renewal_blocked_fines ) && ( OpacRenewalAllowed ) %]
-                                    <li id="renewal_blocked_fines"><strong>Please note: </strong> Since you have <a href="/cgi-bin/koha/opac-account.pl">[% IF renewal_blocked_fines != "0.00" %] more than <span id="renewal_blocked_fines_amount">[% renewal_blocked_fines %]</span> in [% END %] fines</a>, you cannot renew your books online. Please pay your fines if you wish to renew your books.</li>
+                                    <li id="renewal_blocked_fines"><strong>Please note: </strong> Since you have <a href="/cgi-bin/koha/opac-account.pl">[% IF renewal_blocked_fines != "0.00" %] more than <span id="renewal_blocked_fines_amount">[% renewal_blocked_fines %]</span> in [% END %] fines</a>, you cannot renew your books online. Please <a href="/cgi-bin/koha/opac-account.pl">pay your fines</a> if you wish to renew your books.</li>
                                 [% END %]
                             </ul>
                         </div>
@@ -289,6 +289,7 @@
                                             </tr>
                                         </tbody>
                                     </table>
+                                    <p>Pay <a href="/cgi-bin/koha/opac-account.pl">fines and charges</a>.</p>
                                 </div>
                             [% END %]
 
@@ -303,6 +304,7 @@
                                             </tr>
                                         </tbody>
                                     </table>
+                                    <p>Pay <a href="/cgi-bin/koha/opac-account.pl">fines and charges</a>.</p>
                                 </div>
                             [% END %]
 

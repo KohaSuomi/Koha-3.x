@@ -20,5 +20,10 @@
       "description": "Hash for response parameters",
       "type": "string"
     }
-  }
+  },
+  "required": [
+    "Id",
+    "Status",
+    "Hash"
+  ]
 }

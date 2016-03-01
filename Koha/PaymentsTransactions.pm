@@ -1,6 +1,6 @@
 package Koha::PaymentsTransactions;
 
-# Copyright Open Source Freedom Fighters
+# Copyright 2016 KohaSuomi
 #
 # This file is part of Koha.
 #
