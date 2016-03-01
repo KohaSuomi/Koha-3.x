@@ -1,4 +1,4 @@
-package t::db_dependent::Api::V1::Pos;
+package t::db_dependent::Api::V1::Payments;
 
 # Copyright 2016 KohaSuomi
 #
@@ -30,54 +30,23 @@ use C4::Context;
 use C4::OPLIB::CPUIntegration;
 use Digest::SHA;
 
-sub postcpu_n_report404 {
+sub gettransaction_n_404 {
     my ($class, $restTest, $driver) = @_;
     my $testContext = $restTest->get_testContext();
     my $activeUser = $restTest->get_activeBorrower();
     my $path = $restTest->get_routePath(77747777777);
 
-    # Load the secret key - we need it to generate the checksum
-    my $secretKey = C4::Context->config('pos')->{'CPU'}->{'secretKey'};
-
-    my $post;
-    $post->{Source} = "KOHA";
-    $post->{Id} = "77747777777";
-    $post->{Status} = 1;
-    $post->{Reference} = "77747777777";
-
-    # Calculate checksum
-    my $data = $post->{Source}."&".$post->{Id}."&".$post->{Status}."&".$post->{Reference}."&".$secretKey;
-    my $hash = Digest::SHA::sha256_hex($data);
-
-    # Add checksum to POST parameters
-    $post->{Hash} = $hash;
-
-    # Post it
-    $driver->post_ok($path => {Accept => 'text/json'} => json => $post);
-
+    $driver->get_ok($path => {Accept => 'text/json'});
     $restTest->catchSwagger2Errors($driver);
     $driver->status_is(404);
 }
 
-sub postcpu_n_report400 {
-    my ($class, $restTest, $driver) = @_;
-    my $testContext = $restTest->get_testContext();
-    my $activeUser = $restTest->get_activeBorrower();
-    my $path = $restTest->get_routePath(77747777777);
-
-    # 400 will be given because the POST has an invalid
-    # SHA256 checksum (here we give none at all)
-    $driver->post_ok($path => {Accept => 'text/json'});
-    $restTest->catchSwagger2Errors($driver);
-    $driver->status_is(400);
-}
-
-sub postcpu_n_report200 {
+sub gettransaction_n_200 {
     my ($class, $restTest, $driver) = @_;
     my $testContext = $restTest->get_testContext();
     my $activeUser = $restTest->get_activeBorrower();
 
-    # Set default item number and activate POS integration
+        # Set default item number and activate POS integration
     my $systempreferences = t::lib::TestObjects::SystemPreferenceFactory->createTestGroup([
             {preference => 'POSIntegration',
              value      => 'cpu',
@@ -98,7 +67,7 @@ sub postcpu_n_report200 {
         note => 'unique identifier',
     }, undef, $testContext);
 
-    # Create payment_transaction.
+    # Create payment
     my $payment = C4::OPLIB::CPUIntegration::InitializePayment({
         borrowernumber => Koha::Borrowers->find({ cardnumber => '1A23' })->borrowernumber,
         office => 100,
@@ -106,29 +75,8 @@ sub postcpu_n_report200 {
         selected => []
     });
 
-    # Set the path to payment id
     my $path = $restTest->get_routePath($payment->{Id});
-
-    # Load the secret key - we need it to generate the checksum
-    my $secretKey = C4::Context->config('pos')->{'CPU'}->{'secretKey'};
-
-    # Generate a HASH that simulates CPU response
-    my $post;
-    $post->{Source} = "KOHA";
-    $post->{Id} = $payment->{Id};
-    $post->{Status} = 1;
-    $post->{Reference} = $payment->{Id};
-
-    # Calculate checksum for the response
-    my $data = $post->{Source}."&".$post->{Id}."&".$post->{Status}."&".$post->{Reference}."&".$secretKey;
-    my $hash = Digest::SHA::sha256_hex($data);
-
-    # Add checksum to CPU response
-    $post->{Hash} = $hash;
-
-    # Post it
-    $driver->post_ok($path => {Accept => 'text/json'} => json => $post);
-
+    $driver->get_ok($path => {Accept => 'text/json'});
     $restTest->catchSwagger2Errors($driver);
     $driver->status_is(200);
 }

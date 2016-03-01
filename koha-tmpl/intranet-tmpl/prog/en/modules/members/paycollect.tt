@@ -224,7 +224,7 @@ function moneyFormat(textObj) {
                 handlePOSResponse(data);
             });
             $("#recheck").click(function() {
-                $.get("/api/v1/pos/cpu/" + [% payment.Id %], function(data) {
+                $.get("/api/v1/payments/transactions/" + [% payment.Id %], function(data) {
                     var response = jQuery.parseJSON(JSON.stringify(data));
 
                     handlePOSResponse(response);

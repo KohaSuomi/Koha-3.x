@@ -20,8 +20,8 @@
   "/borrowers/{borrowernumber}/holds": {
     "$ref": "paths/borrowers.json#/~1borrowers~1{borrowernumber}~1holds"
   },
-  "/pos/cpu/{invoicenumber}": {
-    "$ref": "paths/pos/cpu.json#/~1pos~1cpu~1{invoicenumber}"
+  "/payments/transaction/{invoicenumber}": {
+    "$ref": "paths/payments.json#/~1payments~1transactions~1{invoicenumber}"
   },
   "/pos/cpu/{invoicenumber}/report": {
     "$ref": "paths/pos/cpu.json#/~1pos~1cpu~1{invoicenumber}~1report"

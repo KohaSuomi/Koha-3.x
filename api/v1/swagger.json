@@ -651,9 +651,9 @@
         }
       }
     },
-    "/pos/cpu/{invoicenumber}": {
+    "/payments/transactions/{invoicenumber}": {
       "get": {
-        "x-mojo-controller": "Koha::REST::V1::POSIntegration",
+        "x-mojo-controller": "Koha::REST::V1::Payments::Transactions",
         "operationId": "getTransaction",
         "x-koha-permission": {
           "updatecharges": "remaining_permissions"
@@ -684,7 +684,7 @@
     },
     "/pos/cpu/{invoicenumber}/report": {
       "post": {
-        "x-mojo-controller": "Koha::REST::V1::POSIntegration",
+        "x-mojo-controller": "Koha::REST::V1::Pos::CPU::Reports",
         "operationId": "cpuReport",
         "tags": ["POS Integration"],
         "parameters": [
