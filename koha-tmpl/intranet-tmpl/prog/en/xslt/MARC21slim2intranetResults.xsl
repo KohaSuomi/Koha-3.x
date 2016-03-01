@@ -292,9 +292,8 @@
            </xsl:call-template>
         </xsl:if>
 
-	<a><xsl:attribute name="href">/cgi-bin/koha/catalogue/detail.pl?biblionumber=<xsl:value-of select="$biblionumber"/></xsl:attribute>
-    <xsl:attribute name="class">title</xsl:attribute>
-    <xsl:choose>
+	<a><xsl:attribute name="href">/cgi-bin/koha/catalogue/detail.pl?biblionumber=<xsl:value-of select="$biblionumber"/></xsl:attribute><xsl:attribute name="class">title</xsl:attribute>
+        <xsl:choose>
         <xsl:when test="marc:datafield[@tag=245]">
           <xsl:for-each select="marc:datafield[@tag=245]">
             <xsl:variable name="title">
