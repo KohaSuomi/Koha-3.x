@@ -20,19 +20,44 @@ package t::lib::TestContext;
 
 use Modern::Perl;
 use Carp;
+use Scalar::Util qw(blessed);
+use Try::Tiny;
 
 use C4::Context;
+
+use t::lib::TestObjects::BorrowerFactory;
 
 =head setUserenv
 
 Sets the C4::Context->userenv with nice default values, like:
  -Being in 'CPL'
 
+@PARAM1 Koha::Borrower, this object must be persisted to DB beforehand, sets the userenv for this borrower
+        or BorrowerFactory-params, which create a new borrower and set the userenv for it.
+@RETURNS Koha::Borrower, the userenv borrower if it was created
+
 =cut
 
 sub setUserenv {
-    C4::Context->_new_userenv('DUMMY SESSION');
-    C4::Context::set_userenv(0,0,0,'firstname','surname', 'CPL', 'Library 1', {}, 'dummysession@example.com', '', '');
+    my ($borrowerFactoryParams, $testContext) = @_;
+
+    my $borrower;
+    if ($borrowerFactoryParams) {
+        if (blessed($borrowerFactoryParams) && $borrowerFactoryParams->isa('Koha::Borrower')) {
+            #We got a nice persisted borrower
+            $borrower = $borrowerFactoryParams;
+        }
+        else {
+            $borrower = t::lib::TestObjects::BorrowerFactory->createTestGroup( $borrowerFactoryParams, undef, $testContext );
+        }
+        C4::Context->_new_userenv('DUMMY SESSION');
+        C4::Context::set_userenv($borrower->borrowernumber, $borrower->userid, $borrower->cardnumber, $borrower->firstname, $borrower->surname, $borrower->branchcode, 'Library 1', {}, $borrower->email, '', '');
+        return $borrower;
+    }
+    else {
+        C4::Context->_new_userenv('DUMMY SESSION');
+        C4::Context::set_userenv(0,0,0,'firstname','surname', 'CPL', 'Library 1', {}, 'dummysession@example.com', '', '');
+    }
 }
 
 1;
