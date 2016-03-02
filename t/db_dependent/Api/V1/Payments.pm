@@ -67,15 +67,14 @@ sub gettransaction_n_200 {
         note => 'unique identifier',
     }, undef, $testContext);
 
-    # Create payment
-    my $payment = C4::OPLIB::CPUIntegration::InitializePayment({
-        borrowernumber => Koha::Borrowers->find({ cardnumber => '1A23' })->borrowernumber,
-        office => 100,
-        total_paid => 10.0,
-        selected => []
-    });
+    # Create payment_transaction.
+    my $payment = Koha::PaymentsTransaction->new()->set({
+        borrowernumber      => Koha::Borrowers->find({ cardnumber => '1A23' })->borrowernumber,
+        status              => "unsent",
+        description         => '',
+    })->store();
 
-    my $path = $restTest->get_routePath($payment->{Id});
+    my $path = $restTest->get_routePath($payment->transaction_id);
     $driver->get_ok($path => {Accept => 'text/json'});
     $restTest->catchSwagger2Errors($driver);
     $driver->status_is(200);

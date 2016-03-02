@@ -26,7 +26,10 @@ use bignum;
 
 =head2 InitializePayment
 
-  &InitializePayment($args);
+  &InitializePayment(
+        transaction => Koha::PaymentsTransaction-object,
+        office      => 15,
+  );
 
 Initializes the accountlines that will be sent to CPU.
 
@@ -37,54 +40,11 @@ Returns the payment HASH.
 sub InitializePayment {
     my ($args) = shift;
 
-    my $dbh        = C4::Context->dbh;
-    my $borrowernumber = $args->{borrowernumber};
-    my @selected = @{ $args->{selected} };
+    my $transaction = $args->{transaction};
 
     # Hash containing CPU format of payment
     my $payment;
     $payment->{Office} = $args->{office};
-    $payment->{Products} = [];
-
-    @selected = sort { $a <=> $b } @selected if @selected > 1;
-
-    my $total_price = 0;
-    my $money_left = _convert_to_cents($args->{total_paid});
-
-    my $use_selected = (@selected > 0) ? "AND accountno IN (?".+(",?") x (@selected-1).")" : "";
-    my $sql = "SELECT * FROM accountlines WHERE borrowernumber=? AND (amountoutstanding<>0) ".$use_selected." ORDER BY date";
-    my $sth = $dbh->prepare($sql);
-
-    $sth->execute($borrowernumber, @selected);
-
-    # Create a new transaction
-    my $transaction = Koha::PaymentsTransaction->new()->set({
-            borrowernumber          => $borrowernumber,
-            status                  => "unsent",
-            description             => $args->{payment_note} || '',
-    })->store();
-
-    while ( (my $accdata = $sth->fetchrow_hashref) and $money_left > 0) {
-        my $product;
-
-        $product->{Code} = $accdata->{'accounttype'};
-        $product->{Amount} = 1;
-        $product->{Description} = $accdata->{'description'};
-
-        if ( _convert_to_cents($accdata->{'amountoutstanding'}) >= $money_left ) {
-            $product->{Price} = $money_left;
-            $money_left = 0;
-        } else {
-            $product->{Price} = _convert_to_cents($accdata->{'amountoutstanding'});
-            $money_left -= _convert_to_cents($accdata->{'amountoutstanding'});
-        }
-        push $payment->{Products}, $product;
-        $total_price += $product->{Price};
-
-        $transaction->AddRelatedAccountline($accdata->{'accountlines_id'}, $product->{Price});
-    }
-
-    $transaction->set({ price_in_cents => $total_price })->store();
 
     my $borrower = Koha::Borrowers->cast($transaction->borrowernumber);
 
@@ -95,7 +55,9 @@ sub InitializePayment {
     $payment->{Id}          = $transaction->transaction_id;
     $payment->{Mode}        = C4::Context->config('pos')->{'CPU'}->{'mode'};
     $payment->{Description} = $description;
-    $payment->{Products} = AccountTypesToItemNumbers($transaction->GetProducts(), C4::Branch::mybranch());
+    $payment->{Products} =  AccountTypesToItemNumbers(
+                                _convert_to_cpu_products($transaction->GetProducts()), C4::Branch::mybranch()
+                            );
 
     my $notificationAddress = C4::Context->config('pos')->{'CPU'}->{'notificationAddress'};
     my $transactionNumber = $transaction->transaction_id;
@@ -414,6 +376,27 @@ sub CalculateResponseHash {
 
     $data = Digest::SHA::sha256_hex($data);
     return $data;
+}
+
+sub _convert_to_cpu_products {
+    my $products = shift;
+    my $CPU_products;
+
+    foreach my $product (@$products){
+        my $tmp;
+
+        {
+            no bignum;
+            $tmp->{Amount} = 1;
+        }
+        $tmp->{Price} = $product->{price};
+        $tmp->{Description} = $product->{description};
+        $tmp->{Code} = $product->{accounttype};
+
+        push @$CPU_products, $tmp;
+    }
+
+    return $CPU_products;
 }
 
 sub _validate_cpu_hash {

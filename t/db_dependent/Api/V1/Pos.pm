@@ -27,7 +27,6 @@ use t::lib::TestObjects::SystemPreferenceFactory;
 
 use C4::Members;
 use C4::Context;
-use C4::OPLIB::CPUIntegration;
 use Digest::SHA;
 
 sub postcpu_n_report404 {
@@ -99,15 +98,14 @@ sub postcpu_n_report200 {
     }, undef, $testContext);
 
     # Create payment_transaction.
-    my $payment = C4::OPLIB::CPUIntegration::InitializePayment({
-        borrowernumber => Koha::Borrowers->find({ cardnumber => '1A23' })->borrowernumber,
-        office => 100,
-        total_paid => 10.0,
-        selected => []
-    });
+    my $payment = Koha::PaymentsTransaction->new()->set({
+        borrowernumber      => Koha::Borrowers->find({ cardnumber => '1A23' })->borrowernumber,
+        status              => "unsent",
+        description         => '',
+    })->store();
 
     # Set the path to payment id
-    my $path = $restTest->get_routePath($payment->{Id});
+    my $path = $restTest->get_routePath($payment->transaction_id);
 
     # Load the secret key - we need it to generate the checksum
     my $secretKey = C4::Context->config('pos')->{'CPU'}->{'secretKey'};
@@ -115,9 +113,9 @@ sub postcpu_n_report200 {
     # Generate a HASH that simulates CPU response
     my $post;
     $post->{Source} = "KOHA";
-    $post->{Id} = $payment->{Id};
+    $post->{Id} = $payment->transaction_id;
     $post->{Status} = 1;
-    $post->{Reference} = $payment->{Id};
+    $post->{Reference} = $payment->transaction_id;
 
     # Calculate checksum for the response
     my $data = $post->{Source}."&".$post->{Id}."&".$post->{Status}."&".$post->{Reference}."&".$secretKey;

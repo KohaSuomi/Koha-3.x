@@ -19,6 +19,7 @@ package Koha::PaymentsTransaction;
 
 use Modern::Perl;
 use Data::Dumper;
+use Scalar::Util qw (looks_like_number);
 
 use C4::Accounts;
 use C4::Context;
@@ -26,6 +27,7 @@ use C4::Log;
 use C4::Stats;
 
 use Koha::Database;
+use Koha::Exception::BadParameter;
 
 use bignum;
 
@@ -35,7 +37,74 @@ sub type {
     return 'PaymentsTransaction';
 }
 
-sub AddRelatedAccountline {
+=head2 AddRelatedAccountlines
+
+  &AddRelatedAccountlines({
+            paid => 10.0,
+            selected => @{ 1, 2, 3 }
+        });
+
+Adds the related accountlines' accountnos to a payment. The parameter
+selected requires "accountno"s of this borrower, DO NOT try to give
+"accountlines_id"s.
+
+The related accountlines will go to database table
+payments_transactions_accountlines and will have a foreign key to
+"accountlines.accountlines_id" and "payments_transactions.transaction_id"
+
+=cut
+
+sub AddRelatedAccountlines {
+    my ($self, $data) = @_;
+
+    # Make some simple validations
+    Koha::Exception::BadParameter->throw(error => "Parameter 'paid' must be given")
+            unless defined $data->{paid};
+    Koha::Exception::BadParameter->throw(error => "Parameter 'paid' must be numeric")
+            unless Scalar::Util::looks_like_number($data->{paid});
+
+    my $dbh = C4::Context->dbh;
+    my $borrowernumber = $self->borrowernumber;
+    my @selected = @{ $data->{selected} } if defined $data->{selected};
+    @selected = sort { $a <=> $b } @selected if @selected > 1;
+
+    my $money_left = _convert_to_cents($data->{paid});
+    my $total_price = 0;
+
+    my $use_selected = (@selected > 0) ? "AND accountno IN (?".+(",?") x (@selected-1).")" : "";
+    my $sql = "SELECT * FROM accountlines WHERE borrowernumber=? AND (amountoutstanding<>0) ".$use_selected." ORDER BY date";
+    my $sth = $dbh->prepare($sql);
+
+    $sth->execute($borrowernumber, @selected);
+
+    my $added_accountlines;
+
+    while ( (my $accdata = $sth->fetchrow_hashref) and $money_left > 0) {
+        my $product;
+
+        $product->{accounttype} = $accdata->{'accounttype'};
+        $product->{amount} = 1;
+        $product->{description} = $accdata->{'description'};
+
+        if ( _convert_to_cents($accdata->{'amountoutstanding'}) >= $money_left ) {
+            $product->{price} = $money_left;
+            $money_left = 0;
+        } else {
+            $product->{price} = _convert_to_cents($accdata->{'amountoutstanding'});
+            $money_left -= _convert_to_cents($accdata->{'amountoutstanding'});
+        }
+        push @$added_accountlines, $product;
+        $total_price += $product->{price};
+
+        $self->_add_related_accountline($accdata->{'accountlines_id'}, $product->{price});
+    }
+
+    $self->set({ price_in_cents => $total_price })->store();
+
+    return $added_accountlines;
+}
+
+sub _add_related_accountline {
     my ($self, $accountlines_id, $paid_price) = @_;
 
     return 0 unless defined $accountlines_id and defined $paid_price;
@@ -76,9 +145,9 @@ ON payments_transactions_accountlines.accountlines_id = accountlines.accountline
 
     while (my $accountline = $sth->fetchrow_hashref) {
         my $product;
-        $product->{Code} = $accountline->{'accounttype'};
-        $product->{Price} = $accountline->{'paid_price_cents'};
-        $product->{Description} = $accountline->{'description'};
+        $product->{accounttype} = $accountline->{'accounttype'};
+        $product->{price} = $accountline->{'paid_price_cents'};
+        $product->{description} = $accountline->{'description'};
         push @products, $product;
     }
 

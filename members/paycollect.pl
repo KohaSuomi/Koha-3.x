@@ -136,6 +136,20 @@ if ( $total_paid and $total_paid ne '0.00' ) {
             my @selected = (defined $select) ? split /,/, $select : $accountno;
             $payment->{selected}             = \@selected;
 
+            # Initialize the transaction
+            $payment->{transaction} = Koha::PaymentsTransaction->new()->set({
+                borrowernumber      => $payment->{borrowernumber},
+                status              => "unsent",
+                description         => $payment->{payment_note} || '',
+            })->store();
+
+            # Link accountlines to the transaction
+            $payment->{transaction}->AddRelatedAccountlines({
+                paid        => $payment->{total_paid},
+                selected    => $payment->{selected},
+            });
+
+            # Get payment in CPU format
             my $CPUPayment = C4::OPLIB::CPUIntegration::InitializePayment($payment);
 
             $template->param(
