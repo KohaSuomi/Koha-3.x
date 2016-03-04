@@ -35,6 +35,7 @@ use t::lib::WebDriverFactory;
 use t::lib::RESTTest;
 use t::lib::TestObjects::BorrowerFactory;
 use t::lib::TestObjects::ObjectFactory;
+use t::lib::TestContext;
 
 use Koha::Exception::FeatureUnavailable;
 
@@ -217,6 +218,7 @@ sub _getTestBorrower {
              categorycode => 'PT',
              dateofbirth => DateTime->now(time_zone => C4::Context->tz())->subtract(years => 21)->iso8601(), #I am always 21!
             }, undef, $testContext);
+    t::lib::TestContext::setUserenv($borrower, $testContext);
     return $borrower;
 }
 
