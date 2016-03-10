@@ -145,6 +145,9 @@ TestObjectFactories must be lazy loaded here to make it possible for them to sub
 
 sub tearDownTestContext {
     my ($self, $stash) = @_;
+    unless (ref($stash) eq 'HASH') {
+        Koha::Exception::BadParameter->throw(error => "Parameter '\$stash' is not a HASHref. You must call this subroutine with -> instead of ::");
+    }
 
     ##You should introduce tearDowns in such an order that to not provoke FOREIGN KEY issues.
     if ($stash->{'file'}) {
