@@ -87,6 +87,7 @@ sub send_sms {
         $sender = SMS::Send->new( $driver,
                                  _login    => C4::Context->preference('SMSSendUsername'),
                                  _password => C4::Context->preference('SMSSendPassword'),
+                                 _from => $params->{'from_address'},
                             );
     
         # Send a message

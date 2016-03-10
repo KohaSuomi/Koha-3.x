@@ -1304,6 +1304,7 @@ sub _send_message_by_sms {
         $success = C4::SMS->send_sms( { destination => $member->{'smsalertnumber'},
                                            message     => $message->{'content'},
                                            message_id  => $message->{'message_id'},
+                                           from_address => $message->{'from_address'},
                                          } );
         _set_message_status( { message_id => $message->{'message_id'},
                                status     => ($success ? 'sent' : 'failed'),
