@@ -69,6 +69,9 @@ sub new {
     elsif ($verbose && $verbose =~ /^\d+$/) {
         $self->{verbose} = $verbose;
     }
+    else {
+        $self->{verbose} = 0;
+    }
 
     my $matcher = C4::Matcher->fetch($matcher_id);
     if (not($matcher)) {
@@ -93,6 +96,10 @@ sub deduplicate {
     foreach my $biblionumber (@$biblionumbers) {
         my $marc = C4::Biblio::GetMarcBiblio($biblionumber);
         my @matches = $self->{matcher}->get_matches( $marc, $self->{max_matches} );
+        #sort @matches by record_id, because the C4::Matcher sorts them randomly.
+        #This prevents some strange bugs when figuring out the automatic merge target
+        #in cases where each match is a equally valid merge target.
+        @matches = sort {$b->{record_id} <=> $a->{record_id}} @matches;
 
         if (scalar(@matches) > 1) {
             for (my $i=0 ; $i<scalar(@matches) ; $i++) {
@@ -117,7 +124,7 @@ sub deduplicate {
 
             push @{$self->{duplicates}}, $biblio;
         }
-        if ($verbose) {
+        if ($verbose > 1) {
             print $biblionumber."\n";
         }
     }
@@ -181,10 +188,10 @@ sub batchMergeDuplicates {
 
     foreach my $duplicate (@$duplicates) {
         foreach my $match (@{$duplicate->{matches}}) {
-            if ($match eq $duplicate->{'mergeTarget'}) { #Comparing Perl references, if htey point to the same object.
+            if ($match eq $duplicate->{'mergeTarget'}) { #Comparing Perl references, if they point to the same object.
                 next(); #Don't merge itself to oneself.
             }
-            merge($match, $duplicate->{'mergeTarget'}, $self->{mergeErrors});
+            merge($match, $duplicate->{'mergeTarget'}, $self->{mergeErrors}) if $duplicate->{'mergeTarget'}; #Dont merge if not know where to merge
         }
     }
     return $self->{mergeErrors} if scalar @{$self->{mergeErrors}} > 0;
@@ -211,7 +218,7 @@ sub _mergeTargetFindingAlgorithm_newest {
         my $target_leader_f005 = 0;
         foreach my $match (@{$duplicate->{matches}}) {
             my $f005;
-            eval {$f005 = $match->{marc}->field('005')->data(); }; #If marc is not defined thia will crash unless we catch the die-signal
+            eval {$f005 = $match->{marc}->field('005')->data(); }; #If marc is not defined this will crash unless we catch the die-signal
             if ($f005 && $f005 > $target_leader_f005) {
                 $target_leader = $match;
                 $target_leader_f005 = $f005;

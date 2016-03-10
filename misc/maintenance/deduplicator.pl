@@ -26,14 +26,15 @@ use Koha::Deduplicator;
 
 use Getopt::Long qw(:config no_ignore_case);
 
-my ($help, $verbose, $biblionumber, $matcher_id, $merge);
+my ($help, $biblionumber, $matcher_id, $merge);
 my $limit = 500;
 my $chunk = 500;
 my $offset = 0;
+my $verbose = 0;
 
 GetOptions(
     'h|help'           => \$help,
-    'v|verbose'        => \$verbose,
+    'v|verbose:i'      => \$verbose,
     'l|limit:i'        => \$limit,
     'c|chunk:i'        => \$chunk,
     'o|offset:i'       => \$offset,
@@ -51,7 +52,8 @@ Finds duplicates for the parametrized group of biblios.
 This script has the following parameters :
     -h --help         This help.
 
-    -v --verbose      Prints each biblionumber checked.
+    -v --verbose      Integer, 1, prints found duplicates.
+                               2, prints each biblionumber checked.
 
     -l --limit        How many biblios to check for duplicates. Is the SQL
                       LIMIT-clause for gathering biblios to deduplicate.
@@ -121,6 +123,7 @@ while ($lastOffset < $limit) {
 It can be that the last chunk overflows the limit-paramter, thus leading to deduplicating/merging too many biblios.
 We don't want that, so calculate the remaining chunk size to not exceed the given limit!
 =cut
+
 sub _calculateChunkSize {
     my ($lastOffset, $chunk, $limit) = @_;
 
@@ -145,7 +148,7 @@ sub runDeduplicateMergeChunk {
     else {
         my $duplicates = $deduplicator->deduplicate();
 
-        $deduplicator->printDuplicatesAsText();
+        $deduplicator->printDuplicatesAsText() if $verbose > 0;
 
         if ($merge && scalar(@$duplicates) > 0) {
             my $errors = $deduplicator->batchMergeDuplicates($duplicates, $merge);
