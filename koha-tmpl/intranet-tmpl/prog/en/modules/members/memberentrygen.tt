@@ -439,6 +439,9 @@
                 <input type="password" name="ssn_password" class="valid">
             </li>
             <li>
+                <input type="hidden" name="ssn_url" value="[% ssn_url %]">
+            </li>
+            <li>
                 <label for="ssn_ssn" class="">Sotu: </label>
                 <input type="text" name="ssn_ssn" class="valid">
             </li>

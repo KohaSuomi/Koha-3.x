@@ -742,7 +742,8 @@ $template->param(
   category_type =>$category_type,
   modify          => $modify,
   nok     => $nok,#flag to konw if an error 
-  NoUpdateLogin =>  $NoUpdateLogin
+  NoUpdateLogin =>  $NoUpdateLogin,
+  ssn_url => C4::Context->config("ssnProvider")->{ssn_url} #Feature #1132, config for ssn url
   );
 
 if(defined($data{'flags'})){

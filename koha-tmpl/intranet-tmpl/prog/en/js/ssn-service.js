@@ -6,10 +6,11 @@ $("input[id=ssn_submit]").click(function( event ) {
     var ssn_username = $("input[name=ssn_username]").val();
     var ssn_password = $("input[name=ssn_password]").val();
     var ssn_value = $("input[name=ssn_ssn]").val();
+    var ssn_url = $("input[name=ssn_url]").val();
 
     $.ajax({
         type: "POST",
-        url: "https://turva.vaarakirjastot.fi/ssn/addssn?ajax=1",
+        url: ssn_url,
         dataType: 'json',
         data: { ssn: ssn_value, username: ssn_username, password: ssn_password }
     })
