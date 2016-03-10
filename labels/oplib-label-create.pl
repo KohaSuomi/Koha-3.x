@@ -118,6 +118,7 @@ if ($op eq "printLabels") {
         if ($_->isa('Koha::Exception::Labels::UnknownItems')) {
             $template->param('badBarcodeErrors', $_->badBunch);
             $template->param('barcode', $barcodes); #return barcodes if error happens!
+            $template->param(barcodesTextArea => $barcodes);
         }
         else {
             $_->rethrow();
