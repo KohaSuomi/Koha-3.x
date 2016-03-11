@@ -76,7 +76,9 @@ $template->param(
 #Get the matchers to choose from
 my $matcherCookie = $input->cookie('matcher');
 my $matchers = [ C4::Matcher::GetMatcherList() ];
-foreach (@$matchers) { if($_->{matcher_id} == $matcherCookie) {$_->{selected} = 1;} } #Mark the previously selected matcher as selected
+if ($matcherCookie) {
+    foreach (@$matchers) { if($_->{matcher_id} == $matcherCookie) {$_->{selected} = 1;} } #Mark the previously selected matcher as selected
+}
 $template->param(    matchers => $matchers    ); #Send the matcher to the template
 
 if ( $op ne "do_search" ) {
