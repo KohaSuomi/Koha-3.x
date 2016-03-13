@@ -31,6 +31,7 @@ my $limit = 500;
 my $chunk = 500;
 my $offset = 0;
 my $verbose = 0;
+my $maxMatchThreshold = 3;
 
 GetOptions(
     'h|help'           => \$help,
@@ -40,6 +41,7 @@ GetOptions(
     'o|offset:i'       => \$offset,
     'b|biblionumber:i' => \$biblionumber,
     'm|matcher:i'      => \$matcher_id,
+    'max-matches:i'    => \$maxMatchThreshold,
     'M|merge:s'        => \$merge,
 );
 
@@ -70,6 +72,15 @@ This script has the following parameters :
 
     -b --biblionumber From which biblionumber (inclusive) to start gathering
                       the biblios to deduplicate. Obsoletes --offset
+
+    --max-matches     Safety trigger to stop matching a single biblio if it has
+                      this many matches. This is used to prevent catastrophic
+                      merge failures in your database caused by misconfigured
+                      matchers. If you know your DB is really duplicated, try
+                      making multiple deduplication runs with incrementally
+                      higher --max-matches threshold to verify your matching
+                      rules.
+                      Defaults to 3.
 
     -m --matcher      MANDATORY. The matcher to use. References the
                       koha.marc_matcher.matcher_id.
@@ -137,7 +148,7 @@ sub _calculateChunkSize {
 sub runDeduplicateMergeChunk {
     my ($matcher_id, $chunkSize, $offset, $biblionumber, $verbose ) = @_;
 
-    my ($deduplicator, $initErrors) = Koha::Deduplicator->new( $matcher_id, $chunkSize, $offset, $biblionumber, $verbose );
+    my ($deduplicator, $initErrors) = Koha::Deduplicator->new( $matcher_id, $chunkSize, $offset, $biblionumber, $maxMatchThreshold, $verbose );
     if ($initErrors) {
         print "Errors happened when creating the Deduplicator:\n";
         print join("\n", @$initErrors);

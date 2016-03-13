@@ -41,7 +41,7 @@ sub mergeMatchedRecords {
        'Got the correct records');
 
     ##Start deduplicating from the first created biblio. Excpecting to find 3 duplicates and merge them all.
-    system($ENV{KOHA_PATH}."/misc/maintenance/deduplicator.pl", "--matcher", $matcher->_id(), "-M", "newest", "--biblionumber", $localRecords->{isbn1}->{biblionumber});
+    system($ENV{KOHA_PATH}."/misc/maintenance/deduplicator.pl", "--matcher", $matcher->_id(), "-M", "newest", "--biblionumber", $localRecords->{isbn1}->{biblionumber}, '--max-matches', 10);
 
     $r = C4::Biblio::GetBiblio(  $localRecords->{isbn1}->{biblionumber}  );
     is($r, undef, "First duplicate 'isbn1' deleted");

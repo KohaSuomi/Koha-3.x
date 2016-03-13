@@ -30,10 +30,15 @@ use C4::Acquisition qw/ModOrder GetOrdersByBiblionumber/;
 use Koha::Exception::Deduplicator::TooManyMatches;
 
 sub new {
-    my ($class, $matcher_id, $limit, $offset, $biblionumber, $verbose) = @_;
+    my ($self, $initErrors) = _validate_new(@_);
+    return ($self, $initErrors) if @$initErrors;
+
+    return ($self, undef);
+}
+sub _validate_new {
+    my ($class, $matcher_id, $limit, $offset, $biblionumber, $alertMatchCountThreshold, $verbose) = @_;
 
     my $self = {};
-    ### Validate parameters. ###
     my @initErrors;
     if (not($matcher_id) || $matcher_id !~ /^\d+$/) {
         push @initErrors, "Koha::Deduplicator->new(): Parameter matcher_id $matcher_id must be defined and a number pointing to koha.marc_matchers.matcher_id!";
@@ -73,6 +78,16 @@ sub new {
         $self->{verbose} = 0;
     }
 
+    if ($alertMatchCountThreshold && $alertMatchCountThreshold !~ /^\d+$/) {
+        push @initErrors, "$class( $matcher_id, $limit, $offset, $biblionumber ): Parameter alertMatchCountThreshold $alertMatchCountThreshold must be a number or don't define it!";
+    }
+    elsif ($alertMatchCountThreshold && $alertMatchCountThreshold =~ /^\d+$/) {
+        $self->{alertMatchCountThreshold} = $alertMatchCountThreshold;
+    }
+    else {
+        $self->{alertMatchCountThreshold} = 3;
+    }
+
     my $matcher = C4::Matcher->fetch($matcher_id);
     if (not($matcher)) {
         push @initErrors, "Koha::Deduplicator->new(): No Matcher with the given matcher_id $matcher_id.";
@@ -80,11 +95,10 @@ sub new {
     $self->{matcher} = $matcher;
 
     $self->{max_matches} = 100; #Default the max number of matches to return per matched biblionumber to 100
-    return (undef, \@initErrors) if scalar(@initErrors) > 0;
-    ### Parameters validated ###
 
+    return (undef, \@initErrors) if @initErrors;
     bless $self, $class;
-    return ($self, undef);
+    return ($self, \@initErrors);
 }
 
 sub deduplicate {
@@ -95,7 +109,7 @@ sub deduplicate {
     $self->{duplicates} = [];
     foreach my $biblionumber (@$biblionumbers) {
         my $marc = C4::Biblio::GetMarcBiblio($biblionumber);
-        my $matches = Koha::Deduplicator->getMatches($self->{matcher}, $marc, $self->{max_matches});
+        my $matches = Koha::Deduplicator->getMatches($self->{matcher}, $marc, $self->{max_matches}, $self->{alertMatchCountThreshold});
 
         if (scalar(@$matches) > 1) {
             for (my $i=0 ; $i<scalar(@$matches) ; $i++) {
@@ -143,12 +157,14 @@ Is a wrapper for C4::Matcher->get_matches() fixing an issue where the resultset 
 
 sub getMatches {
     my ($class, $matcher, $record, $maxMatches, $alertMatchCountThreshold) = @_;
-    $alertMatchCountThreshold = 100 unless $alertMatchCountThreshold;
+    Koha::Exception::BadParameter->throw(error => (caller(0))[3]."($matcher, $record, $maxMatches, $alertMatchCountThreshold):> Param \$alertMatchCountThreshold is not defined")
+            unless $alertMatchCountThreshold;
 
-    my @matches = $matcher->get_matches( $record, $maxMatches, $alertMatchCountThreshold );
+    my @matches = $matcher->get_matches( $record, $maxMatches );
     if (scalar(@matches) >= $alertMatchCountThreshold) {
         my @cc = caller(0);
-        Koha::Exception::Deduplicator::TooManyMatches->throw(error => $cc[3]."():> ");
+        my @biblionumbers = map {$_->{record_id}} @matches;
+        Koha::Exception::Deduplicator::TooManyMatches->throw(error => $cc[3]."():> The match operation using matcher '".$matcher->code()."' returned too many search results and a safety mechanisms has been triggered preventing merging of all the found records. Revise your Matcher configuration. List of matched biblionumbers follows: [@biblionumbers]");
     }
 
     #sort @matches by record_id, because the C4::Matcher sorts them randomly.
@@ -268,6 +284,7 @@ sub _mergeTargetFindingAlgorithm_newest {
 =head mergeMatches
 
 Merges an array of records.
+@RETURNS C4::Matchers match-HASH
 
 =cut
 
@@ -285,6 +302,31 @@ sub mergeMatches {
         }
         merge($match, $mergeToRecord);
     }
+
+    return _validateMatchHASH($mergeToRecord);
+}
+
+=head _validateMatchHASH
+
+Quarantee for modules consuming this endpoint that we always return the expected values.
+
+=cut
+
+sub _validateMatchHASH {
+    my ($match) = @_;
+
+    my $errorDesc = "Cannot return a Match-hash because it is invalid.";
+    unless (ref($match) eq 'HASH') {
+        Koha::Exception::UnknownObject->throw(error => (caller(1))[3]."():> $errorDesc \$match is not a HASH");
+    }
+    unless (blessed($match->{target_record}) && $match->{target_record}->isa('Koha::Exception')) {
+        Koha::Exception::UnknownObject->throw(error => (caller(1))[3]."():> $errorDesc \$match key 'target_record' is not a MARC::Record");
+    }
+    unless ($match->{record_id} =~ /^\d+$/) {
+        Koha::Exception::UnknownObject->throw(error => (caller(1))[3]."():> $errorDesc \$match key 'record_id' is not an Integer");
+    }
+
+    return $match;
 }
 
 =head merge

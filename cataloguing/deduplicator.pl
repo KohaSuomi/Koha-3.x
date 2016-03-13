@@ -60,7 +60,8 @@ foreach (@matchers) {
 $template->param(   matchers => \@matchers   );
 
 if ($op && $op eq 'deduplicate') {
-    my ($deduplicator, $initErrors) = Koha::Deduplicator->new($matcher_id, $param_limit, $param_offset, $param_biblionumber);
+    #We can set a high $maxMatchCountThreshold here because this doesnt do automatic merging.
+    my ($deduplicator, $initErrors) = Koha::Deduplicator->new($matcher_id, $param_limit, $param_offset, $param_biblionumber, 100, 0);
     if ($initErrors) {
         $template->param(   errors => join('<br/>', @$initErrors)   );
     }
