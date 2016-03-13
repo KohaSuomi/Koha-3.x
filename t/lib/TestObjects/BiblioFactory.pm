@@ -224,6 +224,11 @@ sub deleteTestGroup {
         foreach my $b (@biblios) {
             $b->delete();
         }
+
+        #Remove any attached component parts.
+        foreach my $componentPartBiblionumber (  @{C4::Biblio::getComponentBiblionumbers( $record )}  ) {
+            my $error = C4::Biblio::DelBiblio($componentPartBiblionumber);
+        }
     }
 }
 sub _deleteTestGroupFromIdentifiers {
