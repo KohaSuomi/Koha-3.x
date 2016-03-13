@@ -21,6 +21,7 @@ use Modern::Perl;
 
 use Exception::Class (
     'Koha::Exception::File' => {
+        isa => 'Koha::Exception',
         description => 'Something wrong with the given file',
     },
 );

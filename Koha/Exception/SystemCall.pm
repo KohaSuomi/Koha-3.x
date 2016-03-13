@@ -21,6 +21,7 @@ use Modern::Perl;
 
 use Exception::Class (
     'Koha::Exception::SystemCall' => {
+        isa => 'Koha::Exception',
         description => 'Making a system call failed',
     },
 );

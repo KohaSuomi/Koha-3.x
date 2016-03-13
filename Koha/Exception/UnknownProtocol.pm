@@ -21,6 +21,7 @@ use Modern::Perl;
 
 use Exception::Class (
     'Koha::Exception::UnknownProtocol' => {
+        isa => 'Koha::Exception',
         description => 'Protocol is not known',
     },
 );

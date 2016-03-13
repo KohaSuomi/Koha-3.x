@@ -21,6 +21,7 @@ use Modern::Perl;
 
 use Exception::Class (
     'Koha::Exception::LoginFailed' => {
+        isa => 'Koha::Exception',
         description => 'Login to host failed',
     },
 );

@@ -21,6 +21,7 @@ use Modern::Perl;
 
 use Exception::Class (
     'Koha::Exception::Parse' => {
+        isa => 'Koha::Exception',
         description => 'Parsing the given input failed',
     },
 );

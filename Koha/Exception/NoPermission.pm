@@ -21,6 +21,7 @@ use Modern::Perl;
 
 use Exception::Class (
     'Koha::Exception::NoPermission' => {
+        isa => 'Koha::Exception',
         description => 'User has no permission to do whatever he was up to',
     },
 );

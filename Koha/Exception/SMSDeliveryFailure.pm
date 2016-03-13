@@ -21,6 +21,7 @@ use Modern::Perl;
 
 use Exception::Class (
     'Koha::Exception::SMSDeliveryFailure' => {
+        isa => 'Koha::Exception',
         description => 'SMS delivery was failed.',
     },
 );

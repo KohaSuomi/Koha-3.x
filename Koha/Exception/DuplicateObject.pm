@@ -21,6 +21,7 @@ use Modern::Perl;
 
 use Exception::Class (
     'Koha::Exception::DuplicateObject' => {
+        isa => 'Koha::Exception',
         description => 'Same object already exists',
     },
 );

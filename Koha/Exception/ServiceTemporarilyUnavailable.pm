@@ -21,6 +21,7 @@ use Modern::Perl;
 
 use Exception::Class (
     'Koha::Exception::ServiceTemporarilyUnavailable' => {
+        isa => 'Koha::Exception',
         description => 'Service is temporarily unavailable',
     },
 );

@@ -21,6 +21,7 @@ use Modern::Perl;
 
 use Exception::Class (
     'Koha::Exception::DB' => {
+        isa => 'Koha::Exception',
         description => 'Something wrong with the database',
     },
 );

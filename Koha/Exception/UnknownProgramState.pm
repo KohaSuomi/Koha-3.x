@@ -21,6 +21,7 @@ use Modern::Perl;
 
 use Exception::Class (
     'Koha::Exception::UnknownProgramState' => {
+        isa => 'Koha::Exception',
         description => 'The running program has done something terribly unpredicatable',
     },
 );

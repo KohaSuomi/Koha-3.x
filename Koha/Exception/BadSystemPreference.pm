@@ -21,6 +21,7 @@ use Modern::Perl;
 
 use Exception::Class (
     'Koha::Exception::BadSystemPreference' => {
+        isa => 'Koha::Exception',
         description => 'System preference value is incomprehensible',
         fields => ['syspref'],
     },

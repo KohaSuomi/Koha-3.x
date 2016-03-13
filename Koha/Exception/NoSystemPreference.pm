@@ -21,6 +21,7 @@ use Modern::Perl;
 
 use Exception::Class (
     'Koha::Exception::NoSystemPreference' => {
+        isa => 'Koha::Exception',
         description => 'Required system preference is not set',
         fields => ['syspref'],
     },

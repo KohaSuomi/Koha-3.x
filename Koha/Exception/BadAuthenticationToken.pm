@@ -21,6 +21,7 @@ use Modern::Perl;
 
 use Exception::Class (
     'Koha::Exception::BadAuthenticationToken' => {
+        isa => 'Koha::Exception',
         description => 'Authentication token is invalid',
     },
 );

@@ -21,6 +21,7 @@ use Modern::Perl;
 
 use Exception::Class (
     'Koha::Exception::ObjectExists' => {
+        isa => 'Koha::Exception',
         description => 'The given Object already exists',
     },
 );

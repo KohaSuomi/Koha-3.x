@@ -1,12 +1,12 @@
-package Koha::Exception::Logout;
+package Koha::Exception;
 
-# Copyright 2015 Vaara-kirjastot
+# Copyright 2016 KohaSuomi
 #
 # This file is part of Koha.
 #
 # Koha is free software; you can redistribute it and/or modify it under the
 # terms of the GNU General Public License as published by the Free Software
-# Foundation; either version 2 of the License, or (at your option) any later
+# Foundation; either version 3 of the License, or (at your option) any later
 # version.
 #
 # Koha is distributed in the hope that it will be useful, but WITHOUT ANY
@@ -20,10 +20,14 @@ package Koha::Exception::Logout;
 use Modern::Perl;
 
 use Exception::Class (
-    'Koha::Exception::Logout' => {
-        isa => 'Koha::Exception',
-        description => 'User logged out, catch this and redirect.',
+    'Koha::Exception' => {
+        description => 'Koha exceptions base class',
     },
 );
+
+sub newFromDie {
+    my ($class, $die) = @_;
+    return Koha::Exception->new(error => "$die");
+}
 
 return 1;

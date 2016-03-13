@@ -21,6 +21,7 @@ use Modern::Perl;
 
 use Exception::Class (
     'Koha::Exception::UnknownObject' => {
+        isa => 'Koha::Exception',
         description => 'Object cannot be found or is not known',
     },
 );

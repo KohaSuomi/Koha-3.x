@@ -21,6 +21,7 @@ use Modern::Perl;
 
 use Exception::Class (
     'Koha::Exception::VersionMismatch' => {
+        isa => 'Koha::Exception',
         description => 'Versions do not match',
     },
 );

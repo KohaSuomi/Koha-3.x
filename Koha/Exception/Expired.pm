@@ -21,6 +21,7 @@ use Modern::Perl;
 
 use Exception::Class (
     'Koha::Exception::Expired' => {
+        isa => 'Koha::Exception',
         description => 'Object expired and is now stale',
     },
 );

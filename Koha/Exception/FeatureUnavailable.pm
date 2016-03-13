@@ -21,6 +21,7 @@ use Modern::Perl;
 
 use Exception::Class (
     'Koha::Exception::FeatureUnavailable' => {
+        isa => 'Koha::Exception',
         description => 'Feature requested is not currently available',
     },
 );

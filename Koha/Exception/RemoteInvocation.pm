@@ -21,6 +21,7 @@ use Modern::Perl;
 
 use Exception::Class (
     'Koha::Exception::RemoteInvocation' => {
+        isa => 'Koha::Exception',
         description => 'Interacting with a remote process failed',
     },
 );
