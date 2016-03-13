@@ -24,10 +24,10 @@ use C4::Matcher;
 use C4::Items qw(GetItemsCount get_itemnumbers_of MoveItemFromBiblio);
 use C4::Biblio qw(GetBiblionumberSlice GetMarcBiblio GetBiblioItemByBiblioNumber DelBiblio);
 use C4::Serials qw(CountSubscriptionFromBiblionumber);
-#use C4::Koha;
 use C4::Reserves qw/MergeHolds/;
 use C4::Acquisition qw/ModOrder GetOrdersByBiblionumber/;
 
+use Koha::Exception::Deduplicator::TooManyMatches;
 
 sub new {
     my ($class, $matcher_id, $limit, $offset, $biblionumber, $verbose) = @_;
@@ -95,20 +95,16 @@ sub deduplicate {
     $self->{duplicates} = [];
     foreach my $biblionumber (@$biblionumbers) {
         my $marc = C4::Biblio::GetMarcBiblio($biblionumber);
-        my @matches = $self->{matcher}->get_matches( $marc, $self->{max_matches} );
-        #sort @matches by record_id, because the C4::Matcher sorts them randomly.
-        #This prevents some strange bugs when figuring out the automatic merge target
-        #in cases where each match is a equally valid merge target.
-        @matches = sort {$b->{record_id} <=> $a->{record_id}} @matches;
+        my $matches = Koha::Deduplicator->getMatches($self->{matcher}, $marc, $self->{max_matches});
 
-        if (scalar(@matches) > 1) {
-            for (my $i=0 ; $i<scalar(@matches) ; $i++) {
-                my $match = $matches[$i];
+        if (scalar(@$matches) > 1) {
+            for (my $i=0 ; $i<scalar(@$matches) ; $i++) {
+                my $match = $matches->[$i];
                 my $itemsCount = C4::Items::GetItemsCount($match->{record_id});
                 $match->{itemsCount} = $itemsCount;
                 unless(  _buildSlimBiblio($match->{record_id}, $match, C4::Biblio::GetMarcBiblio($match->{record_id}))  ) {
                     #Sometimes we get an error where the marcxml is not available.
-                    splice(@matches, $i, 1);
+                    splice(@$matches, $i, 1);
                     $i--; #Don't advance the iterator after this round or we will skip one record!
                     next();
                 }
@@ -120,7 +116,7 @@ sub deduplicate {
             unless ($biblio) { #Sometimes we get an error where the marcxml is not available.
                 next();
             }
-            $biblio->{matches} = \@matches;
+            $biblio->{matches} = $matches;
 
             push @{$self->{duplicates}}, $biblio;
         }
@@ -129,6 +125,37 @@ sub deduplicate {
         }
     }
     return $self->{duplicates};
+}
+
+=head getMatches
+
+Is a wrapper for C4::Matcher->get_matches() fixing an issue where the resultset is not sorted and adds extra safety checks.
+
+@PARAM1 C4::Matcher
+@PARAM2 MARC::Record
+@PARAM3 Integer, how many matches to return even if there would be more
+@PARAM4 Integer, If there are this many matches, throw an exception. This is a safeguard to detect
+                 destructive matching attempts which can potentially destroy the whole bibliographic database.
+                 So if you expect to match only 1-3 records at max, you can stop deduplicating if there are more matches.
+                 Defaults to 100.
+
+=cut
+
+sub getMatches {
+    my ($class, $matcher, $record, $maxMatches, $alertMatchCountThreshold) = @_;
+    $alertMatchCountThreshold = 100 unless $alertMatchCountThreshold;
+
+    my @matches = $matcher->get_matches( $record, $maxMatches, $alertMatchCountThreshold );
+    if (scalar(@matches) >= $alertMatchCountThreshold) {
+        my @cc = caller(0);
+        Koha::Exception::Deduplicator::TooManyMatches->throw(error => $cc[3]."():> ");
+    }
+
+    #sort @matches by record_id, because the C4::Matcher sorts them randomly.
+    #This prevents some strange bugs when figuring out the automatic merge target
+    #in cases where each match is a equally valid merge target.
+    @matches = sort {$b->{record_id} <=> $a->{record_id}} @matches;
+    return \@matches;
 }
 
 sub _buildSlimBiblio {
@@ -180,6 +207,7 @@ sub _buildSlimBiblio {
     $deduplicator->batchMergeDuplicates( $duplicates, $mergeTargetFindingAlgorithm );
 
 =cut
+
 sub batchMergeDuplicates {
     my ($self, $duplicates, $mergeTargetFindingAlgorithm) = @_;
 
@@ -199,44 +227,72 @@ sub batchMergeDuplicates {
 }
 
 sub _findMergeTargets {
-    my ($duplicates, $mergeTargetFindingAlgorithm, $errors) = @_;
+    my ($duplicates, $mergeTargetFindingAlgorithm) = @_;
 
+    my $subroutine;
     if ($mergeTargetFindingAlgorithm eq 'newest') {
-        _mergeTargetFindingAlgorithm_newest( $duplicates );
+        $subroutine = "_mergeTargetFindingAlgorithm_newest";
     }
     else {
         warn "Unknown merge target finding algorithm given: '$mergeTargetFindingAlgorithm'";
     }
+
+    foreach my $duplicate (@$duplicates) {
+        $duplicate->{mergeTarget} = __PACKAGE__->$subroutine( $duplicate );
+    }
 }
 
 sub _mergeTargetFindingAlgorithm_newest {
-    my $duplicates = shift;
+    my ($class, $duplicate) = @_;
 
-    foreach my $duplicate (@$duplicates) {
-
-        my $target_leader; #Run through all matches and find the newest record.
-        my $target_leader_f005 = 0;
-        foreach my $match (@{$duplicate->{matches}}) {
-            my $f005;
-            eval {$f005 = $match->{marc}->field('005')->data(); }; #If marc is not defined this will crash unless we catch the die-signal
-            if ($f005 && $f005 > $target_leader_f005) {
-                $target_leader = $match;
-                $target_leader_f005 = $f005;
-            }
-        }
-        if ($target_leader) {
-            $duplicate->{mergeTarget} = $target_leader;
-        }
-        else {
-            warn "Koha::Deduplicator::_mergeTargetFindingAlgorithm_newest($duplicates), Couldn't get the merge target for duplicate bn:".$duplicate->{biblionumber};
+    my $target_leader; #Run through all matches and find the newest record.
+    my $target_leader_f005 = 0;
+    foreach my $match (@{$duplicate->{matches}}) {
+        my $f005;
+        eval {$f005 = $match->{marc}->field('005')->data(); }; #If marc is not defined this will crash unless we catch the die-signal
+        if ($f005 && $f005 > $target_leader_f005) {
+            $target_leader = $match;
+            $target_leader_f005 = $f005;
         }
     }
+
+    if ($target_leader) {
+        return $target_leader;
+    }
+    else {
+        warn "Koha::Deduplicator::_mergeTargetFindingAlgorithm_newest($duplicate), Couldn't get the merge target for duplicate bn:".$duplicate->{biblionumber};
+        return undef;
+    }
 }
+
+=head mergeMatches
+
+Merges an array of records.
+
+=cut
+
+sub mergeMatches {
+    my ($class, $matches) = @_;
+
+    my $duplicate = {
+        matches => $matches,
+    };
+
+    my $mergeToRecord = _mergeTargetFindingAlgorithm_newest($duplicate);
+    foreach my $match (@{$duplicate->{matches}}) {
+        if ($match eq $mergeToRecord) {
+            next(); #Do not merge thyself into oneself.
+        }
+        merge($match, $mergeToRecord);
+    }
+}
+
 =head merge
 CODE DUPLICATION WARNING!!
 Most of this is copypasted from cataloguing/merge.pl
 
 =cut
+
 sub merge {
     my ($match, $mergeTarget, $errors) = @_;
 
@@ -303,6 +359,64 @@ sub merge {
         my $error = DelBiblio($frombiblio);
         push @$errors, $error if ($error);
     }
+}
+
+
+=head deduplicateSingleRecord
+
+    my $count = Koha::Deduplicator->deduplicateSingleRecord($record, $matcher, $maxMatches, $alertMatchCountThreshold);
+
+@PARAM1 MARC::Record to deduplicate
+@PARAM2 C4::Matcher to find matches for @PARAM1
+@PARAM3 Integer, How many matches to merge, even if there were more
+@PARAM4 Integer, see getMatches() \$alertMatchCountThreshold
+@RETURN Integer, how many duplicates found and deduplicated?
+@THROWS Koha::Exception::Deduplicator::TooManyMatches if there are more or as many matches than the \$alertMatchCountThreshold-parameter
+
+=cut
+
+sub deduplicateSingleRecord {
+    my ($class, $record, $matcher, $maxMatches, $alertMatchCountThreshold) = _validate_deduplicateSingleRecord(@_);
+
+    my $matches = Koha::Deduplicator->getMatches($matcher, $record, $maxMatches, $alertMatchCountThreshold);
+
+
+    $class->mergeMatches($matches);
+
+    return scalar(@$matches);
+}
+sub _validate_deduplicateSingleRecord {
+    my ($class, $record, $matcher, $maxMatches, $alertMatchCountThreshold) = @_;
+    unless($matcher) {
+        my @cc = caller(0);
+        Koha::Exception::BadParameter->throw(error => $cc[3]."($record, $matcher):> Param \$matcher '$matcher' is undefined");
+    }
+    if ($matcher =~ /^\d+$/) {
+        $matcher = C4::Matcher->fetch($matcher);
+        unless($matcher) {
+            my @cc = caller(0);
+            Koha::Exception::BadParameter->throw(error => $cc[3]."($record, $matcher):> Param \$matcher '$matcher' is an id, but no matcher found with that id");
+        }
+    }
+    elsif (blessed($matcher) && $matcher->isa('C4::Matcher')) {
+        my @cc = caller(0);
+        Koha::Exception::BadParameter->throw(error => $cc[3]."($record, $matcher):> Param \$matcher '$matcher' is not an id or a 'C4::Matcher'-object");
+    }
+    unless (blessed($record) && $record->isa('MARC::Record')) {
+        my @cc = caller(0);
+        Koha::Exception::BadParameter->throw(error => $cc[3]."($record, $matcher):> Param \$record '$record' is not a MARC::Record");
+    }
+    if($maxMatches && $maxMatches !~ /^\d$/) {
+        my @cc = caller(0);
+        Koha::Exception::BadParameter->throw(error => $cc[3]."($record, $matcher):> Param \$maxMatches '$maxMatches' is not an integer");
+    }
+    if($alertMatchCountThreshold && $alertMatchCountThreshold !~ /^\d$/) {
+        my @cc = caller(0);
+        Koha::Exception::BadParameter->throw(error => $cc[3]."($record, $matcher):> Param \$alertMatchCountThreshold '$alertMatchCountThreshold' is not an integer");
+    }
+    $alertMatchCountThreshold = 3 unless(defined($alertMatchCountThreshold));
+
+    return ($record, $matcher, $maxMatches, $alertMatchCountThreshold);
 }
 
 sub printDuplicatesAsText {
