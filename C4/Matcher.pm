@@ -656,7 +656,7 @@ sub get_matches {
 			else {
 				my $phr = C4::Context->preference('AggressiveMatchOnISBN') ? ',phr' : q{};
 				$query = join( " or ",
-					map { "$matchpoint->{'index'}$phr=$_" } @source_keys );
+					map { "$matchpoint->{'index'}$phr=\"$_\"" } @source_keys );
 			}
 
 			require C4::Search;
