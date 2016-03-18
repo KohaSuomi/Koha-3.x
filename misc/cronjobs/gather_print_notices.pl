@@ -52,16 +52,18 @@ Usage: $0 OUTPUT_DIRECTORY
                  information can be found. Regexp could be like 'Item: (\\S+)<br />' or 'Barcode (\\S+)<br />'. Remember that
                  these letters are htmlized, so lines end/start with <br />! You must define a capture group between
                  parenthesis () to catch the barcode.
+  -m --message  Choose which messages are printed, can be repeated.
 USAGE
     exit $_[0];
 }
 
-my ( $stylesheet, $help, $split, $HOLDbarcodeParsingRegexp );
+my ( $stylesheet, $help, $split, $HOLDbarcodeParsingRegexp, @messagecodes );
 
 GetOptions(
     'h|help'  => \$help,
     's|split' => \$split,
     'holdbarcode=s' => \$HOLDbarcodeParsingRegexp,
+    'message=s' => \@messagecodes,
 ) || usage(1);
 
 usage(0) if ($help);
@@ -78,7 +80,12 @@ my $today        = C4::Dates->new();
 my @all_messages = @{ GetPrintMessages() };
 exit unless (@all_messages);
 
-@all_messages = grep { $_->{letter_code} !~ /^ODUE.+/ } @all_messages; #HACKMAN HERE Remove ODUE* letters, because they are sent via send_overdue_messages.pl
+if (@messagecodes) {
+    my %seen = map { $_ => 1 } @messagecodes;
+    @all_messages = grep { $seen{$_->{letter_code}} } @all_messages;
+}
+
+#@all_messages = grep { $_->{letter_code} !~ /^ODUE.+/ } @all_messages; #HACKMAN HERE Remove ODUE* letters, because they are sent via send_overdue_messages.pl
 
 ## carriage return replaced by <br/> as output is html
 foreach my $message (@all_messages) {
