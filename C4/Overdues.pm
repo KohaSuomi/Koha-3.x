@@ -261,6 +261,10 @@ sub CalcFine {
     if ( ($pl eq 'KUV' || $pl eq 'LAP' || $pl eq 'LAK' || $pl eq 'LVA' || $pl eq 'NUO' || $pl eq 'NUA' || $pl eq 'NUV' || $pl eq 'OHE') ) {
             $data->{fine} = 0;
     }
+    #HACKMAN HERE! Kyyti's locations
+    if ( ($pl eq 'SN' || $pl eq 'N' || $pl eq 'ND' || $pl eq 'NV' || $pl eq 'NA') ) {
+            $data->{fine} = 0;
+    }
 
     my $chargeable_units = _get_chargeable_units($fine_unit, $start_date, $end_date, $branchcode);
     my $units_minus_grace = $chargeable_units - $data->{firstremind};
