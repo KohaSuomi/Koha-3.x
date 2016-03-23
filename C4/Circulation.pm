@@ -1272,6 +1272,11 @@ sub AddIssue {
                 _FixAccountForLostAndReturned( $item->{'itemnumber'}, undef, $item->{'barcode'} );
             }
         }
+        #HACKMAN HERE, removes notforloan -state from all negative values
+        if ( $item->{'notforloan'} < 0 ) {
+            ModItem({ notforloan => 0 }, $item->{'biblionumber'}, $item->{'itemnumber'});
+        }
+
 
         ModItem({ issues           => $item->{'issues'},
                   holdingbranch    => C4::Context->userenv->{'branch'},
