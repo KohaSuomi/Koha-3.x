@@ -194,11 +194,11 @@ sub get_barcode {
     if($branchcode){
         $query = "SELECT MAX(CAST(SUBSTRING(barcode, -4) AS signed)) FROM items WHERE barcode REGEXP ?";
         $sth = C4::Context->dbh->prepare($query);
-        $sth->execute("^$prefix$args->{year}");
+        $sth->execute("^$prefix$args->{year}$args->{mon}");
     }else{
         $query = "SELECT MAX(CAST(SUBSTRING(barcode,-4) AS signed)) from items where barcode REGEXP ?";
         $sth=C4::Context->dbh->prepare($query);
-        $sth->execute("^$prefix$args->{year}");
+        $sth->execute("^$prefix$args->{year}$args->{mon}");
     }
     
     while (my ($count)= $sth->fetchrow_array) {
@@ -207,10 +207,10 @@ sub get_barcode {
     }
 
     $nextnum++;
-    $nextnum = sprintf("%0*d", "6",$nextnum);
+    $nextnum = sprintf("%0*d", "5",$nextnum);
 
     $barcode = $prefix;
-    $barcode .= $args->{year}.$nextnum;
+    $barcode .= $args->{year}.$args->{mon}.$nextnum;
 
     my $scr = "
         for (i=0 ; i<document.f.field_value.length ; i++) {
