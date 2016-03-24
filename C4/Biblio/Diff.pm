@@ -192,20 +192,15 @@ sub diffRecords {
     }
 
     my %diff;
+
+    $self->diffLeaders(\%diff, $records);
+
     ##Iterate all found indicators, fields and subfields and diff between all given records
     #Remember that all fields and subfields can be repeated
     foreach my $fk (sort(keys(%availableFields))) { #Iterate fields
 
         if (int($fk) < 10) { #Control fields
-            my @candidates;
-            for(my $ri=0 ; $ri<scalar(@$records) ; $ri++) {
-                my $r = $records->[$ri];
-                my $field = $r->field($fk);
-                $candidates[$ri] = ($field) ? $field->data() : undef;
-            }
-            if (_valuesDiff(\@candidates)) {
-                $diff{$fk} = \@candidates;
-            }
+            $self->diffControlFields(\%diff, $records, $fk);
         } #EO control field
         else { #Data fields
             my @fs;
@@ -251,45 +246,35 @@ sub diffRecords {
         } #EO Data fields
     } #EO fields iterator
 
-##DEBUG DEBUG Find out why some diffs have a undefined array index and defined array indexes after that?
-sub throwUp {
-    my ($records, $diff, $msg) = @_;
-    require Data::Dumper::Dumper;
-    die "\n$msg\n\n@$records\n\n".Data::Dumper::Dumper($diff)."\n\n";
-}
-foreach my $fk (sort(keys(%availableFields))) { #Iterate fields
-    if (int($fk) < 10) { #Control fields
-        if (exists($diff{$fk}) && not($diff{$fk})) {
-            throwUp($records, \%diff, "Control field null");
-        }
-    } #EO control field
-    else { #Data fields
-        if (exists($diff{$fk}) && not($diff{$fk})) {
-            throwUp($records, \%diff, "Data field null");
-        }
-        for(my $fi=0   ;   $fi<$fieldRepetitions{$fk}   ;   $fi++) { #Iterate field repetitions
-            foreach my $i (1..2) { #Diff indicators
-                if (exists($diff{$fk}->[$fi]) && not($diff{$fk}->[$fi])) {
-                    throwUp($records, \%diff, "Data field repetition null");
-                }
-            } #EO indicators
-            foreach my $sfk (sort(keys(%{$availableFields{$fk}}))) { #Iterate subfields
-                if (exists($diff{$fk}->[$fi]->{$sfk}) && not($diff{$fk}->[$fi]->{$sfk})) {
-                    throwUp($records, \%diff, "Subfield null");
-                }
-                for(my $sfi=0   ;   $sfi<$subfieldRepetitions{$fk.$sfk}   ;   $sfi++) { #Iterate subfield repetitions
-                    if (exists($diff{$fk}->[$fi]->{$sfk}->[$sfi]) && not($diff{$fk}->[$fi]->{$sfk}->[$sfi])) {
-                        throwUp($records, \%diff, "Subfield repetition null");
-                    }
-                } #EO subfield repetiton iterator
-            } #EO subfields iterator
-        } #EO Field repetiton iterator
-    } #EO Data fields
-} #EO fields iterator
-##EO DEBUG DEBUG
-
     $self->{diff} = \%diff;
     return $self->{diff};
+}
+
+sub diffLeaders {
+    my ($self, $diff, $records) = @_;
+
+    my @candidates;
+    for(my $ri=0 ; $ri<scalar(@$records) ; $ri++) {
+        my $r = $records->[$ri];
+        $candidates[$ri] = $r->leader();
+    }
+    if (_valuesDiff(\@candidates)) {
+        $diff->{'000'} = \@candidates;
+    }
+}
+
+sub diffControlFields {
+    my ($self, $diff, $records, $fieldTag) = @_;
+
+    my @candidates;
+    for(my $ri=0 ; $ri<scalar(@$records) ; $ri++) {
+        my $r = $records->[$ri];
+        my $field = $r->field($fieldTag);
+        $candidates[$ri] = ($field) ? $field->data() : undef;
+    }
+    if (_valuesDiff(\@candidates)) {
+        $diff->{$fieldTag} = \@candidates;
+    }
 }
 
 =head _valuesDiff

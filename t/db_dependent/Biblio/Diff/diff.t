@@ -42,6 +42,11 @@ sub biblioDiff {
         my $d = $diff->diffRecords();
 
         my $expectedDiff = {
+            '000' => [
+                '00510cam a22002054a 4500',
+                '00618cam a22002294a 4500',
+                '01096cam a22003134i 4500',
+            ],
             '001' => [
                 '300841',
                 '21937',
@@ -204,7 +209,18 @@ sub biblioDiffUndefIndexes {
                     );
         my $d = $diff->diffRecords();
 
-        my $expectedDiff = {};
+        my $expectedDiff = {
+            '020' => [
+                {
+                    'a' => [
+                        [
+                            '9510107417',
+                            '9510107418',
+                        ],
+                    ],
+                }
+            ]
+        };
 
         is_deeply($d, $expectedDiff, "Deep diff is as expected");
     };
