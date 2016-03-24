@@ -1715,6 +1715,96 @@ sub GetAuthorisedValueDesc {
     }
 }
 
+sub GetMarcTitle {
+    my ($record) = @_;
+    my $title = $record->subfield('245','a') || $record->subfield('240','a') || $record->subfield('130','a');
+    return $title;
+}
+
+sub GetMarcAuthor {
+    my ($record) = @_;
+    my $author = $record->subfield('100','a') || $record->subfield('110','a');
+    return $author;
+}
+
+=head getStdids
+
+    my $stdids = C4::Biblio::GetMarcStdids( $MARC::Record );
+
+@RETURNS Array of standard identifiers in list context
+         or concatenated String of standard identifiers in scalar context
+
+=cut
+
+sub GetMarcStdids {
+    my ($record) = @_;
+
+    my @stdids;
+    my $stdids = GetMarcISBNs($record);
+    push @stdids, @$stdids;
+    $stdids = GetMarcEANs($record);
+    push @stdids, @$stdids;
+    $stdids = GetMarcISSNs($record);
+    push @stdids, @$stdids;
+
+    if (wantarray) {
+        return @stdids;
+    }
+    return join(", ", @stdids);
+}
+
+=head GetMarcEANs
+
+@RETURNS ArrayRef of Strings
+
+=cut
+
+sub GetMarcEANs {
+    my ($record) = @_;
+    return _getAllFieldsSubfields($record, '024', 'a');
+}
+
+=head GetMarcISBNs
+
+@RETURNS ArrayRef of Strings.
+
+=cut
+
+sub GetMarcISBNs {
+    my ($record) = @_;
+    return _getAllFieldsSubfields($record, '020', 'a');
+}
+
+=head GetMarcISSNs
+
+@RETURNS ArrayRef of Strings.
+
+=cut
+
+sub GetMarcISSNs {
+    my ($record) = @_;
+    return _getAllFieldsSubfields($record, '022', 'a');
+}
+
+=head _getAllFieldsSubfields
+
+@RETURNS ArrayRef of Strings of all the field repetitions and subfield repetitions.
+
+=cut
+
+sub _getAllFieldsSubfields {
+    my ($record, $tag, $code) = @_;
+    my @vals;
+    my @f = $record->field($tag);
+    foreach my $f (@f) {
+        my @sfs = $f->subfield($code);
+        if (@sfs) {
+            push(@vals, @sfs);
+        }
+    }
+    return \@vals;
+}
+
 =head2 GetMarcControlnumber
 
   $marccontrolnumber = GetMarcControlnumber($record,$marcflavour);
