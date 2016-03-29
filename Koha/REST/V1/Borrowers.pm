@@ -6,10 +6,14 @@ use Try::Tiny;
 use Mojo::Base 'Mojolicious::Controller';
 use Mojo::JSON;
 
-use ILS::Patron;
+use File::Basename;
+
 use Koha::Borrowers;
 use Koha::Auth::Challenge::Password;
 use Koha::Database;
+
+use lib File::Basename::dirname($INC{"Koha/Borrowers.pm"})."/../C4/SIP";
+use ILS::Patron;
 
 sub list_borrowers {
     my ($c, $args, $cb) = @_;
