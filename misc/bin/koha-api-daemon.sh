@@ -23,6 +23,7 @@
 # Default-Stop:      0 1 6
 # Short-Description: Hypnotoad Mojolicious Server for handling Koha API requests
 ### END INIT INFO
+. /etc/environment #Source Koha's environment variables
 
 USER=koha
 loggedInUser=`whoami`
