@@ -47,6 +47,10 @@ use C4::Acquisition qw(GetOrdersByBiblionumber);
 use C4::RotatingCollections qw(GetItemsCollection); # KD-139
 use JSON::XS;
 
+use Try::Tiny;
+use Scalar::Util qw(blessed);
+use Koha::RemoteAPIs;
+
 my $query = CGI->new();
 
 my $analyze = $query->param('analyze');
@@ -95,6 +99,16 @@ if (C4::Context->preference("XSLTDetailsDisplay") ) {
 
 $template->param( 'SpineLabelShowPrintOnBibDetails' => C4::Context->preference("SpineLabelShowPrintOnBibDetails") );
 $template->param( ocoins => GetCOinSBiblio($record) );
+
+$template->param( jasmineTesting => 1 ) if $query->param('jasmineTesting'); #Enable javascript tests
+try { #Load remote api configurations
+    $template->param( remoteAPIs => Koha::RemoteAPIs->new->toJSON );
+} catch {
+    $template->param( remoteAPIs => '{}' );
+    die $_ unless(blessed($_) && $_->can('rethrow'));
+    #warn $_->error, "\n", $_->trace->as_string, "\n" if $_->isa('Koha::Exception::FeatureUnavailable');
+    die $_->error, "\n", $_->trace->as_string, "\n" unless $_->isa('Koha::Exception::FeatureUnavailable');
+};
 
 # some useful variables for enhanced content;
 # in each case, we're grabbing the first value we find in

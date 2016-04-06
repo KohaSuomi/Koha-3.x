@@ -8,6 +8,7 @@ use Encode;
 
 use Koha::REST::V1;
 use Koha::REST::V1::Biblios;
+use C4::Matcher;
 use C4::Biblio;
 
 

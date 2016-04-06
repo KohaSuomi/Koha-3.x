@@ -77,7 +77,7 @@ my $cataloguingCenterZ3950 = t::CataloguingCenter::z3950Params::getCataloguingCe
 C4::Breeding::upsertZ3950server($cataloguingCenterZ3950);
 $cataloguingCenterZ3950 = C4::Breeding::getZ3950server( {name => $cataloguingCenterZ3950->{name}} );
 my $mergeMatcher = t::CataloguingCenter::matchers::create($testContext)->{MERGE_MATCHER};
-t::CataloguingCenter::ContextSysprefs::create($testContext);
+t::CataloguingCenter::ContextSysprefs::createBatchOverlayRules($testContext);
 
 
 

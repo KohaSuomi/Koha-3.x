@@ -45,3 +45,16 @@ Web services:
             - pref: SvcMaxReportRows
               class: integer
             - rows of a report requested via the reports web service.
+    RemoteAPIs:
+        -
+            - Configure remote APIs to interface from Koha.
+            - pref: RemoteAPIs
+              type: textarea
+              class: code
+            - "Example YAML config"
+            - "<pre>---</pre>
+               <pre>Example API:</pre>
+               <pre>    host: http://test.example.com:8080</pre>
+               <pre>    basePath: /api/v1/</pre>
+               <pre>    authentication: cookies</pre>
+               <pre>    api: Koha-Suomi</pre></pre>"

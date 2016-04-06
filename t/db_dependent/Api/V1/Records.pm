@@ -32,6 +32,10 @@ sub post200 {
     my $testContext = $restTest->get_testContext(); #Test context will be automatically cleaned after this subtest has been executed.
     my $activeUser = $restTest->get_activeBorrower();
 
+    #Flush ZOOM caches and reindex changes
+    C4::Context->flushZconns(); #ZOOM connection has cached the previous result, so flush all connections to drop all caches.
+    my $output = C4::Search::reindexZebraChanges();
+
     my $testMarcxml = <<MARCXML;
 <record>
   <leader>00510cam a22002054a 4500</leader>
@@ -76,10 +80,16 @@ MARCXML
 
 sub post400 {
     my ($class, $restTest, $driver) = @_;
+    my @params = @_;
     my $testContext = $restTest->get_testContext(); #Test context will be automatically cleaned after this subtest has been executed.
     my $activeUser = $restTest->get_activeBorrower();
 
-    my $testMarcxml = <<MARCXML;
+    subtest "Mandatory 001 and 003", \&mandatory001And003, @params;
+    sub mandatory001And003 {
+        my ($class, $restTest, $driver) = @_;
+        my $testContext = $restTest->get_testContext(); #Test context will be automatically cleaned after this subtest has been executed.
+        my $activeUser = $restTest->get_activeBorrower();
+        my $testMarcxml = <<MARCXML;
 <record>
   <leader>00510cam a22002054a 4500</leader>
   <controlfield tag="008">       1988    xxk|||||||||| ||||1|eng|c</controlfield>
@@ -88,22 +98,68 @@ sub post400 {
   </datafield>
 </record>
 MARCXML
-    my ($path, $biblionumber, $tx, $ua, $json);
+        my ($path, $biblionumber, $tx, $ua, $json);
 
-    $path = $restTest->get_routePath();
-    #Make a custom POST request with formData parameters :) Mojo-fu!
-    $ua = $driver->ua;
-    $tx = $ua->build_tx(POST => $path => {Accept => '*/*'});
-    $tx->req->body( Mojo::Parameters->new("marcxml=$testMarcxml")->to_string);
-    $tx->req->headers->remove('Content-Type');
-    $tx->req->headers->add('Content-Type' => 'application/x-www-form-urlencoded');
-    $tx = $ua->start($tx);
-    $restTest->catchSwagger2Errors($tx);
-    $json = $tx->res->json;
-    is($tx->res->code, 400, "Good parameters given");
-    is(ref($json), 'HASH', "Got a json-object");
+        $path = $restTest->get_routePath();
+        #Make a custom POST request with formData parameters :) Mojo-fu!
+        $ua = $driver->ua;
+        $tx = $ua->build_tx(POST => $path => {Accept => '*/*'});
+        $tx->req->body( Mojo::Parameters->new("marcxml=$testMarcxml")->to_string);
+        $tx->req->headers->remove('Content-Type');
+        $tx->req->headers->add('Content-Type' => 'application/x-www-form-urlencoded');
+        $tx = $ua->start($tx);
+        $restTest->catchSwagger2Errors($tx);
+        $json = $tx->res->json;
+        is($tx->res->code, 400, "Good parameters given");
+        is(ref($json), 'HASH', "Got a json-object");
 
-    ok($json->{error} =~ /One of mandatory fields '.*?' missing/, 'Mandatory 001 and 003 is missing');
+        ok($json->{error} =~ /One of mandatory fields '.*?' missing/, 'Mandatory 001 and 003 is missing');
+    }
+
+    subtest "Duplicate Record", \&duplicateRecord, @params;
+    sub duplicateRecord {
+        my ($class, $restTest, $driver) = @_;
+        my $testContext = $restTest->get_testContext(); #Test context will be automatically cleaned after this subtest has been executed.
+        my $activeUser = $restTest->get_activeBorrower();
+        my $testMarcxml = <<MARCXML;
+<record>
+  <leader>00510cam a22002054a 4500</leader>
+  <controlfield tag="001">rest-test-record</controlfield>
+  <controlfield tag="003">REST-TEST</controlfield>
+  <controlfield tag="008">       1988    xxk|||||||||| ||||1|eng|c</controlfield>
+  <datafield tag="020" ind1=" " ind2=" ">
+    <subfield code="a">rest-test-isbn-duplicated</subfield>
+  </datafield>
+  <datafield tag="245" ind1="1" ind2="4">
+    <subfield code="a">REST recordzzz</subfield>
+  </datafield>
+</record>
+MARCXML
+        my ($path, $biblio, $output, $biblionumber, $ua, $tx, $json);
+
+        #Create the test context.
+        $biblio = t::lib::TestObjects::BiblioFactory->createTestGroup({record => $testMarcxml}, undef, $testContext);
+        $biblionumber = $biblio->{biblionumber};
+        #Flush ZOOM caches and reindex changes
+        C4::Context->flushZconns(); #ZOOM connection has cached the previous result, so flush all connections to drop all caches.
+        $output = C4::Search::reindexZebraChanges();
+
+
+        $path = $restTest->get_routePath();
+        #Make a custom POST request with formData parameters :) Mojo-fu!
+        $ua = $driver->ua;
+        $tx = $ua->build_tx(POST => $path => {Accept => '*/*'});
+        $tx->req->body( Mojo::Parameters->new("marcxml=$testMarcxml")->to_string);
+        $tx->req->headers->remove('Content-Type');
+        $tx->req->headers->add('Content-Type' => 'application/x-www-form-urlencoded');
+        $tx = $ua->start($tx);
+        $restTest->catchSwagger2Errors($tx);
+        $json = $tx->res->json;
+        is($tx->res->code, 400, "Second creation failed 400 not ok");
+
+        is(ref($json), 'HASH', "Got a json-object");
+        ok($json->{error} =~ /duplicate/, "Duplicate record found");
+    }
 }
 
 sub post500 {
