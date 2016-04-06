@@ -23,14 +23,7 @@ This way we can have different settings for different servers running Mojoliciou
 
 =head2 Configuration file
 
-$ENV{MOJO_CONFIG} should be set in the system service (init) starting Mojolicious, eg:
-export MOJO_CONFIG=/home/koha/kohaclone/api/v1/hypnotoad.conf
-
-This configuration file read by the Mojolicious::Plugin::Config
-http://mojolicio.us/perldoc/Mojolicious/Plugin/Config
-
-If you don't want to use any config files, disable the alert notifications ny setting the
-MOJO_CONFIG-environment variable to undef.
+See loadConfigs()
 
 =head2 Logging
 
@@ -65,9 +58,9 @@ MOJO_LOGFILES-environment variable to undef.
 sub startup {
     my $self = shift;
 
-    $self->setKohaParamLogging();
-    $self->setKohaParamConfig();
-    $self->minifySwagger();
+    my $config = $self->loadConfigs();
+    $self->setKohaParamLogging($config);
+    $self->minifySwagger($config);
 
     # Force charset=utf8 in Content-Type header for JSON responses
     $self->types->type(json => 'application/json; charset=utf8');
@@ -79,22 +72,38 @@ sub startup {
     Mojo::IOLoop->next_tick(sub { $0 = 'hypnokoha' });
 }
 
-sub setKohaParamConfig {
+=head2 loadConfigs
+
+    $self->loadConfigs();
+    my $config = $self->config();
+
+Loads all the known application configuration files using Mojolicious::Plugin::Config.
+Eg. The hypnotoad server config (or other server configs), default Mojo app config, config from $ENV{MOJO_CONFIG}
+All separate configuration files are merged together
+
+=cut
+
+sub loadConfigs {
     my $self = shift;
-    #Enable the config-plugin. Loads the config file from $ENV{MOJO_CONFIG} by default.
+
+    #Load the default config
+    $self->plugin('Config' => {file => $self->home->rel_file("api/v1/config.conf")});
+
+    #Enable the server-specific configurations.
+    if ($ENV{HYPNOTOAD_SERVER}) {
+        $self->plugin('Config' => {file => $ENV{HYPNOTOAD_SERVER}});
+    }
+
+    #Overload conflicting default configuration directives from the environment-specific configuration file.
     if ($ENV{MOJO_CONFIG}) {
-        $self->plugin('Config');
+        $self->plugin('Config' => {file => $ENV{MOJO_CONFIG}});
     }
-    elsif (exists($ENV{MOJO_CONFIG})) {
-        #Don't complain.
-    }
-    else {
-        print __PACKAGE__."::startup():> No config-file loaded. Define your config-file to the MOJO_CONFIG environmental variable. If you don't want to use a specific config-file, set the MOJO_CONFIG to undef.\n";
-    }
+
+    return $self->config;
 }
 
 sub setKohaParamLogging {
-    my $self = shift;
+    my ($self, $config) = @_;
     #Log to a filename with loglevel configured in environment variables
     if ($ENV{MOJO_LOGFILES}) {
         $self->app->log( Mojo::Log->new( path => $ENV{MOJO_LOGFILES}.'.log', level => ($ENV{MOJO_LOGLEVEL} || 'error') ) );
@@ -114,7 +123,7 @@ sub setKohaParamLogging {
 }
 
 sub minifySwagger {
-    my ($self) = @_;
+    my ($self, $config) = @_;
 
     my $swaggerPath = $ENV{KOHA_PATH}.'/api/v1/swagger/';
     my $pathToMinifier = $swaggerPath.'minifySwagger.pl';
@@ -124,6 +133,30 @@ sub minifySwagger {
     if ($output) {
         die $output;
     }
+}
+
+=head2 corsOriginWhitelist
+
+Mojolicious::Plugin::Swagger2::CORS invokes this CORS allowed Origins handler to accept/fail the remote CORS request origin.
+This redirects the Origin handling to a allowed origins whitelist defined in the Mojolicious configuration.
+
+=cut
+
+sub corsOriginWhitelist {
+    my ($c, $origin) = @_;
+    my $allowedOrigins = $c->stash('config')->{cors}->{whitelist};
+
+    if (ref $allowedOrigins eq 'ARRAY') {
+        foreach my $ao (@$allowedOrigins) {
+            if (($origin =~ /$ao/ms)) {
+                return $origin;
+            }
+        }
+    }
+    else {
+        die "Configuration directive '/cors/whitelist' must be an ArrayRef. Current value '$allowedOrigins'";
+    }
+    return undef;
 }
 
 =head _koha_authenticate

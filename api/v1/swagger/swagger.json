@@ -25,5 +25,11 @@
   },
   "securityDefinitions": {
     "$ref": "securityDefinitions.json"
+  },
+  "x-cors": {
+    "x-cors-access-control-allow-origin-list": "Koha::REST::V1::corsOriginWhitelist()",
+    "x-cors-access-control-allow-credentials": "true",
+    "x-cors-access-control-allow-methods": "*",
+    "x-cors-access-control-max-age": "3600"
   }
 }
