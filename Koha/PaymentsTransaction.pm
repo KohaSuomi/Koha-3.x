@@ -26,6 +26,7 @@ use C4::Context;
 use C4::Log;
 use C4::Stats;
 
+use Koha::Borrower::Debarments;
 use Koha::Database;
 use Koha::Exception::BadParameter;
 
@@ -286,6 +287,7 @@ sub CompletePayment {
         $transaction->set({ status => $new_status, accountlines_id => $dbh->last_insert_id( undef, undef, 'accountlines', undef ) })->store();
 
         C4::Stats::UpdateStats($branch, 'payment', _convert_to_euros($transaction->price_in_cents), '', '', '', $transaction->borrowernumber, $nextacctno);
+        Koha::Borrower::Debarments::DelDebarmentsAfterPayment({ borrowernumber => $transaction->borrowernumber });
 
         if ( C4::Context->preference("FinesLog") ) {
             C4::Log::logaction("FINES", 'CREATE',$transaction->borrowernumber,Dumper({
