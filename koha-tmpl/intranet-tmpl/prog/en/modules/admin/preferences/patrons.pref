@@ -56,6 +56,17 @@ Patrons:
                katipo: Do
          - check and construct borrower card numbers in the Katipo style. This overrides <code>autoMemberNum</code> if on.
      -
+         - pref: DebarmentsToLiftAfterPayment
+           type: textarea
+           class: code
+         - Lift these debarments after Borrower has paid his/her fees
+         - "<p>Example, debarment is lifted after all fees are paid:</p>"
+         - "<pre>Debarment message:</pre>
+            <pre>  outstanding: 0</pre>"
+         - "<p>Example, debarment is lifted after payment with outstanding fees less or equal than 5:</p>"
+         - "<pre>Another debarment:</pre>
+            <pre>  outstanding: 5.00</pre>"
+     -
          - pref: EnhancedMessagingPreferences
            choices:
                yes: Allow

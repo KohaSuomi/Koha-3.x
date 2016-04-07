@@ -5,7 +5,7 @@ use Modern::Perl;
 use C4::Context;
 use C4::Members;
 
-use Test::More tests => 31;
+use Test::More tests => 33;
 
 use_ok('Koha::Borrower::Debarments');
 
@@ -153,5 +153,24 @@ is( IsDebarred( $borrowernumber ), undef, 'A patron without a debarred date is n
 
 $dbh->do(q|UPDATE borrowers SET debarred = '9999-12-31'|); # Note: Change this test before the first of January 10000!
 is( IsDebarred( $borrowernumber ), '9999-12-31', 'A patron with a debarred date in the future is debarred' );
+
+my $debarmentsRulesPref = C4::Context->preference("DebarmentsToLiftAfterPayment");
+C4::Context->set_preference("DebarmentsToLiftAfterPayment", "Test debarment:\n  outstanding: 0\nTest debarment 2:");
+AddDebarment({
+    borrowernumber => $borrowernumber,
+    comment => 'Test debarment',
+});
+AddDebarment({
+    borrowernumber => $borrowernumber,
+    comment => 'Test debarment 2',
+});
+
+$debarments = GetDebarments({ borrowernumber => $borrowernumber });
+is( @$debarments, 2, "GetDebarments returns 2 debarments before payment" );
+Koha::Borrower::Debarments::DelDebarmentsAfterPayment({ borrowernumber => $borrowernumber });
+# Set the preference back to old value
+C4::Context->set_preference("DebarmentsToLiftAfterPayment", $debarmentsRulesPref);
+$debarments = GetDebarments({ borrowernumber => $borrowernumber });
+is( @$debarments, 0, "GetDebarments returns 0 debarments after payment" );
 
 $dbh->rollback;

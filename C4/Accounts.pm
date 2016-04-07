@@ -25,6 +25,7 @@ use C4::Stats;
 use C4::Members;
 use C4::Circulation qw(ReturnLostItem);
 use C4::Log qw(logaction);
+use Koha::Borrower::Debarments;
 
 use Data::Dumper qw(Dumper);
 
@@ -159,6 +160,7 @@ sub recordpayment {
     $usth->finish;
 
     UpdateStats( $branch, 'payment', $data, '', '', '', $borrowernumber, $nextaccntno );
+    Koha::Borrower::Debarments::DelDebarmentsAfterPayment({ borrowernumber => $borrowernumber });
 
     if ( C4::Context->preference("FinesLog") ) {
         $accdata->{'amountoutstanding_new'} = $newamtos;
@@ -275,6 +277,7 @@ sub makepayment {
     # UpdateStats is now being passed $accountno too. MTJ
     UpdateStats( $user, 'payment', $amount, '', '', '', $borrowernumber,
         $accountno );
+    Koha::Borrower::Debarments::DelDebarmentsAfterPayment({ borrowernumber => $borrowernumber });
 
     #check to see what accounttype
     if ( $data->{'accounttype'} eq 'Rep' || $data->{'accounttype'} eq 'L' ) {
@@ -652,6 +655,7 @@ sub recordpayment_selectaccts {
     q|VALUES (?,?,now(),?,'','Pay',?,?,?)|;
     $dbh->do($sql,{},$borrowernumber, $nextaccntno, 0 - $amount, 0 - $amountleft, $manager_id, $note );
     UpdateStats( $branch, 'payment', $amount, '', '', '', $borrowernumber, $nextaccntno );
+    Koha::Borrower::Debarments::DelDebarmentsAfterPayment({ borrowernumber => $borrowernumber });
 
     if ( C4::Context->preference("FinesLog") ) {
         logaction("FINES", 'CREATE',$borrowernumber,Dumper({
@@ -736,6 +740,7 @@ sub makepartialpayment {
         "Payment, thanks - $user", 'Pay', $data->{'itemnumber'}, $manager_id, $payment_note);
 
     UpdateStats( $user, 'payment', $amount, '', '', '', $borrowernumber, $accountno );
+    Koha::Borrower::Debarments::DelDebarmentsAfterPayment({ borrowernumber => $borrowernumber });
 
     if ( C4::Context->preference("FinesLog") ) {
         logaction("FINES", 'CREATE',$borrowernumber,Dumper({
@@ -820,6 +825,7 @@ sub WriteOffFee {
     }
 
     UpdateStats( $branch, 'writeoff', $amount, q{}, q{}, q{}, $borrowernumber );
+    Koha::Borrower::Debarments::DelDebarmentsAfterPayment({ borrowernumber => $borrowernumber });
 
 }
 
