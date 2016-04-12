@@ -206,10 +206,11 @@ else {
         $circ->screen_msg('Invalid Item');
     }
 	# It's ok to check it in if it exists, and if it was checked out
-	$circ->ok($item && $item->{patron});
+    # or it was not checked out but the checked_in_ok flag was set
+	$circ->ok($item);
 
 	if (!defined($item->{patron})) {
-#		$circ->screen_msg("Item not checked out");
+		$circ->screen_msg("Item not checked out")
 	} else {
 		if ($circ->ok) {
 			$circ->patron($patron = new ILS::Patron $item->{patron});

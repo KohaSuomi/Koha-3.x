@@ -690,7 +690,8 @@ sub handle_checkin {
             $status->alert_type('04');  # no hold, just send it
         }
     }
-    $resp .= $status->alert ? 'Y' : 'N';
+    #$resp .= $status->alert ? 'Y' : 'N';
+    $resp .= 'N';
     $resp .= Sip::timestamp;
     $resp .= add_field(FID_INST_ID, $inst_id);
     $resp .= add_field(FID_ITEM_ID, $item_id);
