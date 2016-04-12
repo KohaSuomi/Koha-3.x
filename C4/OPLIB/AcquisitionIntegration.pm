@@ -455,9 +455,18 @@ sub getDiscounts {
 
 
             if($timestamp > time){
-                return $discount = $config->{$code}->{'t'.$subfield_value} if $config->{$code}->{'t'.$subfield_value};
+                if ($config->{$code}) {
+                    return $discount = $config->{$code}->{'t'.$subfield_value} if $config->{$code}->{'t'.$subfield_value};
+                } else {
+                    return $discount = $config->{'t'.$subfield_value} if $config->{'t'.$subfield_value};
+                }
+                
             }else{
-                return $discount = $config->{$code}->{'additiont'.$subfield_value} if $config->{$code}->{'additiont'.$subfield_value};
+                if ($config->{$code}) {
+                    return $discount = $config->{$code}->{'additiont'.$subfield_value} if $config->{$code}->{'additiont'.$subfield_value};
+                } else {
+                    return $discount = $config->{'additiont'.$subfield_value} if $config->{'additiont'.$subfield_value};
+                }
             }
         }
     }
