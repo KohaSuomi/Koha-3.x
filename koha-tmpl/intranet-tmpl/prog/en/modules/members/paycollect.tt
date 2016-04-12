@@ -224,7 +224,7 @@ function moneyFormat(textObj) {
                 handlePOSResponse(data);
             });
             $("#recheck").click(function() {
-                $.get("/api/v1/payments/transactions/" + [% payment.Id %], function(data) {
+                $.get("/api/v1/payments/transaction/" + [% payment.Id %], function(data) {
                     var response = jQuery.parseJSON(JSON.stringify(data));
 
                     handlePOSResponse(response);
@@ -254,6 +254,16 @@ function moneyFormat(textObj) {
             }
             else if (response.status == "processing") {
                 $("span.processing").css("display", "inline-block");
+            }
+            else if (response.Status == 88) {
+                $("span.cancelled").css("display", "inline-block");
+                colorBall("red");
+                alert(_("HTTP Response error: ") + JSON.stringify(response));
+            }
+            else if (response.Status == 89) {
+                $("span.cancelled").css("display", "inline-block");
+                colorBall("red");
+                alert(_("Error: ") + JSON.stringify(response));
             }
             else if (response.Status == 97) {
                 $("span.cancelled").css("display", "inline-block");
