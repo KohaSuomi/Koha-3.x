@@ -53,17 +53,19 @@ Usage: $0 OUTPUT_DIRECTORY
                  these letters are htmlized, so lines end/start with <br />! You must define a capture group between
                  parenthesis () to catch the barcode.
   -m --message  Choose which messages are printed, can be repeated.
+  -l --library  Get print notices by branchcode, can be repeated.
 USAGE
     exit $_[0];
 }
 
-my ( $stylesheet, $help, $split, $HOLDbarcodeParsingRegexp, @messagecodes );
+my ( $stylesheet, $help, $split, $HOLDbarcodeParsingRegexp, @messagecodes, @branchcodes );
 
 GetOptions(
     'h|help'  => \$help,
     's|split' => \$split,
     'holdbarcode=s' => \$HOLDbarcodeParsingRegexp,
     'message=s' => \@messagecodes,
+    'library=s' => \@branchcodes,
 ) || usage(1);
 
 usage(0) if ($help);
@@ -79,6 +81,11 @@ if ( !$output_directory || !-d $output_directory || !-w $output_directory ) {
 my $today        = C4::Dates->new();
 my @all_messages = @{ GetPrintMessages() };
 exit unless (@all_messages);
+
+if (@branchcodes) {
+    my %seen = map { $_ => 1 } @branchcodes;
+    @all_messages = grep { $seen{$_->{branchcode}} } @all_messages;
+}
 
 if (@messagecodes) {
     my %seen = map { $_ => 1 } @messagecodes;
@@ -140,10 +147,21 @@ if ($split) {
     }
 }
 else {
-    my $output_file = File::Spec->catdir( $output_directory,
-        "holdnotices-" . $today->output('iso') . ".html" );
-    open $OUTPUT, '>', $output_file
-        or die "Could not open $output_file: $!";
+    if (@branchcodes) {
+        my $code;
+        foreach my $branch (@branchcodes) {
+            $code = substr($branch, 0, 3);
+        }
+        my $output_file = File::Spec->catdir( $output_directory,
+            "holdnotices-" . $today->output('iso') . "-$code.html" );
+        open $OUTPUT, '>', $output_file
+            or die "Could not open $output_file: $!";
+    } else {
+        my $output_file = File::Spec->catdir( $output_directory,
+            "holdnotices-" . $today->output('iso') . ".html" );
+        open $OUTPUT, '>', $output_file
+            or die "Could not open $output_file: $!";
+    }
 
 
     my $template =

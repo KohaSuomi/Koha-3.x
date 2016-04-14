@@ -40,7 +40,7 @@ my $usesftp=C4::Context->config('printmailProviders')->{'opuscapita'}->{'usesftp
 my $sftpuser=C4::Context->config('printmailProviders')->{'opuscapita'}->{'user'};
 my $sftppasswd=C4::Context->config('printmailProviders')->{'opuscapita'}->{'passwd'};
 my $ipostcontact=C4::Context->config('printmailProviders')->{'opuscapita'}->{'contact'};
-my $targetdirectory=C4::Context->config('printmailProviders')->{'opuscapita'}->{'targetdir'};
+my $targetdirectory=C4::Context->config('printmailProviders')->{'opuscapita'}->{'targetdir_kotka'};
 my $sftpaddress=C4::Context->config('printmailProviders')->{'opuscapita'}->{'address'};
 
 # Get the directory and the name of the file to be processed from the arguments
@@ -63,9 +63,9 @@ my @contents=grep /<pre>/, @lines;
 
 # Make EPL
 # Test header
-#my $eplheader="EPL111645560490TT002SD 0                $ipostcontact\r\n";
+#my $eplheader="EPL114507929470TT002SD 0                $ipostcontact\r\n";
 # Production header
-#my $eplheader="EPL1116455604900T002SD 0                $ipostcontact\r\n"; #FIXME
+my $eplheader="EPL1145079294700T002SD 0                $ipostcontact\r\n"; #KOTKA
 
 my %epl;
 my $header;
