@@ -164,6 +164,7 @@ sub UpdateBiblioDataElement {
     $bde->setItemtype($itemtype);
     $bde->isSerial($itemtype);
     $bde->setLanguages($record);
+    $bde->setEncodingLevel($record);
     if ($oldDbi) {
         Koha::BiblioDataElement::DBI_insertBiblioDataElement($bde, $biblioitemnumber) unless $bde->{biblioitemnumber};
         Koha::BiblioDataElement::DBI_updateBiblioDataElement($bde) if $bde->{biblioitemnumber};
@@ -271,6 +272,33 @@ Marks all BiblioDataElements to be updated during the next indexing.
 sub markForReindex {
     my $dbh = C4::Context->dbh();
     $dbh->do("UPDATE biblio_data_elements SET last_mod_time = '1900-01-01 01:01:01'");
+}
+
+=head2 find
+
+    my $bde = Koha::BiblioDataElements->find($biblionumber);
+
+=cut
+
+sub find {
+    my ($class, $biblionumber) = @_;
+    my $dbh = C4::Context->dbh();
+    my $sth = $dbh->prepare("SELECT * FROM biblio_data_elements WHERE biblioitemnumber = ?");
+    $sth->execute($biblionumber);
+    return $sth->fetchrow_hashref();
+}
+
+=head2 delete
+
+    Koha::BiblioDataElements->delete($biblionumber);
+
+=cut
+
+sub delete {
+    my ($class, $biblionumber) = @_;
+    my $dbh = C4::Context->dbh();
+    my $sth = $dbh->prepare("DELETE FROM biblio_data_elements WHERE biblioitemnumber = ?");
+    $sth->execute($biblionumber);
 }
 
 1;
