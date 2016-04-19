@@ -39,6 +39,7 @@ use C4::Context;
 
 BEGIN {
     Log::Log4perl->wrapper_register(__PACKAGE__);
+    $ENV{"LOG4PERL_CONF"} = C4::Context->config("log4perl_conf"); #Supercharge Koha::Log to skip unnecessary configuration file checking on each log attempt
 }
 
 =head2 get
