@@ -42,6 +42,23 @@ BEGIN {
     $ENV{"LOG4PERL_CONF"} = C4::Context->config("log4perl_conf"); #Supercharge Koha::Log to skip unnecessary configuration file checking on each log attempt
 }
 
+=head2 new
+
+    my $logger = Koha::Logger->new($params);
+
+See get() for available $params.
+Prepares the logger for lazyLoading if uncertain whether or not the environment is set.
+This is meant to be used to instantiate package-level loggers.
+
+=cut
+
+sub new {
+    my ($class, $params) = @_;
+    my $self = {lazyLoad => $params}; #Mark self as lazy loadable
+    bless $self, $class;
+    return $self;
+}
+
 =head2 get
 
     Returns a logger object (based on log4perl).
@@ -82,6 +99,10 @@ sub AUTOLOAD {
     my ( $self, $line ) = @_;
     my $method = $Koha::Logger::AUTOLOAD;
     $method =~ s/^Koha::Logger:://;
+
+    if ($self->{lazyLoad}) { #We have created this logger to be lazy loadable
+        $self = ref($self)->get( $self->{lazyLoad} ); #Lazy load me!
+    }
 
     if ( !exists $self->{logger} ) {
 
