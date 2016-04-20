@@ -102,6 +102,7 @@ use ZOOM;
 use XML::Simple;
 use C4::Boolean;
 use C4::Debug;
+use C4::Members;
 use POSIX ();
 use DateTime::TimeZone;
 use Module::Load::Conditional qw(can_load);
@@ -1291,6 +1292,40 @@ sub IsSuperLibrarian {
     }
 
     return ($userenv->{flags}//0) % 2;
+}
+
+=head2 setCommandlineEnvironment
+
+Sets the Koha environment for command line scripts.
+
+=cut
+
+sub setCommandlineEnvironment {
+	my ($class) = @_;
+
+	C4::Context->interface('commandline'); #Set interface for logger and friends
+	C4::Context->_new_userenv('commandline');
+	my $clisu = _enforceCommandlineSuperuserBorrowerExists();
+	C4::Context::set_userenv($clisu->{borrowernumber},$clisu->{userid},$clisu->{cardnumber},$clisu->{firstname},$clisu->{surname}, $clisu->{branchcode}, '', {}, '', '', '');
+}
+
+sub _enforceCommandlineSuperuserBorrowerExists {
+	my $commandlineSuperuser = C4::Members::GetMember(userid => 'commandlineadmin');
+	unless ($commandlineSuperuser) {
+		my $dbh = C4::Context->dbh();
+		my $ctgr = $dbh->selectrow_array("SELECT categorycode FROM categories WHERE category_type = 'I' LIMIT 1;");
+		my $brnchcd = $dbh->selectrow_array("SELECT branchcode FROM borrowers GROUP BY branchcode ORDER BY COUNT(*) DESC LIMIT 1;");
+		C4::Members::AddMember(cardnumber => 'commandlineadmin',
+							   userid => 'commandlineadmin',
+							   surname => 'Admin',
+							   firstname => 'Koha',
+							   dateexpiry => '2099-12-31',
+							   categorycode => $ctgr,
+							   branchcode => $brnchcd,
+		);
+		$commandlineSuperuser = C4::Members::GetMember(userid => 'commandlineadmin');
+	}
+	return $commandlineSuperuser;
 }
 
 =head2 interface
