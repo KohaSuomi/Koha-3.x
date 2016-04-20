@@ -118,8 +118,7 @@ sub AUTOLOAD {
         warn "$method: $line" if $line;
     }
     elsif ( $self->{logger}->can($method) ) {    #use log4perl
-        $self->{logger}->$method($line);
-        return 1;
+        return $self->{logger}->$method($line);
     }
     else {                                       # we should not really get here
         warn "ERROR: Unsupported method $method";
