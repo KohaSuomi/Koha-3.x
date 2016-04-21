@@ -117,10 +117,32 @@ sub createBibliosFromDBColumns {
 
 subtest "Create biblios from MARCXML", \&createBibliosFromMARCXML;
 sub createBibliosFromMARCXML {
-    my $record = t::lib::TestObjects::BiblioFactory->createTestGroup(
+    my ($record, $biblio);
+
+    ##Create from a HASH with a reference to MARCXML
+    $record = t::lib::TestObjects::BiblioFactory->createTestGroup(
                                     {record => $marcxml}, 'biblioitems.isbn', $subtestContext);
 
-    my $biblio = C4::Biblio::GetBiblioData($record->{biblionumber});
+    $biblio = C4::Biblio::GetBiblioData($record->{biblionumber});
+    is($biblio->{title},
+       'THE WISHING TREE /',
+       'Title ok');
+    is($biblio->{copyrightdate},
+       '1990',
+       'Copyrightdate ok');
+
+    t::lib::TestObjects::ObjectFactory->tearDownTestContext($subtestContext);
+
+    $biblio = C4::Biblio::GetBiblioData($record->{biblionumber});
+    ok(not($biblio),
+       'Biblio deleted');
+
+
+    ##Create from a MARCXML scalar
+    $record = t::lib::TestObjects::BiblioFactory->createTestGroup(
+                                    $marcxml, 'biblioitems.isbn', $subtestContext);
+
+    $biblio = C4::Biblio::GetBiblioData($record->{biblionumber});
     is($biblio->{title},
        'THE WISHING TREE /',
        'Title ok');

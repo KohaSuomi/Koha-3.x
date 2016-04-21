@@ -26,6 +26,7 @@ use MARC::File::XML;
 
 use C4::Biblio;
 use Koha::Database;
+use Koha::BiblioDataElements;
 
 use Koha::Exception::BadParameter;
 
@@ -83,7 +84,10 @@ sub handleTestObject {
 
     my $record;
     #Turn the given MARCXML or MARC::Record into a input object.
-    if ($object->{record} && $object->{record} =~ /<record/) { #This is MARCXML
+    if (not(ref($object))) { #scalar, prolly MARCXML
+        $object = MARC::Record::new_from_xml( $object, "utf8", 'marc21' );
+    }
+    elsif ($object->{record} && $object->{record} =~ /<record/) { #This is MARCXML
         $object = MARC::Record::new_from_xml( $object->{record}, "utf8", 'marc21' );
     }
     if (blessed($object) && $object->isa('MARC::Record')) {
@@ -119,10 +123,12 @@ sub handleMARCXML {
     unless ($existingBiblio) {
         ($biblionumber, $biblioitemnumber) = C4::Biblio::AddBiblio($record,'');
         $record->{biblionumber} = $biblionumber;
+        $record->{biblioitemnumber} = $biblioitemnumber;
     }
     else {
         ($record, $biblionumber, $biblioitemnumber) = C4::Biblio::UpsertBiblio($record, '');
         $record->{biblionumber} = $biblionumber;
+        $record->{biblioitemnumber} = $biblioitemnumber;
     }
     return ($record, $object);
 }
@@ -139,11 +145,14 @@ sub handleObject {
         $record = C4::Biblio::TransformKohaToMarc($object);
         ($biblionumber, $biblioitemnumber) = C4::Biblio::AddBiblio($record,'');
         $record->{biblionumber} = $biblionumber;
+        $record->{biblioitemnumber} = $biblioitemnumber;
     }
     else {
         my $bn = $existingBiblio->biblionumber->biblionumber;
+        my $bin = $existingBiblio->biblioitemnumber;
         $record = C4::Biblio::GetMarcBiblio($bn); #Funny!
         $record->{biblionumber} = $bn;
+        $record->{biblioitemnumber} = $bin;
     }
     return ($record, $object);
 }
@@ -229,6 +238,9 @@ sub deleteTestGroup {
         foreach my $componentPartBiblionumber (  @{C4::Biblio::getComponentBiblionumbers( $record )}  ) {
             my $error = C4::Biblio::DelBiblio($componentPartBiblionumber);
         }
+
+        #Remove biblio_data_elements
+        Koha::BiblioDataElements->delete($record->{biblioitemnumber});
     }
 }
 sub _deleteTestGroupFromIdentifiers {
