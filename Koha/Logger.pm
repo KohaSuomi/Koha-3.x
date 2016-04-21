@@ -42,6 +42,7 @@ use C4::Context;
 BEGIN {
     Log::Log4perl->wrapper_register(__PACKAGE__);
     $ENV{"LOG4PERL_CONF"} = C4::Context->config("log4perl_conf"); #Supercharge Koha::Log to skip unnecessary configuration file checking on each log attempt
+    warn "\$KOHA_CONF/yazgfs/log4perl_conf is undefined. This must point to the Log4perl configuration file which should be in /home/koha/koha-dev/etc/log4perl.conf" unless C4::Context->config("log4perl_conf");
 }
 
 =head2 new
