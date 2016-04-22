@@ -859,7 +859,7 @@ sub GetReserveFee {
             if ( my $rdata = $rsth->fetchrow_hashref ) {
             }
             else {
-                $fee = 0;
+                #$fee = 0; #HACKMAN HERE
             }
         }
     }
