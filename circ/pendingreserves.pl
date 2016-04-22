@@ -123,6 +123,8 @@ if ( $run_report ) {
                     ORDER BY items.itemnumber SEPARATOR '<br/>') l_enumchron,
             GROUP_CONCAT(DISTINCT items.copynumber
                     ORDER BY items.itemnumber SEPARATOR '<br/>') l_copynumber,
+            GROUP_CONCAT(DISTINCT items.itemnotes
+                    ORDER BY items.itemnumber SEPARATOR '<br/>') l_itemnotes,
             items.itemnumber,
             biblio.notes,
             notificationdate,
@@ -187,6 +189,7 @@ if ( $run_report ) {
                 itemcallnumber  => $data->{l_itemcallnumber},
                 enumchron       => $data->{l_enumchron},
                 copyno          => $data->{l_copynumber},
+                itemnotes       => $data->{l_itemnotes},
                 notificationdate=> $data->{notificationdate},
                 reminderdate    => $data->{reminderdate},
                 count           => $data->{icount},
