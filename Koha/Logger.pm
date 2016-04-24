@@ -91,6 +91,23 @@ sub get {
     return $self;
 }
 
+=head2 sql
+
+    $logger->sql('debug', $sql, $params) if $logger->is_debug();
+
+Log SQL-statements using a unified interface.
+@param {String} Log level
+@param {String} SQL-command
+@param {ArrayRef} SQL prepared statement parameters
+@returns whatever Log::Log4perl returns
+
+=cut
+
+sub sql {
+    my ($self, $level, $sql, $params) = @_;
+    return $self->$level("$sql -- @$params");
+}
+
 =head1 INTERNALS
 
 =head2 AUTOLOAD
