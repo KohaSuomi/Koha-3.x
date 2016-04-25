@@ -862,6 +862,15 @@ sub GetReserveFee {
                 #$fee = 0; #HACKMAN HERE
             }
         }
+        #Kyyti#993
+        my $isth =
+            $dbh->prepare("SELECT * FROM items WHERE biblionumber = ? and permanent_location = 'N' or permanent_location = 'SN'
+                permanent_location = 'NV' or permanent_location = 'ND' permanent_location = 'NA'");
+        $isth->execute($biblionumber);
+        if ( my $idata = $isth->fetchrow_hashref ) {
+            $fee = 0;
+        }
+
     }
     return $fee;
 }
