@@ -29,6 +29,7 @@ use C4::Review qw/numberofreviews/;
 use C4::Suggestions qw/CountSuggestion/;
 use C4::Tags qw/get_count_by_tag_status/;
 use Koha::Borrower::Modifications;
+use C4::Koha;
 
 my $query = new CGI;
 
@@ -51,7 +52,8 @@ my $koha_news_count = scalar @$all_koha_news;
 
 $template->param(
     koha_news       => $all_koha_news,
-    koha_news_count => $koha_news_count
+    koha_news_count => $koha_news_count,
+    daily_quote     => C4::Koha::GetDailyQuoteForInterface(),
 );
 
 my $branch =

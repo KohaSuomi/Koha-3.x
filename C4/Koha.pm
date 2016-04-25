@@ -85,6 +85,8 @@ BEGIN {
 # expensive functions
 memoize('GetAuthorisedValues');
 
+use Koha::Exception::UnknownProgramState;
+
 =head1 NAME
 
 C4::Koha - Perl Module containing convenience functions for Koha scripts
@@ -1486,6 +1488,29 @@ sub GetAuthvalueDropbox {
     return;
 }
 
+=head2 GetDailyQuoteForInterface
+
+    my $quote = C4::Koha::GetDailyQuoteForInterface();
+
+Is a wrapper for GetDailyQuotes(), with an extra check for using the correct
+interface defined in the syspref 'QuoteOfTheDay'.
+If the current interface is not allowed to display quotes, then returns undef.
+
+=cut
+
+sub GetDailyQuoteForInterface {
+    my %opts = @_;
+    my $qotdPref = C4::Context->preference('QuoteOfTheDay');
+    my $interface = C4::Context->interface();
+    unless ($interface) {
+        my @cc = caller(3);
+        Koha::Exception::UnknownProgramState->throw(error => $cc[3]."()> C4::Context->interface() is not set! Don't know are you in OPAC or staff client?");
+    }
+    unless ($qotdPref =~ /$interface/) {
+        return undef;
+    }
+    return GetDailyQuote(%opts);
+}
 
 =head2 GetDailyQuote($opts)
 
