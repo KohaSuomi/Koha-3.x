@@ -184,4 +184,13 @@ sub public_yklVaara {
     return ($parts[1]) ? $parts[1] : undef;
 }
 
+sub public_yklKyyti {
+    my ($params) = @_;
+    my $item = $params->[0]->{item};
+
+    my $itemcallnumber = $item->{itemcallnumber}; #84.2 SLO PK N
+    my @parts = split(/\s+/, $itemcallnumber);
+    return ($parts[0]) ? $parts[0] : undef;
+}
+
 1;

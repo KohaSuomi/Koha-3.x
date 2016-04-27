@@ -271,5 +271,32 @@ sub labelPrintingList {
 }
 
 
+
+subtest "DataSourceFunctions", \&dataSourceFunctions;
+sub dataSourceFunctions {
+    eval {
+        my $params = [
+            {biblio => {}, biblioitem => {}, item => {}, homebranch => {}}, #HASHRef of database tables
+            {}, #MARC::Record stub
+            {}, #C4::Labels::Sheet::Element
+            [], #ARRAYRef of dataSourceFunction's parameters
+        ];
+
+
+        ## public_yklKyyti()
+        $params->[0]->{item} = {itemcallnumber => '84.2 SLO PK N'};
+        is(C4::Labels::DataSource::public_yklKyyti($params), '84.2',      "Ykl Kyyti 1");
+        $params->[0]->{item} = {itemcallnumber => '79.31 JAL PK N'};
+        is(C4::Labels::DataSource::public_yklKyyti($params), '79.31',     "Ykl Kyyti 2");
+        $params->[0]->{item} = {itemcallnumber => '32.182809 OUT PK A'};
+        is(C4::Labels::DataSource::public_yklKyyti($params), '32.182809', "Ykl Kyyti 3");
+
+
+    };
+    if ($@) {
+        ok(0, $@);
+    }
+}
+
 t::lib::TestObjects::ObjectFactory->tearDownTestContext($testContext);
 done_testing();

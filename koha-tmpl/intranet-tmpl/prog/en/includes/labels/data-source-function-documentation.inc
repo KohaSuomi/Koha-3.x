@@ -50,7 +50,13 @@
 <div class="dsfd-doc" id="dsfd-yklVaara">
     <span class="title">ykl-code, Vaara-kirjastot</span>
     <span class="comment">
-        Selects the first element in the item's callnumber-column. In Vaara-kirjastot this must contain the Item-specific ykl-classification.
+        Selects the second element in the item's callnumber-column. In Vaara-kirjastot this must contain the Item-specific ykl-classification.
+    </span>
+</div>
+<div class="dsfd-doc" id="dsfd-yklKyyti">
+    <span class="title">ykl-code, Kyyti-kirjastot</span>
+    <span class="comment">
+        Selects the first element in the item's callnumber-column. In Kyyti-kirjastot this must contain the Item-specific ykl-classification.
     </span>
 </div>
 
