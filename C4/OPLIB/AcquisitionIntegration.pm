@@ -94,7 +94,7 @@ sub SendBasketgroupToVendors {
             queueBasketToKirjavalitysAsCsv($csvBuilder_kirjavalitys, $basket, $orders, $contract, $bookseller, $basketgroup, $errorsBuilder);
         }
         elsif ($interfaceCode eq 'BTJ') {
-            push @$errorsBuilder, "There is no automatic mechanism for sending orders to BTJ.\nYou need to print this basketgroup as a .pdf and send it by email.";
+            #push @$errorsBuilder, "There is no automatic mechanism for sending orders to BTJ.\nYou need to print this basketgroup as a .pdf and send it by email.";
         }
         elsif (not($interfaceCode)) {
             push @$errorsBuilder, "Couldn't decide where to send this order. There is no configured interface for the given vendor.\nYou need to print this basketgroup as a .pdf and send it by email.";
