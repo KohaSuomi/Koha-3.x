@@ -21,6 +21,8 @@ use Modern::Perl;
 
 use Koha::Exception::DB;
 
+use C4::Record;
+
 =head SYNOPSIS
 
     BiblioChunker paginates database access to a large volume of marcxml from the DB.
@@ -46,7 +48,27 @@ sub new {
     return $self;
 }
 
+sub getChunkAsMARCRecord {
+    my ($self) = @_;
+    my $chunk = $self->_getChunk();
+    return $chunk unless $chunk;
+
+    for (my $i=0 ; $i<scalar(@$chunk) ; $i++) {
+        my $bi = $chunk->[$i];
+        (undef, $chunk->[$i]) = C4::Record::marcxml2marc($bi->{marcxml});
+        $chunk->[$i]->{biblionumber} = $bi->{biblionumber};
+        $chunk->[$i]->{biblioitemnumber} = $bi->{biblioitemnumber};
+        $chunk->[$i]->{frameworkcode} = $bi->{frameworkcode};
+    }
+    return $chunk;
+}
+
 sub getChunk {
+    my ($self) = @_;
+    return $self->_getChunk();
+}
+
+sub _getChunk {
     my ($self) = @_;
     my @cc = caller(0);
 
@@ -58,7 +80,7 @@ sub getChunk {
         return undef;
     }
     my $dbh = C4::Context->dbh();
-    my $sth = $dbh->prepare("SELECT * FROM biblioitems WHERE biblioitemnumber >= ? AND biblioitemnumber < ?");
+    my $sth = $dbh->prepare("SELECT bi.*, b.frameworkcode FROM biblioitems bi LEFT JOIN biblio b ON b.biblionumber = bi.biblionumber WHERE bi.biblioitemnumber >= ? AND bi.biblioitemnumber < ?");
     $sth->execute( $self->_getPosition() );
     if ($sth->err) {
         Koha::Exception::DB->throw(error => $cc[3]."():> ".$sth->errstr);
