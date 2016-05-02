@@ -40,6 +40,7 @@ use C4::Branch qw/GetBranches/;
 use C4::Members qw/GetMember/;
 use C4::Contract qw/GetContract/;
 use C4::Biblio qw/GetBiblioData/;
+use C4::OPLIB::VendorConfig;
 
 =head sendBasketgroupToVendors
 
@@ -360,7 +361,9 @@ sub getVendorConfig {
                 '    username: valivalimies',
             ),
     ) unless $configVendor;
-    return $configVendor;
+    $configVendor->{configKey} = $configKey;
+
+    return C4::OPLIB::VendorConfig->new($configVendor);
 }
 
 return "happy happy joy joy";

@@ -15,6 +15,7 @@ use Carp;
 
 use C4::OPLIB::AcquisitionIntegration;
 use C4::OPLIB::SelectionListProcessor;
+use C4::OPLIB::RemoteBiblioPackageImporter;
 use C4::ImportBatch;
 
 use Getopt::Long;
@@ -61,15 +62,21 @@ This script takes the following parameters :
                         ONLY FOR THE SEPARATE Z39.50 CONTAINER!
 
     --verbose | v       verbose. An integer, 1 for slightly verbose, 2 for largely verbose!
+                        If using --btj-biblios, this is the verbosity level of Koha::Logger,
+                        in this case set it to 0 to enabled default logging, levels increase verbosity.
 ";
 
 if ( $help ) {
     print $usage;
+    exit 0;
 }
 unless ( $kv_selects || $btj_selects || $btj_biblios ) {
     print $usage;
     die "ERROR: you must define atleast one of these\n--kv_selects\n--btj_selects";
 }
+
+C4::Context->setCommandlineEnvironment();
+Koha::Logger->setConsoleVerbosity($verbose);
 
 my $listdirectory = '/tmp/'; #Where to store selection lists
 my $stagedFileVerificationDuration_days = 700; #Stop looking for selection lists older than this when staging MARC for the Koha reservoir
@@ -209,27 +216,6 @@ sub stageSelectionlist {
     "",
     )
     );
-}
-
-=head stageFromFileSelectionlist
-
-This function is used to import the btj full bibliographic records.
-@THROWS Koha::Exception::SystemCall
-=cut
-
-sub stageFromFileSelectionlist {
-    my ($filePath, $comment, $encoding, $matcherid) = @_;
-
-    ##Push the Kirjavälitys selection list to staged records batches.
-    my @args = ($ENV{KOHA_PATH}.'/misc/stage_file.pl',
-                '--file '.$filePath,
-                '--encoding '.$encoding,
-                '--match '.($matcherid || 1),
-                '--comment "'.$comment.'"',
-                '--format ISO2709');
-
-    system("@args") == 0 or Koha::Exception::SystemCall->throw(error => "system @args failed: $?");
-    return 0; #No errors wooee!
 }
 
 sub stageSelectionlists {
@@ -390,107 +376,9 @@ sub getAllBTJSelectionlists {
 }
 
 sub forBTJBiblios {
-    print "Starting BTJ biblios\n" if $verbose;
-
-    #Prepare all the files to look for in the KV ftp-server
-    my $ma_selectionlist_filenames = [];
-    my $mk_selectionlist_filenames = [];
-
-    my $vendorConfig = C4::OPLIB::AcquisitionIntegration::getVendorConfig('BTJBiblios');
-
-    getAllBTJBibliolists($ma_selectionlist_filenames, $mk_selectionlist_filenames);
-
-    processBTJBibliolistType($vendorConfig, $ma_selectionlist_filenames, 'av-aineisto');
-    processBTJBibliolistType($vendorConfig, $mk_selectionlist_filenames, 'kirja-aineisto');
-
-    if (scalar @$errors) {
-        print "\nFOLLOWING ERRORS WERE FOUND!\n".
-                "----------------------------\n".
-                join "\n", @$errors;
-    }
+    my $importer = C4::OPLIB::RemoteBiblioPackageImporter->new({remoteId => 'BTJBiblios'});
+    $importer->importFromRemote();
 }
-sub processBTJBibliolistType {
-    my ($vendorConfig, $bibliosBatches, $listType) = @_;
-
-    my $ftp = Koha::FTP->new( C4::OPLIB::AcquisitionIntegration::connectToBTJbiblios() );
-
-    for(my $i = 0 ; $i < scalar @$bibliosBatches ; $i++) {
-        try {
-            my $bibliosBatch = $bibliosBatches->[$i];
-
-            ##Inject a year into the batch filename when receiving it, so it won't get confused with same named Biblio batches from last year.
-            my $localBatchFileName;
-            unless ($bibliosBatch =~ /^(B)(\d\d\d\d)(\D+)$/) {
-                Koha::Exception::File->throw(error => "processBTJBibliolistType():> Couldn't parse the Biblios Batch filename '$bibliosBatch' using regexp ".'/^(B)(\d\d\d\d)(\D+)$/'.". Cannot inject the year to the filename :(");
-            }
-            $localBatchFileName = "${year}_$1$2$3";
-
-            isSelectionListImported( $localBatchFileName );
-
-            $bibliosBatch =~ /(\d{4})/;
-            my $md = $1;
-
-            $ftp->get($bibliosBatch, $listdirectory.$localBatchFileName);
-
-            stageFromFileSelectionlist($listdirectory.$localBatchFileName, 'List type '.$listType, $vendorConfig->{biblioEncoding}, $vendorConfig->{matcher});
-        } catch {
-            if (blessed($_)) {
-                if ($_->isa('Koha::Exception::DuplicateObject')) {
-                    #It is normal for BTJ to find the same selection lists again and again,
-                    #because they keep the selection lists from the past month.
-                }
-                else {
-                    warn $_->error()."\n";
-                    push @$errors, $_->error();
-                }
-#                next(); #Perl bug here. next() doesn't point to the foreach loop here but possibly to something internal to Try::Tiny.
-                 #Thus we get the "Exiting subroutine via next" -warning. Because there are no actions after the catch-statement,
-                 #this doesn't really hurt here, but just a remnder for anyone brave enough to venture further here.
-            }
-            else { die "Exception not caught by try-catch:> ".$_;}
-        };
-    }
-
-    #Always check and try to commit files, if previous errors!
-    my $error = commitStagedFiles('B\d\d\d\dm[ak]');
-    if ($error) {
-        push @$errors, $error;
-        next();
-    }
-
-    $ftp->quit();
-}
-sub getAllBTJBibliolists {
-    my ($ma_selectionlist_filenames, $mk_selectionlist_filenames) = @_;
-
-    my $ftpcon = C4::OPLIB::AcquisitionIntegration::connectToBTJbiblios();
-
-    my $ftpfiles = $ftpcon->ls();
-    foreach my $file (@$ftpfiles) {
-        if ($file =~ /B(\d\d)(\d\d)\D/) { #Pick only files of specific format
-            #Subtract file's date from current date.
-            #The year must be selected, but there is no way of knowing which year is set on the selection list files so using arbitrary 2000
-            my $difference_days = Date::Calc::Delta_Days(2000,$1,$2,2000,$now->month(),$now->day());
-
-            if ( $difference_days >= 0 && #If the year changes there is trouble, because during subtraction year is always the same
-                 $difference_days < $stagedFileVerificationDuration_days) { #if selection list is too old, skip trying to stage it.
-
-                if ($file =~ /ma$/) {
-                    print "BTJ: Found file: $file\n" if $verbose;
-                    push @$ma_selectionlist_filenames, $file;
-                }elsif ($file =~ /mk$/) {
-                    print "BTJ: Found file: $file\n" if $verbose;
-                    push @$mk_selectionlist_filenames, $file;
-                }
-            }
-        }
-    }
-    $ftpcon->close();
-
-    @$ma_selectionlist_filenames = sort @$ma_selectionlist_filenames;
-    @$mk_selectionlist_filenames = sort @$mk_selectionlist_filenames;
-}
-
 
 
 
@@ -528,39 +416,6 @@ sub isSelectionListImported {
     if (exists $importedSelectionlists->{$selectionlist}) {
         Koha::Exception::DuplicateObject->throw(error => "Selection list $selectionlist already imported.")
     }
-}
-
-=head commitStagedFiles
-Warning, this function actually pushes the imported batch into the live DB instead of the reservoir.
-=cut
-
-sub commitStagedFiles {
-    my ($matching_regexp) = @_;
-    my $errors = '';
-
-    #Get the record batch numbers that are just staged
-    my @batch_numbers;
-    open(my $OUT, '$KOHA_PATH/misc/commit_file.pl --list-batches | grep -P "'.$matching_regexp.'" | grep -P "staged" |') or die 'Couldn\'t run $KOHA_PATH/misc/commit_files.pl: '.$!;
-    while (<$OUT>) {
-        my $staged_file = $_;
-        if ($staged_file =~ /^\s+(\d+)\s+.*?staged\s*$/) {
-            push @batch_numbers, $1;
-            print "Commit: Found batch-number $1\n" if $verbose;
-        }
-        else {
-            $errors .= "commit_file.pl output format has changed or failed! Couldn't find the staged file's batch-number from:\n  < $staged_file >\n";
-        }
-    }
-    close $OUT;
-
-    #Commit all the staged record batches/biblio lists
-    foreach my $batch_number (@batch_numbers) {
-        open(my $COMMIT_OUT, '$KOHA_PATH/misc/commit_file.pl --batch-number '.$batch_number.' |') or die 'Couldn\'t run $KOHA_PATH/misc/commit_files.pl --batch_number '.$batch_number.': '.$!;
-        while (<$COMMIT_OUT>) { print $_; }
-        close $COMMIT_OUT;
-    }
-
-    return $errors;
 }
 
 sub verifyCharacterEncoding {
