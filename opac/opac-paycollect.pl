@@ -26,6 +26,7 @@ use CGI qw(:cgi-lib);
 
 use C4::Accounts;
 use C4::Auth;
+use C4::Branch;
 use C4::Budgets qw(GetCurrency);
 use C4::Circulation;
 use C4::Members;
@@ -89,7 +90,8 @@ else {
         borrowernumber      => $borrowernumber,
         status              => "unsent",
         description         => '',
-        is_self_payment     => 1
+        is_self_payment     => 1,
+        user_branch         => C4::Branch::mybranch(),
     })->store();
 
     # Link accountlines to the transaction

@@ -71,6 +71,12 @@ __PACKAGE__->table("payments_transactions");
   default_value: 0
   is_nullable: 0
 
+=head2 user_branch
+
+  data_type: 'varchar'
+  is_nullable: 1
+  size: 10
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -102,6 +108,8 @@ __PACKAGE__->add_columns(
   { data_type => "integer", is_nullable => 0 },
   "is_self_payment",
   { data_type => "integer", default_value => 0, is_nullable => 0 },
+  "user_branch",
+  { data_type => "varchar", is_nullable => 1, size => 10 },
 );
 
 =head1 PRIMARY KEY
@@ -169,8 +177,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07039 @ 2016-03-03 11:03:08
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:k12/ZqDRPKF2mo2C1qyIfA
+# Created by DBIx::Class::Schema::Loader v0.07039 @ 2016-05-06 10:15:20
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:oMMWklMNbJmwPOJito1iCQ
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
