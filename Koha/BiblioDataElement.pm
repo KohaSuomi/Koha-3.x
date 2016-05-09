@@ -121,7 +121,7 @@ sub setLanguages {
         }
         $languages = join(',',@sb) if scalar(@sb);
     }
-    $primaryLanguage = $finFound || $sweFound || $firstA;
+    $primaryLanguage = $finFound || $sweFound || $firstA || $primaryLanguage; #Keep the default if no others were found
 
     ($self->{dbi}) ? $self->{'languages'} = $languages : $self->set({'languages' => $languages});
     ($self->{dbi}) ? $self->{'primary_language'} = $primaryLanguage : $self->set({'primary_language' => $primaryLanguage});
