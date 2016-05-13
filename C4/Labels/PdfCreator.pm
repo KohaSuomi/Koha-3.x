@@ -258,6 +258,7 @@ sub _normalizeBarcodesToItems {
     }
 
     my @errors;
+    my @items;
     for (my $i=0 ; $i<scalar(@$barcodesAry) ; $i++) {
         my $ibc = $barcodesAry->[$i];
         my $item;
@@ -274,14 +275,16 @@ sub _normalizeBarcodesToItems {
         }
         unless(defined($item)) {
             push(@errors, $ibc);
+            splice(@$barcodesAry, $i, 1);
+            #$barcodesAry->[$i] = undef; #Can't decide should the barcodeAry be shortened or the bad indexes be set as undef?
         }
-        $barcodesAry->[$i] = $item;
+        $items[$i] = $item;
     }
 
     if (scalar(@errors)) {
         Koha::Exception::Labels::UnknownItems->throw(badBunch => \@errors);
     }
-    return $barcodesAry;
+    return \@items;
 }
 
 return 1;
