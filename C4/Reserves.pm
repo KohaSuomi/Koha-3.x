@@ -1226,7 +1226,7 @@ sub CancelExpiredReserves {
             my $expiration = _reserve_last_pickup_date( $res );
             if ( $today > $expiration ) {
                 if ( $charge ) {
-                    manualinvoice($res->{'borrowernumber'}, $res->{'itemnumber'}, 'Hold waiting too long', 'F', $charge);
+                    manualinvoice($res->{'borrowernumber'}, $res->{'itemnumber'}, '', 'HE', $charge);
                 }
                 CancelReserve({ reserve_id => $res->{'reserve_id'},
                                 pickupexpired => $expiration,
