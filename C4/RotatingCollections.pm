@@ -2,16 +2,17 @@ package C4::RotatingCollections;
 
 # $Id: RotatingCollections.pm,v 0.1 2007/04/20 kylemhall
 
-# This package is inteded to keep track of what library
+# This package is intended to keep track of what library
 # Items of a certain collection should be at.
 
 # Copyright 2007 Kyle Hall
+# Copyright 2015 Juhani Seppälä @ Vaara-kirjastot
 #
 # This file is part of Koha.
 #
 # Koha is free software; you can redistribute it and/or modify it under the
 # terms of the GNU General Public License as published by the Free Software
-# Foundation; either version 2 of the License, or (at your option) any later
+# Foundation; either version 3 of the License, or (at your option) any later
 # version.
 #
 # Koha is distributed in the hope that it will be useful, but WITHOUT ANY
@@ -26,7 +27,7 @@ use Modern::Perl;
 
 use C4::Context;
 use C4::Circulation;
-use C4::Reserves qw(GetReserveStatus);
+use C4::Reserves;
 use C4::Biblio;
 use C4::Branch;
 use C4::Items;
@@ -206,7 +207,7 @@ sub DeleteCollection {
     my $collectionItems = GetItemsInCollection($colId);
     # KD-139: Actually remove all items from the collection before removing the collection itself.
     for my $item (@$collectionItems) {
-        my $itembiblio = GetBiblioFromItemNumber(undef, $item->{'barcode'});
+        my $itembiblio = C4::Biblio::GetBiblioFromItemNumber(undef, $item->{'barcode'});
         my $itemnumber = $itembiblio->{'itemnumber'};
         RemoveItemFromCollection($colId, $itemnumber);
     }
@@ -309,11 +310,11 @@ sub GetItemsInCollection {
 
     my @results;
     while ( my $row = $sth->fetchrow_hashref ) {
-        my $originbranchname = GetBranchName($row->{'origin_branchcode'});
-        my $holdingbranchname = GetBranchName($row->{'holdingbranch'});
+        my $originbranchname = C4::Branch::GetBranchName($row->{'origin_branchcode'});
+        my $holdingbranchname = C4::Branch::GetBranchName($row->{'holdingbranch'});
         $row->{'holdingbranchname'} = $holdingbranchname;
         $row->{'origin_branchname'} = $originbranchname;
-        $row->{'intransit'} = GetTransfers($row->{'itemnumber'});
+        $row->{'intransit'} = C4::Circulation::GetTransfers($row->{'itemnumber'});
         $row->{'date_added_format'} = output_pref({ dt => dt_from_string($row->{'date_added'}), dateonly => 1 });
         push( @results, $row );
     }
@@ -448,7 +449,7 @@ sub AddItemToCollection {
         return ( 0, 3, "Item is already in a different collection!" );
     }
 
-    my $itembiblio = GetBiblioFromItemNumber($itemnumber, undef);
+    my $itembiblio = C4::Biblio::GetBiblioFromItemNumber($itemnumber, undef);
     my $originbranchcode = $itembiblio->{'homebranch'};
     my $transferred = 0;
 
@@ -500,17 +501,17 @@ sub RemoveItemFromCollection {
 
     # KD-139: Attempt to transfer the item being removed if it has its origin branch
     # set up.
-    my $itembiblio = GetBiblioFromItemNumber($itemnumber, undef);
+    my $itembiblio = C4::Biblio::GetBiblioFromItemNumber($itemnumber, undef);
     my $currenthomebranchcode = $itembiblio->{'homebranch'};
     my $originbranchcode = GetItemOriginBranch($itemnumber);
     my $barcode = $itembiblio->{'barcode'};
     my ($dotransfer, $messages, $iteminformation);
 
     if ($originbranchcode && $barcode) {
-        if (GetTransfers($itemnumber)) {
-            DeleteTransfer($itemnumber)
+        if (C4::Circulation::GetTransfers($itemnumber)) {
+            C4::Circulation::DeleteTransfer($itemnumber)
         }
-        ($dotransfer, $messages, $iteminformation) = transferbook($originbranchcode, $barcode, 1);
+        ($dotransfer, $messages, $iteminformation) = C4::Circulation::transferbook($originbranchcode, $barcode, 1);
     }
 
     my $dbh = C4::Context->dbh;
@@ -520,7 +521,7 @@ sub RemoveItemFromCollection {
                         WHERE itemnumber = ?"
     );
     $sth->execute($itemnumber) or return ( 0, 3, $sth->errstr() );
-    ModItem({ homebranch => $originbranchcode }, undef, $itemnumber);
+    C4::Items::ModItem({ homebranch => $originbranchcode }, undef, $itemnumber);
 
     return (1, 4, $messages);
 }
@@ -626,9 +627,9 @@ sub ReturnCollectionItemToOrigin {
     $sth->execute($colId, $itemnumber) or return (0, 5, $sth->errstr);
     my ($dotransfer, $messages, $iteminformation);
     if (my $item = $sth->fetchrow_hashref) {
-        unless (GetReserveStatus($item->{itemnumber}) eq "Waiting") {
+        unless (C4::Reserves::GetReserveStatus($item->{itemnumber}) eq "Waiting") {
             ($dotransfer, $messages, $iteminformation)
-                = transferbook($originBranch, $item->{barcode}, 1);
+                = C4::Circulation::transferbook($originBranch, $item->{barcode}, 1);
         }
     }
     # Push all issues with the transfer into a list for template usage.
@@ -646,7 +647,7 @@ sub ReturnCollectionItemToOrigin {
         WHERE itemnumber = ?
     });
     $sth->execute($itemnumber) or return (0, 7, $sth->errstr);
-    ModItem({ homebranch => $originBranch }, undef, $itemnumber);
+    C4::Items::ModItem({ homebranch => $originBranch }, undef, $itemnumber);
 
     return (1, 6, \@errorlist);
 }
@@ -763,9 +764,9 @@ sub TransferCollectionItem {
     $sth->execute($colId, $itemnumber) or return ( 0, 5, $sth->errstr );
     my ($dotransfer, $messages, $iteminformation);
     if (my $item = $sth->fetchrow_hashref) {
-        unless (GetReserveStatus($item->{itemnumber}) eq "Waiting") {
+        unless (C4::Reserves::GetReserveStatus($item->{itemnumber}) eq "Waiting") {
             ($dotransfer, $messages, $iteminformation)
-                = transferbook($transferBranch, $item->{barcode}, 1);
+                = C4::Circulation::transferbook($transferBranch, $item->{barcode}, 1);
         }
     }
 
@@ -785,7 +786,7 @@ sub TransferCollectionItem {
         WHERE itemnumber = ?
     });
     $sth->execute($transferBranch, $transferred, $itemnumber) or return (0, 7, $sth->errstr);
-    ModItem({ homebranch => $transferBranch }, undef, $itemnumber);
+    C4::Items::ModItem({ homebranch => $transferBranch }, undef, $itemnumber);
 
     return (1, 6, \@errorlist);
 }
@@ -988,5 +989,6 @@ __END__
 =head1 AUTHOR
 
 Kyle Hall <kylemhall@gmail.com>
+Juhani Seppälä <jseppal@student.uef.fi>
 
 =cut

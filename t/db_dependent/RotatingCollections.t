@@ -181,7 +181,7 @@ is_deeply(
     ],
     "Collection1 belongs to the sample branch (SAB)"
 );
-is( TransferCollection, "No Id Given", "TransferCollection without ID" );
+is( TransferCollection(), "No Id Given", "TransferCollection without ID" );
 is(
     TransferCollection($collection_id1),
     "No Branchcode Given",
