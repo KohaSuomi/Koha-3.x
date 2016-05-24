@@ -35,8 +35,11 @@
   "/payments/transaction/{invoicenumber}": {
     "$ref": "paths/payments.json#/~1payments~1transactions~1{invoicenumber}"
   },
-  "/pos/cpu/{invoicenumber}/report": {
-    "$ref": "paths/pos/cpu.json#/~1pos~1cpu~1{invoicenumber}~1report"
+  "/payments/online/cpu/{invoicenumber}/report": {
+    "$ref": "paths/payments/online/cpu.json#/~1payments~1online~1cpu~1{invoicenumber}~1report"
+  },
+  "/payments/pos/cpu/{invoicenumber}/report": {
+    "$ref": "paths/payments/pos/cpu.json#/~1payments~1pos~1cpu~1{invoicenumber}~1report"
   },
   "/lists/{listname}/contents": {
     "$ref": "paths/lists.json#/~1lists~1{listname}~1contents"

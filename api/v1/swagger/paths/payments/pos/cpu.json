@@ -1,19 +1,19 @@
 {
-  "/pos/cpu/{invoicenumber}/report": {
+  "/payments/pos/cpu/{invoicenumber}/report": {
     "post": {
-      "x-mojo-controller": "Koha::REST::V1::Pos::CPU::Reports",
+      "x-mojo-controller": "Koha::REST::V1::Payments::Pos::CPU::Reports",
       "operationId": "cpuReport",
       "tags": ["POS Integration"],
       "parameters": [
         {
-          "$ref": "../../parameters.json#/invoicenumberPathParam"
+          "$ref": "../../../parameters.json#/invoicenumberPathParam"
         },
         {
           "name": "body",
           "in": "body",
           "description": "New report",
           "required": true,
-          "schema": { "$ref": "../../definitions/CPUinvoiceReport.json" }
+          "schema": { "$ref": "../../../definitions/CPUinvoiceReport.json" }
         }
       ],
       "consumes": ["application/json"],
@@ -28,13 +28,13 @@
         "400": {
           "description": "Bad parameters",
           "schema": {
-            "$ref": "../../definitions.json#/error"
+            "$ref": "../../../definitions.json#/error"
           }
         },
         "404": {
           "description": "Transaction not found",
           "schema": {
-            "$ref": "../../definitions.json#/error"
+            "$ref": "../../../definitions.json#/error"
           }
         }
       }

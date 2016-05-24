@@ -117,6 +117,7 @@ my $permissionManager = Koha::Auth::PermissionManager->new();
 $permissionManager->grantPermissions($borrowers->{'superuberadmin'}, {superlibrarian => 'superlibrarian'});
 eval {
     MakeOnlinePayment($fines);
+    IsCorrectProductCodes();
 };
 if ($@) { #Catch all leaking errors and gracefully terminate.
     warn $@;
@@ -157,4 +158,19 @@ sub MakeOnlinePayment {
     ->isFinePaid("First")       # Make sure fines are paid
     ->isFinePaid("Second")     # Also the second :)
     ->isEverythingPaid();      # and make sure total due is 0.00
+}
+sub IsCorrectProductCodes {
+    my $transaction = Koha::PaymentsTransactions->new->next();
+    my $payment = Koha::Payment::Online->new(C4::Branch::mybranch());
+
+    my $products = $payment->get_prepared_products(
+                                    $transaction->GetProducts(),
+                                    $borrowers->{'superuberadmin'}->branchcode);
+    foreach my $product (@$products){
+        if ($product->{'Description'} eq ($fines->{"First"}->{description}." ".$items->{'167Nabe0001'}->itemnumber)){
+            is($product->{'Code'}, $item_product_code, "Product code (".$item_product_code.") has been fetched from item's home library product code mapping");
+        } else {
+            is($product->{'Code'}, $other_product_code, "Product code (".$other_product_code.") has been fetched from user's home branch product code mapping");
+        }
+    }
 }

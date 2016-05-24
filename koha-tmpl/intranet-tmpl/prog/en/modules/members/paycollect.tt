@@ -213,7 +213,7 @@ function moneyFormat(textObj) {
     <script type="text/javascript">
         $(document).ready(function() {
             $.ajax({
-                url: "/cgi-bin/koha/members/paycollect.pl",
+                url: "/cgi-bin/koha/members/paycollect-ajax.pl",
                 type: "post",
                 dataType: "json",
                 data: JSON.stringify([% json_payment %]),
@@ -234,9 +234,9 @@ function moneyFormat(textObj) {
 
         function handlePOSResponse(response){
             $("span[id='status']").children().css("display","none");
-            if (response.Status == 0 || response.status == "cancelled") {
+            if (response.status === 0) {
                 $("span.cancelled").css("display", "inline-block");
-                colorBall("red");
+                    colorBall("red");
 
                 if (response.error) {
                     alert(_("Error: ") + JSON.stringify(response));
@@ -244,45 +244,13 @@ function moneyFormat(textObj) {
 
                 window.location.replace("/cgi-bin/koha/members/boraccount.pl?borrowernumber=[% borrowernumber %]");
             }
-            else if (response.Status == 1 || response.status == "paid") {
+            else if (response.status == 1) {
                 $("span.paid").css("display", "inline-block");
                 colorBall("green");
                 window.location.replace("/cgi-bin/koha/members/boraccount.pl?borrowernumber=[% borrowernumber %]");
             }
-            else if (response.Status == 2 || response.status == "pending") {
+            else if (response.Status == 2) {
                 $("span.pending").css("display", "inline-block");
-            }
-            else if (response.status == "processing") {
-                $("span.processing").css("display", "inline-block");
-            }
-            else if (response.Status == 88) {
-                $("span.cancelled").css("display", "inline-block");
-                colorBall("red");
-                alert(_("HTTP Response error: ") + JSON.stringify(response));
-            }
-            else if (response.Status == 89) {
-                $("span.cancelled").css("display", "inline-block");
-                colorBall("red");
-                alert(_("Error: ") + JSON.stringify(response));
-            }
-            else if (response.Status == 97) {
-                $("span.cancelled").css("display", "inline-block");
-                colorBall("red");
-                alert(_("Duplicate transaction number: ") + JSON.stringify(response));
-            }
-            else if (response.Status == 98) {
-                $("span.cancelled").css("display", "inline-block");
-                colorBall("red");
-                alert(_("Cash register server system error: ") + JSON.stringify(response));
-            }
-            else if (response.Status == 99) {
-                $("span.cancelled").css("display", "inline-block");
-                colorBall("red");
-                alert(_("Payment request is malformed: ") + JSON.stringify(response));
-            }
-            else {
-                $("span.cancelled").css("display", "inline-block");
-                alert(_("Error: ") + JSON.stringify(response));
             }
         }
 
@@ -351,7 +319,11 @@ function moneyFormat(textObj) {
         <input name="paid" id="paid" value="[% amountoutstanding | format('%.2f') %]" onchange="moneyFormat(document.payindivfine.paid)"/>
     </li>
     <li>
-        [% INCLUDE offices %]
+        [% IF POSInterface %]
+            <!-- Custom template & inputs for POS integration -->
+            [% INCLUDE "payment/${POSInterface}.inc" %]
+            [% IF CustomPOSInputs %][% PROCESS CustomPOSInputs %][% END %]
+        [% END %]
     </li>
 </ol>
 <div>
@@ -406,7 +378,7 @@ function moneyFormat(textObj) {
     <input type="hidden" name="borrowernumber" id="borrowernumber" value="[% borrower.borrowernumber %]" />
     <input type="hidden" name="selected_accts" id="selected_accts" value="[% selected_accts %]" />
     <input type="hidden" name="total" id="total" value="[% total %]" />
-    
+
     <fieldset class="rows">
     [% IF ( selected_accts ) %]<legend>Pay an amount toward selected fines</legend>[% ELSE %]<legend>Pay an amount toward all fines</legend>[% END %]
     <ol>
@@ -424,7 +396,10 @@ function moneyFormat(textObj) {
         <textarea name="selected_accts_notes" id="selected_accts_notes">[% selected_accts_notes %]</textarea>
     </li>
     <li>
-        [% INCLUDE offices %]
+        [% IF POSInterface %]
+            <!-- Custom template & inputs for POS integration -->
+            [% INCLUDE "payment/${POSInterface}.inc" %]
+        [% END %]
     </li>
     </ol>
     </fieldset>
@@ -441,161 +416,3 @@ function moneyFormat(textObj) {
 </div>
 </div>
 [% INCLUDE 'intranet-bottom.inc' %]
-[% BLOCK offices %]
-    [% IF POSIntegration %]
-        [% IF POSIntegration_in_branch %]
-    <label for="offices">Select office:</label>
-    <div id="offices"></div>
-    <input type="hidden" name="Office" id="office" />
-    <span id="add_new_office"><a>Add new office</a></span>
-    <div id="office_form" style="display:none">
-        <label for="office_new">Office:</label><input type="text" name="office_new" id="office_new" />
-        <button id="new_office" type="button">Add new office</button>
-        <p>Offices are stored as a browser cookie. Currently stored offices will disappear and need to be added again if you clear the browser cookies.</p>
-        <p>You can delete a stored office by first selecting it, and then pressing the delete-key on your keyboard.</p>
-    </div>
-        [% ELSE %]
-    <span id="add_new_office"><a>Add new office</a></span>
-    <div id="office_form" style="display:none">
-        <p>Cash register integration has not been enabled for your branch. In order to enable cash register integration in this branch ([% branch %]), please contact a superlibrarian. Koha payment types need to be mapped into your cash register item numbers.</p>
-    </div>
-        [% END%]
-    [% END %]
-[% END %]
-[% IF POSIntegration %]
-<script type="text/javascript">
-    $(document).ready(function() {
-        $("#add_new_office").click(function() {
-            if ($("#office_form").css("display") == "none") {
-                $("#office_form").css("display", "block"); 
-            } else {
-                $("#office_form").css("display", "none"); 
-            }
-        });
-        [% IF POSIntegration_in_branch %]
-        loadCashRegisters();
-        $("#new_office").click(function() {
-            if ($("#office_new").val().length > 0) {
-                newOffice($("#office_new").val());
-            }
-        });
-
-        $("#office").bind("enterKey",function(e) {
-            if ($("#office_new").val().length > 0) {
-                newOffice($("#office_new").val());
-            }
-        });
-        $("#office_new").keyup(function(e) {
-            if(e.keyCode == 13) {
-                $(this).trigger("enterKey");
-            }
-        });
-
-        $("body").on("click", "button[id*=office-]", function() {
-            selectOffice(this);
-        });
-        $("body").on("keyup", "button[id*=office-]", function(e) {
-            if(e.keyCode == 46) {
-                deleteOffice(this);
-            }
-        });
-        [% END %]
-    });
-    [% IF POSIntegration_in_branch %]
-    function selectOffice(button) {
-        // Deselect all other buttons
-        $.each($("button[id*=office-]"), function(key, obj) {
-            $(obj).attr("class", "office-button");
-        })
-        $(button).attr("class", "office-button selected");
-
-        $("#office").val($(button).attr("id").substr(7));
-    }
-    function newOffice(office) {
-        var offices = getOffices();
-
-        if (offices == null) {
-            offices = [];
-        }
-        if (offices.indexOf(office) > -1) {
-            return offices;
-        }
-        offices.push(office);
-
-        $.each(offices, function(key, val){
-            if (!$("#office-"+val).length) {
-                $("#offices").append('<button id="office-'+val+'" type="button" class="office-button">'+val+'</button>');
-            }
-        });
-
-        setCookie("offices", JSON.stringify(offices), "100*365");
-
-        $("#office_new").val("");
-        return offices;
-    }
-    function deleteOffice(obj) {
-        var offices = getOffices();
-
-        if (offices == null) {
-            return null;
-        }
-
-        $(obj).remove();
-
-        var index = offices.indexOf($(obj).attr("id").substr(7));
-
-        offices.splice(index, 1);
-
-        if ($("#office").val() == $(obj).attr("id").substr(7)) {
-            $("#office").val("");
-        }
-        setCookie("offices", JSON.stringify(offices), "100*365");
-
-        return offices;
-    }
-    function loadCashRegisters() {
-        var offices = getOffices();
-
-        if (offices == null) {
-            return null;
-        }
-        $.each(offices, function(key, val){
-            if (!$("#office-"+val).length) {
-                $("#offices").append('<button id="office-'+val+'" type="button" class="office-button">'+val+'</button>');
-            }
-        });
-    }
-    function getOffices() {
-        var cookie;
-        var name = "offices=";
-        var ca = document.cookie.split(';');
-        for(var i=0; i<ca.length; i++) {
-            var c = ca[i];
-            while (c.charAt(0)==' ') c = c.substring(1);
-            if (c.indexOf(name) == 0) cookie = c.substring(name.length,c.length);
-        }
-
-        if (!cookie) {
-            return null;
-        }
-
-        return JSON.parse(cookie);
-    }
-
-    function setCookie(cname, cvalue, exdays) {
-        var d = new Date();
-        d.setTime(d.getTime() + (exdays*24*60*60*1000));
-        var expires = "expires="+d.toUTCString();
-        document.cookie = cname + "=" + cvalue + "; " + expires;
-    }
-
-    function validatePayment(obj) {
-        if ($("#office").val().length == 0) {
-            alert(_("Please select office"));
-            return false;
-        }
-        $(obj)[0].submit();
-    }
-    [% END %]
-</script>
-[% END %]

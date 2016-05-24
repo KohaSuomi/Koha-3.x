@@ -682,11 +682,50 @@
         }
       }
     },
-    "/pos/cpu/{invoicenumber}/report": {
+    "/payments/pos/cpu/{invoicenumber}/report": {
       "post": {
-        "x-mojo-controller": "Koha::REST::V1::Pos::CPU::Reports",
+        "x-mojo-controller": "Koha::REST::V1::Payments::Pos::CPU::Reports",
         "operationId": "cpuReport",
         "tags": ["POS Integration"],
+        "parameters": [
+          {
+            "$ref": "#/parameters/invoicenumberPathParam"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "type": "string",
+            "description": "New report",
+            "schema": { "$ref": "#/definitions/CPUinvoiceReport" }
+          }
+        ],
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "responses": {
+          "200": {
+            "description": "Response for receiving report",
+            "type": "string"
+          },
+          "400": {
+            "description": "Bad parameters",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "404": {
+            "description": "Transaction not found",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          }
+        }
+      }
+    },
+    "/payments/online/cpu/{invoicenumber}/report": {
+      "post": {
+        "x-mojo-controller": "Koha::REST::V1::Payments::Online::CPU::Reports",
+        "operationId": "cpuReport",
+        "tags": ["Online Payments"],
         "parameters": [
           {
             "$ref": "#/parameters/invoicenumberPathParam"
@@ -1316,7 +1355,12 @@
           "description": "Hash for response parameters",
           "type": "string"
         }
-      }
+      },
+      "required": [
+        "Id",
+        "Status",
+        "Hash"
+      ]
     },
     "error": {
       "type": "object",

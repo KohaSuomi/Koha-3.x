@@ -28,8 +28,9 @@ use C4::Members;
 use C4::Accounts;
 use C4::Koha;
 use C4::Branch;
-use C4::OPLIB::CPUIntegration;
 use JSON;
+
+use Koha::Payment::POS;
 
 my $input = CGI->new();
 
@@ -44,18 +45,6 @@ my ( $template, $loggedinuser, $cookie ) = get_template_and_user(
     }
 );
 
-# POS integration AJAX call
-my $posintegration = 1 if (C4::Context->preference("POSIntegration") ne "OFF");
-my $posintegration_in_branch = 1 if C4::OPLIB::CPUIntegration::hasBranchEnabledIntegration(C4::Branch::mybranch());
-if ($posintegration && $posintegration_in_branch && $input->param('POSTDATA')) {
-    my $payment = JSON->new->utf8->canonical(1)->decode($input->param('POSTDATA'));
-
-    if ($payment->{send_payment} && $payment->{send_payment} eq "POST") {
-        output_ajax_with_http_headers $input, C4::OPLIB::CPUIntegration::SendPayment($payment);
-        exit 1;
-    }
-}
-
 # get borrower details
 my $borrowernumber = $input->param('borrowernumber');
 my $borrower       = GetMember( borrowernumber => $borrowernumber );
@@ -67,17 +56,17 @@ my $branch = GetBranch( $input, GetBranches() );
 my ( $total_due, $accts, $numaccts ) = GetMemberAccountRecords($borrowernumber);
 my $total_paid = $input->param('paid');
 
+
 my $individual   = $input->param('pay_individual');
 my $writeoff     = $input->param('writeoff_individual');
 my $select_lines = $input->param('selected');
 my $select       = $input->param('selected_accts');
-my $office       = $input->param('Office');
 my $payment_note = uri_unescape $input->param('payment_note');
 my $accountno;
 my $accountlines_id;
 
-$template->param( POSIntegration => 1 ) if $posintegration;
-$template->param( POSIntegration_in_branch => 1 ) if $posintegration_in_branch;
+my $pos = Koha::Payment::POS->new($branch) if Koha::Payment::POS::is_pos_integration_enabled($branch);
+$template->param( POSInterface => $pos->get_interface() ) if $pos;
 
 if ( $individual || $writeoff ) {
     if ($individual) {
@@ -125,14 +114,13 @@ if ( $total_paid and $total_paid ne '0.00' ) {
             total_due => $total_due
         );
     } else {
-        if ($posintegration and C4::Context->preference("POSIntegration") eq "cpu" and $posintegration_in_branch) {
+        if ($pos) {
             my $payment;
 
             $payment->{borrowernumber}      = $borrowernumber;
             $payment->{total_paid}          = $total_paid;
             $payment->{total_due}           = $total_due;
             $payment->{payment_note}        = $payment_note || $input->param('notes') || $input->param('selected_accts_notes');
-            $payment->{office}              = $office;
             my @selected = (defined $select) ? split /,/, $select : $accountno;
             $payment->{selected}             = \@selected;
 
@@ -149,15 +137,15 @@ if ( $total_paid and $total_paid ne '0.00' ) {
                 selected    => $payment->{selected},
             });
 
-            # Get payment in CPU format
-            my $CPUPayment = C4::OPLIB::CPUIntegration::InitializePayment($payment);
+            # Get payment in a format that is ready to be sent to your provider
+            # Include $input in case you have custom query parameters that you want to use
+            my $prepared_payment = $pos->prepare_payment($payment, $input);
 
             $template->param(
                 startSending => 1,
-                payment => $CPUPayment,
-                posdestination => C4::Context->config('pos')->{'CPU'}->{'url'},
-                json_payment => JSON::encode_json($CPUPayment),
-                office          => $office,
+                payment => $prepared_payment,
+                POSInterface => $pos->get_interface(),
+                json_payment => JSON::encode_json($prepared_payment),
             );
         } else {
 

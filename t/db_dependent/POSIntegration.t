@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-# Copyright 2015 Open Source Freedom Fighters
+# Copyright 2016 KohaSuomi
 #
 # This file is part of Koha.
 #
@@ -35,8 +35,6 @@ use t::lib::TestObjects::BorrowerFactory;
 use t::lib::TestObjects::SystemPreferenceFactory;
 use t::lib::TestObjects::FinesFactory;
 
-use bignum;
-
 ##Setting up the test context
 my $testContext = {};
 
@@ -67,12 +65,9 @@ my $borrowers = $borrowerFactory->createTestGroup([
 
 my $systempreferences = t::lib::TestObjects::SystemPreferenceFactory->createTestGroup([
             {preference => 'POSIntegration',
-             value      => 'cpu',
-            },
-            {preference => 'cpuitemnumbers',
-             value      => '
-             CPL:
-               Default: 0000
+             value      => 'Default:
+  POSInterface: CPU
+  Default: 123
              ',
             },
         ], undef, $testContext);

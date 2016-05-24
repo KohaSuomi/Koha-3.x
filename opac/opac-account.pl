@@ -28,7 +28,7 @@ use C4::Output;
 use C4::Budgets qw(GetCurrency);
 use warnings;
 
-use C4::OPLIB::CPUIntegration;
+use Koha::Payment::Online;
 
 my $query = new CGI;
 my ( $template, $borrowernumber, $cookie ) = get_template_and_user(
@@ -76,7 +76,7 @@ $template->param (
     total => sprintf( "%.2f", $total ),
 	accountview => 1,
     currency => C4::Budgets::GetCurrency(),
-    online_payments_enabled => C4::OPLIB::CPUIntegration->isOnlinePaymentsEnabled(C4::Branch::mybranch()),
+    online_payments_enabled => Koha::Payment::Online::is_online_payment_enabled(C4::Branch::mybranch()),
     minimumSum => C4::Context->preference("OnlinePaymentMinTotal"),
 );
 
