@@ -102,7 +102,7 @@ use ZOOM;
 use XML::Simple;
 use C4::Boolean;
 use C4::Debug;
-use C4::Members;
+#require C4::Members; #Avoid possible circular module dependency loop with other Exporting modules.
 use POSIX ();
 use DateTime::TimeZone;
 use Module::Load::Conditional qw(can_load);
