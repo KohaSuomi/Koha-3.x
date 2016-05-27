@@ -1314,13 +1314,14 @@ sub _enforceCommandlineSuperuserBorrowerExists {
 	unless ($commandlineSuperuser) {
 		my $dbh = C4::Context->dbh();
 		my $ctgr = $dbh->selectrow_array("SELECT categorycode FROM categories WHERE category_type = 'I' LIMIT 1;");
+                $ctgr = $dbh->selectrow_array("SELECT categorycode FROM categories LIMIT 1;") unless $ctgr;
 		my $brnchcd = $dbh->selectrow_array("SELECT branchcode FROM borrowers GROUP BY branchcode ORDER BY COUNT(*) DESC LIMIT 1;");
 		C4::Members::AddMember(cardnumber => 'commandlineadmin',
 							   userid => 'commandlineadmin',
 							   surname => 'Admin',
 							   firstname => 'Koha',
 							   dateexpiry => '2099-12-31',
-							   categorycode => $ctgr,
+							   categorycode => $ctgr || 'NOCAT',
 							   branchcode => $brnchcd,
 		);
 		$commandlineSuperuser = C4::Members::GetMember(userid => 'commandlineadmin');
