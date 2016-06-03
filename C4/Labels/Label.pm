@@ -297,7 +297,7 @@ sub _BIBBAR {
     my $self = shift;
     my $barcode_llx = $self->{'llx'} + $self->{'left_text_margin'};     # this places the bottom left of the barcode the left text margin distance to right of the left edge of the label ($self->{'llx'})
     my $barcode_lly = $self->{'lly'} - $self->{'top_text_margin'} + 25;      # this places the bottom left of the barcode the top text margin distance above the bottom of the label ($lly)
-    my $barcode_width = 0.8 * $self->{'width'};                         # this scales the barcode width to 80% of the label width
+    my $barcode_width = 0.68 * $self->{'width'};                         # this scales the barcode width to 80% of the label width
     my $barcode_y_scale_factor = 0.01 * $self->{'height'};              # this scales the barcode height to 10% of the label height
     my $line_spacer = ($self->{'font_size'} * 1.3);       # number of pixels between text rows (This is actually leading: baseline to baseline minus font size. Recommended starting point is 20% of font size.).
     my $text_lly = ($self->{'lly'} + ($self->{'height'} - $self->{'top_text_margin'}));
