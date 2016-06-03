@@ -74,6 +74,7 @@ overdue_notices.pl
                                   For ex. "12" generates only the first and second overdue letter.
                                   Ex. "13" Generates the first and third overdue letters.
                                   Ex. "2" Generates only the second overdue letter.
+   -p, -preferemail               Generates message for one message type. Email, SMS or print, prefers email.
 
 =head1 OPTIONS
 
@@ -296,6 +297,7 @@ my @myborcat;
 my @myborcatout;
 my $date;
 my $letternumbers = 123; #overdue notifications letter1, letter2, letter3 to generate.
+my $preferemail = 0; # Prevents generating email, sms and print letter. Generates only one if patron data is right, prefers email.
 
 GetOptions(
     'help|?'         => \$help,
@@ -315,6 +317,7 @@ GetOptions(
     'borcatout=s'    => \@myborcatout,
     'email=s'        => \@emails,
     'letternumbers=s'  => \$letternumbers,
+    'p|preferemail'  => \$preferemail,
 ) or pod2usage(2);
 pod2usage(1) if $help;
 pod2usage( -verbose => 2 ) if $man;
@@ -583,6 +586,17 @@ END_SQL
                 @message_transport_types = @{ GetOverdueMessageTransportTypes( q{}, $overdue_rules->{categorycode}, $i) }
                     unless @message_transport_types;
 
+                #HACKMAN HERE, Bug #1093 Koha-Suomi
+                if ($preferemail && scalar @emails_to_use && grep( /^email$/, @message_transport_types)) {
+                  $verbose and warn "Generating only email message for patron";
+                  @message_transport_types = 'email';
+                } elsif ($preferemail && $data->{smsalertnumber} && grep( /^sms$/, @message_transport_types)) {
+                  $verbose and warn "Generating only sms message for patron";
+                  @message_transport_types = 'sms';
+                } elsif ($preferemail && not scalar @emails_to_use && grep( /^print$/, @message_transport_types)) {
+                  $verbose and warn "Generating only print message for patron";
+                  @message_transport_types = 'print';
+                } 
 
                 my $print_sent = 0; # A print notice is not yet sent for this patron
                 for my $mtt ( @message_transport_types ) {
