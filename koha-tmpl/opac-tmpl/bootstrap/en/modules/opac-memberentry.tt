@@ -222,9 +222,9 @@
 
                                             <input type="text" id="borrower_othernames" name="borrower_othernames" value="[% borrower.othernames %]" />
                                             [% IF mandatory.defined('othernames') %]<span class="required">Required</span>[% END %]
-                                            <span style="color: #808080; font-size: small; font-weight: bold; display: inline-block;">
+                                            <!--<span style="color: #808080; font-size: small; font-weight: bold; display: inline-block;">
                                                 The Joensuu main library starts to provide self-service holds. Use this name to find your own holds from the self-service shelf.
-                                            </span>
+                                            </span>-->
                                         </li>
                                     [% END %]
 
