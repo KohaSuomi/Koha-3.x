@@ -504,10 +504,11 @@ sub _get_response_string {
     my ($class, $code) = @_;
 
     my $response = $class->_get_response_int($code);
-    my $status = $response;
+    my $status;
     $status->{status} = 'cancelled';
     $status->{status} = 'paid' if $response->{'status'} == 1;
     $status->{status} = 'pending' if $response->{'status'} == 2;
+    $status->{description} = $response->{description} if $response->{description};
 
     return $status;
 };
