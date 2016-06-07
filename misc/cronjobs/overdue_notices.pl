@@ -628,7 +628,7 @@ END_SQL
                     if (@misses) {
                         $verbose and warn "The following terms were not matched and replaced: \n\t" . join "\n\t", @misses;
                     }
-
+                    set_overdue_price($borrowernumber, $i, $overdue_rules->{categorycode}, $overdue_rules->{"letter$i"}); #HACKMAN HERE, Bug #1050
                     if ($nomail) {
                         push @output_chunks,
                           prepare_letter_for_printing(
@@ -873,5 +873,23 @@ sub prepare_letter_for_printing {
         # $return .= Data::Dumper->Dump( [ $params->{'borrowernumber'}, $params->{'letter'} ], [qw( borrowernumber letter )] );
     }
     return $return;
+}
+
+sub set_overdue_price {
+  my ($borrowernumber, $letternumber, $categorycode, $letter_code) = @_;
+
+  # Find right price from overdue rules.
+  my $fine = "fine".$letternumber;
+  my $sth = C4::Context->dbh->prepare("SELECT ".$fine." FROM overduerules WHERE categorycode = ?");
+  $sth->execute($categorycode);
+  my $price = $sth->fetchrow_array;
+  # Set overdue price to patron.
+  if ($letter_code =~ /1/) {
+    C4::Accounts::manualinvoice( $borrowernumber, undef, '1. huomautus', 'ODUE', $price, undef );
+  } elsif ($letter_code =~ /2/) {
+    C4::Accounts::manualinvoice( $borrowernumber, undef, '2. huomautus', 'ODUE', $price, undef );
+  } elsif ($letter_code =~ /CLAIM/) {
+    C4::Accounts::manualinvoice( $borrowernumber, undef, 'Perintä', 'ODUE', $price, undef );
+  }
 }
 
