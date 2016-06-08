@@ -38,6 +38,9 @@ use Net::FTP;
 use C4::OPLIB::ClaimletterOdt;
 use C4::OPLIB::ClaimletterText;
 
+use Koha::Borrower::Debarments;
+use Koha::DateUtils;
+
 #binmode STDOUT, ":encoding(UTF-8)";
 
 
@@ -522,6 +525,14 @@ sub markODUECLAIMasSent_and_ManualInvoice {
             # Add the claiming fee to the guarantor's account
             my @claimBarcodes = map { buildManualInvoiceNote($_) } @$issueDatas; #Collect all the barcodes (as links) claimed from this guarantor
             C4::Accounts::manualinvoice(  $guarantorNumber, undef, 'Perintäkirjemaksu', 'ODUECLAIM', $odueClaimPrice, "Viivakoodit: @claimBarcodes"  );
+            Koha::Borrower::Debarments::AddUniqueDebarment(
+            {
+                borrowernumber => $guarantorNumber,
+                type           => 'OVERDUES',
+                comment => "Perintäkirjeestä aiheutunut lainauskielto ".
+                           Koha::DateUtils::output_pref( Koha::DateUtils::dt_from_string() ),
+            }
+        );
         }
     }
 
