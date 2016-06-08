@@ -415,7 +415,6 @@ sub _convert_to_cpu_products {
         $tmp->{Price} = $product->{price};
         $tmp->{Description} = $product->{description};
         $tmp->{Code} = $product->{accounttype};
-        $tmp->{_itemnumber} = $product->{itemnumber} if $product->{itemnumber};
 
         push @$CPU_products, $tmp;
     }
