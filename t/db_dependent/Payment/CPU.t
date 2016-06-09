@@ -161,7 +161,7 @@ sub MakeOnlinePayment {
 }
 sub IsCorrectProductCodes {
     my $transaction = Koha::PaymentsTransactions->new->next();
-    my $payment = Koha::Payment::Online->new(C4::Branch::mybranch());
+    my $payment = Koha::Payment::Online->new({ branch => C4::Branch::mybranch() });
 
     my $products = $payment->get_prepared_products(
                                     $transaction->GetProducts(),

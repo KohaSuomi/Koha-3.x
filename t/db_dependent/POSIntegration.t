@@ -65,7 +65,7 @@ my $borrowers = $borrowerFactory->createTestGroup([
 
 my $systempreferences = t::lib::TestObjects::SystemPreferenceFactory->createTestGroup([
             {preference => 'POSIntegration',
-             value      => 'Default:
+             value      => 'CPL:
   POSInterface: CPU
   Default: 123
              ',

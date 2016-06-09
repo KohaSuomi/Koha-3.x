@@ -41,7 +41,7 @@ if (Koha::Payment::POS::is_pos_integration_enabled(C4::Branch::mybranch()) && $i
 
     if ($payment->{send_payment} && $payment->{send_payment} eq "POST") {
         delete $payment->{send_payment};
-        my $pos_payment = Koha::Payment::POS->new(C4::Branch::mybranch());
+        my $pos_payment = Koha::Payment::POS->new({ branch => C4::Branch::mybranch() });
         output_ajax_with_http_headers $input, $pos_payment->send_payment($payment);
         exit 1;
     }

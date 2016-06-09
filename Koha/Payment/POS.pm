@@ -47,7 +47,7 @@ This documentation explains how to subclass different POS payment interfaces.
 
     if ($transaction) {
         # Creates a Koha::Payment::POS::Test object
-        $payment = Koha::Payment::POS->new;
+        $payment = Koha::Payment::POS->new({ branch => "CPL" });
         $payment->send_payment($transaction);
     }
 
@@ -73,12 +73,13 @@ the required subroutines.
 =cut
 
 sub new {
-    my ($class, $self, $branch) = @_;
+    my ($class, $self) = @_;
 
     $self = {} unless ref $self eq 'HASH';
 
+    my $branch = $self->{branch};
     $branch = C4::Branch::mybranch() if not $branch;
-    my $interface = is_pos_integration_enabled($branch);
+    my $interface = $class->is_pos_integration_enabled($branch);
 
     Koha::Exception::NoSystemPreference->throw(error => "Koha::Payment::POS->new():>"
         . "POS integration is disabled in POSIntegration system preference.", syspref => "POSIntegration" )

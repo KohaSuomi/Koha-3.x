@@ -55,7 +55,7 @@ The branch is Patron's home branch.
 
     if ($transaction) {
         # Creates a Koha::Payment::Online::Test object
-        $payment = Koha::Payment::Online->new("CPL");
+        $payment = Koha::Payment::Online->new({ branch => "CPL" });
         $payment->send_payment($transaction);
     }
 
@@ -81,12 +81,13 @@ See _validate_interface_implementation() for the required subroutines.
 =cut
 
 sub new {
-    my ($class, $self, $branch) = @_;
+    my ($class, $self) = @_;
 
     $self = {} unless ref $self eq 'HASH';
 
+    my $branch = $self->{branch};
     $branch = C4::Branch::mybranch() if not $branch;
-    my $interface = is_online_payment_enabled($branch);
+    my $interface = $class->is_online_payment_enabled($branch);
 
     Koha::Exception::NoSystemPreference->throw(error => "Koha::Payment::Online->new():>"
         . "Online payment is disabled in OnlinePayments system preference.",

@@ -65,7 +65,7 @@ my $payment_note = uri_unescape $input->param('payment_note');
 my $accountno;
 my $accountlines_id;
 
-my $pos = Koha::Payment::POS->new($branch) if Koha::Payment::POS::is_pos_integration_enabled($branch);
+my $pos = Koha::Payment::POS->new({ branch => C4::Branch::mybranch() }) if Koha::Payment::POS::is_pos_integration_enabled(C4::Branch::mybranch());
 $template->param( POSInterface => $pos->get_interface() ) if $pos;
 
 if ( $individual || $writeoff ) {
@@ -129,6 +129,7 @@ if ( $total_paid and $total_paid ne '0.00' ) {
                 borrowernumber      => $payment->{borrowernumber},
                 status              => "unsent",
                 description         => $payment->{payment_note} || '',
+                user_branch         => C4::Branch::mybranch(),
             })->store();
 
             # Link accountlines to the transaction

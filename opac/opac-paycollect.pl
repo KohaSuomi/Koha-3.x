@@ -57,7 +57,7 @@ $template->param( BORROWER_INFO => \@bordat );
 
 my ( $total_due, $accts, $numaccts ) = C4::Members::GetMemberAccountRecords($borrowernumber);
 my $minimumSum = C4::Context->preference("OnlinePaymentMinTotal");
-my $payment = Koha::Payment::Online->new(C4::Branch::mybranch());
+my $payment = Koha::Payment::Online->new({ branch => C4::Branch::mybranch() });
 my $interface = $payment->get_interface();
 
 if (not $payment->is_online_payment_enabled(C4::Branch::mybranch())) {

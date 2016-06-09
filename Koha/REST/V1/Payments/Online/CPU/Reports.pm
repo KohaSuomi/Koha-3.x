@@ -31,7 +31,7 @@ sub cpu_report {
     $logger->warn("Transaction $invoicenumber not found.") if not $transaction;
     return $c->$cb({ error => "Transaction not found"}, 404) if not $transaction;
 
-    my $interface = Koha::Payment::Online->new($transaction->user_branch);
+    my $interface = Koha::Payment::Online->new({ branch => $transaction->user_branch });
     my $valid_hash = $interface->is_valid_hash($args);
     $logger->warn("Invalid hash for transaction $invoicenumber.") if not $valid_hash;
     return $c->$cb({ error => "Invalid Hash" }, 400) if not $valid_hash;
