@@ -20,6 +20,7 @@ package C4::OPLIB::VendorConfig;
 use Modern::Perl;
 
 use Koha::Logger;
+use C4::Matcher;
 
 use Koha::Exception::BadSystemPreference;
 
