@@ -21,6 +21,7 @@ use Modern::Perl;
 
 use Exception::Class (
     'Koha::Exception::NotImplemented' => {
+        isa => 'Koha::Exception',
         description => 'Subroutine requires implementation.',
     },
 );
