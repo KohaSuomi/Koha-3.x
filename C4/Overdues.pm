@@ -251,7 +251,7 @@ sub CalcFine {
 
     #HACKMAN HERE! If we have quick loan items identified by ccode == PILA (Pikalaina), their fine is 0.50!
     if ($item->{ccode} eq 'PILA') {
-        $data->{fine} = 0.5;
+        $data->{fine} = 0.25;
     }
 
     #HACKMAN HERE! Childrens and young adults material from permanent_location LAP, LAK, LVA, NUO, NUA is not fined,
