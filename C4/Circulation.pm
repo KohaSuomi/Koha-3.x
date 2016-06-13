@@ -2702,6 +2702,10 @@ sub CanBookBeRenewed {
     if ($item->{ccode} eq 'PILA') {
         return (0, 'non_renewable');
     }
+    ##HACKMAN HERE!
+    if ($item->{ccode} eq 'LYLA') {
+        return (0, 'non_renewable');
+    }
 
 
     $borrowernumber ||= $itemissue->{borrowernumber};
@@ -2891,6 +2895,10 @@ sub GetRenewCount {
 
     #Quick circulating (PILA) cannot be renewed!
     if ($item && $item->{ccode} eq 'PILA') {
+        return (0, 0, 0); #returns ( $renewcount, $renewsallowed, $renewsleft );
+    }
+
+    if ($item && $item->{ccode} eq 'LYLA') {
         return (0, 0, 0); #returns ( $renewcount, $renewsallowed, $renewsleft );
     }
 

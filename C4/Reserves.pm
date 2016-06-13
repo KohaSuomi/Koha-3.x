@@ -571,7 +571,7 @@ sub CanItemBeReserved{
     my $borrower = C4::Members::GetMember('borrowernumber'=>$borrowernumber);
 
     ##HACKMAN HERE! certain Items cannot be put on hold!
-    if ($item->{ccode} eq 'PILA' ||
+    if ($item->{ccode} eq 'PILA' || $item->{ccode} eq 'LYLA' ||
         $item->{permanent_location} eq 'SII' || $item->{permanent_location} eq 'REF' ||
         $item->{homebranch} eq 'JOE_LAKO' || $item->{homebranch} eq 'JOE_LASI' ||
         $item->{itype} eq 'EK') {
@@ -1140,7 +1140,7 @@ sub CheckReserves {
     return if  ( $notforloan_per_item > 0 ) or $notforloan_per_itemtype;
 
     #HACKMAN HERE: Don't catch certain Items for reservation/holding!
-    return if ($ccode eq 'PILA' ||
+    return if ($ccode eq 'PILA' || $ccode eq 'LYLA' ||
                $homebranch eq 'JOE_LAKO' || $homebranch eq 'JOE_LASI' ||
                $permanent_location eq 'SII' || $permanent_location eq 'REF' ||
                $itype eq 'EK');
