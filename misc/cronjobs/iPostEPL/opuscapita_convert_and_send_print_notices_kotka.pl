@@ -61,6 +61,11 @@ print localtime . ": Processing letters in $sourcefile.\n";
 # Get the actual message content from letters
 my @contents=grep /<pre>/, @lines;
 
+unless (@contents) {
+  print localtime . ": No data, will end here!\n";
+  exit 1;
+} 
+
 # Make EPL
 # Test header
 #my $eplheader="EPL114507929470TT002SD 0                $ipostcontact\r\n";
@@ -147,6 +152,13 @@ foreach (@contents) {
     print "\n=== Source data ===\n" . $notice . "=== Source data ends ===\n";
     print "\n" . localtime . ": Will not proceed.\n";
     exit 1;
+  }
+
+  unless ( $header =~ /EPLKFI/ ) {
+    print localtime . ": ERROR: Letter #" . $letters . " seem to be lacking EPL data.\n";
+    print "\n=== Source data ===\n" . $notice . "=== Source data ends ===\n";
+    print "\n" . localtime . ": Will go to next line\n";
+    next if $notice;
   }
 
   $header=crlf($header);
