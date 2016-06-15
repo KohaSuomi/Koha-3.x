@@ -208,7 +208,7 @@ sub CompletePayment {
     # Reverse the payment if old status is different than new status (and either paid or cancelled)
     if (defined $transaction->accountlines_id && (($old_status eq "paid" and $new_status eq "cancelled") or ($old_status eq "cancelled" and $new_status eq "paid"))){
         C4::Accounts::ReversePayment($transaction->accountlines_id);
-        $transaction->set($status)->store();
+        $transaction->set({ status => $status, description => $transaction->description . "\n\nPayment was reverted after it has already been paid" })->store();
         return;
     }
 
