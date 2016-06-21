@@ -64,28 +64,9 @@
                                 </ul> <!-- / .dropdown-menu -->
                             </li> <!-- / .dropdown -->
                         [% END # / IF virtualshelves %]
-
-                            <li class="dropdown"> <!-- Prepared searches -->
-                                <a href="#" class="dropdown-toggle" id="preparedSearches" data-toggle="dropdown" role="button"><i class="icon-search icon-white"></i> <span class="listslabel">Searches</span> <b class="caret"></b></a>
-                                <ul aria-labelledby="preparedSearches" role="menu" class="dropdown-menu">
-                                    <li role="presentation"><a href="#" tabindex="-1" class="menu-inactive" role="menuitem"><strong>Just received:</strong></a></li>
-                                    <li class="divider" role="presentation"></li>
-                                    <li role="presentation"><a href="/cgi-bin/koha/opac-search.pl?q=ccl%3Ditype%3DKI+and+notforloan%3D0+and+datereceived%2Crtrn%3D[% currentYear %]&sort_by=datereceived_dsc" tabindex="-1" role="menuitem">Books</a></li>
-                                    <li role="presentation"><a href="/cgi-bin/koha/opac-search.pl?q=ccl%3Ditype%3DKA+or+itype%3DCD+or+itype%3DMP+or+itype%3DNU+or+itype%3DLE+and+notforloan%3D0+and+datereceived%2Crtrn%3D[% currentYear %]&sort_by=datereceived_dsc" tabindex="-1" role="menuitem">Music</a></li>
-                                    <li role="presentation"><a href="/cgi-bin/koha/opac-search.pl?q=ccl%3Ditype%3DKP+and+notforloan%3D0+and+datereceived%2Crtrn%3D[% currentYear %]&sort_by=datereceived_dsc" tabindex="-1" role="menuitem">Console games</a></li>
-                                    <li role="presentation"><a href="/cgi-bin/koha/opac-search.pl?q=ccl%3Ditype%3DBR+or+itype%3DDV+or+itype%3DVI+and+notforloan%3D0+and+datereceived%2Crtrn%3D[% currentYear %]&sort_by=datereceived_dsc" tabindex="-1" role="menuitem">Videos</a></li>
-                                    <li role="presentation"><a href="/cgi-bin/koha/opac-search.pl?q=ccl%3Dlocation%3DKUV+or+location%3DLAP+or+location%3DNUO+or+location%3DNUA+and+notforloan%3D0+and+datereceived%2Crtrn%3D[% currentYear %]&sort_by=datereceived_dsc" tabindex="-1" role="menuitem">Childrens material</a></li>
-                                    <li class="divider" role="presentation"></li>
-                                    <li role="presentation"><a href="#" tabindex="-1" class="menu-inactive" role="menuitem"><strong>Just ordered:</strong></a></li>
-                                    <li class="divider" role="presentation"></li>
-                                    <li role="presentation"><a href="/cgi-bin/koha/opac-search.pl?q=ccl%3Ditype%3DKI+and+acqdate%2Crtrn%3D[% currentYear %]&sort_by=acqdate_dsc" tabindex="-1" role="menuitem">Books</a></li>
-                                    <li role="presentation"><a href="/cgi-bin/koha/opac-search.pl?q=ccl%3Ditype%3DKA+or+itype%3DCD+or+itype%3DMP+or+itype%3DNU+or+itype%3DLE+and+acqdate%2Crtrn%3D[% currentYear %]&sort_by=acqdate_dsc" tabindex="-1" role="menuitem">Music</a></li>
-                                    <li role="presentation"><a href="/cgi-bin/koha/opac-search.pl?q=ccl%3Ditype%3DKP+and+acqdate%2Crtrn%3D[% currentYear %]&sort_by=acqdate_dsc" tabindex="-1" role="menuitem">Console games</a></li>
-                                    <li role="presentation"><a href="/cgi-bin/koha/opac-search.pl?q=ccl%3Ditype%3DBR+or+itype%3DDV+or+itype%3DVI+and+acqdate%2Crtrn%3D[% currentYear %]&sort_by=acqdate_dsc" tabindex="-1" role="menuitem">Videos</a></li>
-                                    <li role="presentation"><a href="/cgi-bin/koha/opac-search.pl?q=ccl%3Dlocation%3DKUV+or+location%3DLAP+or+location%3DNUO+or+location%3DNUA+and+acqdate%2Crtrn%3D[% currentYear %]&sort_by=acqdate_dsc" tabindex="-1" role="menuitem">Childrens material</a></li>
-                                </ul> <!-- / .dropdown-menu -->
-                            </li> <!-- / prepared searches .dropdown -->
-
+                        <!-- OPAC navigation preferences -->
+                        [% Koha.Preference( 'opacnavigation' )%]
+                        
                     </ul> <!-- / .nav -->
                     [% IF Koha.Preference( 'virtualshelves' ) == 1 %]<div id="listsDetails"></div>[% END %]
                     [% IF Koha.Preference( 'opacuserlogin' ) == 1 %]
