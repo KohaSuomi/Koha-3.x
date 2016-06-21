@@ -415,6 +415,12 @@ foreach my $biblioNum (@biblionumbers) {
     foreach my $itemInfo (@{$biblioData->{itemInfos}}) {
         $debug and warn $itemInfo->{'notforloan'};
 
+        my $no_checkout = IsNoReservationOrCheckout($itemInfo->{itemnumber}, "no_checkout");
+        if ($no_checkout) {
+            $itemInfo->{'notforloan'} = 1;
+            $itemInfo->{'itemnotforloan'} = 1;
+        }
+
         # Get reserve fee.
         my $fee = GetReserveFee(undef, $borrowernumber, $itemInfo->{'biblionumber'}, 'a',
                                 ( $itemInfo->{'biblioitemnumber'} ) );
@@ -537,6 +543,12 @@ foreach my $biblioNum (@biblionumbers) {
         if (IsAvailableForItemLevelRequest($itemNum) and $policy_holdallowed and CanItemBeReserved($borrowernumber,$itemNum) eq 'OK' and ($itemLoopIter->{already_reserved} ne 1)) {
             $itemLoopIter->{available} = 1;
             $numCopiesAvailable++;
+        }
+
+        my $no_checkout = IsNoReservationOrCheckout($itemInfo->{itemnumber}, "no_checkout");
+        my $no_reservation = IsNoReservationOrCheckout($itemInfo->{itemnumber}, "no_reservation");
+        if($no_checkout || $no_reservation) {
+            $itemLoopIter->{available} = 0;
         }
 
         $itemLoopIter->{imageurl} = getitemtypeimagelocation( 'opac', $itemTypes->{ $itemInfo->{itype} }{imageurl} );

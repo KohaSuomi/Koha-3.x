@@ -242,6 +242,12 @@ foreach my $item (@items) {
     my $itembranchcode = $item->{$separatebranch};
     $item->{homebranch}        = GetBranchName($item->{homebranch});
 
+    my $no_checkout = C4::Circulation::IsNoReservationOrCheckout($item->{itemnumber}, "no_checkout");
+    if ($no_checkout) {
+        $item->{'itemnotforloan'} = 1;
+    }
+
+
     # can place holds defaults to yes
     $norequests = 0 unless ( ( $item->{'notforloan'} > 0 ) || ( $item->{'itemnotforloan'} > 0 ) );
 

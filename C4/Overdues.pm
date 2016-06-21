@@ -31,6 +31,7 @@ use C4::Accounts;
 use C4::Log; # logaction
 use C4::Debug;
 use C4::Items qw/GetItem/;
+use Data::Dumper;
 
 use vars qw($VERSION @ISA @EXPORT);
 
@@ -248,23 +249,20 @@ sub CalcFine {
     my $data = C4::Circulation::GetIssuingRule($bortype, $itemtype, $branchcode);
     my $fine_unit = $data->{lengthunit};
     $fine_unit ||= 'days';
-
-    #HACKMAN HERE! If we have quick loan items identified by ccode == PILA (Pikalaina), their fine is 0.50!
-    if ($item->{ccode} eq 'PILA') {
-        $data->{fine} = 0.25;
+    #KD#1134, Improve authorised values wit allow and deny option
+    my $overduefine = DistinctiveOverdueFine($item->{itemnumber});
+    if ($overduefine){
+        warn "New overdue fine: $overduefine\n";
+        $data->{fine} = $overduefine;
     }
 
     #HACKMAN HERE! Childrens and young adults material from permanent_location LAP, LAK, LVA, NUO, NUA is not fined,
     #  unless it is of itemtypes VI, DV, DR, KP, CR, BR
-    my $itemRow = GetItem( undef, $item->{barcode}, undef );
-    my $pl = $itemRow->{permanent_location};
-    if ( ($pl eq 'KUV' || $pl eq 'LAP' || $pl eq 'LAK' || $pl eq 'LVA' || $pl eq 'NUO' || $pl eq 'NUA' || $pl eq 'NUV' || $pl eq 'OHE') ) {
-            $data->{fine} = 0;
-    }
-    #HACKMAN HERE! Kyyti's locations
-    if ( ($pl eq 'SN' || $pl eq 'N' || $pl eq 'ND' || $pl eq 'NV' || $pl eq 'NA') ) {
-            $data->{fine} = 0;
-    }
+    # my $itemRow = GetItem( undef, $item->{barcode}, undef );
+    # my $pl = $itemRow->{permanent_location};
+    # if ( ($pl eq 'KUV' || $pl eq 'LAP' || $pl eq 'LAK' || $pl eq 'LVA' || $pl eq 'NUO' || $pl eq 'NUA' || $pl eq 'NUV' || $pl eq 'OHE') ) {
+    #         $data->{fine} = 0;
+    # }
 
     my $chargeable_units = _get_chargeable_units($fine_unit, $start_date, $end_date, $branchcode);
     my $units_minus_grace = $chargeable_units - $data->{firstremind};
@@ -954,6 +952,46 @@ sub GetOverdueMessageTransportTypes {
         if grep {/^print$/} @mtts;
 
     return \@mtts;
+}
+
+=head2 DistinctiveOverdueFine
+
+  DistinctiveOverdueFine( $itemnumber )
+
+  Returns fine if the authorised value has one, otherwise will return
+
+  KD#1134, Improve authorised values wit allow and deny option
+
+=cut
+
+sub DistinctiveOverdueFine {
+    my $itemnumber = shift;
+    my $dbh = C4::Context->dbh;
+    my $sth = $dbh->prepare(q{
+        SELECT ccode, genre, sub_location, permanent_location 
+        FROM items
+        WHERE itemnumber = ?
+    });
+    $sth->execute($itemnumber);
+    my @values = $sth->fetchrow_array;
+    foreach my $value (@values) {
+        my $sth2 = $dbh->prepare(q{
+            SELECT overdue_fine 
+            FROM authorised_values
+            WHERE (category = 'LOC' or category = 'CCODE' or category = 'GENRE' 
+                or category = 'SUBLOC') 
+            and authorised_value = ?
+        });
+        $sth2->execute($value);
+        my $new_fine = $sth2->fetchrow;
+        if ($new_fine) {
+            warn "DistinctiveOverdueFine returns $new_fine\n";
+            return $new_fine;
+        }
+    
+    }
+    warn "DistinctiveOverdueFine returns nothing\n";
+    return 0;
 }
 
 1;

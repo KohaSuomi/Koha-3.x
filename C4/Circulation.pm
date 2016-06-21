@@ -94,6 +94,7 @@ BEGIN {
 		&AnonymiseIssueHistory
         &CheckIfIssuedToPatron
         &IsItemIssued
+        &IsNoReservationOrCheckout
 	);
 
 	# subs to deal with returns
@@ -915,6 +916,17 @@ sub CanBookBeIssued {
             }
             $needsconfirmation{BORRNOTSAMEBRANCH} = GetBranchName( $borrower->{'branchcode'} )
               if ( $borrower->{'branchcode'} ne $userenv->{branch} );
+        }
+    }
+    #KD#1134, Improve authorised values wit allow and deny option
+    my $no_checkout = IsNoReservationOrCheckout($item->{itemnumber}, "no_checkout");
+    if ($no_checkout) {
+        if(!C4::Context->preference("AllowNotForLoanOverride")){
+            $issuingimpossible{NOT_FOR_LOAN} = 1;
+            $issuingimpossible{item_notforloan} = $item->{'notforloan'};
+        }else{
+            $needsconfirmation{NOT_FOR_LOAN_FORCING} = 1;
+            $needsconfirmation{item_notforloan} = $item->{'notforloan'};
         }
     }
 
@@ -2698,12 +2710,9 @@ sub CanBookBeRenewed {
     my $item      = GetItem($itemnumber)      or return ( 0, 'no_item' );
     my $itemissue = GetItemIssue($itemnumber) or return ( 0, 'no_checkout' );
 
-    ##HACKMAN HERE! quickloan items cannot be renewed!
-    if ($item->{ccode} eq 'PILA') {
-        return (0, 'non_renewable');
-    }
-    ##HACKMAN HERE!
-    if ($item->{ccode} eq 'LYLA') {
+    #KD1134, Improve authorised values wit allow and deny option
+    my $non_renewable = IsNoReservationOrCheckout($itemnumber, 'no_reservation');
+    if ($non_renewable) {
         return (0, 'non_renewable');
     }
 
@@ -2891,14 +2900,10 @@ sub GetRenewCount {
     my $renewsleft    = 0;
 
     my $borrower = C4::Members::GetMember( borrowernumber => $bornum);
-    my $item     = GetItem($itemno); 
-
-    #Quick circulating (PILA) cannot be renewed!
-    if ($item && $item->{ccode} eq 'PILA') {
-        return (0, 0, 0); #returns ( $renewcount, $renewsallowed, $renewsleft );
-    }
-
-    if ($item && $item->{ccode} eq 'LYLA') {
+    my $item     = GetItem($itemno);
+    #KD#1134, Improve authorised values wit allow and deny option
+    my $non_renewable = IsNoReservationOrCheckout($itemno, 'no_reservation');
+    if ($item && $non_renewable) {
         return (0, 0, 0); #returns ( $renewcount, $renewsallowed, $renewsleft );
     }
 
@@ -3952,6 +3957,43 @@ sub GetAgeRestriction {
     }
 
     return ($restriction_year);
+}
+
+=head2 IsNoReservationOrCheckout
+
+  IsNoReservation( $itemnumber, $fieldname )
+
+  Return 1 if the item can't be reserved or checkout, otherwise return 0
+
+  KD#1134, Improve authorised values wit allow and deny option
+
+=cut
+
+sub IsNoReservationOrCheckout {
+    my ($itemnumber, $fieldname) = @_;
+    my $dbh = C4::Context->dbh;
+    my $sth = $dbh->prepare(q{
+        SELECT ccode, genre, sub_location, permanent_location 
+        FROM items
+        WHERE itemnumber = ?
+    });
+    $sth->execute($itemnumber);
+    my @values = $sth->fetchrow_array;
+    foreach my $value (@values) {
+        my $query = "SELECT ".$fieldname." FROM authorised_values
+            WHERE (category = 'LOC' or category = 'CCODE' or category = 'GENRE' 
+                or category = 'SUBLOC')
+            and authorised_value = ?";
+        my $sth2 = $dbh->prepare($query);
+        $sth2->execute($value);
+        my $auth_value = $sth2->fetchrow;
+        if ($auth_value == 1) {
+            return 1;
+        }
+    
+    }
+
+    return 0;
 }
 
 1;

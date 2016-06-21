@@ -570,10 +570,12 @@ sub CanItemBeReserved{
     my $biblioData = C4::Biblio::GetBiblioData( $item->{biblionumber} );
     my $borrower = C4::Members::GetMember('borrowernumber'=>$borrowernumber);
 
+    #KD#1134, Improve authorised values wit allow and deny option
+    my $no_reservation = C4::Circulation::IsNoReservationOrCheckout($itemnumber, 'no_reservation');
+    return 0 if ($no_reservation);
+
     ##HACKMAN HERE! certain Items cannot be put on hold!
-    if ($item->{ccode} eq 'PILA' || $item->{ccode} eq 'LYLA' ||
-        $item->{permanent_location} eq 'SII' || $item->{permanent_location} eq 'REF' ||
-        $item->{homebranch} eq 'JOE_LAKO' || $item->{homebranch} eq 'JOE_LASI' ||
+    if ($item->{homebranch} eq 'JOE_LAKO' || $item->{homebranch} eq 'JOE_LASI' ||
         $item->{itype} eq 'EK') {
         return (0);
     }
@@ -1139,10 +1141,12 @@ sub CheckReserves {
     #    execpt where items.notforloan < 0 :  This indicates the item is holdable. 
     return if  ( $notforloan_per_item > 0 ) or $notforloan_per_itemtype;
 
+    #KD#1134, Improve authorised values wit allow and deny option
+    my $no_reservation = C4::Circulation::IsNoReservationOrCheckout($itemnumber, 'no_reservation');
+    return if ($no_reservation);
+
     #HACKMAN HERE: Don't catch certain Items for reservation/holding!
-    return if ($ccode eq 'PILA' || $ccode eq 'LYLA' ||
-               $homebranch eq 'JOE_LAKO' || $homebranch eq 'JOE_LASI' ||
-               $permanent_location eq 'SII' || $permanent_location eq 'REF' ||
+    return if ($homebranch eq 'JOE_LAKO' || $homebranch eq 'JOE_LASI' ||
                $itype eq 'EK');
 
     # Find this item in the reserves

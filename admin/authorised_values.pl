@@ -34,7 +34,7 @@ sub AuthorizedValuesForCategory {
     $searchstring=~ s/\'/\\\'/g;
     my @data=split(' ',$searchstring);
     my $sth=$dbh->prepare('
-          SELECT  id, category, authorised_value, lib, lib_opac, imageurl
+          SELECT  id, category, authorised_value, lib, lib_opac, imageurl, no_reservation, no_checkout, overdue_fine
             FROM  authorised_values
            WHERE  (category = ?)
         ORDER BY  category, authorised_value
@@ -70,7 +70,7 @@ if ($op eq 'add_form') {
 	my $data;
     my @selected_branches;
 	if ($id) {
-		my $sth=$dbh->prepare("select id, category, authorised_value, lib, lib_opac, imageurl from authorised_values where id=?");
+		my $sth=$dbh->prepare("select id, category, authorised_value, lib, lib_opac, imageurl, no_reservation, no_checkout, overdue_fine from authorised_values where id=?");
 		$sth->execute($id);
 		$data=$sth->fetchrow_hashref;
         $sth = $dbh->prepare("SELECT b.branchcode, b.branchname FROM authorised_values_branches AS avb, branches AS b WHERE avb.branchcode = b.branchcode AND avb.av_id = ?;");
@@ -109,6 +109,9 @@ if ($op eq 'add_form') {
                          authorised_value => $data->{'authorised_value'},
                          lib              => $data->{'lib'},
                          lib_opac         => $data->{'lib_opac'},
+                         no_reservation   => $data->{'no_reservation'},
+                         no_checkout      => $data->{'no_checkout'},
+                         overdue_fine     => $data->{'overdue_fine'},
                          id               => $data->{'id'},
                          imagesets        => C4::Koha::getImageSets( checked => $data->{'imageurl'} ),
                          offset           => $offset,
@@ -141,13 +144,19 @@ if ($op eq 'add_form') {
                                           authorised_value = ?,
                                           lib              = ?,
                                           lib_opac         = ?,
-                                          imageurl         = ?
+                                          imageurl         = ?,
+                                          no_reservation   = ?,
+                                          no_checkout      = ?,
+                                          overdue_fine     = ?
                                       WHERE id=?' );
             my $lib = $input->param('lib');
             my $lib_opac = $input->param('lib_opac');
             undef $lib if ($lib eq ""); # to insert NULL instead of a blank string
             undef $lib_opac if ($lib_opac eq ""); # to insert NULL instead of a blank string
-            $sth->execute($new_category, $new_authorised_value, $lib, $lib_opac, $imageurl, $id);
+            my $no_reservation = $input->param('no_reservation') ? 1 : 0;
+            my $no_checkout = $input->param('no_checkout') ? 1 : 0;
+            my $overdue_fine = $input->param('overdue_fine') eq "" ? undef : $input->param('overdue_fine');
+            $sth->execute($new_category, $new_authorised_value, $lib, $lib_opac, $imageurl, $no_reservation, $no_checkout, $overdue_fine, $id);
             if ( @branches ) {
                 $sth = $dbh->prepare("DELETE FROM authorised_values_branches WHERE av_id = ?");
                 $sth->execute( $id );
@@ -173,13 +182,16 @@ if ($op eq 'add_form') {
         ($duplicate_entry) = $sth->fetchrow_array();
         unless ( $duplicate_entry ) {
             my $sth=$dbh->prepare( 'INSERT INTO authorised_values
-                                    ( category, authorised_value, lib, lib_opac, imageurl )
-                                    values (?, ?, ?, ?, ?)' );
+                                    ( category, authorised_value, lib, lib_opac, imageurl, no_reservation, no_checkout, overdue_fine )
+                                    values (?, ?, ?, ?, ?, ?, ?)' );
     	    my $lib = $input->param('lib');
     	    my $lib_opac = $input->param('lib_opac');
+            my $no_reservation = $input->param('no_reservation') ? 1 : 0;
+            my $no_checkout = $input->param('no_checkout') ? 1 : 0;
+            my $overdue_fine = $input->param('overdue_fine') eq "" ? undef : $input->param('overdue_fine');
     	    undef $lib if ($lib eq ""); # to insert NULL instead of a blank string
     	    undef $lib_opac if ($lib_opac eq ""); # to insert NULL instead of a blank string
-            $sth->execute( $new_category, $new_authorised_value, $lib, $lib_opac, $imageurl );
+            $sth->execute( $new_category, $new_authorised_value, $lib, $lib_opac, $imageurl, $no_reservation, $no_checkout, $overdue_fine );
             $id = $dbh->{'mysql_insertid'};
             if ( @branches ) {
                 $sth = $dbh->prepare(
@@ -206,7 +218,7 @@ if ($op eq 'add_form') {
 ################## DELETE_CONFIRM ##################################
 # called by default form, used to confirm deletion of data in DB
 } elsif ($op eq 'delete_confirm') {
-	my $sth=$dbh->prepare("select category,authorised_value,lib,lib_opac from authorised_values where id=?");
+	my $sth=$dbh->prepare("select category,authorised_value,lib,lib_opac, no_reservation, no_checkout, overdue_fine from authorised_values where id=?");
 	$sth->execute($id);
 	my $data=$sth->fetchrow_hashref;
 	$id = $input->param('id') unless $id;
@@ -280,6 +292,9 @@ sub default_form {
 		$row_data{authorised_value}      = $results->[$i]{'authorised_value'};
 		$row_data{lib}                   = $results->[$i]{'lib'};
 		$row_data{lib_opac}              = $results->[$i]{'lib_opac'};
+        $row_data{no_reservation}         = $results->[$i]{'no_reservation'};
+        $row_data{no_checkout}           = $results->[$i]{'no_checkout'};
+        $row_data{overdue_fine}           = $results->[$i]{'overdue_fine'};
 		$row_data{imageurl}              = getitemtypeimagelocation( 'intranet', $results->[$i]{'imageurl'} );
 		$row_data{edit}                  = "$script_name?op=add_form&amp;id=".$results->[$i]{'id'}."&amp;offset=$offset";
 		$row_data{delete}                = "$script_name?op=delete_confirm&amp;searchfield=$searchfield&amp;id=".$results->[$i]{'id'}."&amp;offset=$offset";

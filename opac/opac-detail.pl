@@ -609,12 +609,20 @@ if ( not $viewallitems and @items > $max_items_to_display ) {
   for my $itm (@items) {
     $itm->{holds_count} = $item_reserves{ $itm->{itemnumber} };
     $itm->{priority} = $priority{ $itm->{itemnumber} };
+    
+    #KD#1134, Improve authorised values wit allow and deny option
+    my $no_checkout = C4::Circulation::IsNoReservationOrCheckout($itm->{itemnumber}, "no_checkout");
+    if ($no_checkout) {
+        $itm->{'itemnotforloan'} = 1;
+    }
+
     $norequests = 0
        if ( (not $itm->{'withdrawn'} )
          && (not $itm->{'itemlost'} )
          && ($itm->{'itemnotforloan'}<0 || not $itm->{'itemnotforloan'} )
 		 && (not $itemtypes->{$itm->{'itype'}}->{notforloan} )
-         && ($itm->{'itemnumber'} ) );
+         && ($itm->{'itemnumber'} ) 
+         && (not $no_checkout));
 
     # get collection code description, too
     my $ccode = $itm->{'ccode'};
