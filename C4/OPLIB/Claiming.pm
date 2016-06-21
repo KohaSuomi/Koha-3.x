@@ -511,6 +511,15 @@ sub markODUECLAIMasSent_and_ManualInvoice {
                 my $message_queue = $issueData->{message_queue};
                 my $notClaimedBarcodesMap = $message_queue_notClaimedBarcodesMap->{  $message_queue->{message_id}  }->{verifiedClaimBarcodesMap};
 
+                if ($guarantorNumber != $issueData->{borrowernumber}) {
+                    Koha::Borrower::Debarments::AddUniqueDebarment(
+                    {
+                        borrowernumber => $issueData->{borrowernumber},
+                        type           => 'OVERDUES',
+                        comment => "Huoltajan perintäkirjeestä aiheutunut lainauskielto ".
+                                   Koha::DateUtils::output_pref( Koha::DateUtils::dt_from_string() ),
+                    });
+                }
                 if (exists $notClaimedBarcodesMap->{ $issueData->{barcode} }) {
                     delete $notClaimedBarcodesMap->{ $issueData->{barcode} };
                 }
