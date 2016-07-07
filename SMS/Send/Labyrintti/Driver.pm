@@ -113,6 +113,10 @@ sub send_sms {
         $parameters->{'unicode'} = 'no';
     }
 
+    if (C4::Context->config('smsProviders')->{'labyrintti'}->{'sourceName'}) {
+        $parameters->{'source-name'} = C4::Context->config('smsProviders')->{'labyrintti'}->{'sourceName'};
+    }
+
     my $report_url = C4::Context->config('smsProviders')->{'labyrintti'}->{'reportUrl'};
     if ($report_url) {
         my $msg_id = $params->{_message_id};

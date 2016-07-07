@@ -161,6 +161,7 @@ __PAZPAR2_TOGGLE_XML_POST__
             To use UTF-16 when needed: yes
             To disable and use GSM 03.38: leave blank -->
         <Unicode></Unicode>
+        <sourceName></sourceName> <!-- Displays as sender name in phones. Maxlength 11 chars -->
     </labyrintti>
  </smsProviders>
  <pos>
