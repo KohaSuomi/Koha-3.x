@@ -41,6 +41,7 @@ use File::Spec;
 use Getopt::Long;
 use Encode;
 use Data::Dumper;
+use POSIX qw(strftime);
 
 sub usage {
     print STDERR <<USAGE;
@@ -50,15 +51,17 @@ Usage: $0 OUTPUT_DIRECTORY
 
   -l --library  Get print notices by branchcode, can be repeated.
   -m --message  Choose which messages are printed, can be repeated.
+  -c --claiming  Choose this for claiming template
 
 USAGE
     exit $_[0];
 }
 
-my ( $stylesheet, $help, @branchcodes, @messagecodes);
+my ( $stylesheet, $help, @branchcodes, @messagecodes, $claiming);
 
 GetOptions(
     'h|help'  => \$help,
+    'c|claiming'  => \$claiming,
     'library=s' => \@branchcodes,
     'message=s' => \@messagecodes,
 ) || usage(1);
@@ -99,9 +102,14 @@ foreach my $message (@all_messages) {
 
 
 foreach my $message (@all_messages) {
-    my $letterTemplate = HTML::Template->new(filename => $fileplace.'/misc/cronjobs/iPostPDF/pdf_print.tmpl');
+    my $letterTemplate;
 
-    my $timestamp = time;
+    if ($claiming) {
+        $letterTemplate = HTML::Template->new(filename => $fileplace.'/misc/cronjobs/iPostPDF/pdf_bill.tmpl');
+        $message = claimingTemplate($message);
+    }else{
+        $letterTemplate = HTML::Template->new(filename => $fileplace.'/misc/cronjobs/iPostPDF/pdf_print.tmpl');
+    }
 
     my $branch = GetBranchByEmail($message->{'from_address'});
 
@@ -109,16 +117,7 @@ foreach my $message (@all_messages) {
 
     my $pdfFile = $branch->{'branchcode'}.$message->{'message_id'}."_".$today->output('iso'). ".pdf";
 
-    $letterTemplate->param(BRANCH => $branch->{branchname});
-    $letterTemplate->param(BRANCHADDRESS => $branch->{branchaddress1});
-    $letterTemplate->param(BRANCHZIPCODE => $branch->{branchzip});
-    $letterTemplate->param(BRANCHCITY => $branch->{branchcity});
-    $letterTemplate->param(NAME => $borrower->{firstname});
-    $letterTemplate->param(SURNAME => $borrower->{surname});
-    $letterTemplate->param(ADDRESS1 => $borrower->{address});
-    $letterTemplate->param(ADDRESS2 => $borrower->{address2});
-    $letterTemplate->param(ZIPCODE => $borrower->{zipcode});
-    $letterTemplate->param(CITY => $borrower->{city});
+   
     $letterTemplate->param(ITEMINFO => Encode::encode( "utf8", $message->{'content'}));
 
     open PDF, "| wkhtmltopdf.sh - " . $output_directory.$pdfFile;
@@ -143,4 +142,49 @@ sub GetBranchByEmail {
     my $sth = C4::Context->dbh->prepare("SELECT * FROM branches WHERE branchemail = ?");
     $sth->execute($email);
     return $sth->fetchrow_hashref();
+}
+
+sub claimingTemplate {
+    my ($message) = shift or return;
+
+    my $now = strftime "%d%m%Y", localtime;
+
+    my $totalfines = 0;
+
+    my $billNumberTag = "MessageID";
+    my $billNumber = $message->{message_id};
+
+    $message->{'content'} =~ s/$billNumberTag/$billNumber/g;
+
+    my $referenseNumberTag = "ReferenceNumber";
+    my $referenseNumber = $message->{message_id}." ".$message->{'borrowernumber'}." ".$now;
+
+    $message->{'content'} =~ s/$referenseNumberTag/$referenseNumber/g;
+
+    my $DueDateTag = "DueDate";
+    my $date = time;
+    $date = $date + (14 * 24 * 60 * 60);
+    my $DueDate = strftime "%d.%m.%Y", localtime($date);
+
+    $message->{'content'} =~ s/$DueDateTag/$DueDate/g;
+
+    my $start = "<var>";
+    my $end = "</var>";
+
+    my @matches = $message->{'content'} =~ /$start(.*?)$end/g;
+
+    foreach my $match (@matches) {
+        $totalfines = $totalfines + $match;
+        my $new_match = $match;
+        $new_match =~ tr/./,/;
+        $message->{'content'} =~ s/$match/$new_match/g;
+    }
+
+    $totalfines = sprintf("%.2f", $totalfines);
+    $totalfines =~ tr/./,/;
+
+    $message->{'content'} =~ s/TotalFines/$totalfines/g;
+
+    return $message;
+
 }
