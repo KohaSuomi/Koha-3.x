@@ -146,7 +146,19 @@ __PAZPAR2_TOGGLE_XML_POST__
 
  <smsProviders>
     <labyrintti>
-        <!-- Login details for SMS Gateway service -->
+        <!-- Login details for SMS Gateway service
+        There are 3 options to configure this, 
+        first one is single branch login. This uses branchcode for defining client
+        <branchcode>
+            <user></user>
+            <passwd></passwd>
+        </branchcode>-->
+        <!-- Second one is library group login. This uses 3 first chars of branchcode for defining client
+        <branchprefix>
+            <user></user>
+            <passwd></passwd>
+        </branchprefix>-->
+        <!-- And the third one is shared login for all messages.-->
         <user></user>
         <passwd></passwd>
         <!-- Report URL is the page where your SMS Gateway provider will send a report

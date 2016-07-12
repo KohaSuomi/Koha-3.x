@@ -44,9 +44,30 @@ BEGIN {
 sub new {
        my $class = shift;
         my $params = {@_};
-        my $username = $params->{_login} ? $params->{_login} : C4::Context->config('smsProviders')->{'labyrintti'}->{'user'};
-        my $password = $params->{_password} ? $params->{_password} : C4::Context->config('smsProviders')->{'labyrintti'}->{'passwd'};
+        my $from = $params->{_from};
+        my $dbh=C4::Context->dbh;
+        my $branches=$dbh->prepare("SELECT branchcode FROM branches WHERE branchemail = ?;");
+        $branches->execute($from);
+        my $branch = $branches->fetchrow;
+        my $prefix = substr($branch, 0, 3);
+        my $group_branch = C4::Context->config('smsProviders')->{'labyrintti'}->{$prefix}->{'user'};
+        my $single_branch = C4::Context->config('smsProviders')->{'labyrintti'}->{$branch}->{'user'};
 
+        my $username;
+        my $password;
+
+        if($single_branch) {
+            $username = $params->{_login} ? $params->{_login} : C4::Context->config('smsProviders')->{'labyrintti'}->{$branch}->{'user'};
+            $password = $params->{_password} ? $params->{_password} : C4::Context->config('smsProviders')->{'labyrintti'}->{$branch}->{'passwd'};
+        }elsif($group_branch) {
+            $username = $params->{_login} ? $params->{_login} : C4::Context->config('smsProviders')->{'labyrintti'}->{$prefix}->{'user'};
+            $password = $params->{_password} ? $params->{_password} : C4::Context->config('smsProviders')->{'labyrintti'}->{$prefix}->{'passwd'};
+        }else{
+            $username = $params->{_login} ? $params->{_login} : C4::Context->config('smsProviders')->{'labyrintti'}->{'user'};
+            $password = $params->{_password} ? $params->{_password} : C4::Context->config('smsProviders')->{'labyrintti'}->{'passwd'};
+        }
+        
+        
         if (! defined $username ) {
             warn "->send_sms(_login) must be defined!";
             return;
