@@ -2292,11 +2292,22 @@ sub MoveItemFromBiblio {
 	    # Checking if the item we want to move is in an order 
         require C4::Acquisition;
         my $order = C4::Acquisition::GetOrderFromItemnumber($itemnumber);
-	    if ($order) {
-		    # Replacing the biblionumber within the order if necessary
-		    $order->{'biblionumber'} = $tobiblio;
-	        C4::Acquisition::ModOrder($order);
-	    }
+        if ($order && $order->{biblionumber} eq $frombiblio) {
+            # Replacing the biblionumber within the order if necessary
+            $order->{'biblionumber'} = $tobiblio;
+            C4::Acquisition::ModOrder($order);
+        } elsif ($order && $order->{biblionumber} ne $frombiblio) {
+            # Replacing only ordernumber of an item
+            my @orders = C4::Acquisition::GetOrdersByBiblionumber($frombiblio);
+            foreach my $ord (@orders){
+                if($frombiblio eq $ord->{'biblionumber'}){
+                  C4::Acquisition::ModItemOrder($itemnumber, $ord->{'ordernumber'});
+                  $ord->{'biblionumber'} = $tobiblio;
+                  C4::Acquisition::ModOrder($ord);
+                  last;
+                }
+            }   
+        }
         return $tobiblio;
 	}
     return;
