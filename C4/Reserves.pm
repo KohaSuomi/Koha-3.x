@@ -791,6 +791,8 @@ sub GetReserveFee {
     my $data = $sth->fetchrow_hashref;
     my $fee      = $data->{'reservefee'};
     my $cntitems = @- > $bibitems;
+    #Kyyti#993, remove predefined reserve payment from certain location;
+    $fee = 0 if C4::Context->preference("ReserveFeeOnNotify");
 
     if ( $fee > 0 ) {
 
@@ -863,14 +865,6 @@ sub GetReserveFee {
             else {
                 #$fee = 0; #HACKMAN HERE
             }
-        }
-        #Kyyti#993
-        my $isth =
-            $dbh->prepare("SELECT * FROM items WHERE biblionumber = ? and permanent_location = 'N' or permanent_location = 'SN'
-                permanent_location = 'NV' or permanent_location = 'ND' permanent_location = 'NA'");
-        $isth->execute($biblionumber);
-        if ( my $idata = $isth->fetchrow_hashref ) {
-            $fee = 0;
         }
 
     }
@@ -2272,6 +2266,8 @@ sub _koha_notify_reserve {
         } );
     };
 
+    AddReserveFeeOnNotify($reserve->{'itemnumber'});
+
     while ( my ( $mtt, $letter_code ) = each %{ $messagingprefs->{transports} } ) {
         if ( ($mtt eq 'email' and not $to_address) or ($mtt eq 'sms' and not $borrower->{smsalertnumber}) ) {
             # email or sms is requested but not exist
@@ -2706,6 +2702,71 @@ sub printReserve {
         return join('',@sb);
     }
 }
+
+=head2 AddReserveFeeOnNotify
+
+  AddReserveFeeOnNotify( $itemnumber, $permanent_location )
+
+  #Kyyti#993, adds reserve fee when notifying the patron. 
+
+=cut
+
+sub AddReserveFeeOnNotify {
+    my ($itemnumber) = @_;
+    my @zeroLocations = split( /\|/, C4::Context->preference("ReserveFeeOnNotify") );
+    if (@zeroLocations) {
+        my $dbh = C4::Context->dbh;
+        my ( $restype, $res ) = C4::Reserves::CheckReserves( $itemnumber );
+        my $item = GetBiblioFromItemNumber($itemnumber, undef);
+        my $fee;
+        my $checked = 0;
+        foreach my $location (@zeroLocations) {
+            my $isth = $dbh->prepare("SELECT * FROM items WHERE itemnumber = ? and permanent_location = ?");
+            $isth->execute($itemnumber, $location);
+            if (my $idata = $isth->fetchrow_hashref && $location ne 'null') {
+                warn "Don't add any fee\n";
+                $fee = 0;
+                return;
+            } else {
+                $checked = 1;
+            }
+        }
+        if ( $checked) {
+            warn "Adding borrower's hold fee\n";
+            my $query = qq/
+              SELECT * FROM borrowers
+            LEFT JOIN categories ON borrowers.categorycode = categories.categorycode
+            WHERE borrowernumber = ?
+            /;
+            my $sth = $dbh->prepare($query);
+            $sth->execute($res->{'borrowernumber'});
+            my $data = $sth->fetchrow_hashref;
+            $fee      = $data->{'reservefee'};
+            if ($fee > 0) {
+                #eval {
+                # updates take place here
+                    my $nextacctno = &getnextacctno( $res->{'borrowernumber'} );
+                    my $query      = qq/
+                    INSERT INTO accountlines
+                        (borrowernumber,accountno,date,amount,description,accounttype,amountoutstanding)
+                    VALUES
+                        (?,?,now(),?,?,'Res',?)
+                /;
+                    my $usth = $dbh->prepare($query);
+                    my $asth = $dbh->prepare("SELECT * FROM accountlines WHERE borrowernumber = ? and 
+                        amount = ? and description = ? and accounttype = 'RES' and (amountoutstanding = ? or amountoutstanding = 0.00)");
+                    $asth->execute($res->{'borrowernumber'}, $fee, "Reserve Charge - $item->{title}", $fee);
+                    unless (my $adata = $asth->fetchrow_hashref) {
+                        $usth->execute( $res->{'borrowernumber'}, $nextacctno, $fee,
+                        "Reserve Charge - $item->{title}", $fee );
+                    }
+                    
+            }
+        }
+    }
+    return;
+}
+
 
 
 =head1 AUTHOR

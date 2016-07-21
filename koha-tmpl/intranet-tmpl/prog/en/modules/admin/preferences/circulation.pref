@@ -412,6 +412,10 @@ Circulation:
                   no: "Don't allow"
             - "holds to expire automatically if they have not been picked by within the time period specified in ReservesMaxPickUpDelay"
         -
+            - Add reserve fee to patron's fines when sending notify message and remove payment from certain locations. There can be added just word <strong>null</strong> which means that every location will be charged on notify or locations can be left out with separator |, eg. <strong>N|NA</strong>
+            - pref: ReserveFeeOnNotify
+              class: Choice
+        -
             - If using ExpireReservesMaxPickUpDelay, charge a borrower who allows his or her waiting hold to expire a fee of
             - pref: ExpireReservesMaxPickUpDelayCharge
               class: currency

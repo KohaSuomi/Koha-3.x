@@ -588,6 +588,7 @@ foreach my $biblionumber (@biblionumbers) {
 $template->param( biblioloop => \@biblioloop );
 $template->param( biblionumbers => $biblionumbers );
 $template->param( maxreserves => $maxreserves );
+$template->param( reservefee => 1 ) if C4::Context->preference("ReserveFeeOnNotify");
 
 if ($multihold) {
     $template->param( multi_hold => 1 );

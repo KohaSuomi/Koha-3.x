@@ -78,8 +78,12 @@ if ( $borr->{'BlockExpiredPatronOpacActions'} ) {
 }
 
 # Pass through any reserve charge
-if ($borr->{reservefee} > 0){
+if ($borr->{reservefee} > 0  && !C4::Context->preference("ReserveFeeOnNotify")){
     $template->param( RESERVE_CHARGE => sprintf("%.2f",$borr->{reservefee}));
+}
+
+if ($borr->{reservefee} > 0 && C4::Context->preference("ReserveFeeOnNotify") ne 'null'){
+    $template->param( RESERVE_CHARGE_NOTIFY => sprintf("%.2f",$borr->{reservefee}));
 }
 # get branches and itemtypes
 my $branches = GetBranches();

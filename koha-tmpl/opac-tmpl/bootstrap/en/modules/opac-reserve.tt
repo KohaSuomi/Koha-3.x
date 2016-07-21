@@ -105,6 +105,12 @@
                             </div>
                         [% END %]
 
+                        [% IF (RESERVE_CHARGE_NOTIFY) %]
+                            <div class="alert" id="reserve_fee">
+                                [% RESERVE_CHARGE_NOTIFY %] fee will be charged from certain locations.
+                            </div>
+                        [% END %]
+
                         <form action="/cgi-bin/koha/opac-reserve.pl" method="post" id="hold-request-form">
                             <input type="hidden" name="place_reserve" value="1"/>
                             <!-- These values are set dynamically by js -->

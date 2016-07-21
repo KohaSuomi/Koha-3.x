@@ -308,7 +308,6 @@ function checkMultiHold() {
             <input type="hidden" name="title" value="[% title |html %]" />
             <input type="hidden" name="rank-request" value="[% fixedRank %]" />
         [% END %]
-
        <ol> <li><span class="label">Patron:</span>
             [% IF ( borrowernumber ) %]
                 <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=[% borrowernumber %]">[% borrowerfirstname %] [% borrowersurname %] ([% cardnumber %])</a>
@@ -321,6 +320,12 @@ function checkMultiHold() {
               <span class="label">Priority:</span>
               <strong>[% fixedRank %]</strong>
           </li>
+        [% END %]
+        [% IF reservefee %]
+            <li>
+                <label for="holdfee">Hold fee:</label>
+                Hold fee will be added to patron's fines when notify message is sent
+            </li>
         [% END %]
         <li>
             <label for="holdnotes">Notes:</label>
