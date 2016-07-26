@@ -74,6 +74,9 @@ my $systempreferences = t::lib::TestObjects::SystemPreferenceFactory->createTest
             {preference => 'SMSSendDriver',
              value      => 'test'
             },
+            {preference => 'EnhancedMessagingPreferences',
+             value      => 1
+            },
         ], undef, $testContext);
 
 my $permissionManager = Koha::Auth::PermissionManager->new();

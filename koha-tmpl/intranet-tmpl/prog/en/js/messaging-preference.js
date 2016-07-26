@@ -38,7 +38,7 @@ function disableCheckboxesWithInvalidPreferences(elem, id_attr) {
     var checkbox_prefs = eval("patron_messaging_checkbox_preferences." + id_attr);
     // Check if element is empty or not valid
 
-    if (!$(elem).length || $(elem).val().length == 0 ||  !$(elem).valid()) {
+    if (!$(elem).length || $(elem).val().length == 0 || !$(elem).valid()) {
 
         if (checkbox_prefs.is_enabled) {
             // Save the state of checked checkboxes
@@ -70,13 +70,13 @@ function disableCheckboxesWithInvalidPreferences(elem, id_attr) {
 
             // Disable the checkboxes that were disabled by default
             checkbox_prefs.disabled_checkboxes.each(function() {
-                $(this).attr("disabled", "disabled");
-                $(this).removeAttr("checked");
+                $(this).prop("disabled", true);
+                $(this).prop("checked", false);
             });
 
             // Restore the state of checkboxes
             checkbox_prefs.checked_checkboxes.each(function() {
-                $(this).attr("checked", "checked");
+                $(this).prop("checked", true);
             });
 
             // Remove the background color from table cell
