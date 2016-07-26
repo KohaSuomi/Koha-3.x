@@ -45,7 +45,7 @@ BEGIN {
     $VERSION = 3.07.00.049;
     @ISA = qw(Exporter);
     @EXPORT = qw(
-        &GetLetters &GetPreparedLetter &GetWrappedLetter &addalert &getalert &delalert &findrelatedto &SendAlerts &GetPrintMessages &GetMessageTransportTypes
+        &GetLetters &GetPreparedLetter &GetWrappedLetter &addalert &getalert &delalert &findrelatedto &SendAlerts &GetPrintMessages &GetMessageTransportTypes &GetMessage
     );
 }
 
@@ -988,6 +988,7 @@ ENDSQL
 
     $statement .= " WHERE message_id = ?";
     push @query_params, $params->{'message_id'};
+
 
     my $sth = $dbh->prepare( $statement );
     my $result = $sth->execute( @query_params );

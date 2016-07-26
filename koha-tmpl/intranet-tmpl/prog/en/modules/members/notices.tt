@@ -38,7 +38,7 @@
 //]]>
 </script>
 <style type="text/css">
-    p.notice { display: none; }
+    div.notice { display: none;}
     a.notice-title { font-weight: bold; display: block; }
 </style>
 </head>
@@ -71,9 +71,9 @@
 	    <tr>
 		<td>
             <a class="notice-title" href="#">[% QUEUED_MESSAGE.subject %]</a>
-            <p class="notice">
-                [% QUEUED_MESSAGE.content FILTER html_line_break %]
-            </p>
+            <div class="notice">
+                <p>[% QUEUED_MESSAGE.content FILTER html_line_break %]</p>
+            </div>
         </td>
 		<td>
             [% IF ( QUEUED_MESSAGE.message_transport_type == 'email' ) %]email

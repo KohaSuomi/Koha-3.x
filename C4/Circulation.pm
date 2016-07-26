@@ -44,7 +44,7 @@ use C4::Koha qw(
 use C4::Overdues qw(CalcFine UpdateFine);
 use C4::RotatingCollections;
 use Algorithm::CheckDigits;
-use C4::Billing::SapErp;
+use C4::Billing::BillingManager qw(RemovePayment);
 
 use Koha::FloatingMatrix;
 use Data::Dumper;
@@ -1970,7 +1970,7 @@ sub AddReturn {
         }
     }
 
-    C4::Billing::SapErp::RemovePayment($borrowernumber, $item->{itemnumber});
+    C4::Billing::BillingManager::RemovePayment($borrowernumber, $item->{itemnumber});
 
     # fix up the overdues in accounts...
     if ($borrowernumber) {

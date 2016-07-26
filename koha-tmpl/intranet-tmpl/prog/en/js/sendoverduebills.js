@@ -4,23 +4,27 @@ $(document).ready(function(){
 	var maxpagenumber = $(".maxpage").val();
 	var maxresults = $(".maxresults").val(); // Current results per page
 	var showall = $(".show").val();
+	var showbilled = $(".billed").val();
+	var shownotbilled = $(".notbilled").val();
+	var bypatron = $(".patron").val();
+	var branch = $("#branch").val();
 	
 	if(parseInt(pagenumber) > parseInt(maxpagenumber) && parseInt(maxpagenumber) > 0){
-		window.location = "/cgi-bin/koha/tools/sendOverdueBills.pl?page=" + maxpagenumber + "&results=" + maxresults + "&showall=" + showall;
+		window.location = "/cgi-bin/koha/tools/sendOverdueBills.pl?page=" + maxpagenumber + "&totalpages=" + maxpagenumber + "&results=" + maxresults + "&showall=" + showall + "&showbilled=" + showbilled + "&shownotbilled=" + shownotbilled + "&bypatron=" + bypatron + "&branch=" + branch;
 	}
 	
 	if(parseInt(pagenumber) > 1){
-		$(".pageprev").attr("href", "/cgi-bin/koha/tools/sendOverdueBills.pl?page=" + (parseInt(pagenumber)-1) + "&results=" + maxresults + "&showall=" + showall);
+		$(".pageprev").attr("href", "/cgi-bin/koha/tools/sendOverdueBills.pl?page=" + (parseInt(pagenumber)-1) + "&totalpages=" + maxpagenumber +  "&results=" + maxresults + "&showall=" + showall + "&showbilled=" + showbilled + "&shownotbilled=" + shownotbilled + "&bypatron=" + bypatron + "&branch=" + branch);
 	}//if
 	else{
-		$(".pageprev").attr("href", "/cgi-bin/koha/tools/sendOverdueBills.pl?page=" + pagenumber + "&results=" + maxresults + "&showall=" + showall);
+		$(".pageprev").attr("href", "/cgi-bin/koha/tools/sendOverdueBills.pl?page=" + pagenumber + "&totalpages=" + maxpagenumber + "&results=" + maxresults + "&showall=" + showall + "&showbilled=" + showbilled + "&shownotbilled=" + shownotbilled + "&bypatron=" + bypatron + "&branch=" + branch);
 	}//else
 	
 	if(parseInt(pagenumber) == parseInt(maxpagenumber)){
-		$(".pagenext").attr("href", "/cgi-bin/koha/tools/sendOverdueBills.pl?page=" + pagenumber + "&results=" + maxresults + "&showall=" + showall);
+		$(".pagenext").attr("href", "/cgi-bin/koha/tools/sendOverdueBills.pl?page=" + pagenumber + "&totalpages=" + maxpagenumber + "&results=" + maxresults + "&showall=" + showall + "&showbilled=" + showbilled + "&shownotbilled=" + shownotbilled + "&bypatron=" + bypatron + "&branch=" + branch);
 	}//if
 	else{
-		$(".pagenext").attr("href", "/cgi-bin/koha/tools/sendOverdueBills.pl?page=" + (parseInt(pagenumber)+1) + "&results=" + maxresults + "&showall=" + showall);
+		$(".pagenext").attr("href", "/cgi-bin/koha/tools/sendOverdueBills.pl?page=" + (parseInt(pagenumber)+1) + "&totalpages=" + maxpagenumber + "&results=" + maxresults + "&showall=" + showall + "&showbilled=" + showbilled + "&shownotbilled=" + shownotbilled  + "&bypatron=" + bypatron + "&branch=" + branch);
 	}//else
 	
 	if(parseInt(showall) == 1){
@@ -28,6 +32,27 @@ $(document).ready(function(){
 	}//if
 	else{
 		$(".showall").prop("checked", false);
+	}//else
+
+	if(parseInt(shownotbilled) == 1){
+		$(".shownotbilled").prop("checked", true);
+	}//if
+	else{
+		$(".shownotbilled").prop("checked", false);
+	}//else
+
+	if(parseInt(showbilled) == 1){
+		$(".showbilled").prop("checked", true);
+	}//if
+	else{
+		$(".showbilled").prop("checked", false);
+	}//else
+
+	if(parseInt(bypatron) == 1){
+		$(".bypatron").prop("checked", true);
+	}//if
+	else{
+		$(".bypatron").prop("checked", false);
 	}//else
 	
 	$(".showall").change(function(){
@@ -38,8 +63,10 @@ $(document).ready(function(){
 		else{
 			showall = 0;
 		}//else
+
+		maxpagenumber = 0;
 		
-		window.location.href = "/cgi-bin/koha/tools/sendOverdueBills.pl?page=" + pagenumber + "&results=" + maxresults + "&showall=" + showall;
+		window.location.href = "/cgi-bin/koha/tools/sendOverdueBills.pl?page=" + pagenumber + "&totalpages=" + maxpagenumber + "&results=" + maxresults + "&showall=" + showall + "&showbilled=" + showbilled + "&shownotbilled=" + shownotbilled + "&bypatron=" + bypatron + "&branch=" + branch;
 		
 	});
 
@@ -55,6 +82,53 @@ $(document).ready(function(){
 		}//else
 		
 	});
+
+	$(".showbilled").change(function(){
+		
+		if($(this).is(":checked")){
+			showbilled = 1;
+			shownotbilled = 0;
+		}//if
+		else{
+			showbilled = 0;
+		}//else
+		
+		maxpagenumber = 0;
+
+		window.location.href = "/cgi-bin/koha/tools/sendOverdueBills.pl?page=" + pagenumber + "&totalpages=" + maxpagenumber + "&results=" + maxresults + "&showall=" + showall + "&showbilled=" + showbilled + "&shownotbilled=" + shownotbilled + "&bypatron=" + bypatron + "&branch=" + branch;
+		
+	});
+
+	$(".shownotbilled").change(function(){
+		
+		if($(this).is(":checked")){
+			shownotbilled = 1;
+			showbilled = 0;
+		}//if
+		else{
+			shownotbilled = 0;
+		}//else
+
+		maxpagenumber = 0;
+		
+		window.location.href = "/cgi-bin/koha/tools/sendOverdueBills.pl?page=" + pagenumber  + "&totalpages=" + maxpagenumber + "&results=" + maxresults + "&showall=" + showall + "&showbilled=" + showbilled + "&shownotbilled=" + shownotbilled + "&bypatron=" + bypatron + "&branch=" + branch;
+		
+	});
+
+	$(".bypatron").change(function(){
+		
+		if($(this).is(":checked")){
+			bypatron = 1;
+		}//if
+		else{
+			bypatron = 0;
+		}//else
+
+		maxpagenumber = 0;
+		
+		window.location.href = "/cgi-bin/koha/tools/sendOverdueBills.pl?page=" + pagenumber  + "&totalpages=" + maxpagenumber + "&results=" + maxresults + "&showall=" + showall + "&showbilled=" + showbilled + "&shownotbilled=" + shownotbilled + "&bypatron=" + bypatron + "&branch=" + branch;
+		
+	});
 	
 	$(".gotopage").click(function(e){
 		
@@ -63,13 +137,13 @@ $(document).ready(function(){
 		var gotopagenumber = parseInt($(this).parent(".pagecontrol").find(".jumptopage").val());
 		
 		if(gotopagenumber == "" || gotopagenumber < 1){
-			window.location.href = "/cgi-bin/koha/tools/sendOverdueBills.pl?page=1&results=" + maxresults + "&showall=" + showall;
+			window.location.href = "/cgi-bin/koha/tools/sendOverdueBills.pl?page=1&results=" + maxresults + "&totalpages=" + maxpagenumber + "&showall=" + showall + "&showbilled=" + showbilled + "&shownotbilled=" + shownotbilled + "&bypatron=" + bypatron + "&branch=" + branch;
 		}//if
 		else if(gotopagenumber > parseInt(maxpagenumber)){
-			window.location.href = "/cgi-bin/koha/tools/sendOverdueBills.pl?page=" + maxpagenumber + "&results=" + maxresults + "&showall=" + showall;
+			window.location.href = "/cgi-bin/koha/tools/sendOverdueBills.pl?page=" + maxpagenumber + "&totalpages=" + maxpagenumber + "&results=" + maxresults + "&showall=" + showall + "&showbilled=" + showbilled + "&shownotbilled=" + shownotbilled + "&bypatron=" + bypatron + "&branch=" + branch;
 		}//else if
 		else if(gotopagenumber >= 1 && gotopagenumber <= parseInt(maxpagenumber)){
-			window.location.href = "/cgi-bin/koha/tools/sendOverdueBills.pl?page=" + gotopagenumber + "&results=" + maxresults + "&showall=" + showall;
+			window.location.href = "/cgi-bin/koha/tools/sendOverdueBills.pl?page=" + gotopagenumber  + "&totalpages=" + maxpagenumber + "&results=" + maxresults + "&showall=" + showall + "&showbilled=" + showbilled + "&shownotbilled=" + shownotbilled + "&bypatron=" + bypatron + "&branch=" + branch;
 		}//else if
 		
 	});
@@ -79,8 +153,19 @@ $(document).ready(function(){
 	$(".pageresults").change(function(){
 		
 		var resultset = $(this).val();
+
+		maxpagenumber = 0;
 		
-		window.location.href = "/cgi-bin/koha/tools/sendOverdueBills.pl?page=" + pagenumber + "&results=" + resultset + "&showall=" + showall;
+		window.location.href = "/cgi-bin/koha/tools/sendOverdueBills.pl?page=" + pagenumber + "&totalpages=" + maxpagenumber + "&results=" + resultset + "&showall=" + showall + "&showbilled=" + showbilled + "&shownotbilled=" + shownotbilled + "&bypatron=" + bypatron + "&branch=" + branch;
+		
+	});
+
+	$("#branch").change(function(){
+		
+		branch = $(this).val();
+		maxpagenumber = 0;
+		
+		window.location.href = "/cgi-bin/koha/tools/sendOverdueBills.pl?page=" + pagenumber  + "&totalpages=" + maxpagenumber + "&results=" + maxresults + "&showall=" + showall + "&showbilled=" + showbilled + "&shownotbilled=" + shownotbilled + "&bypatron=" + bypatron + "&branch=" + branch;
 		
 	});
 
@@ -186,20 +271,16 @@ $(document).ready(function(){
 		var price = $(this).val();
 		var priceholder = $(this).prop("placeholder");
 		var row = $(this).parent().parent().attr("data-rownumber"); // Rownumber
-		
-		if(checkbox){
 
-			if(price == "" || price < 0.00){
-				$("input[name=replacementprice_" + row + "]").val(priceholder);
-			}//if
-			else if(price >= 0.00){
-				$("input[name=replacementprice_" + row + "]").val(price);
-			}//else if
-			else{
-				$("input[name=replacementprice_" + row + "]").val(0.00);
-			}//else
-			
+		if(price == "" || price < 0.00){
+			$("input[name=replacementprice_" + row + "]").val(priceholder);
 		}//if
+		else if(price >= 0.00){
+			$("input[name=replacementprice_" + row + "]").val(price);
+		}//else if
+		else{
+			$("input[name=replacementprice_" + row + "]").val(0.00);
+		}//else
 		
 	});
 	

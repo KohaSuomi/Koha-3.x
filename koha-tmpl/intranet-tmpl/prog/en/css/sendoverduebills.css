@@ -29,3 +29,6 @@
 .help, .msg{
 	max-width:60%;
 }
+.branches {
+	padding: 20px 0;
+}

@@ -31,6 +31,7 @@ use DBD::mysql;
 
 use C4::Accounts;
 use C4::Members;
+use C4::Billing::BillingManager;
 use Data::Dumper;
 
 use vars qw($VERSION @ISA @EXPORT);
@@ -41,9 +42,7 @@ BEGIN {
 	require Exporter;
 	@ISA    = qw(Exporter);
 	@EXPORT = qw(
-		send_xml
-		OverduePrice
-		RemovePayment);
+		send_xml);
 }
 
 sub send_xml{
@@ -103,6 +102,7 @@ sub create_xml {
 	my $timestamp = POSIX::strftime '%y%m%d', gmtime();
 	my $datum = POSIX::strftime '%Y%m%d', gmtime();
 	my $year = POSIX::strftime '%Y', gmtime();
+	my $today = C4::Dates->new();
 
 	my $time = POSIX::strftime '%m%d', gmtime();
 	
@@ -136,10 +136,11 @@ sub create_xml {
 		my $rowstring = sprintf("%06d", $i);
 
 		# Getting ssn for the bill
-		my $ssn = get_ssn($data->{borrowernumber});
+		my $ssn = C4::Billing::BillingManager::GetSSN($data->{borrowernumber});
+		if (!CheckMessageDate($data->{borrowernumber}, 'Asiakkaalla on laskutettua aineistoa', $today->output('iso'))) {
+            C4::Members::AddMessage( $data->{borrowernumber}, 'L', 'Asiakkaalla on laskutettua aineistoa', 'MLI_PK' );
+        }
 
-		C4::Members::AddMessage( $data->{borrowernumber}, 'L', 'Asiakkaalla on laskutettua aineistoa', 'MLI_PK' );
-		#my $ssn;
 		$idoc->setAttribute("BEGIN", "1");
 		
 		#EDI_DC40
@@ -385,7 +386,7 @@ sub create_xml {
 				$tag->appendChild($rowtag);
 				
 				$rowtag = $doc->createElement("KRATE");$rowtag->appendTextNode($data->{fine});
-				C4::Accounts::manualinvoice($data->{borrowernumber}, undef, 'Laskutuslisä', 'F', $data->{fine}, 'Laskutuslisä');
+				C4::Accounts::manualinvoice($data->{borrowernumber}, undef, 'Laskutuslisä', 'B', $data->{fine}, 'Laskutuslisä');
 				$tag->appendChild($rowtag);
 				
 				$element->appendChild($tag);
@@ -485,7 +486,7 @@ sub create_xml {
 				$tag->appendChild($rowtag);
 				
 				$rowtag = $doc->createElement("KRATE");$rowtag->appendTextNode($data->{replacementprice});
-				C4::Accounts::manualinvoice($data->{borrowernumber}, $data->{itemnumber}, 'Lasku', 'F', $data->{replacementprice}, 'Perintä');
+				C4::Accounts::manualinvoice($data->{borrowernumber}, $data->{itemnumber}, 'Lasku', 'B', $data->{replacementprice}, 'Perintä');
 				$tag->appendChild($rowtag);
 				
 				$element->appendChild($tag);
@@ -701,7 +702,7 @@ sub create_xml {
 				$tag->appendChild($rowtag);
 				
 				$rowtag = $doc->createElement("KRATE");$rowtag->appendTextNode($data->{plastic});
-				C4::Accounts::manualinvoice($data->{borrowernumber}, $data->{itemnumber}, 'Muovitusmaksu', 'F', $data->{plastic}, 'Muovitusmaksu');
+				C4::Accounts::manualinvoice($data->{borrowernumber}, $data->{itemnumber}, 'Muovitusmaksu', 'B', $data->{plastic}, 'Muovitusmaksu');
 				$tag->appendChild($rowtag);
 				
 				$element->appendChild($tag);
@@ -805,7 +806,7 @@ sub create_xml {
 					$tag->appendChild($rowtag);
 					
 					$rowtag = $doc->createElement("KRATE");$rowtag->appendTextNode($data->{replacementprice});
-					C4::Accounts::manualinvoice($data->{borrowernumber}, $data->{itemnumber}, 'Lasku', 'F', $data->{replacementprice}, 'Perintä');
+					C4::Accounts::manualinvoice($data->{borrowernumber}, $data->{itemnumber}, 'Lasku', 'B', $data->{replacementprice}, 'Perintä');
 					$tag->appendChild($rowtag);
 					
 					$element->appendChild($tag);
@@ -1025,7 +1026,7 @@ sub create_xml {
 					$tag->appendChild($rowtag);
 					
 					$rowtag = $doc->createElement("KRATE");$rowtag->appendTextNode($data->{plastic});
-					C4::Accounts::manualinvoice($data->{borrowernumber}, $data->{itemnumber}, 'Muovitusmaksu', 'F', $data->{plastic}, 'Muovitusmaksu');
+					C4::Accounts::manualinvoice($data->{borrowernumber}, $data->{itemnumber}, 'Muovitusmaksu', 'B', $data->{plastic}, 'Muovitusmaksu');
 					$tag->appendChild($rowtag);
 					
 					$element->appendChild($tag);
@@ -1086,31 +1087,6 @@ sub create_xml {
 	return ($filepath, $filename);
 }
 
-sub get_ssn {
-	my ($borrowernumber) = @_;
-
-	my $dbh = C4::Context->dbh;
-    my $sth = $dbh->prepare("SELECT attribute FROM borrower_attributes WHERE borrowernumber = ? and code = 'SSN'");
-    $sth->execute($borrowernumber);
-    my $ssnkey = $sth->fetchrow;
-    $ssnkey =~ s/\D//g;
-
-	my $host = C4::Context->config('ssnProvider')->{'host'};
-	my $port = C4::Context->config('ssnProvider')->{'port'};
-	my $user = C4::Context->config('ssnProvider')->{'user'};
-	my $password = C4::Context->config('ssnProvider')->{'password'};
-
-	my $dsn = "dbi:mysql:ssn:".$host.":".$port;
-
-	my $connect_ssn = DBI->connect($dsn, $user, $password);
-
-	my $sth_dsn = $connect_ssn->prepare("SELECT ssnvalue FROM ssn WHERE ssnkey = ?");
-	$sth_dsn->execute($ssnkey);
-	my $ssnvalue = $sth_dsn->fetchrow;
-
-	return $ssnvalue;
-}
-
 sub get_ftp {
 
 	my ($providerConfig) = @_;
@@ -1144,42 +1120,6 @@ sub get_sftp {
     } else {
     	return ($sftpcon, undef);
     }
-}
-
-sub OverduePrice {
-	my ($itemnumber) = @_;
-
-	my $dbh = C4::Context->dbh;
-    my $sth = $dbh->prepare("SELECT amountoutstanding FROM accountlines WHERE itemnumber = ? and accounttype = 'FU' order by date desc limit 1");
-    $sth->execute($itemnumber);
-    my $overdueprice = $sth->fetchrow;
-
-	return $overdueprice;
-}
-
-sub RemovePayment {
-	my ($borrowernumber, $itemnumber) = @_;
-
-	my $dbh = C4::Context->dbh;
-	my $csth = $dbh->prepare("SELECT guarantorid FROM borrowers WHERE borrowernumber = ?");
-	$csth->execute($borrowernumber);
-    my $guarantor = $csth->fetchrow;
-
-    if ($guarantor) {
-    	$borrowernumber = $guarantor;
-    } 
-    my $sth = $dbh->prepare("SELECT accountlines_id FROM accountlines WHERE itemnumber = ? and borrowernumber = ? and accounttype = 'F' and note = 'Perintä'");
-    $sth->execute($itemnumber, $borrowernumber);
-    my $billed = $sth->fetchrow;
-
-    if ($billed) {
-    	my $asth = $dbh->prepare("UPDATE accountlines SET amountoutstanding = 0 WHERE accountlines_id = ? AND borrowernumber = ? and accounttype = 'F' and note = 'Perintä'");
-    	$asth->execute( $billed, $borrowernumber );
-
-    	my $msth = $dbh->prepare("UPDATE accountlines SET amountoutstanding = 0 WHERE itemnumber = ? and borrowernumber = ? and note = 'Muovitusmaksu'");
-    	$msth->execute( $itemnumber, $borrowernumber );
-    }
-    
 }
 
 1;

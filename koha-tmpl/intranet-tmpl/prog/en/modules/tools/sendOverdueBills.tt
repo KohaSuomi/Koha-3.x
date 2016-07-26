@@ -15,32 +15,60 @@
 <div id="bd">
     <div id="yui-main">
     	<div class="yui-b">
-    	
+
     		<h1>Send overdue bills</h1>
     		
     		<div class="help">
-	            <p>As default this page shows all overdue items from issues table that are delayed more than 
-	            defined number of days in <a href="/cgi-bin/koha/tools/overduerules.pl">Overdue notice/status triggers</a> for any library branch beginning with 'MLI_' in second tab. Borrower needs to have a category code for this.
-	            Show all results option shows all results listed in issues table even when there is no borrower data available. <u>In this case Delay and Fine set for 'Henkilö' is used for every borrower listed!</u>
-	            </p>
-	            <p>Items can be selected and removed by pressing select all or selecting items one by one. 
-	            Replacement price of an item can be edited and all predefined additional prices are added to it automatically. 
-	            Choose overdue items listed below and press send bills button to send bills from all selected items.
-	            </p>
-	            <p>When bills are sent successfully a time stamp with current date and time is recorded to the database 
-	            and showed in last bill sent field of the table.
-	            </p>
+    			<h3>Instructions</h3>
+    			<ul>
+    				<li>Select branch, the table will show the issues of a current branch</li>
+    				<li>Branch has to have a billing property set in the <a href="/cgi-bin/koha/admin/branches.pl">library parameters</a>. Now there are two options: SAPERP and PDFBILL. SAPERP will send bills to KuntaErp and PDFBILL will create a PDF for printing</li>
+    				<li>Items can be selected and removed by pressing select all or selecting items one by one. 
+	            	Replacement price of an item can be edited and all predefined additional prices are added to it automatically. 
+	            	Choose overdue items listed below and press Create bills button to create bills from all selected items.</li>
+	            	<li>Replacement price will be reseted after creating the bill. Addded price will be on the bill.</li>
+	            	<li>When bills are created successfully a time stamp with current date and time is recorded to the database 
+	            	and showed in last bill created field of the table.</li>
+	            	<li>If the patron is a child then guarantor will show and the bill will be created for him or her</li>
+	            	<li>There can be defined a preference for removing fines in system preferences: <a href= "/cgi-bin/koha/admin/preferences.pl?tab=&op=search&searchfield=RemoveFineOnReturn" target="_blank">RemoveFinesOnReturn</a></li>
+    			</ul>
+    			[% IF ( account == 'PDFBILL' ) %]
+    				<h3>Billing interface: PDF</h3>
+    				<p>First you have to define a ODUECLAIM notice for the PDF. <a href="/static_content/claiming/example/pdfbill.docx">Here is an example for it.</a> <b>Modify only related text, leave the html and CamelCase words be!</b></p>
+    				<p>The bill can be printed from the page, old bills are one patron's notice page. The link will come to each row but the content is the same for the same patron.</p>
+    				<p>The replacement price and other predefined overdue fines will be added to patron's fines.</p>
+    				<p>The PDF can be created as many times as needed in one day, the overdue fines will be added to patrons once in a day. The next day there will be created a new file and patron will have new overdue fines.</p>
+    			[% END %]
+    			[% IF ( account == 'SAPERP' ) %]
+    				<h3>Billing interface: KuntaErp</h3>
+    				<p>Sends bills to Mikkeli's KuntaErp.</p>
+    			[% END %]
+    			[% IF ( !account ) %]
+    				<p><b>No billing interface defined</b></p>
+    			[% END %]
         	</div>
         	<div class="msg">
         		<p>[% msg %]</p>
         	</div>
+        	<div class='branches'>
+	        	<h3>Change branch:</h3>
+				<select name="branch" id="branch">
+			        <option value=""></option>
+			            [% FOREACH branchloo IN branchloop %]
+			                [% IF ( branchloo.selected ) %]
+			                    <option value="[% branchloo.value %]" selected="selected">[% branchloo.branchname %]</option>
+			                [% ELSE %]
+			                    <option value="[% branchloo.value %]" >[% branchloo.branchname %]</option>
+			                [% END %]
+			            [% END %]
+			    </select>
+			</div>
         	<div class="pagecontrol">
-        		<input class="maxpage" type="hidden" value="[% sqlrows %]"/>
-        		<a class="btn btn-small pagefirst" href="/cgi-bin/koha/tools/sendOverdueBills.pl?page=1&results=[% results %]&showall=[% showall %]">&lt;&lt;</a>
+        		<a class="btn btn-small pagefirst" href="/cgi-bin/koha/tools/sendOverdueBills.pl?page=1&results=[% results %]&totalpages=[% sqlrows %]&showall=[% showall %]&showbilled=[% showbilled %]&shownotbilled=[% shownotbilled %]&branch=[% branch %]">&lt;&lt;</a>
 				<a class="btn btn-small pageprev" href="">&lt;</a>
 				<span class="pagenumber">[% page %]</span>
 				<a class="btn btn-small pagenext" href="">&gt;</a>
-				<a class="btn btn-small pagelast" href="/cgi-bin/koha/tools/sendOverdueBills.pl?page=[% sqlrows %]&results=[% results %]&showall=[% showall %]">&gt;&gt;</a>
+				<a class="btn btn-small pagelast" href="/cgi-bin/koha/tools/sendOverdueBills.pl?page=[% sqlrows %]&results=[% results %]&totalpages=[% sqlrows %]&showall=[% showall %]&showbilled=[% showbilled %]&shownotbilled=[% shownotbilled %]&bypatron=[% bypatron %]&branch=[% branch %]">&gt;&gt;</a>
 				<label for="jumptopage">Go to page</label><input class="jumptopage" type="number" min="1" max="[% sqlrows %]" placeholder="page number" value="[% page %]"/>
 				<span>/[% sqlrows %]</span>
 				<a class="btn btn-small gotopage" href="#">Go</a>
@@ -57,6 +85,9 @@
 					<option value="100">100</option>
 				</select>
 				<label for="showall">Show all results</label><input class="showall" type="checkbox"/>
+				<label for="showbilled">Show only billed</label><input class="showbilled" type="checkbox"/>
+				<label for="shownotbilled">Show only not billed</label><input class="shownotbilled" type="checkbox"/>
+				<label for="bypatron">Order by patron</label><input class="bypatron" type="checkbox"/>
 				<label for="selectall">Select all</label><input class="selectall" type="checkbox"/>
 			</div>
 			<div class="searchresults">
@@ -73,7 +104,8 @@
 				    <th>Barcode</th>
 					<th>Price</th>
 					<th>Last bill sent</th>
-					<th>Send bill</th>
+					<th>Add to bill</th>
+					[% IF ( account == 'PDFBILL' ) %]<th>Print bill from today</th>[% END %]
 			</tr></thead>
 			
 			<tbody>[% FOREACH overdueloo IN overdueloop %]
@@ -95,17 +127,20 @@
 		        <input type="hidden" value="[% overdueloo.fine %]"/></td>
 		        <td>[% IF (overdueloo.billingdate) %] [% overdueloo.billingdate %] [% END %]</td>
 		        <td><input type="checkbox" class="sendcheckbox sendbill_[% overdueloo.borrowernumber %]"/></td>
+		        [% IF ( account == 'PDFBILL' ) %]
+		        <td> [% IF (overdueloo.bdate == date) %]<a href="[% pageurl %]/static_content/claiming/[% IF ( overdueloo.guarantorid ) %][% overdueloo.guarantorid %][% ELSE %][% overdueloo.borrowernumber %][% END %]/[% branch %][% IF ( overdueloo.guarantorid ) %][% overdueloo.guarantorid %][% ELSE %][% overdueloo.borrowernumber %][% END %]_[% date %].pdf" target="_blank">Print</a>[% END %]</td>
+		        [% END %]
 		        </tr>
 			[% END %]</tbody>
 			</table>
 			</div>
 			<div class="pagecontrol">
         		<input class="maxpage" type="hidden" value="[% sqlrows %]"/>
-        		<a class="btn btn-small pagefirst" href="/cgi-bin/koha/tools/sendOverdueBills.pl?page=1&results=[% results %]&showall=[% showall %]">&lt;&lt;</a>
+        		<a class="btn btn-small pagefirst" href="/cgi-bin/koha/tools/sendOverdueBills.pl?page=1&results=[% results %]&totalpages=[% sqlrows %]&showall=[% showall %]&showbilled=[% showbilled %]&shownotbilled=[% shownotbilled %]&branch=[% branch %]">&lt;&lt;</a>
 				<a class="btn btn-small pageprev" href="">&lt;</a>
 				<span class="pagenumber">[% page %]</span>
 				<a class="btn btn-small pagenext" href="">&gt;</a>
-				<a class="btn btn-small pagelast" href="/cgi-bin/koha/tools/sendOverdueBills.pl?page=[% sqlrows %]&results=[% results %]&showall=[% showall %]">&gt;&gt;</a>
+				<a class="btn btn-small pagelast" href="/cgi-bin/koha/tools/sendOverdueBills.pl?page=[% sqlrows %]&results=[% results %]&totalpages=[% sqlrows %]&showall=[% showall %]&showbilled=[% showbilled %]&shownotbilled=[% shownotbilled %]&bypatron=[% bypatron %]&branch=[% branch %]">&gt;&gt;</a>
 				<label for="jumptopage">Go to page</label><input class="jumptopage" type="number" min="1" max="[% sqlrows %]" placeholder="page number" value="[% page %]"/>
 				<span>/[% sqlrows %]</span>
 				<a class="btn btn-small gotopage" href="#">Go</a>
@@ -122,14 +157,22 @@
 					<option value="100">100</option>
 				</select>
 				<label for="showall">Show all results</label><input class="showall" type="checkbox"/>
+				<label for="showbilled">Show only billed</label><input class="showbilled" type="checkbox"/>
+				<label for="shownotbilled">Show only not billed</label><input class="shownotbilled" type="checkbox"/>
+				<label for="bypatron">Order by patron</label><input class="bypatron" type="checkbox"/>
 				<label for="selectall">Select all</label><input class="selectall" type="checkbox"/>
 			</div>
 			<div>
 				<form id="sendform" action="/cgi-bin/koha/tools/sendOverdueBills.pl" method="post">
 					<input type="hidden" name="page" value="[% page %]"/>
+					<input class="maxpage" type="hidden" value="[% sqlrows %]"/>
         			<input class="maxresults" type="hidden" name="results" value="[% results %]"/>
         			<input class="show" type="hidden" name="showall" value="[% showall %]"/>
-					<input type="submit" name="send" value="Send bills"/>
+        			<input class="billed" type="hidden" name="showbilled" value="[% showbilled %]"/>
+        			<input class="notbilled" type="hidden" name="shownotbilled" value="[% shownotbilled %]"/>
+        			<input class="patron" type="hidden" name="bypatron" value="[% bypatron %]"/>
+        			<input class="branch" type="hidden" name="branch" value="[% branch %]"/>
+					<input type="submit" name="send" value="Create bills"/>
 				</form>
 			</div>
     	</div>

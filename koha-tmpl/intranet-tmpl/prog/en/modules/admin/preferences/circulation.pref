@@ -551,6 +551,10 @@ Circulation:
                   yes: Charge
                   no: "Don't Charge"
             - the replacement price when a patron loses an item.
+        -
+            - Choose which fines will be removed on item return. Set here the note of the fine, separated by | eg. Perintä|Muovitusmaksu
+            - pref: RemoveFineOnReturn
+              class: Choice
     Self Checkout:
         -
             - "Include the following JavaScript on all pages in the web-based self checkout:"

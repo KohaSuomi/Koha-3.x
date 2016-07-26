@@ -568,13 +568,13 @@ sub GetBranchesCount {
 #LUMME #224, getting the branches loop from branch relations
 sub GetBranchesLoopByRelation { 
     my ($biblionumber, $branch) = @_;
-    my $branch = @_ ? shift : mybranch();
     my $branches = GetBranches();
 
     my $dbh = C4::Context->dbh;
 
     my $itemquery = "SELECT homebranch FROM items WHERE biblionumber = ?";
-    my $relationquery = "SELECT DISTINCT categorycode FROM branchrelations where branchcode=?";
+    my $relationquery = "SELECT DISTINCT categorycode FROM branchrelations
+    WHERE branchrelations.branchcode = ?";
     my $itemsth = $dbh->prepare( $itemquery );
     my $relationsth = $dbh->prepare( $relationquery );
     $itemsth->execute($biblionumber);
@@ -593,7 +593,8 @@ sub GetBranchesLoopByRelation {
     my $categorysth = $dbh->prepare(q{
         SELECT branchcode
         FROM branchrelations
-        WHERE categorycode = ?
+        JOIN branchcategories on branchrelations.categorycode = branchcategories.categorycode 
+        WHERE branchcategories.categorytype = 'searchdomain' AND branchrelations.categorycode = ?
     });
     foreach my $key (keys %categories) {
         $categorysth->execute( $key );
