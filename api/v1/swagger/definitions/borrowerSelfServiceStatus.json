@@ -1,0 +1,9 @@
+{
+  "type": "object",
+  "properties": {
+    "permission": {
+      "description": "permission to access the resource granted/denied",
+      "type": "boolean"
+    }
+  }
+}

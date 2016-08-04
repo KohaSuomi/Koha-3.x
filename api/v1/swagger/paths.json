@@ -17,6 +17,9 @@
   "/borrowers": {
     "$ref": "paths/borrowers.json#/~1borrowers"
   },
+  "/borrowers/ssstatus": {
+    "$ref": "paths/borrowers.json#/~1borrowers~1ssstatus"
+  },
   "/borrowers/status": {
     "$ref": "paths/borrowers.json#/~1borrowers~1status"
   },

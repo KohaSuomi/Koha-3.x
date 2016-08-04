@@ -30,6 +30,45 @@
       }
     }
   },
+  "/borrowers/ssstatus": {
+    "get": {
+      "x-mojo-controller": "Koha::REST::V1::Borrowers",
+      "x-koha-permission": {
+        "borrowers": "get_self_service_status"
+      },
+      "operationId": "getSelfServiceStatus",
+      "tags": ["borrowers"],
+      "summary": "Check if a borrower is allowed to access self-service resources",
+      "description": "This endpoint is intended to be used by barcode readers to quickly check for permissions!<p>Access is denied if the patron has lost his card, account has expired, a debarrment is placed, or excessive fines are encumbered.</p>",
+      "produces": [
+        "application/json",
+        "application/xml"
+      ],
+      "parameters": [
+        {
+          "name": "cardnumber",
+          "description": "The barcode of the library card the Borrower uses to authenticate",
+          "in": "formData",
+          "required": true,
+          "type": "string"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Permission granted/denied",
+          "schema": {
+            "$ref": "../definitions/borrowerSelfServiceStatus.json"
+          }
+        },
+        "404": {
+          "description": "No such barcode in use",
+          "schema": {
+            "$ref": "../definitions/error.json"
+          }
+        }
+      }
+    }
+  },
   "/borrowers/status": {
     "get": {
       "x-mojo-controller": "Koha::REST::V1::Borrowers",

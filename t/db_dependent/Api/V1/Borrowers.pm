@@ -335,4 +335,58 @@ sub getstatus200 {
     is($json->{cardnumber}, $b->cardnumber, "Got a borrower!");
 }
 
+sub getssstatus404 {
+    my ($class, $restTest, $driver) = @_;
+    my $testContext = $restTest->get_testContext(); #Test context will be automatically cleaned after this subtest has been executed.
+    my $activeUser = $restTest->get_activeBorrower();
+
+    my ($b, $path, $ua, $tx, $json);
+
+    ##Make sure there is no such member
+    $b = C4::Members::GetMember(cardnumber => '11A01');
+    C4::Members::DelMember($b->{borrowernumber}) if $b;
+
+    $path = $restTest->get_routePath();
+
+    #Make a custom GET request with formData parameters :) Mojo-fu!
+    $ua = $driver->ua;
+    $tx = $ua->build_tx(GET => $path => {Accept => '*/*'});
+    $tx->req->body( Mojo::Parameters->new("cardnumber=11A01")->to_string);
+    $tx->req->headers->remove('Content-Type');
+    $tx->req->headers->add('Content-Type' => 'application/x-www-form-urlencoded');
+    $tx = $ua->start($tx);
+    $restTest->catchSwagger2Errors($tx);
+    $json = $tx->res->json;
+    is($tx->res->code, 404, "No such cardnumber 404");
+    is(ref($json), 'HASH', "Got a json-object");
+    ok($json && $json->{error} && $json->{error} =~ /cardnumber/i, "No such cardnumber text");
+}
+
+sub getssstatus200 {
+    my ($class, $restTest, $driver) = @_;
+    my $testContext = $restTest->get_testContext(); #Test context will be automatically cleaned after this subtest has been executed.
+    my $activeUser = $restTest->get_activeBorrower();
+
+    my ($b, $path, $ua, $tx, $json);
+
+    $b = t::lib::TestObjects::BorrowerFactory->createTestGroup(
+                    {   cardnumber => '11A01',
+                        password => '1234'
+                    }, undef, $testContext, undef, undef);
+
+    $path = $restTest->get_routePath();
+    #Make a custom GET request with formData parameters :) Mojo-fu!
+    $ua = $driver->ua;
+    $tx = $ua->build_tx(GET => $path => {Accept => '*/*'});
+    $tx->req->body( Mojo::Parameters->new("cardnumber=11A01")->to_string);
+    $tx->req->headers->remove('Content-Type');
+    $tx->req->headers->add('Content-Type' => 'application/x-www-form-urlencoded');
+    $tx = $ua->start($tx);
+    $restTest->catchSwagger2Errors($tx);
+    $json = $tx->res->json;
+    is($tx->res->code, 200, "Good barcode given");
+    is(ref($json), 'HASH', "Got a json-object");
+    ok($json->{permission}, "Permission granted!");
+}
+
 1;

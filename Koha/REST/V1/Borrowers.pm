@@ -94,5 +94,35 @@ sub status {
     return $c->$cb($payload, 200);
 }
 
+sub get_self_service_status {
+    my ($c, $args, $cb) = @_;
+
+    try {
+        my $borrower = Koha::Borrowers->cast($args->{cardnumber});
+
+        my $ilsBorrower = ILS::Patron->new($borrower->userid);
+
+        my $payload = {
+            permission => ($ilsBorrower->card_lost ||
+                           $ilsBorrower->expired ||
+                           not($ilsBorrower->hold_ok) || #debarred
+                           $ilsBorrower->excessive_fines ||
+                           $ilsBorrower->excessive_fees)
+                            ? Mojo::JSON->false : Mojo::JSON->true,
+        };
+
+        return $c->$cb($payload, 200);
+
+    } catch {
+        unless (blessed($_) && $_->can('rethrow')) {
+            die $_;
+        }
+        if ($_->isa('Koha::Exception::UnknownObject')) {
+            return $c->$cb({error => 'No such cardnumber'}, 404);
+        }
+        $_->rethrow();
+    };
+}
+
 1;
 
