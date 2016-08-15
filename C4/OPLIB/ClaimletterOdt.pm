@@ -83,7 +83,7 @@ sub writeClaimletter {
     $document->appendParagraph(text => ''.C4::OPLIB::Claiming::getAddressForLetter($guarantor), style => 'Text body');
     $document->appendParagraph(text => '', style => 'Text body');
     $document->appendParagraph(text => "PERINTÄKIRJE $now", style => 'Heading 3');
-    my $text = "PYYDÄMME PALAUTTAMAAN OHEISEN AINEISTON VÄLITTÖMÄSTI.\nELLEI AINEISTOA PALAUTETA, LÄHETÄMME LASKUN."; $text = encode('UTF-8', $text , Encode::FB_CROAK);
+    my $text = "PYYDÄMME PALAUTTAMAAN OHEISEN AINEISTON VÄLITTÖMÄSTI.\nELLEI AINEISTOA PALAUTETA, LÄHETÄMME LASKUN, JOKA ON ULOSOTTOKELPOINEN."; $text = encode('UTF-8', $text , Encode::FB_CROAK);
     $document->appendParagraph(text => $text, style => 'Text body');
     $document->appendParagraph(text => '', style => 'Text body');
 

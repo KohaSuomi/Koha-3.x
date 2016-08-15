@@ -81,7 +81,7 @@ sub writeClaimletter {
     push @$letterBuilder, ''.C4::OPLIB::Claiming::getAddressForLetter($guarantor);
     push @$letterBuilder, "\n\n";
     push @$letterBuilder, "PERINTÄKIRJE $now";
-    my $text = ''."PYYDÄMME PALAUTTAMAAN OHEISEN AINEISTON VÄLITTÖMÄSTI.\nELLEI AINEISTOA PALAUTETA, LÄHETÄMME LASKUN.";# $text = encode('UTF-8', $text , Encode::FB_CROAK);
+    my $text = ''."PYYDÄMME PALAUTTAMAAN OHEISEN AINEISTON VÄLITTÖMÄSTI.\nELLEI AINEISTOA PALAUTETA, LÄHETÄMME LASKUN, JOKA ON ULOSOTTOKELPOINEN.";# $text = encode('UTF-8', $text , Encode::FB_CROAK);
     push @$letterBuilder, $text;
     push @$letterBuilder, "";
 
