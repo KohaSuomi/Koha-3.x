@@ -204,6 +204,7 @@ sub send_payment {
         }
 
         my $response = JSON->new->utf8->canonical(1)->decode($request->{_content});
+        $logger->info("Got answer: ".Dumper($response));
 
         if ($response->{Hash} ne $class->_calculate_response_hash($response)) {
             $logger->error('Payment '.$payment->{Id}.' responded with invalid hash '.$response->{Hash});
