@@ -183,7 +183,7 @@ if ($op eq 'add_form') {
         unless ( $duplicate_entry ) {
             my $sth=$dbh->prepare( 'INSERT INTO authorised_values
                                     ( category, authorised_value, lib, lib_opac, imageurl, no_reservation, no_checkout, overdue_fine )
-                                    values (?, ?, ?, ?, ?, ?, ?)' );
+                                    values (?, ?, ?, ?, ?, ?, ?, ?)' );
     	    my $lib = $input->param('lib');
     	    my $lib_opac = $input->param('lib_opac');
             my $no_reservation = $input->param('no_reservation') ? 1 : 0;
