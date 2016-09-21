@@ -375,18 +375,41 @@ sub getssstatus200 {
                     }, undef, $testContext, undef, undef);
 
     $path = $restTest->get_routePath();
-    #Make a custom GET request with formData parameters :) Mojo-fu!
-    $ua = $driver->ua;
-    $tx = $ua->build_tx(GET => $path => {Accept => '*/*'});
-    $tx->req->body( Mojo::Parameters->new("cardnumber=11A01")->to_string);
-    $tx->req->headers->remove('Content-Type');
-    $tx->req->headers->add('Content-Type' => 'application/x-www-form-urlencoded');
-    $tx = $ua->start($tx);
-    $restTest->catchSwagger2Errors($tx);
-    $json = $tx->res->json;
-    is($tx->res->code, 200, "Good barcode given");
-    is(ref($json), 'HASH', "Got a json-object");
-    ok($json->{permission}, "Permission granted!");
+
+    my $getssstatus200_tac_fail = sub {
+        #Make a custom GET request with formData parameters :) Mojo-fu!
+        $ua = $driver->ua;
+        $tx = $ua->build_tx(GET => $path => {Accept => '*/*'});
+        $tx->req->body( Mojo::Parameters->new("cardnumber=11A01")->to_string);
+        $tx->req->headers->remove('Content-Type');
+        $tx->req->headers->add('Content-Type' => 'application/x-www-form-urlencoded');
+        $tx = $ua->start($tx);
+        $restTest->catchSwagger2Errors($tx);
+        $json = $tx->res->json;
+        is($tx->res->code, 200, "Good barcode given");
+        is(ref($json), 'HASH', "Got a json-object");
+        is($json->{permission}, '0', "Permission denied!");
+    };
+    subtest "Fail because terms and conditions are not accepted", $getssstatus200_tac_fail;
+
+    my $getssstatus200_tac_accepted = sub {
+        ##Accept terms and conditions
+        C4::Members::Attributes::SetBorrowerAttributes($b->borrowernumber, [{ code => 'SST&C', value => '1' }]);
+        #Make a custom GET request with formData parameters :) Mojo-fu!
+        $ua = $driver->ua;
+        $tx = $ua->build_tx(GET => $path => {Accept => '*/*'});
+        $tx->req->body( Mojo::Parameters->new("cardnumber=11A01")->to_string);
+        $tx->req->headers->remove('Content-Type');
+        $tx->req->headers->add('Content-Type' => 'application/x-www-form-urlencoded');
+        $tx = $ua->start($tx);
+        $restTest->catchSwagger2Errors($tx);
+        $json = $tx->res->json;
+        is($tx->res->code, 200, "Good barcode given");
+        is(ref($json), 'HASH', "Got a json-object");
+        is($json->{permission}, '1', "Permission granted!");
+    };
+    subtest "Succeed because terms and conditions were accepted", $getssstatus200_tac_accepted;
+
 }
 
 1;

@@ -5,12 +5,14 @@ use Scalar::Util qw(blessed);
 use Try::Tiny;
 use Mojo::Base 'Mojolicious::Controller';
 use Mojo::JSON;
+use Carp;
 
 use File::Basename;
 
 use Koha::Borrowers;
 use Koha::Auth::Challenge::Password;
 use Koha::Database;
+use C4::SelfService;
 
 use lib File::Basename::dirname($INC{"Koha/Borrowers.pm"})."/../C4/SIP";
 use ILS::Patron;
@@ -97,31 +99,40 @@ sub status {
 sub get_self_service_status {
     my ($c, $args, $cb) = @_;
 
+    my ($payload, $httpCode);
     try {
         my $borrower = Koha::Borrowers->cast($args->{cardnumber});
 
-        my $ilsBorrower = ILS::Patron->new($borrower->userid);
+        my $ilsPatron = ILS::Patron->new($borrower->cardnumber);
 
-        my $payload = {
-            permission => ($ilsBorrower->card_lost ||
-                           $ilsBorrower->expired ||
-                           not($ilsBorrower->hold_ok) || #debarred
-                           $ilsBorrower->excessive_fines ||
-                           $ilsBorrower->excessive_fees)
-                            ? Mojo::JSON->false : Mojo::JSON->true,
-        };
-
-        return $c->$cb($payload, 200);
+        C4::SelfService::CheckSelfServicePermission($ilsPatron, $args->{branchcode}, 'accessMainDoor');
+        #If we didn't get any exceptions, we succeeded
+        $payload = {permission => Mojo::JSON->true};
+        $httpCode = 200;
 
     } catch {
         unless (blessed($_) && $_->can('rethrow')) {
-            die $_;
+            confess $_;
         }
         if ($_->isa('Koha::Exception::UnknownObject')) {
-            return $c->$cb({error => 'No such cardnumber'}, 404);
+            $payload = {error => 'No such cardnumber'};
+            $httpCode = 404;
         }
-        $_->rethrow();
+        elsif ($_->isa('Koha::Exception::SelfService::Underage') ||
+               $_->isa('Koha::Exception::SelfService::TACNotAccepted') ||
+               $_->isa('Koha::Exception::SelfService')) {
+            $payload = {
+                permission => Mojo::JSON->false,
+                error => ref($_),
+            };
+            $httpCode = 200;
+        }
+        else {
+            $_->rethrow();
+        }
     };
+
+    return $c->$cb($payload, $httpCode);
 }
 
 1;
