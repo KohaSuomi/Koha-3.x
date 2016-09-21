@@ -230,5 +230,13 @@ __PAZPAR2_TOGGLE_XML_POST__
                                             e.g. https://server/cgi-bin/koha/opac-paycollect.pl -->
     </CPU>
  </online_payments>
+ <!-- Connection to ssn server for billing -->
+ <ssnProvider>
+    <host></host>
+    <port></port>
+    <user></user>
+    <password></password>
+    <ssn_url></ssn_url>
+ </ssnProvider>
 </config>
 </yazgfs>
