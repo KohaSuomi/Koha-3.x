@@ -122,6 +122,9 @@ CREATE TABLE `authorised_values` ( -- stores values for authorized values catego
   `lib` varchar(200) default NULL, -- authorized value description as printed in the staff client
   `lib_opac` varchar(200) default NULL, -- authorized value description as printed in the OPAC
   `imageurl` varchar(200) default NULL, -- authorized value URL
+  `no_reservation` tinyint(1) default 0, -- no reservation
+  `no_checkout` tinyint(1) default 0, -- no checkout
+  `overdue_fine` decimal(10,2) default NULL, -- no checkout
   PRIMARY KEY  (`id`),
   KEY `name` (`category`),
   KEY `lib` (`lib`),
