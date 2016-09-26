@@ -1315,6 +1315,8 @@ CREATE TABLE `items` ( -- holdings/item information
   `enumchron` text default NULL, -- serial enumeration/chronology for the item (MARC21 952$h)
   `copynumber` varchar(32) default NULL, -- copy number (MARC21 952$t)
   `stocknumber` varchar(32) default NULL, -- inventory number (MARC21 952$i)
+  `sub_location` varchar(10) default NULL, -- SUBLOC (MARC21 952$S)
+  `genre` varchar(10) default NULL, -- GENRE (MARC21 952$G)
   PRIMARY KEY  (`itemnumber`),
   UNIQUE KEY `itembarcodeidx` (`barcode`),
   KEY `itemstocknumberidx` (`stocknumber`),
