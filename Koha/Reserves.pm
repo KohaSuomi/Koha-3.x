@@ -55,10 +55,20 @@ sub GetLastpickupdate {
     my $startdate = $waitingdate ? Koha::DateUtils::dt_from_string($waitingdate) : DateTime->now( time_zone => C4::Context->tz() );
     my $calendar = Koha::Calendar->new( branchcode => $branchcode );
     my $expiration;
-    if ($branchcode eq 'JOE_LIPAU' ||
-        $branchcode eq 'JOE_KONAU' ||
-        $branchcode eq 'JOE_JOEAU' ) {
-        $expiration = $calendar->days_forward( $startdate, 10 );
+    # Getting the ReservesMaxPickUpDelayBranch
+    my $branches = C4::Context->preference("ReservesMaxPickUpDelayBranch");
+
+    my $yaml = YAML::XS::Load(
+                        Encode::encode(
+                            'UTF-8',
+                            $branches,
+                            Encode::FB_CROAK
+                        )
+                    );
+
+    if ($yaml->{$branchcode}) {
+        my $delay = $yaml->{$branchcode};
+        $expiration = $calendar->days_forward( $startdate, $delay );
     }
     else {
         $expiration = $calendar->days_forward( $startdate, C4::Context->preference('ReservesMaxPickUpDelay') );

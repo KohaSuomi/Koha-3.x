@@ -51,6 +51,7 @@ use Koha::Exception::BadParameter;
 use Koha::Exception::DB;
 use Koha::Exception::NoPermission;
 use Koha::Exception::UnknownObject;
+use Data::Dumper;
 
 use vars qw($VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);
 
@@ -2173,15 +2174,24 @@ sub _reserve_last_pickup_date {
     my $calendar = Koha::Calendar->new( branchcode => $reserve->{branchcode} );
     my $expiration;
 
-    if ($reserve->{branchcode} eq 'JOE_LIPAU' ||
-        $reserve->{branchcode} eq 'JOE_KONAU' ||
-        $reserve->{branchcode} eq 'JOE_JOEAU' ) {
-        $expiration = $calendar->days_forward( $startdate, 10 );
+    # Getting the ReservesMaxPickUpDelayBranch
+    my $branches = C4::Context->preference("ReservesMaxPickUpDelayBranch");
+
+    my $yaml = YAML::XS::Load(
+                        Encode::encode(
+                            'UTF-8',
+                            $branches,
+                            Encode::FB_CROAK
+                        )
+                    );
+
+    if ($yaml->{$reserve->{branchcode}}) {
+        my $delay = $yaml->{$reserve->{branchcode}};
+        $expiration = $calendar->days_forward( $startdate, $delay );
     }
     else {
         $expiration = $calendar->days_forward( $startdate, C4::Context->preference('ReservesMaxPickUpDelay') );
     }
-
        #It is necessary to set the time portion of DateTime as well, because we are actually getting the
        #  last pickup datetime and importantly days end at 23:59:59.
        #  Without this set, last pickup dates expire 1 day too early and frustrates patrons and staff alike!
