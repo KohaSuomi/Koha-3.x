@@ -179,8 +179,8 @@ foreach my $file (@zipfiles) {
 
     $file = substr($file, $last_slash + 1, $length - $last_slash);
     print "$file\n";
-    #$ftp->put($filepath, $file . ".temppi") or die "Cannot upload file";
-    #$ftp->rename($file . ".temppi", $file) or die "Cannot rename file";
+    $ftp->put($filepath, $file . ".temppi") or die "Cannot upload file";
+    $ftp->rename($file . ".temppi", $file) or die "Cannot rename file";
 
     my $processeddirectory=$filepath;
     $processeddirectory=~m/^.+\//;
