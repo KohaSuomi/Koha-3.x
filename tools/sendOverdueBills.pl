@@ -44,17 +44,6 @@ use Data::Dumper;
 my $input = CGI->new;
 my $dbh = C4::Context->dbh;
 
-my $page_url = 'http';
-# if ($ENV{HTTPS} = "on") {
-#     $page_url .= "s";
-# }
-$page_url .= "://";
-if ($ENV{SERVER_PORT} != "80") {
-    $page_url .= $ENV{SERVER_NAME}.":".$ENV{SERVER_PORT};
-} else {
-    $page_url .= $ENV{SERVER_NAME};
-}
-
 my $i = 0; # This variable is used as rowcounter 
 
 my $page = $input->param('page');
@@ -152,8 +141,7 @@ if($send){
                 itemnumber => $form{'itemnum'},
                 plastic => ITEM_ADD_FINE.'.00',
                 overdue_price => $overdue_price,
-                branchcode => $branch,
-                pageurl => $page_url
+                branchcode => $branch
 	
 			};
 		}
@@ -306,7 +294,6 @@ bypatron => $bypatron,
 branch => $branch,
 msg => $msg,
 date => $now,
-pageurl => $page_url,
 account => $account
 );
                            

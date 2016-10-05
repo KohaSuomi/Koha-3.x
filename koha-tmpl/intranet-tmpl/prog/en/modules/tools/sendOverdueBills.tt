@@ -128,7 +128,7 @@
 		        <td>[% IF (overdueloo.billingdate) %] [% overdueloo.billingdate %] [% END %]</td>
 		        <td><input type="checkbox" class="sendcheckbox sendbill_[% overdueloo.borrowernumber %]"/></td>
 		        [% IF ( account == 'PDFBILL' ) %]
-		        <td> [% IF (overdueloo.bdate == date) %]<a href="[% pageurl %]/static_content/claiming/[% IF ( overdueloo.guarantorid ) %][% overdueloo.guarantorid %][% ELSE %][% overdueloo.borrowernumber %][% END %]/[% branch %][% IF ( overdueloo.guarantorid ) %][% overdueloo.guarantorid %][% ELSE %][% overdueloo.borrowernumber %][% END %]_[% date %].pdf" target="_blank">Print</a>[% END %]</td>
+		        <td> [% IF (overdueloo.bdate == date) %]<a href="/static_content/claiming/[% IF ( overdueloo.guarantorid ) %][% overdueloo.guarantorid %][% ELSE %][% overdueloo.borrowernumber %][% END %]/[% branch %][% IF ( overdueloo.guarantorid ) %][% overdueloo.guarantorid %][% ELSE %][% overdueloo.borrowernumber %][% END %]_[% date %].pdf" target="_blank">Print</a>[% END %]</td>
 		        [% END %]
 		        </tr>
 			[% END %]</tbody>

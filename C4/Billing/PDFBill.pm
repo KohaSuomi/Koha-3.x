@@ -67,7 +67,7 @@ sub create_pdf {
         }
         for (my $i=$number; $i <= $lettercount; $i++) {
             my $output_directory = $fileplace.'/koha-tmpl/static_content/claiming/';
-            my ($letter, $borrowernumber, $branchdetail, $url) = set_message($letterdata->{"letter".$i});
+            my ($letter, $borrowernumber, $branchdetail) = set_message($letterdata->{"letter".$i});
             if ($letter) {
                 if ($borrowernumber || $borrowernumber ne '0') {
                     my $message_id = C4::Letters::EnqueueLetter(
@@ -93,7 +93,7 @@ sub create_pdf {
                     $printed = print_pdf($message, $pdfFile, $letterTemplate, $output_directory);
 
                     if ($printed) {
-                        my $pdfPath = "<a href = '".$url."/static_content/claiming/".$borrowernumber."/".$pdfFile."' target='_blank'>Print</a>";
+                        my $pdfPath = "<a href = '/static_content/claiming/".$borrowernumber."/".$pdfFile."' target='_blank'>Print</a>";
                         if (!CheckMessageDate($borrowernumber, 'Asiakkaalla on laskutettua aineistoa', $today->output('iso'))) {
                             C4::Members::AddMessage( $borrowernumber, 'L', 'Asiakkaalla on laskutettua aineistoa', $branchdetail->{branchcode} );
                         }
@@ -153,7 +153,6 @@ sub set_message {
 
     my $borrowernumber = $content->[0]->{borrowernumber};
     my $branch = $content->[0]->{branchcode};
-    my $url = $content->[0]->{pageurl};
 
     my @items = set_content($content, $borrowernumber);
 
@@ -172,8 +171,7 @@ sub set_message {
             message_transport_type => 'print',
         ), 
         $borrowernumber,
-        $branchdetail,
-        $url;
+        $branchdetail
     }
 }
 
