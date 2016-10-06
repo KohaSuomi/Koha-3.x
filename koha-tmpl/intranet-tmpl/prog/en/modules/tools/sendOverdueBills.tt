@@ -129,7 +129,11 @@
 		        <td><input type="number" min="0.00" step="0.01" class="priceinput" placeholder="[% overdueloo.replacementprice %]" value="[% overdueloo.replacementprice %]"/>
 		        <input type="hidden" value="[% overdueloo.fine %]"/></td>
 		        <td>[% IF (overdueloo.billingdate) %] [% overdueloo.billingdate %] [% END %]</td>
+		        [% IF ( !overdueloo.ssnkey && account == 'SAPERP') %]
+		        <td>No ssn key</td>
+		        [% ELSE %]
 		        <td><input type="checkbox" class="sendcheckbox sendbill_[% overdueloo.borrowernumber %]"/></td>
+		        [% END %]
 		        [% IF ( account == 'PDFBILL' ) %]
 		        <td> [% IF (overdueloo.bdate == date) %]<a href="/static_content/claiming/[% IF ( overdueloo.guarantorid ) %][% overdueloo.guarantorid %][% ELSE %][% overdueloo.borrowernumber %][% END %]/[% branch %][% IF ( overdueloo.guarantorid ) %][% overdueloo.guarantorid %][% ELSE %][% overdueloo.borrowernumber %][% END %]_[% date %].pdf" target="_blank">Print</a>[% END %]</td>
 		        [% END %]

@@ -67,20 +67,17 @@ sub GetOverduedIssues {
         items.barcode,
         items.replacementprice
         FROM issues 
-        LEFT JOIN items ON issues.itemnumber=items.itemnumber 
-        LEFT JOIN borrower_attributes on issues.borrowernumber = borrower_attributes.borrowernumber ";
+        LEFT JOIN items ON issues.itemnumber=items.itemnumber ";
     if($showbilled || $shownotbilled) {
         $query .= "LEFT JOIN overduebills ON overduebills.issue_id=issues.issue_id ";
     }
-    $query .= "LEFT JOIN overduerules ON overduerules.categorycode='HENKILO' or 'LAPSI'";
-    $query .= "WHERE (NOW() > DATE_ADD(issues.date_due,INTERVAL ".$delay->{delaytime}." DAY))
-        AND issues.date_due > (NOW() - INTERVAL 2 YEAR) ";
+    $query .= "WHERE (NOW() > DATE_ADD(issues.date_due,INTERVAL ".$delay->{delaytime}." DAY)) 
+        AND issues.date_due > (NOW() - INTERVAL 1 YEAR) ";
     if ($group) {
         $query .= "AND (".$branches.") ";
     } else {
         $query .= "AND items.homebranch = ? ";
     }
-    $query .= "AND borrower_attributes.attribute like 'sotu%' ";
     if ($showbilled) {$query.= "AND overduebills.billingdate IS NOT NULL ";}
     if ($shownotbilled) {$query.= "AND overduebills.billingdate IS NULL ";}
     if ($bypatron) {
@@ -115,6 +112,7 @@ sub GetOverduedIssues {
     while (my $issue = $sth->fetchrow_hashref) {
 
         my $borrower = GetBorrower($issue->{borrowernumber});
+        my $ssnkey;
 
         $issue->{firstname} = trim($borrower->{firstname});
         $issue->{surname} = trim($borrower->{surname});
@@ -136,7 +134,11 @@ sub GetOverduedIssues {
             $issue->{gzipcode} = trim($guarantor->{gzipcode});
             $issue->{gphone} = trim($guarantor->{gphone});
             $issue->{gemail} = trim($guarantor->{gemail});
+            $ssnkey = GetSsnKey($guarantorid);
+        } else {
+            $ssnkey = GetSsnKey($issue->{borrowernumber});
         }
+        $issue->{ssnkey} = trim($ssnkey);
         my $biblio = GetBiblioFromItemNumber($issue->{itemnumber});
 
         $issue->{title} = $biblio->{title};
@@ -179,6 +181,22 @@ sub GetBorrower {
     $sth = $dbh->prepare($query);
     $sth->execute($borrowernumber);
     return $sth->fetchrow_hashref();
+}
+
+sub GetSsnKey {
+    my ($borrowernumber) = @_;
+
+    my $dbh = C4::Context->dbh;
+    my $sth;
+
+    my $query="SELECT 
+        attribute 
+        FROM borrower_attributes
+        WHERE borrowernumber = ? and code = 'SSN'"; 
+
+    $sth = $dbh->prepare($query);
+    $sth->execute($borrowernumber);
+    return $sth->fetchrow;
 }
 
 
@@ -249,8 +267,6 @@ sub GetTotalPages {
     my $query="SELECT COUNT(DISTINCT issues.issue_id) AS sqlrows
         FROM issues 
         LEFT JOIN borrowers ON issues.borrowernumber=borrowers.borrowernumber 
-        LEFT JOIN borrower_attributes ba ON issues.borrowernumber=ba.borrowernumber 
-        LEFT JOIN overduerules ON overduerules.categorycode='HENKILO' or 'LAPSI'
         LEFT JOIN overduebills ON overduebills.issue_id=issues.issue_id
         LEFT JOIN items ON issues.itemnumber=items.itemnumber
         WHERE ";
@@ -259,9 +275,8 @@ sub GetTotalPages {
         } else {
             $query .= "items.homebranch = ? ";
         }
-        $query .= "AND ba.attribute like 'sotu%' 
-        AND (NOW() > DATE_ADD(issues.date_due,INTERVAL ".$delay->{delaytime}." DAY))
-        AND issues.date_due > (NOW() - INTERVAL 2 YEAR) ";
+        $query .= "AND (NOW() > DATE_ADD(issues.date_due,INTERVAL ".$delay->{delaytime}." DAY))
+        AND issues.date_due > (NOW() - INTERVAL 1 YEAR) ";
         if ($showbilled) {$query.= "AND overduebills.billingdate IS NOT NULL ";}
         if ($shownotbilled) {$query.= "AND overduebills.billingdate IS NULL ";}
         

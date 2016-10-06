@@ -260,7 +260,8 @@ foreach my $data (@{$issues}) {
         gaddress                => $data->{gaddress},                       
         gcity                   => $data->{gcity},                   
         gzipcode                => $data->{gzipcode},
-        bdate                   => $bdate
+        bdate                   => $bdate,
+        ssnkey					=> $data->{ssnkey}
     };
 }
 
