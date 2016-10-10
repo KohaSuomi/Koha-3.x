@@ -832,6 +832,11 @@ our $PERL_DEPS = {
         'required' => '1',
         'min_ver'  => '3.0107',
     },
+    'Net::SFTP::Foreign' => {
+        'usage'    => 'Sap Interface',
+        'required' => '1',
+        'min_ver'  => '1.86',
+    },
 
 };
 
