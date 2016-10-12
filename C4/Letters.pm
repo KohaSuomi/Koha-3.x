@@ -868,7 +868,7 @@ sub GetPrintMessages {
 
 =head2 GetQueuedMessages ([$hashref])
 
-  my $messages = GetQueuedMessage( { borrowernumber => '123', limit => 20 } );
+  my $messages = GetQueuedMessage( { borrowernumber => '123', letter_code => 'ODUE1', limit => 20 } );
 
 fetches messages out of the message queue.
 
@@ -891,6 +891,10 @@ ENDSQL
     if ( exists $params->{'borrowernumber'} ) {
         push @whereclauses, ' borrowernumber = ? ';
         push @query_params, $params->{'borrowernumber'};
+    }
+    if ( exists $params->{'letter_code'} ) {
+        push @whereclauses, ' letter_code = ? ';
+        push @query_params, $params->{'letter_code'};
     }
 
     if ( @whereclauses ) {
