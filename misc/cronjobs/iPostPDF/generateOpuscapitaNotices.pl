@@ -122,16 +122,6 @@ foreach my $message (@all_messages) {
     my $xmlFile = $branch->{'branchcode'}.$message->{'message_id'}."_".$today->output('iso'). ".xml";
     my $zipFile = $branch->{'branchcode'}.$message->{'message_id'}."_".$today->output('iso'). ".zip";
 
-    $letterTemplate->param(BRANCH => $branch->{branchname});
-    $letterTemplate->param(BRANCHADDRESS => $branch->{branchaddress1});
-    $letterTemplate->param(BRANCHZIPCODE => $branch->{branchzip});
-    $letterTemplate->param(BRANCHCITY => $branch->{branchcity});
-    $letterTemplate->param(NAME => $borrower->{firstname});
-    $letterTemplate->param(SURNAME => $borrower->{surname});
-    $letterTemplate->param(ADDRESS1 => $borrower->{address});
-    $letterTemplate->param(ADDRESS2 => $borrower->{address2});
-    $letterTemplate->param(ZIPCODE => $borrower->{zipcode});
-    $letterTemplate->param(CITY => $borrower->{city});
     $letterTemplate->param(ITEMINFO => Encode::encode( "iso-8859-1", $message->{'content'}));
 
     $xmlTemplate->param(NAME => $borrower->{firstname});
