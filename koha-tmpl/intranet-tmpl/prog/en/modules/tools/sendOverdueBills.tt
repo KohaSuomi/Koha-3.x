@@ -21,7 +21,7 @@
     		<div class="help">
     			<h3>Instructions</h3>
     			<ul>
-    				<li>Select branch, the table will show the issues of a current branch</li>
+    				<li>Select branch, the table will show the items of a current branch. If you need items from more than one branch then add group property which has LASKU in its name and add this group to your branches.</li>
     				<li>Branch has to have a billing property set in the <a href="/cgi-bin/koha/admin/branches.pl">library parameters</a>. Now there are two options: SAPERP and PDFBILL. SAPERP will send bills to KuntaErp and PDFBILL will create a PDF for printing</li>
     				<li>Items can be selected and removed by pressing select all or selecting items one by one. 
 	            	Replacement price of an item can be edited and all predefined additional prices are added to it automatically. 
@@ -62,6 +62,9 @@
 			                [% END %]
 			            [% END %]
 			    </select>
+			    [% IF ( branchcategory ) %]
+    				<p> <b>The branch is part of [% branchcategory %].</b> Show all items from this group <input class="showgroup" type="checkbox"/></p>
+    			[% END %]
 			</div>
         	<div class="pagecontrol">
         		<a class="btn btn-small pagefirst" href="/cgi-bin/koha/tools/sendOverdueBills.pl?page=1&results=[% results %]&totalpages=[% sqlrows %]&showall=[% showall %]&showbilled=[% showbilled %]&shownotbilled=[% shownotbilled %]&branch=[% branch %]">&lt;&lt;</a>
@@ -172,6 +175,7 @@
         			<input class="notbilled" type="hidden" name="shownotbilled" value="[% shownotbilled %]"/>
         			<input class="patron" type="hidden" name="bypatron" value="[% bypatron %]"/>
         			<input class="branch" type="hidden" name="branch" value="[% branch %]"/>
+        			<input class="group" type="hidden" name="group" value="[% group %]"/>
 					<input type="submit" name="send" value="Create bills"/>
 				</form>
 			</div>

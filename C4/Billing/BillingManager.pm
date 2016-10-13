@@ -42,13 +42,19 @@ BEGIN {
 				OverduePrice
 				RemovePayment
                 CheckMessageDate
+                CheckBillCategory
 				);
 }
 
 sub GetOverduedIssues {
-	my ($branch, $resultnumber, $results, $delay, $showall, $showbilled, $shownotbilled, $bypatron) = @_;
+	my ($branch, $resultnumber, $results, $delay, $showall, $showbilled, $shownotbilled, $bypatron, $group, $branchcategory) = @_;
 
     my @issues;
+    my $branches;
+    if ($group) {
+        my $fields = GetBranchesInCategory($branchcategory);
+        $branches = branch_string($fields);
+    }
 
     my $dbh = C4::Context->dbh;
     my $sth;
@@ -68,9 +74,13 @@ sub GetOverduedIssues {
     }
     $query .= "LEFT JOIN overduerules ON overduerules.categorycode='HENKILO' or 'LAPSI'";
     $query .= "WHERE (NOW() > DATE_ADD(issues.date_due,INTERVAL ".$delay->{delaytime}." DAY))
-        AND issues.date_due > (NOW() - INTERVAL 2 YEAR) 
-        AND items.homebranch = ? 
-        AND borrower_attributes.attribute like 'sotu%' ";
+        AND issues.date_due > (NOW() - INTERVAL 2 YEAR) ";
+    if ($group) {
+        $query .= "AND (".$branches.") ";
+    } else {
+        $query .= "AND items.homebranch = ? ";
+    }
+    $query .= "AND borrower_attributes.attribute like 'sotu%' ";
     if ($showbilled) {$query.= "AND overduebills.billingdate IS NOT NULL ";}
     if ($shownotbilled) {$query.= "AND overduebills.billingdate IS NULL ";}
     if ($bypatron) {
@@ -82,11 +92,22 @@ sub GetOverduedIssues {
     unless ($showall){$query .= " LIMIT ?,?";} 
 
     $sth = $dbh->prepare($query);
-    if ($showall) {
-        $sth->execute($branch);
-    }else {
-        $sth->execute($branch, $resultnumber, $results);
+    if ($group) {
+        if ($showall) {
+            $sth->execute();
+        }else {
+            $sth->execute($resultnumber, $results);
+        }
+
+    } else {
+        if ($showall) {
+            $sth->execute($branch);
+        }else {
+            $sth->execute($branch, $resultnumber, $results);
+        }
+
     }
+    
     
 
     
@@ -214,7 +235,13 @@ sub CheckSSN {
 }
 
 sub GetTotalPages {
-    my ($branch, $showall, $showbilled, $shownotbilled, $delay) = @_;
+    my ($branch, $showall, $showbilled, $shownotbilled, $delay, $group, $branchcategory) = @_;
+
+    my $branches;
+    if ($group) {
+        my $fields = GetBranchesInCategory($branchcategory);
+        $branches = branch_string($fields);
+    }
 
     my $dbh = C4::Context->dbh;
     my $sth;
@@ -226,17 +253,25 @@ sub GetTotalPages {
         LEFT JOIN overduerules ON overduerules.categorycode='HENKILO' or 'LAPSI'
         LEFT JOIN overduebills ON overduebills.issue_id=issues.issue_id
         LEFT JOIN items ON issues.itemnumber=items.itemnumber
-        WHERE items.homebranch = ? 
-        AND ba.attribute like 'sotu%' 
+        WHERE ";
+        if ($group) {
+            $query .= "(".$branches.") ";
+        } else {
+            $query .= "items.homebranch = ? ";
+        }
+        $query .= "AND ba.attribute like 'sotu%' 
         AND (NOW() > DATE_ADD(issues.date_due,INTERVAL ".$delay->{delaytime}." DAY))
         AND issues.date_due > (NOW() - INTERVAL 2 YEAR) ";
         if ($showbilled) {$query.= "AND overduebills.billingdate IS NOT NULL ";}
         if ($shownotbilled) {$query.= "AND overduebills.billingdate IS NULL ";}
-
-    
         
     $sth = $dbh->prepare($query);
-    $sth->execute($branch);
+    if ($group) {
+        $sth->execute();
+    }else {
+        $sth->execute($branch);
+    }
+    
     my $count = $sth->fetchrow;
     if ($showall) {
         $count = 1;
@@ -312,10 +347,12 @@ sub GetBranchBillingAccount {
     $sth->execute();
     while (my $property = $sth->fetchrow_hashref) {
         $categorycode = $property->{categorycode};
-        my $branches = GetBranchesInCategory($categorycode);
-        foreach my $br (@{$branches}) {
-            if ($branch eq $br) {
-                return $categorycode;
+        if ($categorycode =~ /SAP/i || $categorycode =~ /PDF/i) {
+            my $branches = GetBranchesInCategory($categorycode);
+            foreach my $br (@{$branches}) {
+                if ($branch eq $br) {
+                    return $categorycode;
+                }
             }
         }
     }
@@ -414,6 +451,39 @@ sub CheckMessageDate {
     $sth->finish;
 
     return;
+}
+
+sub CheckBillCategory {
+   my ($branchcode) = @_;
+
+    my $dbh = C4::Context->dbh;
+    my $sth = $dbh->prepare("SELECT categorycode FROM branchrelations WHERE branchcode = ?");
+    $sth->execute($branchcode);
+    while (my $categorycode = $sth->fetchrow_array) {
+        if ($categorycode =~ /LASKU/i) {
+            return $categorycode;
+        }
+    }
+
+    $sth->finish;
+    return;
+}
+
+sub branch_string {
+    my ($fields) = @_;
+
+    my $string;
+
+    foreach my $field (@{$fields}) {
+        if (\$field == \@{$fields}[-1]) {
+            $string .= "items.homebranch = '".$field."'";
+        }else{
+            $string .= "items.homebranch = '".$field."' or ";
+        }
+    }
+
+    return $string;
+
 }
 
 sub  trim { 

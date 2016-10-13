@@ -8,23 +8,24 @@ $(document).ready(function(){
 	var shownotbilled = $(".notbilled").val();
 	var bypatron = $(".patron").val();
 	var branch = $("#branch").val();
+	var group = $(".group").val();
 	
 	if(parseInt(pagenumber) > parseInt(maxpagenumber) && parseInt(maxpagenumber) > 0){
-		window.location = "/cgi-bin/koha/tools/sendOverdueBills.pl?page=" + maxpagenumber + "&totalpages=" + maxpagenumber + "&results=" + maxresults + "&showall=" + showall + "&showbilled=" + showbilled + "&shownotbilled=" + shownotbilled + "&bypatron=" + bypatron + "&branch=" + branch;
+		window.location = "/cgi-bin/koha/tools/sendOverdueBills.pl?page=" + maxpagenumber + "&totalpages=" + maxpagenumber + "&results=" + maxresults + "&showall=" + showall + "&showbilled=" + showbilled + "&shownotbilled=" + shownotbilled + "&bypatron=" + bypatron + "&branch=" + branch + "&group=" + group;
 	}
 	
 	if(parseInt(pagenumber) > 1){
-		$(".pageprev").attr("href", "/cgi-bin/koha/tools/sendOverdueBills.pl?page=" + (parseInt(pagenumber)-1) + "&totalpages=" + maxpagenumber +  "&results=" + maxresults + "&showall=" + showall + "&showbilled=" + showbilled + "&shownotbilled=" + shownotbilled + "&bypatron=" + bypatron + "&branch=" + branch);
+		$(".pageprev").attr("href", "/cgi-bin/koha/tools/sendOverdueBills.pl?page=" + (parseInt(pagenumber)-1) + "&totalpages=" + maxpagenumber +  "&results=" + maxresults + "&showall=" + showall + "&showbilled=" + showbilled + "&shownotbilled=" + shownotbilled + "&bypatron=" + bypatron + "&branch=" + branch + "&group=" + group);
 	}//if
 	else{
-		$(".pageprev").attr("href", "/cgi-bin/koha/tools/sendOverdueBills.pl?page=" + pagenumber + "&totalpages=" + maxpagenumber + "&results=" + maxresults + "&showall=" + showall + "&showbilled=" + showbilled + "&shownotbilled=" + shownotbilled + "&bypatron=" + bypatron + "&branch=" + branch);
+		$(".pageprev").attr("href", "/cgi-bin/koha/tools/sendOverdueBills.pl?page=" + pagenumber + "&totalpages=" + maxpagenumber + "&results=" + maxresults + "&showall=" + showall + "&showbilled=" + showbilled + "&shownotbilled=" + shownotbilled + "&bypatron=" + bypatron + "&branch=" + branch + "&group=" + group);
 	}//else
 	
 	if(parseInt(pagenumber) == parseInt(maxpagenumber)){
-		$(".pagenext").attr("href", "/cgi-bin/koha/tools/sendOverdueBills.pl?page=" + pagenumber + "&totalpages=" + maxpagenumber + "&results=" + maxresults + "&showall=" + showall + "&showbilled=" + showbilled + "&shownotbilled=" + shownotbilled + "&bypatron=" + bypatron + "&branch=" + branch);
+		$(".pagenext").attr("href", "/cgi-bin/koha/tools/sendOverdueBills.pl?page=" + pagenumber + "&totalpages=" + maxpagenumber + "&results=" + maxresults + "&showall=" + showall + "&showbilled=" + showbilled + "&shownotbilled=" + shownotbilled + "&bypatron=" + bypatron + "&branch=" + branch + "&group=" + group);
 	}//if
 	else{
-		$(".pagenext").attr("href", "/cgi-bin/koha/tools/sendOverdueBills.pl?page=" + (parseInt(pagenumber)+1) + "&totalpages=" + maxpagenumber + "&results=" + maxresults + "&showall=" + showall + "&showbilled=" + showbilled + "&shownotbilled=" + shownotbilled  + "&bypatron=" + bypatron + "&branch=" + branch);
+		$(".pagenext").attr("href", "/cgi-bin/koha/tools/sendOverdueBills.pl?page=" + (parseInt(pagenumber)+1) + "&totalpages=" + maxpagenumber + "&results=" + maxresults + "&showall=" + showall + "&showbilled=" + showbilled + "&shownotbilled=" + shownotbilled  + "&bypatron=" + bypatron + "&branch=" + branch + "&group=" + group);
 	}//else
 	
 	if(parseInt(showall) == 1){
@@ -54,6 +55,13 @@ $(document).ready(function(){
 	else{
 		$(".bypatron").prop("checked", false);
 	}//else
+
+	if(parseInt(group) == 1){
+		$(".showgroup").prop("checked", true);
+	}//if
+	else{
+		$(".showgroup").prop("checked", false);
+	}//else
 	
 	$(".showall").change(function(){
 		
@@ -66,7 +74,7 @@ $(document).ready(function(){
 
 		maxpagenumber = 0;
 		
-		window.location.href = "/cgi-bin/koha/tools/sendOverdueBills.pl?page=" + pagenumber + "&totalpages=" + maxpagenumber + "&results=" + maxresults + "&showall=" + showall + "&showbilled=" + showbilled + "&shownotbilled=" + shownotbilled + "&bypatron=" + bypatron + "&branch=" + branch;
+		window.location.href = "/cgi-bin/koha/tools/sendOverdueBills.pl?page=" + pagenumber + "&totalpages=" + maxpagenumber + "&results=" + maxresults + "&showall=" + showall + "&showbilled=" + showbilled + "&shownotbilled=" + shownotbilled + "&bypatron=" + bypatron + "&branch=" + branch + "&group=" + group;
 		
 	});
 
@@ -95,7 +103,7 @@ $(document).ready(function(){
 		
 		maxpagenumber = 0;
 
-		window.location.href = "/cgi-bin/koha/tools/sendOverdueBills.pl?page=" + pagenumber + "&totalpages=" + maxpagenumber + "&results=" + maxresults + "&showall=" + showall + "&showbilled=" + showbilled + "&shownotbilled=" + shownotbilled + "&bypatron=" + bypatron + "&branch=" + branch;
+		window.location.href = "/cgi-bin/koha/tools/sendOverdueBills.pl?page=" + pagenumber + "&totalpages=" + maxpagenumber + "&results=" + maxresults + "&showall=" + showall + "&showbilled=" + showbilled + "&shownotbilled=" + shownotbilled + "&bypatron=" + bypatron + "&branch=" + branch + "&group=" + group;
 		
 	});
 
@@ -111,7 +119,7 @@ $(document).ready(function(){
 
 		maxpagenumber = 0;
 		
-		window.location.href = "/cgi-bin/koha/tools/sendOverdueBills.pl?page=" + pagenumber  + "&totalpages=" + maxpagenumber + "&results=" + maxresults + "&showall=" + showall + "&showbilled=" + showbilled + "&shownotbilled=" + shownotbilled + "&bypatron=" + bypatron + "&branch=" + branch;
+		window.location.href = "/cgi-bin/koha/tools/sendOverdueBills.pl?page=" + pagenumber  + "&totalpages=" + maxpagenumber + "&results=" + maxresults + "&showall=" + showall + "&showbilled=" + showbilled + "&shownotbilled=" + shownotbilled + "&bypatron=" + bypatron + "&branch=" + branch + "&group=" + group;
 		
 	});
 
@@ -126,7 +134,22 @@ $(document).ready(function(){
 
 		maxpagenumber = 0;
 		
-		window.location.href = "/cgi-bin/koha/tools/sendOverdueBills.pl?page=" + pagenumber  + "&totalpages=" + maxpagenumber + "&results=" + maxresults + "&showall=" + showall + "&showbilled=" + showbilled + "&shownotbilled=" + shownotbilled + "&bypatron=" + bypatron + "&branch=" + branch;
+		window.location.href = "/cgi-bin/koha/tools/sendOverdueBills.pl?page=" + pagenumber  + "&totalpages=" + maxpagenumber + "&results=" + maxresults + "&showall=" + showall + "&showbilled=" + showbilled + "&shownotbilled=" + shownotbilled + "&bypatron=" + bypatron + "&branch=" + branch + "&group=" + group;
+		
+	});
+
+	$(".showgroup").change(function(){
+		
+		if($(this).is(":checked")){
+			group = 1;
+		}//if
+		else{
+			group = 0;
+		}//else
+
+		maxpagenumber = 0;
+		
+		window.location.href = "/cgi-bin/koha/tools/sendOverdueBills.pl?page=" + pagenumber  + "&totalpages=" + maxpagenumber + "&results=" + maxresults + "&showall=" + showall + "&showbilled=" + showbilled + "&shownotbilled=" + shownotbilled + "&bypatron=" + bypatron + "&branch=" + branch + "&group=" + group;
 		
 	});
 	
@@ -137,13 +160,13 @@ $(document).ready(function(){
 		var gotopagenumber = parseInt($(this).parent(".pagecontrol").find(".jumptopage").val());
 		
 		if(gotopagenumber == "" || gotopagenumber < 1){
-			window.location.href = "/cgi-bin/koha/tools/sendOverdueBills.pl?page=1&results=" + maxresults + "&totalpages=" + maxpagenumber + "&showall=" + showall + "&showbilled=" + showbilled + "&shownotbilled=" + shownotbilled + "&bypatron=" + bypatron + "&branch=" + branch;
+			window.location.href = "/cgi-bin/koha/tools/sendOverdueBills.pl?page=1&results=" + maxresults + "&totalpages=" + maxpagenumber + "&showall=" + showall + "&showbilled=" + showbilled + "&shownotbilled=" + shownotbilled + "&bypatron=" + bypatron + "&branch=" + branch + "&group=" + group;
 		}//if
 		else if(gotopagenumber > parseInt(maxpagenumber)){
-			window.location.href = "/cgi-bin/koha/tools/sendOverdueBills.pl?page=" + maxpagenumber + "&totalpages=" + maxpagenumber + "&results=" + maxresults + "&showall=" + showall + "&showbilled=" + showbilled + "&shownotbilled=" + shownotbilled + "&bypatron=" + bypatron + "&branch=" + branch;
+			window.location.href = "/cgi-bin/koha/tools/sendOverdueBills.pl?page=" + maxpagenumber + "&totalpages=" + maxpagenumber + "&results=" + maxresults + "&showall=" + showall + "&showbilled=" + showbilled + "&shownotbilled=" + shownotbilled + "&bypatron=" + bypatron + "&branch=" + branch + "&group=" + group;
 		}//else if
 		else if(gotopagenumber >= 1 && gotopagenumber <= parseInt(maxpagenumber)){
-			window.location.href = "/cgi-bin/koha/tools/sendOverdueBills.pl?page=" + gotopagenumber  + "&totalpages=" + maxpagenumber + "&results=" + maxresults + "&showall=" + showall + "&showbilled=" + showbilled + "&shownotbilled=" + shownotbilled + "&bypatron=" + bypatron + "&branch=" + branch;
+			window.location.href = "/cgi-bin/koha/tools/sendOverdueBills.pl?page=" + gotopagenumber  + "&totalpages=" + maxpagenumber + "&results=" + maxresults + "&showall=" + showall + "&showbilled=" + showbilled + "&shownotbilled=" + shownotbilled + "&bypatron=" + bypatron + "&branch=" + branch + "&group=" + group;
 		}//else if
 		
 	});
@@ -156,7 +179,7 @@ $(document).ready(function(){
 
 		maxpagenumber = 0;
 		
-		window.location.href = "/cgi-bin/koha/tools/sendOverdueBills.pl?page=" + pagenumber + "&totalpages=" + maxpagenumber + "&results=" + resultset + "&showall=" + showall + "&showbilled=" + showbilled + "&shownotbilled=" + shownotbilled + "&bypatron=" + bypatron + "&branch=" + branch;
+		window.location.href = "/cgi-bin/koha/tools/sendOverdueBills.pl?page=" + pagenumber + "&totalpages=" + maxpagenumber + "&results=" + resultset + "&showall=" + showall + "&showbilled=" + showbilled + "&shownotbilled=" + shownotbilled + "&bypatron=" + bypatron + "&branch=" + branch + "&group=" + group;
 		
 	});
 
@@ -164,8 +187,9 @@ $(document).ready(function(){
 		
 		branch = $(this).val();
 		maxpagenumber = 0;
+		group = 0;
 		
-		window.location.href = "/cgi-bin/koha/tools/sendOverdueBills.pl?page=" + pagenumber  + "&totalpages=" + maxpagenumber + "&results=" + maxresults + "&showall=" + showall + "&showbilled=" + showbilled + "&shownotbilled=" + shownotbilled + "&bypatron=" + bypatron + "&branch=" + branch;
+		window.location.href = "/cgi-bin/koha/tools/sendOverdueBills.pl?page=" + pagenumber  + "&totalpages=" + maxpagenumber + "&results=" + maxresults + "&showall=" + showall + "&showbilled=" + showbilled + "&shownotbilled=" + shownotbilled + "&bypatron=" + bypatron + "&branch=" + branch + "&group=" + group;
 		
 	});
 

@@ -53,6 +53,7 @@ my $showall = $input->param('showall'); # Boolean 1 or 0
 my $showbilled = $input->param('showbilled'); # Boolean 1 or 0
 my $shownotbilled = $input->param('shownotbilled'); # Boolean 1 or 0
 my $bypatron = $input->param('bypatron'); # Boolean 1 or 0
+my $group = $input->param('group'); # Boolean 1 or 0
 my $send = $input->param('send');
 my $msg; #Variable for messages;
 my $branch;
@@ -86,6 +87,8 @@ $branch = $input->param('branch') || C4::Context->userenv->{branch};
 my $branchloop = GetBranchesLoop($branch);
 
 my $account = GetBranchBillingAccount($branch);
+
+my $branchcategory = CheckBillCategory($branch);
 
 #Form handling
 if($send){
@@ -196,10 +199,10 @@ my $issues;
 my $delay = CheckOverduerules($branch);
 
 if($showall == 1){
-    $issues = GetOverduedIssues($branch, $resultnumber, $results, $delay, $showall, $showbilled, $shownotbilled, $bypatron);
+    $issues = GetOverduedIssues($branch, $resultnumber, $results, $delay, $showall, $showbilled, $shownotbilled, $bypatron, $group, $branchcategory);
 }
 else{
-    $issues = GetOverduedIssues($branch, $resultnumber, $results, $delay, $showall, $showbilled, $shownotbilled, $bypatron);
+    $issues = GetOverduedIssues($branch, $resultnumber, $results, $delay, $showall, $showbilled, $shownotbilled, $bypatron, $group, $branchcategory);
 }
 
 foreach my $data (@{$issues}) {
@@ -264,7 +267,7 @@ foreach my $data (@{$issues}) {
 #Getting max page number
 if ($totalpages == 0 || !$totalpages) {
 
-    my $totalcount = GetTotalPages($branch, $showall, $showbilled, $shownotbilled, $delay);	
+    my $totalcount = GetTotalPages($branch, $showall, $showbilled, $shownotbilled, $delay, $group, $branchcategory);	
 	$totalpages = POSIX::ceil($totalcount/$results); # Max page number
 }
 
@@ -291,10 +294,12 @@ showall => $showall,
 showbilled => $showbilled,
 shownotbilled => $shownotbilled,
 bypatron => $bypatron,
+group => $group,
 branch => $branch,
 msg => $msg,
 date => $now,
-account => $account
+account => $account,
+branchcategory => $branchcategory
 );
                            
 output_html_with_http_headers($input, $cookie, $template->output);
