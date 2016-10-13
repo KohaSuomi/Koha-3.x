@@ -45,7 +45,7 @@ BEGIN {
     $VERSION = 1.0;
 	require Exporter;
 	@ISA    = qw(Exporter);
-	@EXPORT = qw(create_pdf);
+	@EXPORT = qw(create_pdf check_item_fine check_billing_fine);
 }
 
 sub create_pdf {

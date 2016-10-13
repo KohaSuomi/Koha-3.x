@@ -32,6 +32,7 @@ use DBD::mysql;
 use C4::Accounts;
 use C4::Members;
 use C4::Billing::BillingManager;
+use C4::Billing::PDFBill qw(check_item_fine check_billing_fine);
 use Data::Dumper;
 
 use vars qw($VERSION @ISA @EXPORT);
@@ -386,7 +387,10 @@ sub create_xml {
 				$tag->appendChild($rowtag);
 				
 				$rowtag = $doc->createElement("KRATE");$rowtag->appendTextNode($data->{fine});
-				C4::Accounts::manualinvoice($data->{borrowernumber}, undef, 'Laskutuslisä', 'B', $data->{fine}, 'Laskutuslisä');
+				unless (check_billing_fine($data->{borrowernumber}, $data->{fine}, 'Laskutuslisä', 'B') || 
+					check_billing_fine($data->{borrowernumber}, $data->{fine}, 'Laskutuslisä', 'F')) {
+					C4::Accounts::manualinvoice($data->{borrowernumber}, undef, 'Laskutuslisä', 'B', $data->{fine}, 'Laskutuslisä');
+				}
 				$tag->appendChild($rowtag);
 				
 				$element->appendChild($tag);
@@ -486,7 +490,10 @@ sub create_xml {
 				$tag->appendChild($rowtag);
 				
 				$rowtag = $doc->createElement("KRATE");$rowtag->appendTextNode($data->{replacementprice});
-				C4::Accounts::manualinvoice($data->{borrowernumber}, $data->{itemnumber}, 'Lasku', 'B', $data->{replacementprice}, 'Perintä');
+				unless(check_item_fine($data->{borrowernumber}, $data->{itemnumber}, $data->{replacementprice}, 'Korvaushinta', 'B') ||
+					check_item_fine($data->{borrowernumber}, $data->{itemnumber}, $data->{replacementprice}, 'Perintä', 'F')) {
+					C4::Accounts::manualinvoice($data->{borrowernumber}, $data->{itemnumber}, 'Lasku', 'B', $data->{replacementprice}, 'Korvaushinta');
+				}
 				$tag->appendChild($rowtag);
 				
 				$element->appendChild($tag);
@@ -702,7 +709,10 @@ sub create_xml {
 				$tag->appendChild($rowtag);
 				
 				$rowtag = $doc->createElement("KRATE");$rowtag->appendTextNode($data->{plastic});
-				C4::Accounts::manualinvoice($data->{borrowernumber}, $data->{itemnumber}, 'Muovitusmaksu', 'B', $data->{plastic}, 'Muovitusmaksu');
+				unless(check_item_fine($data->{borrowernumber}, $data->{itemnumber}, $data->{plastic}, 'Muovitusmaksu', 'B') ||
+					check_item_fine($data->{borrowernumber}, $data->{itemnumber}, $data->{plastic}, 'Muovitusmaksu', 'F')) {
+					C4::Accounts::manualinvoice($data->{borrowernumber}, $data->{itemnumber}, 'Muovitusmaksu', 'B', $data->{plastic}, 'Muovitusmaksu');
+				}
 				$tag->appendChild($rowtag);
 				
 				$element->appendChild($tag);
@@ -806,7 +816,10 @@ sub create_xml {
 					$tag->appendChild($rowtag);
 					
 					$rowtag = $doc->createElement("KRATE");$rowtag->appendTextNode($data->{replacementprice});
-					C4::Accounts::manualinvoice($data->{borrowernumber}, $data->{itemnumber}, 'Lasku', 'B', $data->{replacementprice}, 'Perintä');
+					unless(check_item_fine($data->{borrowernumber}, $data->{itemnumber}, $data->{replacementprice}, 'Korvaushinta', 'B') ||
+						check_item_fine($data->{borrowernumber}, $data->{itemnumber}, $data->{replacementprice}, 'Perintä', 'F')) {
+						C4::Accounts::manualinvoice($data->{borrowernumber}, $data->{itemnumber}, 'Lasku', 'B', $data->{replacementprice}, 'Korvaushinta');
+					}
 					$tag->appendChild($rowtag);
 					
 					$element->appendChild($tag);
@@ -1026,7 +1039,10 @@ sub create_xml {
 					$tag->appendChild($rowtag);
 					
 					$rowtag = $doc->createElement("KRATE");$rowtag->appendTextNode($data->{plastic});
-					C4::Accounts::manualinvoice($data->{borrowernumber}, $data->{itemnumber}, 'Muovitusmaksu', 'B', $data->{plastic}, 'Muovitusmaksu');
+					unless(check_item_fine($data->{borrowernumber}, $data->{itemnumber}, $data->{plastic}, 'Muovitusmaksu', 'B') ||
+						check_item_fine($data->{borrowernumber}, $data->{itemnumber}, $data->{plastic}, 'Muovitusmaksu', 'F') ) {
+						C4::Accounts::manualinvoice($data->{borrowernumber}, $data->{itemnumber}, 'Muovitusmaksu', 'B', $data->{plastic}, 'Muovitusmaksu');
+					}
 					$tag->appendChild($rowtag);
 					
 					$element->appendChild($tag);
