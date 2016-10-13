@@ -39,6 +39,8 @@ use C4::Dates;
 
 use C4::Search;
 
+use C4::BatchOverlay::ReportManager;
+
 use Getopt::Long;
 
 sub usage {
@@ -47,6 +49,9 @@ Usage: $0 [-h|--help] [--sessions] [--sessdays DAYS] [-v|--verbose] [--zebraqueu
 
    -h --help          prints this help message, and exits, ignoring all
                       other options
+   --batchOverlays    Days as integer. Purges all BatchOverlay reports older than this many days
+                      from koha.batch_overlay_reports
+                      Defaults to 181 days.
    --sessions         purge the sessions table.  If you use this while users 
                       are logged into Koha, they will have to reconnect.
    --sessdays DAYS    purge only sessions older than DAYS days.
@@ -79,9 +84,11 @@ my (
     $pLogs,           $pSearchhistory, $pZ3950,       $calendar,
     $pListShareInvites,
 );
+my $batchOverlays = 181;
 
 GetOptions(
     'h|help'       => \$help,
+    'batchOverlays:i'=> \$batchOverlays,
     'sessions'     => \$sessions,
     'sessdays:i'   => \$sess_days,
     'v|verbose'    => \$verbose,
@@ -111,6 +118,7 @@ if ($help) {
 }
 
 unless ( $sessions
+    || $batchOverlays
     || $zebraqueue_days
     || $mail
     || $purge_merged
@@ -152,6 +160,12 @@ if ( $sessions && !$sess_days ) {
     if ($verbose) {
         print "Done with session purge with days>$sess_days.\n";
     }
+}
+
+if ($batchOverlays) {
+    print "Removing BatchOverlay reports older than $batchOverlays days.\n" if $verbose;
+    C4::BatchOverlay::ReportManager->removeReports({to => DateTime->now(time_zone => C4::Context->tz())->subtract(days => $batchOverlays)});
+    print "Done with removing BatchOverlays.\n" if $verbose;
 }
 
 if ($zebraqueue_days) {
