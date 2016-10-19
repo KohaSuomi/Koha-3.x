@@ -57,9 +57,20 @@
                     <p>You have no outstanding fines.</p>
                     [% END %]
                     [% END %]
+
                     <h3>Fines and charges</h3>
 
                     [% IF ( ACCOUNT_LINES ) %]
+                        [% IF vetuma_enabled %]
+                        [% IF total >= minimumSum && total > 0 %]
+                            <button type="button" class="btn has-spinner vetuma-top vetuma-request-init">
+                            <span class="spinner"><i class="icon-spin icon-refresh"></i></span>
+                            <span>Proceed to payment</span>
+                            </button>
+                        [% ELSE %]
+                        <p>Online payment can be used after your fines and charges exceed a total due of [% minimumSum %] [% currency.currency %].</p>
+                        [% END %]
+                        [% END %]
                         <table class="table table-bordered table-striped">
                             <thead>
                                 <tr>
@@ -94,7 +105,7 @@
                                             [% CASE 'L' %]Lost item
                                             [% CASE 'W' %]Writeoff
                                             [% CASE 'FU' %]Accruing fine
-                                            [% CASE 'HE' %]Hold waiting too long
+
                                             [% CASE 'Rent' %]Rental fee
                                             [% CASE 'FOR' %]Forgiven
                                             [% CASE 'LR' %]Lost item fee refund
@@ -114,6 +125,14 @@
                             </tbody>
 
                         </table>
+                        [% IF vetuma_enabled %]
+                        [% IF total >= minimumSum && total > 0 %]
+                            <button type="button" class="btn has-spinner vetuma-bottom vetuma-request-init">
+                                <span class="spinner"><i class="icon-spin icon-refresh"></i></span>
+                                <span>Proceed to payment</span>
+                            </button> 
+                        [% END %]
+                        [% END %]
                     [% ELSE %]
                         <h4>You have no fines or charges</h4>
                     [% END %]
@@ -124,4 +143,13 @@
 </div> <!-- / .main -->
 
 [% INCLUDE 'opac-bottom.inc' %]
-[% BLOCK jsinclude %][% END %]
+[% BLOCK jsinclude %]
+<script type="text/javascript">
+    //<![CDATA[
+        vetumaMessages = "[% messages_json %]";
+        vetumaRequestInitAjaxUrl = "/cgi-bin/koha/vetuma/request/init.pl";
+        requestedAmount = "[% total %]";
+    //]]>
+</script>
+<script type="text/javascript" src="/opac-tmpl/bootstrap/lib/vetuma/vetuma.js"></script>
+[% END %]
