@@ -63,6 +63,14 @@
 
             $("#othernames").val(  surname.val() + ", " + firstname.val()  );
         }
+        function updateAnonOthername() {
+            // KD#1452, use unix time epoch as anonymous holds identifier 
+
+            var unixepoch = Math.round( (new Date()).getTime() / 10 ).toString();
+            var epochdashed = unixepoch.replace( /(....)/g, '$1-').replace(/-$/,'' );
+
+            $("#othernames").val( epochdashed );
+        }
         function checkUniqueOthernames () {
             $.get("/cgi-bin/koha/svc/members/check_unique_othernames", { othernames: $("#othernames").val()[% IF borrowernumber %], borrowernumber: [% borrowernumber %] [% END %] }, function (sjson) {
                 var uniqueelement = $("#othernames_uniquecheck");
@@ -78,7 +86,12 @@
                 }
             });
         }
-        $("#othernames").focus(updateOthername);
+        // KD#1452, handle the anonymizeothernames template parameter 
+        [% IF (anonymizeothernames) %]
+            $("#othernames").focus(updateAnonOthername);
+        [% ELSE %]
+            $("#othernames").focus(updateOthername);
+        [% END %]
         $("#othernames").change(checkUniqueOthernames);
         $("#entryform").validate({
             rules: {
