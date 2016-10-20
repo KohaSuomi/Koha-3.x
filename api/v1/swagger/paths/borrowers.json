@@ -65,6 +65,18 @@
           "schema": {
             "$ref": "../definitions/error.json"
           }
+        },
+        "501": {
+          "description": "Feature not configured properly. Notify the API maintainer.",
+          "schema": {
+            "$ref": "../definitions/error.json"
+          }
+        },
+        "500": {
+          "description": "Unexpected exception happened?!??.",
+          "schema": {
+            "$ref": "../definitions/error.json"
+          }
         }
       }
     }

@@ -5,7 +5,7 @@ use Scalar::Util qw(blessed);
 use Try::Tiny;
 use Mojo::Base 'Mojolicious::Controller';
 use Mojo::JSON;
-use Carp;
+use Carp qw(longmess);
 
 use File::Basename;
 
@@ -112,23 +112,27 @@ sub get_self_service_status {
 
     } catch {
         unless (blessed($_) && $_->can('rethrow')) {
-            confess $_;
+            $payload = longmess("$_");
+            $httpCode = 500;
         }
         if ($_->isa('Koha::Exception::UnknownObject')) {
             $payload = {error => 'No such cardnumber'};
             $httpCode = 404;
         }
-        elsif ($_->isa('Koha::Exception::SelfService::Underage') ||
-               $_->isa('Koha::Exception::SelfService::TACNotAccepted') ||
-               $_->isa('Koha::Exception::SelfService')) {
+        elsif ($_->isa('Koha::Exception::SelfService')) {
             $payload = {
                 permission => Mojo::JSON->false,
                 error => ref($_),
             };
             $httpCode = 200;
         }
+        elsif ($_->isa('Koha::Exception::FeatureUnavailable')) {
+            $payload = {error => "$_"};
+            $httpCode = 501;
+        }
         else {
-            $_->rethrow();
+            $payload = $_->trace->as_string;
+            $httpCode = 500;
         }
     };
 

@@ -21,11 +21,13 @@ use Modern::Perl;
 use Test::More;
 use Mojo::Parameters;
 
+use t::lib::Mojo;
 use t::lib::TestObjects::BorrowerFactory;
 use t::lib::TestObjects::HoldFactory;
 use t::lib::TestObjects::ObjectFactory;
 use t::lib::TestObjects::BiblioFactory;
 use t::lib::TestObjects::ItemFactory;
+use t::lib::TestObjects::SystemPreferenceFactory;
 
 #GET /borrowers/{borrowernumber}, with response 200
 
@@ -348,13 +350,7 @@ sub getssstatus404 {
 
     $path = $restTest->get_routePath();
 
-    #Make a custom GET request with formData parameters :) Mojo-fu!
-    $ua = $driver->ua;
-    $tx = $ua->build_tx(GET => $path => {Accept => '*/*'});
-    $tx->req->body( Mojo::Parameters->new("cardnumber=11A01")->to_string);
-    $tx->req->headers->remove('Content-Type');
-    $tx->req->headers->add('Content-Type' => 'application/x-www-form-urlencoded');
-    $tx = $ua->start($tx);
+    $tx = t::lib::Mojo::getWithFormData($driver, $restTest->get_routePath(), {cardnumber => "11A01"});
     $restTest->catchSwagger2Errors($tx);
     $json = $tx->res->json;
     is($tx->res->code, 404, "No such cardnumber 404");
@@ -377,31 +373,20 @@ sub getssstatus200 {
     $path = $restTest->get_routePath();
 
     my $getssstatus200_tac_fail = sub {
-        #Make a custom GET request with formData parameters :) Mojo-fu!
-        $ua = $driver->ua;
-        $tx = $ua->build_tx(GET => $path => {Accept => '*/*'});
-        $tx->req->body( Mojo::Parameters->new("cardnumber=11A01")->to_string);
-        $tx->req->headers->remove('Content-Type');
-        $tx->req->headers->add('Content-Type' => 'application/x-www-form-urlencoded');
-        $tx = $ua->start($tx);
+        $tx = t::lib::Mojo::getWithFormData($driver, $restTest->get_routePath(), {cardnumber => "11A01"});
         $restTest->catchSwagger2Errors($tx);
         $json = $tx->res->json;
         is($tx->res->code, 200, "Good barcode given");
         is(ref($json), 'HASH', "Got a json-object");
         is($json->{permission}, '0', "Permission denied!");
+        is($json->{error}, 'Koha::Exception::SelfService::TACNotAccepted', "Exception class correct!");
     };
     subtest "Fail because terms and conditions are not accepted", $getssstatus200_tac_fail;
 
     my $getssstatus200_tac_accepted = sub {
         ##Accept terms and conditions
         C4::Members::Attributes::SetBorrowerAttributes($b->borrowernumber, [{ code => 'SST&C', value => '1' }]);
-        #Make a custom GET request with formData parameters :) Mojo-fu!
-        $ua = $driver->ua;
-        $tx = $ua->build_tx(GET => $path => {Accept => '*/*'});
-        $tx->req->body( Mojo::Parameters->new("cardnumber=11A01")->to_string);
-        $tx->req->headers->remove('Content-Type');
-        $tx->req->headers->add('Content-Type' => 'application/x-www-form-urlencoded');
-        $tx = $ua->start($tx);
+        $tx = t::lib::Mojo::getWithFormData($driver, $restTest->get_routePath(), {cardnumber => "11A01"});
         $restTest->catchSwagger2Errors($tx);
         $json = $tx->res->json;
         is($tx->res->code, 200, "Good barcode given");
@@ -409,7 +394,35 @@ sub getssstatus200 {
         is($json->{permission}, '1', "Permission granted!");
     };
     subtest "Succeed because terms and conditions were accepted", $getssstatus200_tac_accepted;
+}
 
+sub getssstatus500 {
+    ok(1, "skipped");
+}
+
+sub getssstatus501 {
+    my ($class, $restTest, $driver) = @_;
+    my $testContext = $restTest->get_testContext(); #Test context will be automatically cleaned after this subtest has been executed.
+    my $activeUser = $restTest->get_activeBorrower();
+
+    my ($b, $tx, $json);
+
+    $b = t::lib::TestObjects::BorrowerFactory->createTestGroup(
+                    {   cardnumber => '11A01',
+                        password => '1234'
+                    }, undef, $testContext, undef, undef);
+
+    t::lib::TestObjects::SystemPreferenceFactory->createTestGroup({
+                        preference => 'SSRules',
+                        value => '',
+                    }, undef, $testContext);
+
+    $tx = t::lib::Mojo::getWithFormData($driver, $restTest->get_routePath(), {cardnumber => "11A01"});
+    $restTest->catchSwagger2Errors($tx);
+    $json = $tx->res->json;
+    is($tx->res->code, 501, "501 - Feature misconfigured");
+    is(ref($json), 'HASH', "Got a json-object");
+    ok($json && $json->{error} && $json->{error} =~ /SSRules/, "Feature unavailable");
 }
 
 1;

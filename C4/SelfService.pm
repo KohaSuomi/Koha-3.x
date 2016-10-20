@@ -28,9 +28,12 @@ use C4::Context;
 use C4::Log;
 use C4::Members::Attributes;
 
+use Koha::Exception::FeatureUnavailable;
 use Koha::Exception::SelfService;
 use Koha::Exception::SelfService::Underage;
 use Koha::Exception::SelfService::TACNotAccepted;
+use Koha::Exception::SelfService::BlockedBorrowerCategory;
+use Koha::Exception::SelfService::PermissionRevoked;
 
 =head2 CheckSelfServicePermission
 
@@ -47,16 +50,28 @@ sub CheckSelfServicePermission {
         unless (blessed($_) && $_->can('rethrow')) {
             confess $_;
         }
-        if (blessed($_) && $_->isa('Koha::Exception::SelfService::Underage')) {
+        if ($_->isa('Koha::Exception::SelfService::Underage')) {
             _WriteAccessLog($action, $ilsPatron->{borrowernumber}, 'underage');
             $_->rethrow();
         }
-        elsif (blessed($_) && $_->isa('Koha::Exception::SelfService::TACNotAccepted')) {
+        elsif ($_->isa('Koha::Exception::SelfService::TACNotAccepted')) {
             _WriteAccessLog($action, $ilsPatron->{borrowernumber}, 'missingT&C');
             $_->rethrow();
         }
-        elsif (blessed($_) && $_->isa('Koha::Exception::SelfService')) {
+        elsif ($_->isa('Koha::Exception::SelfService::BlockedBorrowerCategory')) {
+            _WriteAccessLog($action, $ilsPatron->{borrowernumber}, 'blockBorCat');
+            $_->rethrow();
+        }
+        elsif ($_->isa('Koha::Exception::SelfService::PermissionRevoked')) {
+            _WriteAccessLog($action, $ilsPatron->{borrowernumber}, 'revoked');
+            $_->rethrow();
+        }
+        elsif ($_->isa('Koha::Exception::SelfService')) {
             _WriteAccessLog($action, $ilsPatron->{borrowernumber}, 'denied');
+            $_->rethrow();
+        }
+        elsif ($_->isa('Koha::Exception::FeatureUnavailable')) {
+            _WriteAccessLog($action, $ilsPatron->{borrowernumber}, 'misconfigured');
             $_->rethrow();
         }
         $_->rethrow;
@@ -69,9 +84,12 @@ sub CheckSelfServicePermission {
 sub _HasSelfServicePermission {
     my ($ilsPatron, $requestingBranchcode, $action) = @_;
 
-    _CheckLimitation($ilsPatron);
-    _CheckMinimumAge($ilsPatron);
+    my ($minimumAge, $whitelistedBorrowerCategories) = GetRules();
     _CheckTaC($ilsPatron);
+    _CheckPermission($ilsPatron);
+    _CheckBorrowerCategory($ilsPatron, $whitelistedBorrowerCategories);
+    _CheckMinimumAge($ilsPatron, $minimumAge);
+    _CheckLimitation($ilsPatron);
 
     return 1;
 }
@@ -91,8 +109,7 @@ sub _CheckLimitation {
 }
 
 sub _CheckMinimumAge {
-    my ($ilsPatron) = @_;
-    my $minimumAge = 15;
+    my ($ilsPatron, $minimumAge) = @_;
     my $dob = DateTime::Format::ISO8601->parse_datetime($ilsPatron->{birthdate_iso});
     $dob->set_time_zone( C4::Context->tz() );
     my $minimumDob = DateTime->now(time_zone => C4::Context->tz())->subtract(years => $minimumAge);
@@ -107,6 +124,24 @@ sub _CheckTaC {
     my $agreement = C4::Members::Attributes::GetBorrowerAttributeValue($ilsPatron->{borrowernumber}, 'SST&C');
     unless ($agreement) {
         Koha::Exception::SelfService::TACNotAccepted->throw();
+    }
+    return 1;
+}
+
+sub _CheckPermission {
+    my ($ilsPatron) = @_;
+    my $ban = C4::Members::Attributes::GetBorrowerAttributeValue($ilsPatron->{borrowernumber}, 'SSBAN');
+    if ($ban) {
+        Koha::Exception::SelfService::PermissionRevoked->throw();
+    }
+    return 1;
+}
+
+sub _CheckBorrowerCategory {
+    my ($ilsPatron, $whitelistedBorrowerCategories) = @_;
+
+    unless ($ilsPatron->{ptype} && $whitelistedBorrowerCategories =~ /$ilsPatron->{ptype}/) {
+        Koha::Exception::SelfService::BlockedBorrowerCategory->throw(error => "Borrower category '".$ilsPatron->{ptype}."' is not allowed");
     }
     return 1;
 }
@@ -139,6 +174,28 @@ Deletes all Self-service logs from the koha.action_logs-table
 
 sub FlushLogs {
     C4::Context->dbh->do("DELETE FROM action_logs WHERE module = 'SS'");
+}
+
+=head2 GetRules
+
+    my ($ageLimit, $whitelistedBorrowerCategories) = GetRules();
+
+Retrieves the Self-Service rules
+
+@RETURNS List of:
+             Integer, age limit for self-service resources
+             String, list of allowed borrower categories
+
+@THROWS Koha::Exception::FeatureUnavailable if SSRules is not properly configured
+
+=cut
+
+sub GetRules {
+    my $r = C4::Context->preference('SSRules');
+    if ($r =~ /^(\d+):(.+)$/) {
+        return ($1, $2);
+    }
+    Koha::Exception::FeatureUnavailable->throw(error => "System preference 'SSRules' is not properly defined");
 }
 
 1;

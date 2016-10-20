@@ -636,6 +636,16 @@ Circulation:
                   no: "Don't show"
             - "the print receipt popup dialog when self checkout is finished"
 
+    Self-Service API:
+        -
+            - "Self-service resource usage rules<br/>"
+            - pref: SSRules
+            - "Example: '15:ST PT'<br/>"
+            - "First digits are the minimum age needed to access the self-service resources<br/>"
+            - "separated by a colon ':'<br/>"
+            - "followed by a list of borrower categorycodes allowed to access the self-service resources.<br/>"
+            - "How the codes are separated in thelist, is not important. The list is scanned from left to right for text matching the users categorycode. If a match is found somewhere in the list, user passes the categorycode check."
+
     Course Reserves:
         -
             - pref: UseCourseReserves
