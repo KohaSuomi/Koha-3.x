@@ -2707,10 +2707,20 @@ Returns a new patron password suggestion based on borrowers password policy from
 
 sub GenMemberPasswordSuggestion {
     my $borrowernumber = shift;
-    my $minpasslength = C4::Context->preference('minPasswordLength');
-
     my $borrowerinfo = GetMemberDetails($borrowernumber);
     my $policycode = $borrowerinfo->{'passwordpolicy'};
+    my $minpasslength;
+
+    # KD#1454 - Individual minimum password lengths for different policies (suggest)
+    if ($policycode eq "alphanumeric" ) {
+      $minpasslength = C4::Context->preference('minAlnumPasswordLength');
+    }
+    elsif ($policycode eq "complex" ) {
+      $minpasslength = C4::Context->preference('minComplexPasswordLength');
+    }
+    else {
+      $minpasslength = C4::Context->preference('minPasswordLength');
+    }
 
     my $pass;
     my $length = int(rand(3)) + $minpasslength;
@@ -2750,43 +2760,44 @@ Validates a member's password based on category password policy and/or minPasswo
 
 sub ValidateMemberPassword {
     my ($borrowernumber, $newpassword1, $newpassword2) = @_;
-    my $minpasslength = C4::Context->preference('minPasswordLength');
 
     if (!$borrowernumber) {
         return (0, ,"NOBORROWER", "No borrowernumber given");
     }
+    my $memberinfo = GetMemberDetails($borrowernumber);
+    my $passwordpolicy = $memberinfo->{'passwordpolicy'};
+    my $minpasslength;
 
-    if ((!$newpassword1 || !$newpassword2) || ($newpassword1 ne $newpassword2)) {
-        return (0, "NOMATCH", "The passwords do not match");
-    }
-
-    if (length($newpassword1) < $minpasslength) {
-        return (0, "SHORTPASSWORD", "The password is too short");
-    }
 
     my $memberinfo = GetMemberDetails($borrowernumber);
     my $passwordpolicy = $memberinfo->{'passwordpolicy'};
 
+    # KD#1454 - Add individual minimum password lengths for different policies (validate)
     if ($passwordpolicy) {
         if ($passwordpolicy eq "simplenumeric") {
-           if ($newpassword1 !~ /[0-9]+/) {
-                return (0, "NOPOLICYMATCH", "Password policy: password can only contain digits 0-9");
+           $minpasslength=C4::Context->preference('minPasswordLength');
+           if ($newpassword1 !~ /[0-9]+/ || length($newpassword1) < $minpasslength) {
+                return (0, "NOPOLICYMATCH", "Password policy: password can only contain digits 0-9 and must be at least $minpasslength characters long");
            }
         }
         elsif ($passwordpolicy eq "alphanumeric") {
-            unless ($newpassword1 =~ /[0-9]/
+           $minpasslength=C4::Context->preference('minAlnumPasswordLength');
+           unless ($newpassword1 =~ /[0-9]/
                     && $newpassword1 =~ /[a-zA-ZöäåÖÄÅ]/
                     && $newpassword1 !~ /\W/
-                    && $newpassword1 !~ /[_-]/) {
-                return (0, "NOPOLICYMATCH", "Password policy: password must contain both numbers and non-special characters (at least one of both)");
+                    && $newpassword1 !~ /[_-]/
+                    && length($newpassword1) >= $minpasslength ) {
+                return (0, "NOPOLICYMATCH", "Password policy: password must contain both numbers and non-special characters (at least one of both) and must be at least $minpasslength characters long");
             }
         }
         else {
+            $minpasslength=C4::Context->preference('minComplexPasswordLength');
             unless ($newpassword1 =~ /[0-9]/
                     && $newpassword1 =~ /[a-zåäö]/
                     && $newpassword1 =~ /[A-ZÅÄÖ]/
-                    && $newpassword1 =~ /[\|\[\]\{\}!@#\$%\^&\*\(\)_\-\+\?]/) {
-                return (0, "NOPOLICYMATCH", "Password policy: password must contain numbers, characters and special characters (at least one of each)");
+                    && $newpassword1 =~ /[\|\[\]\{\}!@#\$%\^&\*\(\)_\-\+\?]/ 
+                    && length($newpassword1) >= $minpasslength ) {
+                return (0, "NOPOLICYMATCH", "Password policy: password must contain numbers, characters and special characters (at least one of each) and must be at least $minpasslength characters long");
             }
         }
     }

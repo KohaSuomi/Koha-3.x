@@ -1278,6 +1278,13 @@
 	</fieldset>
     [% END # hide fieldset %]
 
+    <!-- KD#1454 - Individual minimum password lengths for different policies
+    
+    Password checking doesn't work on this page (it was already broken when I got here Bug#278),
+    so disable setting username/password on this page. Passwords/usernames can and should
+    be changed via "Change password". Maybe we should discard that functionality from
+    this page altogether?
+
     [% UNLESS nouserid && nopassword %]
 	<fieldset class="rows" id="memberentry_userid">
         <legend id="opac_staff_login_lgd">OPAC/Staff login</legend><ol>
@@ -1396,6 +1403,8 @@
 		</ol>
 		</fieldset>
         [% END # hide fieldset %][% END %]
+        This is the end of OPAC/Staff Login definitions-->
+
 		<!--this zones are not necessary in modif mode -->
         [% UNLESS ( opadd || opduplicate ) %]
 		<fieldset class="rows">
