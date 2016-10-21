@@ -1,12 +1,14 @@
 #!/bin/bash
 ### BEGIN INIT INFO
-# Provides:          koha-zebra-daemon
+# Provides:          koha-index-daemon
 # Required-Start:    $syslog $remote_fs
 # Required-Stop:     $syslog $remote_fs
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
-# Short-Description: Zebra server daemon for Koha indexing
+# Short-Description: SIP2 server daemon for Koha sipping
 ### END INIT INFO
+
+quotes="\x{22}\x{27}"
 
 ACTION=$1
 SIPDEVICE=$2
@@ -22,6 +24,22 @@ SIPCONFIGDIR="/home/koha/koha-dev/etc/SIPconfig/"
 LOGDIR="/home/koha/koha-dev/var/log/sip2/"
 RUNDIR="/home/koha/koha-dev/var/run/sip2/"
 LOCKDIR="/home/koha/koha-dev/var/lock/sip2/"
+
+
+
+
+# Check the prequisites, we need libxml, xmllint, and ncat from nmap
+depsfail() {
+  # Some of the needed software is missing
+  echo "You need libxml2, xmllint and ncat from nmap package."
+  echo "You also might need libxml2-utils for xmllint"
+}
+
+export xmllint="$(which xmllint)"
+test -z $xmllint && depsfail && exit 1
+
+
+
 
 ##  0  ## Show how to use this carp!
 function help_usage {
@@ -69,6 +87,20 @@ function findConfigurationFile {
     fi
 }
 
+function findSyslogFile {
+  SIPCONFIG=$1
+
+  # Get log facilities
+  config=$($xmllint --xpath '//*[local-name()="server-params"]' $SIPCONFIG)
+  logFile=$(       echo $config | $xmllint --xpath '//@log_file' - |
+                    grep -Po "[$quotes].+?[$quotes]" | grep -Po "[^$quotes]+" )
+  syslogIdent=$(   echo $config | $xmllint --xpath '//@syslog_ident' - |
+                    grep -Po "[$quotes].+?[$quotes]" | grep -Po "[^$quotes]+" )
+  syslogFacility=$(echo $config | $xmllint --xpath '//@syslog_facility' - |
+                    grep -Po "[$quotes].+?[$quotes]" | grep -Po "[^$quotes]+" )
+  SYSLOG_FILE=$(grep -P "$syslogFacility" $KOHA_RSYSLOG_CONFIG | grep -Po '/.+$')
+}
+
 ##  II  ## Do the daemonizing magic
 function operateSIPserverDaemon {
     ACTION=$1
@@ -81,7 +113,7 @@ function operateSIPserverDaemon {
     OUTPUT=$LOGDIR/$SIPDEVICE.out
 
     #Make sure rsyslog has write permission to the given file/folder
-    SYSLOG_FILE=`grep "$SIPDEVICE" $KOHA_RSYSLOG_CONFIG | grep -Po '(?<=\s)\S*$'`
+    findSyslogFile $SIPCONFIG #initializes SYSLOG_FILE
     if [ ! -e "$SYSLOG_FILE" ]; then
         touch $SYSLOG_FILE
     fi
