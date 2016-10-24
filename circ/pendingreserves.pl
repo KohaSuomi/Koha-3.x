@@ -103,6 +103,7 @@ if ( $run_report ) {
         push @query_params, format_date_in_iso($enddate);
     }
 
+    # KD#1459 - items.itemcallnumber changed to items.cn_sort to make sorting work right
     my $strsth =
     "SELECT min(reservedate) as l_reservedate,
             reserves.borrowernumber as borrowernumber,
@@ -117,7 +118,7 @@ if ( $run_report ) {
                     ORDER BY items.itemnumber SEPARATOR '<br/>') l_itype,
             GROUP_CONCAT(DISTINCT items.location
                     ORDER BY items.itemnumber SEPARATOR '<br/>') l_location,
-            GROUP_CONCAT(DISTINCT(CONCAT_WS(' Col ', items.itemcallnumber, collections_tracking.colId))
+            GROUP_CONCAT(DISTINCT(CONCAT_WS(' Col ', items.cn_sort, collections_tracking.colId))
                     ORDER BY items.itemnumber SEPARATOR '<br/>') l_itemcallnumber,
             GROUP_CONCAT(DISTINCT items.enumchron
                     ORDER BY items.itemnumber SEPARATOR '<br/>') l_enumchron,
