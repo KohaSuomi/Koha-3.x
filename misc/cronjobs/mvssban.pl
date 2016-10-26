@@ -25,7 +25,7 @@ use XML::Parser;
 # Nag about missing targetfile
 if ( $ARGV[0] eq '' ) {
     print "No target filename given.\n";
-    exit 1
+    exit 1;
 }
 
 # Initialize the XML blocklist
@@ -66,10 +66,10 @@ $dbh->disconnect;
 
 # Validate and write XML to a file. Validation is very basic, but not much can go wrong here.
 if ( XML::Parser->new->parse($xml) ) {
-    print "New blocklist written to " . $ARGV[0] . ".\n";
-    open XML, '>encoding(utf8)', $ARGV[0];
+    open XML, '>encoding(utf8)', $ARGV[0] or die "Can't write targetfile.";
     print XML $xml;
     close XML;
+    print "New blocklist written to " . $ARGV[0] . ".\n";
 } else {
     print "The XML is not valid, will not write a targetfile.\n";
     exit 1;
