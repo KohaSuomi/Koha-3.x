@@ -386,13 +386,8 @@ if ( ($op eq 'modify' || $op eq 'insert' || $op eq 'save'|| $op eq 'duplicate') 
     }
 }
 
-if (
-        defined $input->param('SMSnumber')
-    &&  (
-           $input->param('SMSnumber') eq ""
-        or $input->param('SMSnumber') ne $newdata{'mobile'}
-        )
-) {
+# KD#1519 Fix for saving patron phone numbers when other phone and sms-number are the same (check disabled).
+if (defined $input->param('SMSnumber')) {
     if (Koha::Validation::validate_phonenumber($input->param('SMSnumber'))){
         $newdata{smsalertnumber} = $input->param('SMSnumber');
     } else {
