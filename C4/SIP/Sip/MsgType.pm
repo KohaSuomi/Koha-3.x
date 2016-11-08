@@ -690,8 +690,13 @@ sub handle_checkin {
             $status->alert_type('04');  # no hold, just send it
         }
     }
+    # Kyyti#913 - This disables the SIP alerts, it's disabled in KohaSuomi because it causes problems
+    # in sorting with Mikroväylä check-in machines. We should find a better way to deal with alerts
+    # (or rather Mikroväylä should fix their sorting).
+    
     #$resp .= $status->alert ? 'Y' : 'N';
     $resp .= 'N';
+
     $resp .= Sip::timestamp;
     $resp .= add_field(FID_INST_ID, $inst_id);
     $resp .= add_field(FID_ITEM_ID, $item_id);

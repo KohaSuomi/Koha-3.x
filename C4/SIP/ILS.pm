@@ -210,7 +210,7 @@ else {
 	$circ->ok($item);
 
 	if (!defined($item->{patron})) {
-		$circ->screen_msg("Item not checked out")
+		$circ->screen_msg("Item not checked out");
 	} else {
 		if ($circ->ok) {
 			$circ->patron($patron = new ILS::Patron $item->{patron});
