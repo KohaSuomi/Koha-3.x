@@ -2716,6 +2716,11 @@ sub CanBookBeRenewed {
         return (0, 'non_renewable');
     }
 
+    # KD#1526 - Allow/deny renewing items with notforloan status set
+    my $renewnotforloan=C4::Context->preference('AllowRenewingNotforloanItems');
+    if ($renewnotforloan == 0 && $item->{notforloan} != 0) {
+        return (0, 'non_renewable'); 
+    }
 
     $borrowernumber ||= $itemissue->{borrowernumber};
     my $borrower = C4::Members::GetMember( borrowernumber => $borrowernumber )
