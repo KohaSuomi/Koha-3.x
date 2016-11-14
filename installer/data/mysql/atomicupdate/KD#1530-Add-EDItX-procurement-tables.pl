@@ -31,8 +31,8 @@ unless ($atomicUpdater->find('KD#1530-Add-EDItX-procurement-tables')) {
     $dbh->do(q{
         CREATE TABLE `map_productform` (
         `id` int(11) NOT NULL AUTO_INCREMENT,
-        `onix_code` varchar(5) DEFAULT NULL,
-        `productform` varchar(5) DEFAULT NULL,
+        `onix_code` varchar(2) DEFAULT NULL,
+        `productform` varchar(10) DEFAULT NULL,
         PRIMARY KEY (`id`)
         ) ENGINE=InnoDB AUTO_INCREMENT=129 DEFAULT CHARSET=latin1;
     });
