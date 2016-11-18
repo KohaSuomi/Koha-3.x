@@ -880,16 +880,17 @@ sub set_overdue_price {
 
   # Find right price from overdue rules.
   my $fine = "fine".$letternumber;
-  my $sth;
-
-  if ($branchcode && $branchcode ne "") {
-    $sth = C4::Context->dbh->prepare("SELECT ".$fine." FROM overduerules WHERE categorycode = ? and branchcode = ?");
-    $sth->execute($categorycode, $branchcode);
-  } else {
-    $sth = C4::Context->dbh->prepare("SELECT ".$fine." FROM overduerules WHERE categorycode = ?");
-    $sth->execute($categorycode);
+  my $price;
+  my $sth = C4::Context->dbh->prepare("SELECT ".$fine." FROM overduerules WHERE categorycode = ? and branchcode = ?");
+  $sth->execute($categorycode, $branchcode);
+  if (my $f = $sth->fetchrow_array) {
+    $price = $f;
+  }else {
+    my $sth2 = C4::Context->dbh->prepare("SELECT ".$fine." FROM overduerules WHERE categorycode = ?");
+    $sth2->execute($categorycode);
+    $price = $sth2->fetchrow_array
   }
-  my $price = $sth->fetchrow_array;
+  
   # Set overdue price to patron.
   if ($letter_code =~ /1/) {
     C4::Accounts::manualinvoice( $borrowernumber, undef, '1. huomautus', 'ODUE', $price, undef );
