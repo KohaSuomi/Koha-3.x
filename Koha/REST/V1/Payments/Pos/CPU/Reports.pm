@@ -15,14 +15,14 @@ use Data::Dumper;
 Receives the success report from CPU.
 
 =cut
-sub cpu_report {
+sub cpu_pos_report {
     my ($c, $args, $cb) = @_;
 
     my $invoicenumber = $args->{'invoicenumber'};
     $args = $args->{body};
 
     C4::Context->interface('intranet');
-    my $logger = Koha::Logger->get({ category=> 'Koha.REST.V1.Payments.Pos.CPU.Reports.cpu_report' });
+    my $logger = Koha::Logger->get({ category=> 'Koha.REST.V1.Payments.Pos.CPU.Reports.cpu_pos_report' });
     $logger->info("Report received: ".Dumper($args));
 
     my $transaction = Koha::PaymentsTransactions->find($invoicenumber);

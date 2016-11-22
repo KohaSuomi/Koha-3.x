@@ -2,7 +2,7 @@
   "/payments/online/cpu/{invoicenumber}/report": {
     "post": {
       "x-mojo-controller": "Koha::REST::V1::Payments::Online::CPU::Reports",
-      "operationId": "cpuReport",
+      "operationId": "cpuOnlineReport",
       "tags": ["Online payments"],
       "parameters": [
         {

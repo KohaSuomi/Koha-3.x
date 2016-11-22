@@ -2,7 +2,7 @@
   "/payments/pos/cpu/{invoicenumber}/report": {
     "post": {
       "x-mojo-controller": "Koha::REST::V1::Payments::Pos::CPU::Reports",
-      "operationId": "cpuReport",
+      "operationId": "cpuPosReport",
       "tags": ["POS Integration"],
       "parameters": [
         {
