@@ -3405,20 +3405,18 @@ sub CalcDateDue {
             ? qq{renewalperiod}
             : qq{issuelength};
 
-    ##OPLIB hack crack fat jack!  Set the shortloan (lyhytlaina) and fastloan (pikalaina) durations.
-    if ($item && ($item->{ccode} eq 'LYLA' || $item->{sub_location} eq 'NEW')) { #LYLA ccode is removed via a cronjob.
-        if ( $loanlength->{lengthunit} eq 'hours' ) {
-            $loanlength->{$length_key} = 336;
-        } else {
-            $loanlength->{$length_key} = 14;
-        }
-    }
-    if ($item && $item->{ccode} eq 'PILA') {
-        if ( $loanlength->{lengthunit} eq 'hours' ) {
-            $loanlength->{$length_key} = 168;
-        } else {
-            $loanlength->{$length_key} = 7;
-        }
+    # Naughty hardcoding follows. Set the shortloan (lyhytlaina) and fastloan (pikalaina) durations.
+    # We really should make this stuff configurable...
+    if ($item) {
+      my $tolengthunit=1;
+         $tolengthunit=24 if $loanlength->{lengthunit} eq 'hours';
+
+      if ($item->{ccode} eq 'LYLA' || $item->{sub_location} eq 'NEW'){
+          $loanlength->{$length_key} = 14 * $tolengthunit;
+      }
+      elsif ($item->{ccode} eq 'PILA' || $item->{ccode} eq 'PIKA') {
+          $loanlength->{$length_key} = 7 * $tolengthunit;
+      }
     }
 
     my $datedue;
