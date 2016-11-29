@@ -1237,7 +1237,19 @@ sub CancelExpiredReserves {
             my $expiration = _reserve_last_pickup_date( $res );
             if ( $today > $expiration ) {
                 if ( $charge ) {
-                    manualinvoice($res->{'borrowernumber'}, $res->{'itemnumber'}, '', 'HE', $charge);
+                    #KD1549, adding syspref for disabling pick up delay charge from certain locations.
+                    my $locations = C4::Items::GetRealItemLocations($res->{'itemnumber'});
+                    my @zeroLocations = split( /\|/, C4::Context->preference("ReserveFeeOnNotify"));
+                    my $addfee = 1;
+                    foreach my $location (@zeroLocations) {
+                        if ($location eq $locations->{permanent_location}) {
+                            $addfee = 0;
+                            last;
+                        }
+                    }
+                    if ($addfee) {
+                        manualinvoice($res->{'borrowernumber'}, $res->{'itemnumber'}, '', 'HE', $charge);
+                    }
                 }
                 CancelReserve({ reserve_id => $res->{'reserve_id'},
                                 pickupexpired => $expiration,
