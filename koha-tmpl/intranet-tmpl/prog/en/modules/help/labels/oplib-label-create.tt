@@ -103,4 +103,11 @@ The screencast is a .mp4-video, so not all browsers can play it directly. Try do
     </li>
 </ul>
 
+<h2> * Custom attributes * </h2>
+<p>Some DataSource-functions and -formatters can accept custom attributes.<br/>
+   Custom attributes are passed as key=value pairs, eg:<br/>
+   <em>key=value, lord=rings, lady=chatterley</em><br/>
+   See the function description for possible custom attributes.
+</p>
+
 [% INCLUDE 'help-bottom.inc' %]

@@ -48,15 +48,18 @@ PDF::Reuse has already been initialized, so it is safe to start calling PDF::Reu
 
 =cut
 
-my $barcodeHeight = 38;
+my $barcodeHeight = 38; #When y-axis scaling is 0.75
 
 sub public_barcode39 {
     my ($data, $element) = @_;
     my $text = $data->{text};
     my $pos = $element->getPdfPosition();
+    my $fontSize = $element->getFontSize();
+    my $customAttr = $element->getCustomAttr();
 
-    my $showText = 1; #Show the barcode values as text underneath it? (1 || 0)
-    my $yScaling = 0.75; #Multiply y-axis height by this amount
+    my $showText = (defined $customAttr->{showtext}) ? $customAttr->{showtext} : 1; #Show the barcode values as text underneath it? (1 || 0)
+    my $yScaling = (defined $customAttr->{'y-scale'}) ? $customAttr->{'y-scale'} : 1.0;
+    my $xScaling = (defined $customAttr->{'x-scale'}) ? $customAttr->{'x-scale'} : 1.0;
 
     #Validate $text is of proper format
     $text = uc($text);
@@ -68,6 +71,7 @@ sub public_barcode39 {
     PDF::Reuse::Barcode::Code39 (x             => $pos->{x},
                                  y             => $pos->{y} - ($barcodeHeight*$yScaling),
                                  ySize         => $yScaling,
+                                 xSize         => $xScaling,
                                  value         => '*'.$text.'*',
                                  text          => $showText,
                                  hide_asterisk => 1,);
@@ -77,9 +81,12 @@ sub public_barcode128 {
     my ($data, $element) = @_;
     my $text = $data->{text};
     my $pos = $element->getPdfPosition();
+    my $fontSize = $element->getFontSize();
+    my $customAttr = $element->getCustomAttr();
 
-    my $showText = 1; #Show the barcode values as text underneath it? (1 || 0)
-    my $yScaling = 0.75; #Multiply y-axis height by this amount
+    my $showText = (defined $customAttr->{showtext}) ? $customAttr->{showtext} : 1; #Show the barcode values as text underneath it? (1 || 0)
+    my $yScaling = (defined $customAttr->{'y-scale'}) ? $customAttr->{'y-scale'} : 1.0;
+    my $xScaling = (defined $customAttr->{'x-scale'}) ? $customAttr->{'x-scale'} : 1.0;
 
     #Validate $text is of proper format
     $text = uc($text);
@@ -91,6 +98,7 @@ sub public_barcode128 {
     PDF::Reuse::Barcode::Code128 (x             => $pos->{x},
                                   y             => $pos->{y} - ($barcodeHeight*$yScaling),
                                   ySize         => $yScaling,
+                                  xSize         => $xScaling,
                                   value         => $text,
                                   text          => $showText,);
 }
@@ -99,9 +107,12 @@ sub public_barcodeEAN13 {
     my ($data, $element) = @_;
     my $text = $data->{text};
     my $pos = $element->getPdfPosition();
+    my $fontSize = $element->getFontSize();
+    my $customAttr = $element->getCustomAttr();
 
-    my $showText = 1; #Show the barcode values as text underneath it? (1 || 0)
-    my $yScaling = 0.75; #Multiply y-axis height by this amount
+    my $showText = (defined $customAttr->{showtext}) ? $customAttr->{showtext} : 1; #Show the barcode values as text underneath it? (1 || 0)
+    my $yScaling = (defined $customAttr->{'y-scale'}) ? $customAttr->{'y-scale'} : 1.0;
+    my $xScaling = (defined $customAttr->{'x-scale'}) ? $customAttr->{'x-scale'} : 1.0;
 
     #Validate $text is of proper format
     $text = uc($text);
@@ -117,6 +128,7 @@ sub public_barcodeEAN13 {
     PDF::Reuse::Barcode::EAN13  (x             => $pos->{x},
                                  y             => $pos->{y} - ($barcodeHeight*$yScaling),
                                  ySize         => $yScaling,
+                                 xSize         => $xScaling,
                                  value         => $text,
                                  text          => $showText,);
 }
@@ -125,9 +137,12 @@ sub public_barcodeEAN13checksum {
     my ($data, $element) = @_;
     my $text = $data->{text};
     my $pos = $element->getPdfPosition();
+    my $fontSize = $element->getFontSize();
+    my $customAttr = $element->getCustomAttr();
 
-    my $showText = 1; #Show the barcode values as text underneath it? (1 || 0)
-    my $yScaling = 0.75; #Multiply y-axis height by this amount
+    my $showText = (defined $customAttr->{showtext}) ? $customAttr->{showtext} : 1; #Show the barcode values as text underneath it? (1 || 0)
+    my $yScaling = (defined $customAttr->{'y-scale'}) ? $customAttr->{'y-scale'} : 1.0;
+    my $xScaling = (defined $customAttr->{'x-scale'}) ? $customAttr->{'x-scale'} : 1.0;
 
     #Validate $text is of proper format
     $text = uc($text);
@@ -143,6 +158,7 @@ sub public_barcodeEAN13checksum {
     PDF::Reuse::Barcode::EAN13  (x             => $pos->{x},
                                  y             => $pos->{y} - ($barcodeHeight*$yScaling),
                                  ySize         => $yScaling,
+                                 xSize         => $xScaling,
                                  value         => $text,
                                  text          => $showText,);
 }

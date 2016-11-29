@@ -40,6 +40,7 @@ sub new {
     $self->setFontSize(   $params->{fontSize});
     $self->setFont(       $params->{font});
     $self->setColour(     $params->{colour});
+    $self->setCustomAttr( $params->{customAttr});
     return $self;
 }
 sub toHash {
@@ -53,6 +54,7 @@ sub toHash {
     $obj->{fontSize} =    $self->getFontSize();
     $obj->{font} =        $self->getFont()->{type};
     $obj->{colour} =      $self->getColour();
+    $obj->{customAttr} =  $self->flattenCustomAttr();
     return $obj;
 }
 sub setId {
@@ -232,6 +234,42 @@ sub getItem {
 sub getRegion {
     my ($self) = @_;
     return $self->getParent();
+}
+sub setCustomAttr {
+    my ($self, $attr) = @_;
+
+    my %attr;
+    $self->{customAttr} = \%attr;
+
+    return if(not($attr) || $attr =~ /^\s+$/);
+
+    my @attr = split(/[,]/, $attr);
+    if (@attr) {
+
+        foreach my $a (@attr) {
+            if ($a =~ /(\S+?)\s*=\s*(\S+)/) {
+                $attr{$1} = $2;
+            }
+            else {
+                my @cc = caller(0);
+                Koha::Exception::BadParameter->throw(error => $cc[3]."($attr) Attribute '$a' doesn't look like 'key=value'".$self->_exceptionId());
+            }
+        }
+        $self->{customAttr} = \%attr;
+    }
+}
+sub flattenCustomAttr {
+    my ($self) = @_;
+    my $ca = $self->getCustomAttr();
+
+    my @sb;
+    while (my ($key, $value) = each($ca)) {
+        push(@sb, "$key=$value");
+    }
+    return join(',', @sb);
+}
+sub getCustomAttr {
+    return shift->{customAttr};
 }
 
 sub _exceptionId {

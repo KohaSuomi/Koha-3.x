@@ -267,6 +267,13 @@ Labels.GUI.Controls.displayElementControls = function (element) {
     else {
         $("#sc_font").val("");
     }
+    $("#sc_customAttr").parent().show();
+    if (element.customAttr) {
+        $("#sc_customAttr").val( element.customAttr );
+    }
+    else {
+        $("#sc_customAttr").val("");
+    }
     $("#sc_colour").parent().show();
     if (element.colour) {
         $("#sc_colour").val( element.colour );

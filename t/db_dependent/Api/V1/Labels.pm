@@ -195,6 +195,28 @@ sub getsheets404 {
     ok(1, "skipped");
 }
 sub getsheets200 {
-    ok(1, "skipped");
+    my ($class, $restTest, $driver) = @_;
+    my $testContext = $restTest->get_testContext(); #Test context will be automatically cleaned after this subtest has been executed.
+    my $activeUser = $restTest->get_activeBorrower();
+
+    my ($path, $sheet);
+
+    $sheet = t::lib::TestObjects::Labels::SheetFactory->createTestGroup(
+                                                   {name => 'Simplex',
+                                                   },
+                                                    undef, $testContext);
+    $sheet = C4::Labels::SheetManager::putNewSheetToDB($sheet);
+
+    #Execute request
+    $path = $restTest->get_routePath();
+    $driver->get_ok($path => {Accept => 'text/json'});
+    $restTest->catchSwagger2Errors($driver);
+    $driver->status_is(200);
+    my $json = $driver->tx->res->json();
+
+    #Compare result
+    ok($json->[0] =~ /"Simplex"/, "Sheet name");
+    #TODO:: This test-suite leaks label_sheets but I shouldn't be doing this now anyway.
 }
+
 1;

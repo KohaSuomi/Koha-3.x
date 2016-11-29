@@ -18,11 +18,14 @@
 use Modern::Perl;
 use Test::More;
 use PDF::Reuse;
+use Try::Tiny;
+use Scalar::Util qw(blessed);
 
 use C4::Labels::DataSourceSelector;
 use C4::Labels::DataSourceManager;
 use C4::Labels::DataSourceFormatter;
 use C4::Labels::PdfCreator;
+use C4::Labels::Sheet::Element;
 use C4::VirtualShelves;
 
 use t::lib::TestObjects::ObjectFactory;
@@ -297,6 +300,58 @@ sub dataSourceFunctions {
         ok(0, $@);
     }
 }
+
+
+
+subtest "Element setters and getters", \&elementSettersAndGetters;
+sub elementSettersAndGetters {
+    eval {
+    my (%element, @keys, $attrs);
+
+    subtest "CustomAttr", sub {
+        C4::Labels::Sheet::Element::setCustomAttr(\%element, ' lord=flies, lady=chatterleys ,  macbeth=shakespeare');
+        $attrs = C4::Labels::Sheet::Element::getCustomAttr(\%element);
+        @keys = keys $attrs;
+        is($attrs->{lord}, 'flies', 'Lord of the Flies');
+        is($attrs->{lady}, 'chatterleys', 'Lady Chatterley\'s Lover');
+        is($attrs->{macbeth}, 'shakespeare', 'Macbeth by Shakespeare');
+        is(scalar(@keys), 3, 'Confirmed correct amount of keys');
+    };
+    subtest "CustomAttr crashes", sub {
+        subtest "key=value, with missing value", sub {
+            try {
+                C4::Labels::Sheet::Element::setCustomAttr(\%element, ' lord=flies, lady=chatterleys ,  macbeth');
+            } catch {
+                die $_ unless (blessed($_) && $_->can('rethrow'));
+                is(ref($_), 'Koha::Exception::BadParameter', 'Key-values missing a value');
+                ok($_->message =~ /Attribute.*?macbeth/, 'Key-values missing a value, specifically "macbeth"');
+            };
+        };
+        subtest "empty meaningless string", sub {
+            try {
+                C4::Labels::Sheet::Element::setCustomAttr(\%element, ' lord ');
+            } catch {
+                die $_ unless (blessed($_) && $_->can('rethrow'));
+                is(ref($_), 'Koha::Exception::BadParameter', 'Some text, but unrecognized format');
+                ok($_->message =~ /Attribute.*?lord/, 'Some text, but unrecognized format, and correct error message');
+            };
+        };
+        subtest "accidental whitespace is acceptable", sub {
+            C4::Labels::Sheet::Element::setCustomAttr(\%element, "    \t ");
+            $attrs = C4::Labels::Sheet::Element::getCustomAttr(\%element);
+            is(ref($attrs), 'HASH', 'Whitespace only, still instantiates a HASH');
+            @keys = keys $attrs;
+            is(scalar(@keys), 0, 'Whitespace only, no HASH keys leaked from anywhere');
+        };
+    };
+
+    };
+    if ($@) {
+        ok(0, $@);
+    }
+}
+
+
 
 t::lib::TestObjects::ObjectFactory->tearDownTestContext($testContext);
 done_testing();

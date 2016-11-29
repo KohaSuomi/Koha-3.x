@@ -123,6 +123,9 @@
                                 <input type="text" size="15" id="sc_dataSource" placeholder="Data source"/>
                               </li>
                               <li>
+                                <input type="text" size="15" id="sc_customAttr" placeholder="Custom attributes"/>
+                              </li>
+                              <li>
                                 <div id="dataSourceFunctionDocs">
                                     [% INCLUDE 'labels/data-source-function-documentation.inc' %]
                                 </div>

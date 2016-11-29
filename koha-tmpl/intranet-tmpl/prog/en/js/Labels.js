@@ -532,6 +532,9 @@ Labels.Element = function(region, params) {
         this.colour = "#"+tc.toHex() || "#000000";
         this.htmlElem.css("color", this.colour);
     }
+    this.setCustomAttr = function (newCustomAttr) {
+        this.customAttr = newCustomAttr;
+    }
     this.setFontSize = function (newFS) {
         this.fontSize = newFS || 12;
         this.htmlElem.css("font-size", this.fontSize+"px");
@@ -582,6 +585,7 @@ Labels.Element = function(region, params) {
         me.fontSize = this.fontSize;
         me.font = this.font;
         var tc = tinycolor(this.colour);
+        me.customAttr = this.customAttr;
         me.colour = tc.toRgb();
         return me;
     }
@@ -590,6 +594,7 @@ Labels.Element = function(region, params) {
     this.setDataFormat(params.dataFormat);
     this.setFontSize(parseInt(params.fontSize));
     this.setFont(params.font);
+    this.setCustomAttr(params.customAttr);
     this.setColour(params.colour);
     this.setSpacings(params.dimensions, params.position);
 }

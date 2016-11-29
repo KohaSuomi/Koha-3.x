@@ -293,6 +293,27 @@ sub getSheet {
 					"b": 0,
 					"a": 1
 				}
+			}, {
+				"dimensions": {
+					"width": 172,
+					"height": 55
+				},
+				"position": {
+					"left": 12,
+					"top": 12
+				},
+				"boundingBox": false,
+				"dataSource": "item.barcode",
+				"dataFormat": "barcode39",
+				"fontSize": "16",
+				"font": "H",
+				"colour": {
+					"r": 214,
+					"g": 48,
+					"b": 48,
+					"a": 1
+				},
+                "customAttr": "yScale=1.0, xScale=0.75"
 			}]
 		}, {
 			"dimensions": {
@@ -334,7 +355,7 @@ sub getSheet {
 					"top": 40
 				},
 				"boundingBox": false,
-				"dataSource": "items.itemcallnumber",
+				"dataSource": "item.itemcallnumber",
 				"dataFormat": "oneLinerShrinkText",
 				"fontSize": "12",
 				"font": "H",
@@ -398,6 +419,27 @@ sub getSheet {
 					"b": 0,
 					"a": 1
 				}
+			}, {
+				"dimensions": {
+					"width": 172,
+					"height": 55
+				},
+				"position": {
+					"left": 12,
+					"top": 12
+				},
+				"boundingBox": false,
+				"dataSource": "item.barcode",
+				"dataFormat": "barcode39",
+				"fontSize": "16",
+				"font": "H",
+				"colour": {
+					"r": 214,
+					"g": 48,
+					"b": 48,
+					"a": 1
+				},
+                "customAttr": "yScale=1.0, xScale=0.75"
 			}]
 		}, {
 			"dimensions": {
@@ -439,7 +481,7 @@ sub getSheet {
 					"top": 45
 				},
 				"boundingBox": false,
-				"dataSource": "items.itemcallnumber",
+				"dataSource": "item.itemcallnumber",
 				"dataFormat": "oneLinerShrinkText",
 				"fontSize": "12",
 				"font": "H",

@@ -8,7 +8,13 @@
         Prints a barcode of format Code 39 from the source data including the barcode value as text.
         Barcode128 is recommended over this as it is a newer standard.
         Supported characters are uppercase letters (A through Z), numeric digits (0 through 9) and a number of special characters (-, ., $, /, +, %, and space).
-        Lower case characters are automatically uppercased.
+        Lower case characters are automatically uppercased.<br/>
+        Custom attributes:<br/>
+        <b>x-scale=1.0</b><br/>
+        <b>y-scale=1.0</b><br/>
+        <b>showtext=1</b><br/>
+        Example:<br/>
+        <em>x-scale=1.0, y-scale=0.75, showtext=0</em>
     </span>
 </div>
 <div class="dsfod-doc" id="dsfod-barcode128">
@@ -16,7 +22,13 @@
     <span class="comment">
         Prints a barcode of format Code 128 from the source data including the barcode value as text.
         Supported characters are uppercase letters (A through Z), numeric digits (0 through 9) and a number of special characters (-, ., $, /, +, %, and space).
-        Lower case characters are automatically uppercased.
+        Lower case characters are automatically uppercased.<br/>
+        Custom attributes:<br/>
+        <b>x-scale=1.0</b><br/>
+        <b>y-scale=1.0</b><br/>
+        <b>showtext=1</b><br/>
+        Example:<br/>
+        <em>x-scale=1.0, y-scale=0.75, showtext=0</em>
     </span>
 </div>
 <div class="dsfod-doc" id="dsfod-barcodeEAN13">
@@ -24,7 +36,13 @@
     <span class="comment">
         Prints a barcode of format EAN13 from the source data including the barcode value as text.
         The data source value must be exactly 13 characters long, with the checksum overwritten by the 13th character.
-        EAN13 accepts only digits.
+        EAN13 accepts only digits.<br/>
+        Custom attributes:<br/>
+        <b>x-scale=1.0</b><br/>
+        <b>y-scale=1.0</b><br/>
+        <b>showtext=1</b><br/>
+        Example:<br/>
+        <em>x-scale=1.0, y-scale=0.75, showtext=0</em>
     </span>
 </div>
 <div class="dsfod-doc" id="dsfod-barcodeEAN13checksum">
@@ -32,7 +50,13 @@
     <span class="comment">
         Prints a barcode of format EAN13 from the source data including the barcode value as text.
         The data source value must be exactly 12 characters long, and the 13th character, aka. the checksum is calculated automatically.
-        EAN13 accepts only digits.
+        EAN13 accepts only digits.<br/>
+        Custom attributes:<br/>
+        <b>x-scale=1.0</b><br/>
+        <b>y-scale=1.0</b><br/>
+        <b>showtext=1</b><br/>
+        Example:<br/>
+        <em>x-scale=1.0, y-scale=0.75, showtext=0</em>
     </span>
 </div>
 <div class="dsfod-doc" id="dsfod-oneLiner">
