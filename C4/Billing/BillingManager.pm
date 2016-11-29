@@ -143,6 +143,7 @@ sub GetOverduedIssues {
 
         $issue->{title} = $biblio->{title};
         $issue->{author} = $biblio->{author};
+        $issue->{copyrightdate} = $biblio->{copyrightdate};
         $issue->{biblionumber} = $biblio->{biblionumber};
 
         if (!$showbilled || !$shownotbilled) {

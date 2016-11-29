@@ -124,7 +124,7 @@
 		        <td>[% IF ( overdueloo.guarantorid ) %][% overdueloo.gaddress %][% ELSE %][% overdueloo.address %][% END %]</td>
 		        <td>[% IF ( overdueloo.guarantorid ) %][% overdueloo.gzipcode %][% ELSE %][% overdueloo.zipcode %][% END %]</td>
 		        <td>[% IF ( overdueloo.guarantorid ) %][% overdueloo.gcity %][% ELSE %][% overdueloo.city %][% END %]</td>
-		        <td>[% INCLUDE 'biblio-default-view.inc' biblionumber = overdueloo.biblionumber %][% overdueloo.title %] [% overdueloo.subtitle %]</a><span>[% overdueloo.author %]</span></td>
+		        <td>[% INCLUDE 'biblio-default-view.inc' biblionumber = overdueloo.biblionumber %][% overdueloo.title %] [% overdueloo.subtitle %]</a><span>[% overdueloo.author %]</span> <br/>([% overdueloo.copyrightdate %])</td>
 				<td><a href="/cgi-bin/koha/catalogue/moredetail.pl?biblionumber=[% overdueloo.biblionumber %]&amp;itemnumber=[% overdueloo.itemnum %]#item[% overdueloo.itemnum %]">[% overdueloo.barcode %]</a></td>
 		        <td><input type="number" min="0.00" step="0.01" class="priceinput" placeholder="[% overdueloo.replacementprice %]" value="[% overdueloo.replacementprice %]"/>
 		        <input type="hidden" value="[% overdueloo.fine %]"/></td>

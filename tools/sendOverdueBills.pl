@@ -245,6 +245,7 @@ foreach my $data (@{$issues}) {
         biblionumber           	=> $data->{biblionumber},
         title                  	=> $data->{title},
         author                 	=> $data->{author},
+        copyrightdate			=> $data->{copyrightdate},
         replacementprice       	=> $data->{replacementprice},
         fine			       	=> $delay->{delayfine},
         rowcount              	=> $i,
