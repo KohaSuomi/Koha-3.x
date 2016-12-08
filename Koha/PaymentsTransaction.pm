@@ -70,8 +70,9 @@ sub AddRelatedAccountlines {
     my $money_left = _convert_to_cents($data->{paid});
     my $total_price = 0;
 
+    C4::Accounts::depleteDebits($borrowernumber, undef, undef);
     my $use_selected = (@selected > 0) ? "AND accountno IN (?".+(",?") x (@selected-1).")" : "";
-    my $sql = "SELECT * FROM accountlines WHERE borrowernumber=? AND (amountoutstanding<>0) ".$use_selected." ORDER BY date";
+    my $sql = "SELECT * FROM accountlines WHERE borrowernumber=? AND (amountoutstanding>0) ".$use_selected." ORDER BY date";
     my $sth = $dbh->prepare($sql);
 
     $sth->execute($borrowernumber, @selected);
