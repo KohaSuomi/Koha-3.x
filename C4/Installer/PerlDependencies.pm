@@ -735,7 +735,7 @@ our $PERL_DEPS = {
     'File::Fu::File' => {
         'usage'    => 'Core',
         'required' => '1',
-        'min_ver'  => '0.08',
+        'min_ver'  => '0.0.8',
     },
     'Archive::Extract' => {
         'usage'    => 'Plugins',
