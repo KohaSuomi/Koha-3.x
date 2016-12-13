@@ -2,29 +2,70 @@ package C4::KohaSuomi::DebianPackages;
 
 use Modern::Perl;
 
-my @dislikedPackageRegexps = (
-    'apache.*',
-    'idzebra.*',
-    'mysql.*',
-    'memcached',
+my %excludedPackageRegexps = (
+    Standalone => [ #Prevent configuring any other servers than the core Koha Perl-files and Debian deps
+        'apache.*',
+        'idzebra.*',
+        'mysql.*',
+        'memcached',
+    ],
+    Ubuntu1604 => [ #Skip packages not present in Ubuntu16.04, install them from CPAN
+        'libtemplate-plugin-htmltotext-perl',
+        'cron-daemon',
+    ],
 );
-sub getDislikedPackageRegexps {
-    return \@dislikedPackageRegexps;
+my %includedPackages = (
+    Ubuntu1604 => [
+        'systemd-cron',
+        'mariadb-client',
+        'mariadb-common',
+        'libdbd-mysql-perl',
+        'libcurl4-openssl-dev',
+    ],
+);
+
+sub getPackageRegexps {
+    my ($excludedOrIncluded, @listnames) = @_;
+    my @listBuilder;
+    foreach my $name (@listnames) {
+        my $neededList;
+        if ($excludedOrIncluded =~ /ex/ && defined($excludedPackageRegexps{$name})) {
+            push(@listBuilder, @{$excludedPackageRegexps{$name}});
+        }
+        elsif ($excludedOrIncluded =~ /in/ && defined($includedPackages{$name})) {
+            push(@listBuilder, @{$includedPackages{$name}});
+        }
+        else {
+            die "Unknown \$listname '$name'";
+        }
+    }
+    return \@listBuilder;
+}
+
+sub getUbuntu1604PackageNames {
+    return
+    _mergeDebianPackagesLists(
+        getPackageRegexps('include', qw(Ubuntu1604)),
+        _dropExcludedPackages(
+            getDebianPackageNames(),
+            getPackageRegexps('exclude', qw(Ubuntu1604)),
+        )
+    );
 }
 
 sub getDebianPackageNames {
     return
     _dropParentPackageReferences(
-        _dropUnwantedPackages(
+        _dropExcludedPackages(
             _extractPackageDependencies(
                 _pickNeededPackages(
                     _splitToPackages(
                         _slurpControlFile()
                     ),
-                    'koha-perldeps', 'koha-deps'
+                    qw(koha-perldeps koha-deps),
                 )
             ),
-            \@dislikedPackageRegexps,
+            getPackageRegexps('exclude', qw(Standalone)),
         )
     );
 }
@@ -33,7 +74,7 @@ sub getKohaSuomiDebianPackageNames {
     return 
     _mergeDebianPackagesLists(
         discoverKohaSuomiDebianPackages(),
-        getDebianPackageNames(),
+        getUbuntu1604PackageNames(),
     );
 }
 
@@ -85,7 +126,7 @@ sub _extractPackageDependencies {
     return \@deps;
 }
 
-sub _dropUnwantedPackages {
+sub _dropExcludedPackages {
     my ($packageNames, $unwanteds) = @_;
 
     foreach my $unwantedRegexp (@$unwanteds) {

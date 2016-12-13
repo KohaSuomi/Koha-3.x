@@ -16,7 +16,7 @@ subtest "Are the starting and ending results what we expect", sub {
 };
 
 subtest "Unwanted packages excluded", sub {
-    foreach my $unwantedPackageName (@{C4::KohaSuomi::DebianPackages::getDislikedPackageRegexps()}) {
+    foreach my $unwantedPackageName (@{C4::KohaSuomi::DebianPackages::getPackageRegexps('exclude', 'Standalone')}) {
         my $found = 0;
         foreach my $packName (@$packageNames) {
             $found = 1 if $packName =~ /^$unwantedPackageName$/i;
@@ -40,6 +40,27 @@ subtest "Drop package source references (or whatever these 'libtest-simple-perl|
         $found = 1 if $packName =~ /libtest-simple-perl\|perl-modules/i;
     }
     ok(not($found), "Source references dropped");
+};
+
+my $ubuntu1604Packages = C4::KohaSuomi::DebianPackages::getUbuntu1604PackageNames();
+subtest "Drop packages not available in Ubuntu16.04", sub {
+    foreach my $unwantedPackageName (@{C4::KohaSuomi::DebianPackages::getPackageRegexps('exclude', 'Ubuntu1604')}) {
+        my $found = 0;
+        foreach my $packName (@$ubuntu1604Packages) {
+            $found = 1 if $packName =~ /^$unwantedPackageName$/i;
+        }
+        ok(not($found), "$unwantedPackageName");
+    }
+};
+
+subtest "Include packages required in Ubuntu16.04", sub {
+    foreach my $wantedPackName (@{C4::KohaSuomi::DebianPackages::getPackageRegexps('include', 'Ubuntu1604')}) {
+        my $found = 0;
+        foreach my $packName (@$ubuntu1604Packages) {
+            $found = 1 if $packName =~ /^$wantedPackName$/i;
+        }
+        ok($found, "$wantedPackName");
+    }
 };
 
 
