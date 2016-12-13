@@ -3,9 +3,9 @@ package C4::KohaSuomi::DebianPackages;
 use Modern::Perl;
 
 my @dislikedPackageRegexps = (
-    'apache.*', 
+    'apache.*',
     'idzebra.*',
-    'mysql.*',  
+    'mysql.*',
     'memcached',
 );
 sub getDislikedPackageRegexps {
@@ -14,16 +14,18 @@ sub getDislikedPackageRegexps {
 
 sub getDebianPackageNames {
     return
-    _dropUnwantedPackages(
-        _extractPackageDependencies(
-            _pickNeededPackages(
-                _splitToPackages(
-                    _slurpControlFile()
-                ),
-                'koha-perldeps', 'koha-deps'
-            )
-        ),
-        \@dislikedPackageRegexps,
+    _dropParentPackageReferences(
+        _dropUnwantedPackages(
+            _extractPackageDependencies(
+                _pickNeededPackages(
+                    _splitToPackages(
+                        _slurpControlFile()
+                    ),
+                    'koha-perldeps', 'koha-deps'
+                )
+            ),
+            \@dislikedPackageRegexps,
+        )
     );
 }
 
@@ -95,6 +97,32 @@ sub _dropUnwantedPackages {
     return $packageNames;
 }
 
+=head2 _dropParentPackageReferences
+
+Drop the tail from strange dependency entries like this:
+    libtest-simple-perl|perl-modules
+to be like this:
+    libtest-simple-perl
+
+=cut
+
+sub _dropParentPackageReferences {
+    my ($packageNames) = @_;
+
+    my @packsAgain;
+    foreach my $packName (@$packageNames) {
+        #extract libtest-simple-perl|perl-module
+        if ($packName =~ /^\s*(.+)\s*(?=\|)/i) {
+            push(@packsAgain, $1);
+        }
+        #extract libtest-deep-perl
+        else {
+            push(@packsAgain, $packName);
+        }
+    }
+    return \@packsAgain;
+}
+
 sub _mergeDebianPackagesLists {
     my (@lists) = @_;
     my @list;
@@ -105,5 +133,4 @@ sub _mergeDebianPackagesLists {
 }
 
 return 1;
-
 

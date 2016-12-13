@@ -33,6 +33,15 @@ subtest "Drop package references to other virtual packages", sub {
     ok(not($found), "Virtual packages dropped");
 };
 
+subtest "Drop package source references (or whatever these 'libtest-simple-perl|perl-modules' are?)", sub {
+    my $found = 0;
+    foreach my $packName (@$packageNames) {
+        $found = 1 if $packName =~ /\|/i;
+        $found = 1 if $packName =~ /libtest-simple-perl\|perl-modules/i;
+    }
+    ok(not($found), "Source references dropped");
+};
+
 
 my $ksPackageNames = C4::KohaSuomi::DebianPackages::getKohaSuomiDebianPackageNames();
 subtest "KohaSuomi specific debian packages discovered", sub {
