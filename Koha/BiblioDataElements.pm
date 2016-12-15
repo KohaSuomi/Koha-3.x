@@ -191,7 +191,7 @@ sub GetLatestDataElementUpdateTime {
     my $rv = $sthLastModTime->fetchrow_hashref();
     my $lastModTime = ($rv && $rv->{last_mod_time}) ? $rv->{last_mod_time} : undef;
     print "Latest koha.biblio_data_elements updating time '".($lastModTime || '')."'\n" if $verbose > 0;
-    return $lastModTime if(not($lastModTime) || $lastModTime =~ /^0000-00-00/);
+    return undef if(not($lastModTime) || $lastModTime =~ /^0000-00-00/);
     my $dt = DateTime::Format::HTTP->parse_datetime($lastModTime);
     $dt->set_time_zone( C4::Context->tz() );
     return $dt;
@@ -215,7 +215,8 @@ sub _getBiblioitemsNeedingUpdate {
 
     print '#'.DateTime->now(time_zone => C4::Context->tz())->iso8601().'# Fetching biblioitems  #'."\n" if $verbose > 0;
 
-    my $lastModTime = GetLatestDataElementUpdateTime($verbose)->iso8601() || Koha::Exception::FeatureUnavailable->throw($cc[3]."():> You must do a complete rebuilding since none of the biblios have been indexed yet.");
+    my $lastModTime = GetLatestDataElementUpdateTime($verbose) || Koha::Exception::FeatureUnavailable->throw($cc[3]."():> You must do a complete rebuilding since none of the biblios have been indexed yet.");
+    $lastModTime = $lastModTime->iso8601();
 
     my $dbh = C4::Context->dbh();
     my $sth = $dbh->prepare("
@@ -251,9 +252,8 @@ sub verifyFeatureIsInUse {
     $verbose = 0 unless $verbose;
 
     my $now = DateTime->now(time_zone => C4::Context->tz());
-    my $lastUpdateTime = Koha::BiblioDataElements::GetLatestDataElementUpdateTime($verbose) || '1900-01-01 01:01:01';
-    my $lastUpdateTimeDt = DateTime::Format::HTTP->parse_datetime($lastUpdateTime);
-    my $difference = $now->subtract_datetime( $lastUpdateTimeDt );
+    my $lastUpdateTime = Koha::BiblioDataElements::GetLatestDataElementUpdateTime($verbose) || DateTime::Format::HTTP->parse_datetime('1900-01-01 01:01:01');
+    my $difference = $now->subtract_datetime( $lastUpdateTime );
     if ($difference->in_units( 'days' ) > 2) {
         my @cc = caller(0);
         Koha::Exception::FeatureUnavailable->throw(error => $cc[3]."():> koha.biblio_data_elements-table is stale. You must configure cronjob 'update_biblio_data_elements.pl' to run daily.");
