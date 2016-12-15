@@ -133,6 +133,7 @@ sub createStatistics {
 sub _processItemsDataRow {
     my ($self, $libraryGroup, $row) = @_;
     my $statCat = $self->getItypeToOKMCategory($row->{itype});
+    return undef if $statCat eq 'Electronic';
     unless ($statCat) {
         $self->log("Couldn't get the statistical category for this item:<br/> - biblionumber => ".$row->{biblionumber}."<br/> - itemnumber => ".$row->{itemnumber}."<br/> - itype => ".$row->{itype}."<br/>Using category 'Other'.");
         $statCat = 'Other';
@@ -230,6 +231,7 @@ sub _processItemsDataRow {
 sub _processIssuesDataRow {
     my ($self, $libraryGroup, $row) = @_;
     my $statCat = $self->getItypeToOKMCategory($row->{itype});
+    return undef if $statCat eq 'Electronic';
     unless ($statCat) {
         #Already logged in _processItemsDataRow()# $self->log("Couldn't get the statistical category for this item:<br/> - biblionumber => ".$row->{biblionumber}."<br/> - itemnumber => ".$row->{itemnumber}."<br/> - itype => ".$row->{itype}."<br/>Using category 'Other'.");
         $statCat = 'Other';
@@ -712,15 +714,20 @@ sub statisticsDiscards {
     my @cc = caller(0);
     print '    #'.DateTime->now()->iso8601()."# Starting ".$cc[3]." #\n" if $self->{verbose};
 
+    #Do not statistize these itemtypes as item discard:
+    my $excludedItemTypes = $self->getItemtypesByStatisticalCategories('Serials', 'Electronic');
     my $dbh = C4::Context->dbh();
     my $in_libraryGroupBranches = $libraryGroup->getBranchcodesINClause();
     my $limit = $self->getLimit();
-    my $sth = $dbh->prepare(
-               "SELECT count(*) FROM deleteditems
-                WHERE homebranch $in_libraryGroupBranches
-                  AND timestamp BETWEEN ? AND ?
-                  AND itype != 'SL' AND itype != 'AL'
-                  $limit;");
+    my $sql =  "SELECT count(*) FROM deleteditems ".
+               "WHERE homebranch $in_libraryGroupBranches ".
+               "  AND timestamp BETWEEN ? AND ? ".
+               "  AND itype NOT IN (".join(',', map {"'$_'"} @$excludedItemTypes).") ".
+#                 AND itype != 'SL' AND itype != 'AL'
+               "  $limit; ";
+
+    my $sth = $dbh->prepare($sql);
+
     $sth->execute( $self->{startDateISO}, $self->{endDateISO} );
     if ($sth->err) {
         Koha::Exception::DB->throw(error => $cc[3]."():> ".$sth->errstr);
@@ -1286,6 +1293,16 @@ sub loadConfiguration {
     }
 
     $self->_validateConfigurationAndPreconditions();
+    $self->_makeStatisticalCategoryToItemTypesMap();
+}
+
+sub getItemtypesByStatisticalCategories {
+    my ($self, @statCats) = @_;
+    my @itypes;
+    foreach my $sc (@statCats) {
+        push(@itypes, @{$self->{conf}->{statisticalCategoryToItemTypes}->{$sc}});
+    }
+    return \@itypes;
 }
 
 =head _validateConfigurationAndPreconditions
@@ -1324,16 +1341,25 @@ sub _validateConfigurationAndPreconditions {
                      "  - AV \n");
     }
 
-    ##Check that all itemtypes and statistical categories are mapped
     my @itypes = C4::ItemType->all();
+
+    ##Check that we haven't accidentally mapped any itemtypes that don't actually exist in our database
+    my %mappedItypes = map {$_ => 1} @statCatKeys; #Copy the itemtypes-as-keys
+
+    ##Check that all itemtypes and statistical categories are mapped
     my %statCategories = ( "Books" => 0, "SheetMusicAndScores" => 0,
                         "Recordings" => 0, "Videos" => 0, "CDROMs" => 0,
-                        "DVDsAndBluRays" => 0, "Other" => 0, "Serials" => 0);
+                        "DVDsAndBluRays" => 0, "Other" => 0, "Serials" => 0,
+                        "Electronic" => 0);
     foreach my $itype (@itypes) {
-        my $mapping = $self->getItypeToOKMCategory($itype->{itemtype});
+        my $it = $itype->{itemtype};
+        my $mapping = $self->getItypeToOKMCategory($it);
         unless ($mapping) { #Is itemtype mapped?
             my @cc = caller(0);
             Koha::Exception::BadSystemPreference->throw(error => $cc[3]."():> System preference 'OKM' has an unmapped itemtype '".$itype->{itemtype}."'. Put it under 'itemTypeToStatisticalCategory'.");
+        }
+        else {
+            delete $mappedItypes{$it};
         }
         if(exists($statCategories{$mapping})) {
             $statCategories{$mapping} = 1; #Mark this mapping as used.
@@ -1344,6 +1370,13 @@ sub _validateConfigurationAndPreconditions {
             Koha::Exception::BadSystemPreference->throw(error => $cc[3]."():> System preference 'OKM' has an unknown mapping '$mapping'. Allowed statistical categories under 'itemTypeToStatisticalCategory' are @statCatKeys");
         }
     }
+    #Do we have extra mapped item types?
+    if (scalar(keys(%mappedItypes))) {
+        my @cc = caller(0);
+        my @itypes = keys(%mappedItypes);
+        Koha::Exception::BadSystemPreference->throw(error => $cc[3]."():> System preference 'OKM' has an mapped itemtypes '@itypes' that don't exist in your database itemtypes-listing?");
+    }
+
     #Check that all statistical categories are mapped
     while (my ($k, $v) = each(%statCategories)) {
         unless ($v) {
@@ -1354,6 +1387,16 @@ sub _validateConfigurationAndPreconditions {
 
     ##Check that koha.biblio_data_elements -table is being updated regularly.
     Koha::BiblioDataElements::verifyFeatureIsInUse($self->{verbose});
+}
+
+sub _makeStatisticalCategoryToItemTypesMap {
+    my ($self) = @_;
+    my %statisticalCategoryToItemTypes;
+    while (my ($itype, $statCat) = each(%{$self->{conf}->{itemTypeToStatisticalCategory}})) {
+        $statisticalCategoryToItemTypes{$statCat} = [] unless $statisticalCategoryToItemTypes{$statCat};
+        push(@{$statisticalCategoryToItemTypes{$statCat}}, $itype);
+    }
+    $self->{conf}->{statisticalCategoryToItemTypes} = \%statisticalCategoryToItemTypes;
 }
 
 =head getItypeToOKMCategory
