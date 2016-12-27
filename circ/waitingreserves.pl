@@ -124,6 +124,7 @@ foreach my $num (@getreserves) {
     }
     $getreserv{'borrowername'}      = $getborrower->{'surname'};
     $getreserv{'borrowerfirstname'} = $getborrower->{'firstname'};
+    $getreserv{'borrowerothernames'} = $getborrower->{'othernames'};
     $getreserv{'borrowerphone'}     = $getborrower->{'phone'};
     if ( $getborrower->{'emailaddress'} ) {
         $getreserv{'borrowermail'}  = $getborrower->{'emailaddress'};

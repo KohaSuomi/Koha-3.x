@@ -43,6 +43,7 @@ Optional extra parameters:
     allbranches => 1 #Show reserves from all branches
 
 @RETURNS t::lib::Page::Circulation::Waitingreserves, ready for user actions!
+
 =cut
 
 sub new {
@@ -207,6 +208,8 @@ sub assertHoldRowsVisible {
         my $targetRow = $holdRows->{ $i };
         is($targetRow->{barcode}, $h->{barcode},
            "assertHoldRowsVisible: Row ".$i." barcodes '".$targetRow->{barcode}."' and '".$h->{barcode}."' match.");
+        ok($targetRow->{borrower}->get_text() =~ /$h->{borrower}->othernames/,
+           "assertHoldRowsVisible: Row ".$i." othername '".$h->{borrower}->othernames."' contained in ".$targetRow->{borrower}->get_text()."'.");
     }
 
     return $self;
