@@ -79,6 +79,7 @@ Tools:
                 <li>'DVDsAndBluRays'</li>
                 <li>'Other'</li>
                 <li>'Serials'</li>
+                <li>'Celia'</li>
             </ul></p>"
         -  "<p>Material is considered Juvenile material if it is in one of the shelving locations defined by the 'juvenileShelvingLocations'-parameter.</p>"
         -  "<p>Execution of the OKM report generator can be blocked by the 'blockStatisticsGeneration'-flag, by setting it to 1. This is mainly useful to prevent people from running the statistics module before first configuring it.</p>"
