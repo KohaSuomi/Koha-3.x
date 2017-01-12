@@ -1350,7 +1350,7 @@ sub _validateConfigurationAndPreconditions {
     my %statCategories = ( "Books" => 0, "SheetMusicAndScores" => 0,
                         "Recordings" => 0, "Videos" => 0, "CDROMs" => 0,
                         "DVDsAndBluRays" => 0, "Other" => 0, "Serials" => 0,
-                        "Electronic" => 0);
+                        "Electronic" => 0, "Celia" => 0);
     foreach my $itype (@itypes) {
         my $it = $itype->{itemtype};
         my $mapping = $self->getItypeToOKMCategory($it);

@@ -49,6 +49,7 @@ sub new {
     $self->{collectionVideos} = 0;
     $self->{collectionCDROMs} = 0;
     $self->{collectionDVDsAndBluRays} = 0;
+    $self->{collectionCelia} = 0;
     $self->{collectionOther} = 0;
     $self->{acquisitions} = 0;
     $self->{acquisitionsBooksTotal} = 0;
@@ -65,6 +66,7 @@ sub new {
     $self->{acquisitionsVideos} = 0;
     $self->{acquisitionsCDROMs} = 0;
     $self->{acquisitionsDVDsAndBluRays} = 0;
+    $self->{acquisitionsCelia} = 0;
     $self->{acquisitionsOther} = 0;
     $self->{issues} = 0;
     $self->{issuesBooksTotal} = 0;
@@ -81,6 +83,7 @@ sub new {
     $self->{issuesVideos} = 0;
     $self->{issuesCDROMs} = 0;
     $self->{issuesDVDsAndBluRays} = 0;
+    $self->{issuesCelia} = 0;
     $self->{issuesOther} = 0;
     $self->{newspapers} = 0;
     $self->{magazines} = 0;
@@ -111,6 +114,7 @@ sub new {
         'collectionVideos',
         'collectionCDROMs',
         'collectionDVDsAndBluRays',
+        'collectionCelia',
         'collectionOther',
         'acquisitions',
         'acquisitionsBooksTotal',
@@ -127,6 +131,7 @@ sub new {
         'acquisitionsVideos',
         'acquisitionsCDROMs',
         'acquisitionsDVDsAndBluRays',
+        'acquisitionsCelia',
         'acquisitionsOther',
         'issues',
         'issuesBooksTotal',
@@ -143,6 +148,7 @@ sub new {
         'issuesVideos',
         'issuesCDROMs',
         'issuesDVDsAndBluRays',
+        'issuesCelia',
         'issuesOther',
         'newspapers',
         'magazines',
