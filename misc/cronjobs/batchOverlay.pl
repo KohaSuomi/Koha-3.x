@@ -27,6 +27,7 @@ my $rtfm = 'false';
 my $chunk = 500;
 my $chunks = 1;
 my $monthsPast = undef;
+my $biblionumbers;
 
 GetOptions(
     'h|help'                      => \$help,
@@ -35,6 +36,7 @@ GetOptions(
     'chunk:i'                     => \$chunk,
     'c|chunks:i'                  => \$chunks,
     'm:i'                         => \$monthsPast,
+    'b|biblionumber:s@'           => \$biblionumbers,
 );
 
 my $usage = <<USAGE;
@@ -76,9 +78,15 @@ It is advised to test first with the syspref's "dry-run"-flag on.
                         catalogued records? Defaults to finding all lowly
                         catalogued records.
 
+  -b --biblionumber     Repeatable list of biblionumbers. If you want to
+                        batchOverlay only the specific biblios for testing
+                        purposes, use this.
+
 EXAMPLE
 
     batchOverlay.pl -m 6 -c 1 --chunk 500 -v 4
+
+    batchOverlay.pl -b 545433 -b 406554
 
 USAGE
 
@@ -96,4 +104,13 @@ C4::Context->setCommandlineEnvironment();
 Koha::Logger->setConsoleVerbosity($verbose);
 
 my $batchOverlayer = C4::BatchOverlay->new();
-$batchOverlayer->batchOverlay({chunk => $chunk, chunks => $chunks, monthsPast => $monthsPast});
+
+if ($biblionumbers) {
+    for (my $i=0 ; $i<@$biblionumbers ; $i++) {
+        $biblionumbers->[$i] = 'biblionumber='.$biblionumbers->[$i];
+    }
+    $batchOverlayer->overlay($biblionumbers, undef);
+}
+else {
+    $batchOverlayer->batchOverlay({chunk => $chunk, chunks => $chunks, monthsPast => $monthsPast});
+}
