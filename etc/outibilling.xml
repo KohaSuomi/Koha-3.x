@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<config>
+  <ignore_borrowercategories>
+    <category>EITILASTO</category>
+    <category>VIRKAILIJA</category>
+    <category>AUTOM</category>
+  </ignore_borrowercategories>
+  <notforloan>
+    <nonbillable>8</nonbillable>
+    <billed>6</billed>
+    <updateitem>no</updateitem>
+  </notforloan>
+  <branchcategories>
+    <OULULA>
+      <targetdir>/home/koha/tmp/outibilling/testit/proe</targetdir>
+      <encoding>WINDOWS-1252</encoding>
+      <output>proe</output>
+    </OULULA>
+    <LIMINKALA>
+      <targetdir>/home/koha/tmp/outibilling/testit/lastu</targetdir>
+      <encoding>utf8</encoding>
+      <output>lastu</output>
+    </LIMINKALA>
+  </branchcategories>
+</config>
