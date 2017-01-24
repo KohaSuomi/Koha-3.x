@@ -98,8 +98,8 @@ sub _setUpTestContext {
     my ($restTest, $driver) = @_;
     my $testContext = $restTest->get_testContext();
 
-    my $ruleManager = C4::BatchOverlay::RuleManager->new();
     t::CataloguingCenter::ContextSysprefs::createBatchOverlayRules($testContext);
+    my $ruleManager = C4::BatchOverlay::RuleManager->new();
     my $records = t::db_dependent::Biblio::Diff::localRecords::create($testContext);
     my @recKeys = sort(keys(%$records));
 
