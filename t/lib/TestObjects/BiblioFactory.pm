@@ -121,12 +121,12 @@ sub handleMARCXML {
     my $existingBiblio = $class->existingObjectFound($object);
 
     unless ($existingBiblio) {
-        ($biblionumber, $biblioitemnumber) = C4::Biblio::AddBiblio($record,'');
+        ($biblionumber, $biblioitemnumber) = C4::Biblio::AddBiblio($record, $object->{frameworkcode} || '', undef);
         $record->{biblionumber} = $biblionumber;
         $record->{biblioitemnumber} = $biblioitemnumber;
     }
     else {
-        ($record, $biblionumber, $biblioitemnumber) = C4::Biblio::UpsertBiblio($record, '');
+        ($record, $biblionumber, $biblioitemnumber) = C4::Biblio::UpsertBiblio($record, $object->{frameworkcode} || '', undef);
         $record->{biblionumber} = $biblionumber;
         $record->{biblioitemnumber} = $biblioitemnumber;
     }
