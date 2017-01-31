@@ -8,18 +8,23 @@
   <notforloan>
     <nonbillable>8</nonbillable>
     <billed>6</billed>
-    <updateitem>no</updateitem>
+    <updateitem>yes</updateitem>
   </notforloan>
   <branchcategories>
     <OULULA>
       <targetdir>/home/koha/tmp/outibilling/testit/proe</targetdir>
+      <debarborrower>yes</debarborrower>
       <encoding>WINDOWS-1252</encoding>
-      <output>proe</output>
+      <output>ProE</output>
     </OULULA>
     <LIMINKALA>
-      <targetdir>/home/koha/tmp/outibilling/testit/lastu</targetdir>
+      <template>/home/koha/koha-dev/etc/lastu/templates/LIMINKALA-MODEL.tt</template>
+      <targetdir>/home/koha/tmp/outibilling/testit/lastu/LIMINKALA</targetdir>
+      <invoicedue>14</invoicedue>
+      <debarborrower>yes</debarborrower>
       <encoding>utf8</encoding>
       <output>lastu</output>
+      <refno_increment>0</refno_increment>
     </LIMINKALA>
   </branchcategories>
 </config>

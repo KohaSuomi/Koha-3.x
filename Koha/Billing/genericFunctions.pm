@@ -18,12 +18,18 @@
 use utf8;
 use strict;
 use warnings;
+use DateTime;
 
 sub getdate {
   my ($sec, $min, $hour, $dom, $month, $year, @discard)=localtime;
   undef @discard;
   $year+=1900;
   $month+=1;
+  $sec=sprintf("%02d", $sec);
+  $min=sprintf("%02d", $min);
+  $hour=sprintf("%02d", $hour);
+  $dom=sprintf("%02d", $dom);
+  $month=sprintf("%02d", $month);
   return $sec, $min, $hour, $dom, $month, $year;
 }
 
@@ -68,6 +74,40 @@ sub writefile {
     }
     close OUTFILE;
   }
+}
+
+sub refchecksum {
+  # Calculate checksum for reference number
+  my $ref=reverse(shift);
+  my $checkSum=0;
+  my @weights=(7,3,1);
+  my $i=0;
+
+  for my $refNumber (split //, $ref) {
+      $i=0 if $i==@weights;
+      $checkSum=$checkSum+($refNumber*$weights[$i]);
+      $i++;
+  }
+
+  my $nextTen=$checkSum+9;
+  $nextTen=$nextTen-($nextTen%10);
+  return $nextTen-$checkSum;
+}
+
+sub refnumber {
+  # Get the next available reference number for the branchgroup from
+  # the sequences-table and concatenate the checksum
+  my $branchcategory=shift;
+  my $refno=getrefsequence($branchcategory, getrefno_increment($branchcategory));
+  return $refno . refchecksum($refno);
+}
+
+sub invoicedue {
+  # Return due date for created invoice
+  my $due=getinvoicedue(shift);
+  my $currentdate=DateTime->now();
+  my $duedate=$currentdate->add(days => $due);
+  return split('-', $duedate->ymd('-'), 3);
 }
 
 1;

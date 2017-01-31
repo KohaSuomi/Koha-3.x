@@ -102,9 +102,15 @@ sub ProE {
       # will just be skipped, two lines is enough ;P)
       push @writefile, $padded_borrowernumber . '3' . substr($itemline, 62, 124) . "\r\n" if length($itemline) > 62; 
   
-      # Add guarantee if not the same as borrower
+      # Add guarantee if not the same as borrower + block patron
+      my (@guaranteedata $guaranteeline);
       if (defined $guarantee{$itemnumber}) {
-        push @writefile, $padded_borrowernumber . '3LAINAAJA: ' . substr($guarantee{$itemnumber}, 0, 62) . "\r\n";
+        @guaranteedata=getborrowerdata('borrowernumber', $guarantee{$itemnumber});
+        $guaranteeline=$guaranteedata[6] . ' ' $guaranteedata[5] . ' (' . $guaranteedata[4] . ')';
+        push @writefile, $padded_borrowernumber . '3LAINAAJA: ' . substr($guaranteeline), 0, 62) . "\r\n";
+        debar $branchcategory, $guarantee{$itemnumber}, 'LASKUNUMERO?', $isodate;
+      else
+        debar $branchcategory, $borrowernumber, 'LASKUNUMERO?', $isodate;
       }
   
       push @writefile, $blank_line;
@@ -116,6 +122,8 @@ sub ProE {
     push @writefile, $padded_borrowernumber . "3LASKUA EI TARVITSE MAKSAA, JOS AINEISTO PALAUTETAAN.\r\n";
     push @writefile, $padded_borrowernumber . "3Veroton vahingonkorvaus.\r\n"
   }
-  return @writefile;
+
+  writefile(@writefile);
+  return 1;
 }
 1;

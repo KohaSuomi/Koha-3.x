@@ -58,6 +58,9 @@ sub getbillableitems {
   my (@items, @billable);
   push @billable, $items[0] while (@items=$sth_issues->fetchrow_array()); 
   return @billable;
+
+  # How about just, would this work?
+  #return $sth_issues->fetchrow_array();
 }
 
 sub getdue {
@@ -105,12 +108,12 @@ sub getssnkey {
 
 sub getitemdata {
   # Get and return item information with itemnumber
-  my $sth_item=$dbh->prepare("SELECT biblionumber, barcode, price, itype, holdingbranch
+  my $sth_item=$dbh->prepare("SELECT biblionumber, barcode, price, itype, holdingbranch, enumchron
                               FROM items
                               WHERE itemnumber=?;");
 
   $sth_item->execute(shift);
-  my ($biblionumber, $barcode, $price, $itype, $holdingbranch)=$sth_item->fetchrow_array();
+  my ($biblionumber, $barcode, $price, $itype, $holdingbranch, $enumchron)=$sth_item->fetchrow_array();
   $price="0.00" unless defined $price;
 
   my $sth_biblio=$dbh->prepare("SELECT author,title
@@ -120,6 +123,7 @@ sub getitemdata {
   $sth_biblio->execute($biblionumber);
   my ($author, $title)=$sth_biblio->fetchrow_array();
   $author='' unless defined $author;
+  $title=$title . ' (' . $enumchron . ')' if defined $enumchron; # Append serial number information to title
 
   return ($barcode, $price, $itype, $holdingbranch, $author, $title); 
 }
@@ -153,6 +157,83 @@ sub updatenotforloan {
     $dbh->do("UPDATE items
               SET notforloan=$billed
               WHERE itemnumber=$itemnumber;");
+  }
+}
+
+sub getrefsequence {
+  # Get the next available reference number for branchcategory and increase
+  # the value in db by $increment
+  my $branchcategory=shift;
+  my $increment=shift;
+
+  my $sth_refnumber=$dbh->prepare('SELECT ' . $branchcategory . ' FROM sequences;');
+
+  $sth_refnumber->execute() or die "No sequence for " . $branchcategory;
+  my @refno=$sth_refnumber->fetchrow_array();
+
+  $dbh->do('UPDATE sequences SET '. $branchcategory . ' = ' . $branchcategory . ' + ' . $increment);
+
+  return $refno[0];
+}
+
+sub getinvoicenumber {
+  # Get the next available invoice number and increase it by one
+  my $sth_invoicenumber=$dbh->prepare('SELECT invoicenumber FROM sequences;');
+
+  $sth_invoicenumber->execute() or die "No sequence for invoicenumber";
+  my @invoiceno=$sth_invoicenumber->fetchrow_array();
+
+  $dbh->do('UPDATE sequences SET invoicenumber = invoicenumber + 1');
+
+  return $invoiceno[0];
+}
+
+sub debar {
+  # Set borrower debarment if defined
+  my $branchcategory=shift;
+  my $borrowernumber=shift;
+  my $invoicenumber=shift;
+  my $invoicedate=shift;
+
+  # Return if we're not debarring borrowers for this branchcategory
+  return if getdebarborrower($branchcategory) ne 'yes';
+
+  $invoicenumber='' if ! defined $invoicenumber;
+
+  # Replace branchcategory code with the real category name (looks nicer in the SC)
+  my $sth_branchcategory=$dbh->prepare("SELECT categoryname
+                                        FROM branchcategories
+                                        WHERE categorycode=?;");
+
+  $sth_branchcategory->execute($branchcategory);
+  my @branchcategoryname=$sth_branchcategory->fetchrow_array();
+  $branchcategory=$branchcategoryname[0];
+
+  # Have we got a debarment for this patron already? Avoid multiples
+  # It would be tempting to do this with $invoicenumber, but ProE doesn't have that, so
+  # we just do it with borrowernumber+comment+date.
+
+  # Comment includes $branchcategory so that every individual debarment gets set
+  # in cases where several billing groups invoice the same borrower.
+
+  my $sth_debar=$dbh->prepare("SELECT borrower_debarment_id
+                               FROM borrower_debarments
+                               WHERE borrowernumber=?
+                               AND comment LIKE \'$branchcategory%\'
+                               AND substr(created, 1, 10)=substr(now(), 1, 10);"); 
+
+  $sth_debar->execute($borrowernumber);
+
+  # Debar only if there was no prior debarment
+  if ($sth_debar->fetchrow_array() == 0) {
+     $sth_debar=$dbh->do("UPDATE borrowers
+                          SET debarred='9999-12-31'
+                          WHERE borrowernumber='" . $borrowernumber . "';");
+
+     $sth_debar=$dbh->do("INSERT INTO borrower_debarments (borrowernumber, type, comment)
+                          VALUES (\'$borrowernumber\',
+                                  \'SUSPENSION\',
+                                  \'$branchcategory $invoicedate / $invoicenumber\');");
   }
 }
 

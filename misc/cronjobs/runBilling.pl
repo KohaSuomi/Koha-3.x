@@ -41,6 +41,7 @@ die "Required parameter missing, you need overdue and billing group, for example
 
 logger "Getting items";
 my @billable=getbillableitems($overdue, $branchcategory);
+logger @billable . " items will be billed";
 
 logger "Finding borrowers and guarantors";
 our %bills;
@@ -52,37 +53,32 @@ foreach my $item (@billable) {
   my ( $borrowernumber,
        $borrowercategory,
        $guarantorid,
-       $relationship,
-       $cardnumber,
-       $firstname,
-       $surname,
        @discard ) = getborrowerdata('itemnumber', $item);
 
-  $cardnumber='' unless defined $cardnumber;
-  
   # There really shouldn't be patrons with guarantorid 0 in the database, but
   # for some reason there are, we'll just skip them 
   if (defined $guarantorid and $guarantorid != 0) {
-    $guarantee{$item}=$surname . ' ' . $firstname . ' (' . $cardnumber . ')';
-    ( $borrowernumber, @discard ) = getborrowerdata('borrowernumber', $guarantorid);
+    $guarantee{$item}=$borrowernumber;
+    ($borrowernumber, $borrowercategory, @discard) = getborrowerdata('borrowernumber', $guarantorid);
   }
 
-  # If the patron or the guarantor are in ignorable categories, don't bill the items
-  # Otherwise push items in a hash to collect all the billable items by patrons 
+  if (! defined $borrowernumber) {
+    logger "No borrower for item $item (possibly deleted?), skipping";
+    next;
+  }
+
+  # If the borrower to be billed is in ignorable category, don't bill the items
+  # Otherwise push items in a hash to collect all the billable items 
   next unless billable_borrowercategory($borrowercategory);
   push @{$bills{"$borrowernumber"}}, $item;
 }
 
 # Format and write, we choose output filter based on the setting in the config file
-logger "Creating bills";
-my @writefile;
+logger "Creating invoices";
 {
   no strict 'refs';
   my $output=output($branchcategory);
-  @writefile=&$output($branchcategory);
+  &$output($branchcategory);
 }
-
-logger "Writing bills to a file";
-writefile(@writefile);
 
 logger "Done";

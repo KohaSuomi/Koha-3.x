@@ -57,6 +57,12 @@ sub targetdir {
   return $config->{'branchcategories'}->{$branchcategory}->{'targetdir'};
 }
 
+sub template {
+  # Return the name and location of the template for the branchcategory 
+  my $branchcategory=shift;
+  return $config->{'branchcategories'}->{$branchcategory}->{'template'};
+}
+
 sub encoding {
   # Return the set character encoding for the bills
   my $branchcategory=shift;
@@ -91,4 +97,23 @@ sub getfindssnconfig {
 sub ssninterface {
   return C4::Context->config('ssnProvider')->{'interface'};
 }
+
+sub getrefno_increment {
+  # Get increment value for reference numbers
+  my $branchcategory=shift;
+  return $config->{'branchcategories'}->{$branchcategory}->{'refno_increment'};
+}
+
+sub getinvoicedue {
+  # Get due date for created invoices
+  my $branchcategory=shift;
+  return $config->{'branchcategories'}->{$branchcategory}->{'invoicedue'};
+}
+
+sub getdebarborrower {
+  my $branchcategory=shift;
+  return $config->{'branchcategories'}->{$branchcategory}->{'debarborrower'};
+}
+
 1;
+
