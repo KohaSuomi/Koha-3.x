@@ -323,7 +323,7 @@ sub createBiblioItem{
         $data->{'place'} = $copyDetail->getPlace();
         $data->{'url'} = '';
         
-        my @paramsToValidate = ('biblio', 'productform', 'publishername', 'yearofpublication', 'timestamp', 'marcxml', 'notes');
+        my @paramsToValidate = ('biblio', 'productform', 'publishername', 'timestamp', 'marcxml', 'notes');
         my @isbn = ('isbn');
         my @ean = ('ean');
         my @identifierParams = ('publishercode', 'editionresponsibility'); 
@@ -333,7 +333,6 @@ sub createBiblioItem{
             my $biblioItem  = new Koha::BiblioItem;
             $biblioItem->set({'biblionumber', $data->{'biblio'}});
             $biblioItem->set({'itemtype', $data->{'productform'}});
-            $biblioItem->set({'publicationyear', $data->{'yearofpublication'}});
             $biblioItem->set({'timestamp', $data->{'timestamp'}});
             $biblioItem->set({'marcxml', $data->{'marcxml'}});
             $biblioItem->set({'notes', $data->{'notes'}});
@@ -345,6 +344,10 @@ sub createBiblioItem{
 
             if(defined $data->{'ean'} && $data->{'ean'} ne ''){
                 $biblioItem->set({'ean', $data->{'ean'}});
+            }
+
+            if(defined $data->{'yearofpublication'} && $data->{'yearofpublication'} ne ''){
+                $biblioItem->set({'publicationyear', $data->{'yearofpublication'}});
             }
 
             $biblioItem->set({'publishercode', $data->{'publishername'}});

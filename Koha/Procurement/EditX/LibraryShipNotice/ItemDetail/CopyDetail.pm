@@ -132,6 +132,11 @@ sub getYearOfPublication {
     if($marcRecord){
         $yearOfPublication = $marcRecord->subfield('260','c');
     }
+    if(!$yearOfPublication || $yearOfPublication eq ''){
+        my $item = $self->getItemDetail();
+        my $xmlData = $item->getXmlData();
+        $yearOfPublication = $xmlData->find('ItemDescription/YearOfPublication')->string_value;
+    }
     if(!$yearOfPublication){
        $yearOfPublication = '';
     }
