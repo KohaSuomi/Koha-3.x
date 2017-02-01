@@ -1,6 +1,6 @@
 #!/bin/perl
-# Outi Billing Version 161124 - Written by Pasi Korkalo
-# Copyright (C)2016 Koha-Suomi Oy
+# Outi Billing Version 170201 - Written by Pasi Korkalo
+# Copyright (C)2016-2017 Koha-Suomi Oy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

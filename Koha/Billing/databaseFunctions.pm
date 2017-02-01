@@ -1,6 +1,6 @@
 #!/usr/bin/perl
-# Outi Billing Version 161124 - Written by Pasi Korkalo 
-# Copyright (C)2016 Koha-Suomi Oy
+# Outi Billing Version 170201 - Written by Pasi Korkalo 
+# Copyright (C)2016-2017 Koha-Suomi Oy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -225,7 +225,8 @@ sub debar {
   $sth_debar->execute($borrowernumber);
 
   # Debar only if there was no prior debarment
-  if ($sth_debar->fetchrow_array() == 0) {
+  my @debarred=$sth_debar->fetchrow_array();
+  if (! defined @debarred or @debarred == 0) {
      $sth_debar=$dbh->do("UPDATE borrowers
                           SET debarred='9999-12-31'
                           WHERE borrowernumber='" . $borrowernumber . "';");

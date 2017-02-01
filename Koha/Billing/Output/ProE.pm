@@ -1,6 +1,6 @@
 #!/usr/bin/perl
-# Outi Billing Version 161124 - Written by Pasi Korkalo 
-# Copyright (C)2016 Koha-Suomi Oy
+# Outi Billing Version 170201 - Written by Pasi Korkalo 
+# Copyright (C)2016-2017 Koha-Suomi Oy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,8 +25,11 @@ our %guarantee;
 sub ProE {
   my $branchcategory=shift;
   my @writefile;
+  my ($sec, $min, $hour, $dom, $month, $year)=getdate;
+  my $isodate=$year. '-' . $month . '-' . $dom;
+
   push @writefile, $branchcategory;
-  
+
   foreach my $borrower (keys %bills) {
     
     my ( $borrowernumber,
@@ -103,13 +106,13 @@ sub ProE {
       push @writefile, $padded_borrowernumber . '3' . substr($itemline, 62, 124) . "\r\n" if length($itemline) > 62; 
   
       # Add guarantee if not the same as borrower + block patron
-      my (@guaranteedata $guaranteeline);
+      my (@guaranteedata, $guaranteeline);
       if (defined $guarantee{$itemnumber}) {
         @guaranteedata=getborrowerdata('borrowernumber', $guarantee{$itemnumber});
-        $guaranteeline=$guaranteedata[6] . ' ' $guaranteedata[5] . ' (' . $guaranteedata[4] . ')';
-        push @writefile, $padded_borrowernumber . '3LAINAAJA: ' . substr($guaranteeline), 0, 62) . "\r\n";
+        $guaranteeline=$guaranteedata[6] . ' ' . $guaranteedata[5] . ' (' . $guaranteedata[4] . ')';
+        push @writefile, $padded_borrowernumber . '3LAINAAJA: ' . substr($guaranteeline, 0, 62) . "\r\n";
         debar $branchcategory, $guarantee{$itemnumber}, 'LASKUNUMERO?', $isodate;
-      else
+      } else {
         debar $branchcategory, $borrowernumber, 'LASKUNUMERO?', $isodate;
       }
   

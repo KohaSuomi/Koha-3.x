@@ -1,6 +1,6 @@
 #!/usr/bin/perl
-# OUTI Billing Version 161124 - Written by Pasi Korkalo
-# Copyright (C)2016 Koha-Suomi Oy
+# OUTI Billing Version 170201 - Written by Pasi Korkalo
+# Copyright (C)2016-2017 Koha-Suomi Oy
 # 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,17 +19,17 @@ use utf8;
 use strict;
 use warnings;
 
-use configReader;
-use genericFunctions;
-use databaseFunctions;
+use Koha::Billing::configReader;
+use Koha::Billing::genericFunctions;
+use Koha::Billing::databaseFunctions;
 
-use Output::ProE;
-use Output::plaintext;
-use Output::lastu;
+use Koha::Billing::Output::ProE;
+use Koha::Billing::Output::plaintext;
+use Koha::Billing::Output::lastu;
 
-use SSN::getSSN;
-use SSN::directDB;
-use SSN::findSSN;
+use Koha::Billing::SSN::getSSN;
+use Koha::Billing::SSN::directDB;
+use Koha::Billing::SSN::findSSN;
 
 binmode STDOUT, ":utf8";
 
