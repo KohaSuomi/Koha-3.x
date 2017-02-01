@@ -356,9 +356,9 @@
             </xsl:call-template>
         </xsl:if>
 
-        <xsl:if test="marc:datafield[@tag=260]">
+        <xsl:if test="marc:datafield[(@tag=260 or (@tag=264 and @ind2='1'))]">
         <span class="results_summary publisher"><span class="label">Publisher: </span>
-            <xsl:for-each select="marc:datafield[@tag=260]">
+            <xsl:for-each select="marc:datafield[(@tag=260 or (@tag=264 and @ind2='1'))]">
                 <span property="publisher" typeof="Organization">
                 <xsl:if test="marc:subfield[@code='a']">
                     <span property="location">

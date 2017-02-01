@@ -823,7 +823,7 @@
       </xsl:call-template>
     </xsl:if>
 
-    <xsl:if test="marc:datafield[(@tag=260 or @tag=942 or @tag=084 or @tag=020 or @tag=022)]">
+    <xsl:if test="marc:datafield[(@tag=260 or (@tag=264 and @ind2='1') or @tag=942 or @tag=084 or @tag=020 or @tag=022)]">
         <span class="results_summary">
         <xsl:if test="marc:datafield[@tag=084]/marc:subfield[@code='a']">
           <xsl:for-each select="marc:datafield[@tag=084]">
@@ -852,14 +852,14 @@
               <xsl:value-of select="marc:datafield[@tag=942]/marc:subfield[@code='c']"/>
             </xsl:with-param>
           </xsl:call-template>
-          <xsl:if test="marc:datafield[@tag=260]">
+          <xsl:if test="marc:datafield[(@tag=260 or (@tag=264 and @ind2='1'))]">
             <xsl:text>, </xsl:text>
           </xsl:if>
         </xsl:if>
         <!--<span class="label">Julkaisutiedot: </span>-->
         <xsl:call-template name="chopPunctuation">
           <xsl:with-param name="chopString">
-            <xsl:value-of select="marc:datafield[@tag=260]/marc:subfield[@code='c']"/>
+            <xsl:value-of select="marc:datafield[(@tag=260 or (@tag=264 and @ind2='1'))]/marc:subfield[@code='c']"/>
           </xsl:with-param>
         </xsl:call-template>
         <xsl:if test="marc:datafield[@tag=250]/marc:subfield[@code='a']">
@@ -890,7 +890,7 @@
         </xsl:if>
 
         <!--
- <xsl:for-each select="marc:datafield[@tag=260]">
+ <xsl:for-each select="marc:datafield[(@tag=260 or (@tag=264 and @ind2='1'))]">
  <xsl:if test="marc:subfield[@code='c']">
  <xsl:call-template name="subfieldSelect">
  <xsl:with-param name="codes">c</xsl:with-param>
