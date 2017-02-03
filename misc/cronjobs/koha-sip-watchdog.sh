@@ -211,8 +211,8 @@ for sipserver in $(ls ${KOHA_CONF%/koha-conf.xml}/SIPconfig/*.xml); do
 
 done
 
-#Exit with error code if errors found
-test -z errorsFound && exit 0
+# Exit with error code if errors found
+test -n "$errorsFound" && exit 1
 
-#All went fine and dandy!
-exit 1
+# All went fine and dandy!
+exit 0
