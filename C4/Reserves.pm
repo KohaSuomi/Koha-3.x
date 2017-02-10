@@ -22,6 +22,7 @@ package C4::Reserves;
 
 
 use strict;
+use utf8;
 #use warnings; FIXME - Bug 2505
 use C4::Context;
 use C4::Biblio;
@@ -577,7 +578,7 @@ sub CanItemBeReserved{
 
     ##HACKMAN HERE! certain Items cannot be put on hold!
     if ($item->{homebranch} eq 'JOE_LAKO' || $item->{homebranch} eq 'JOE_LASI' ||
-        $item->{itype} eq 'EK') {
+        $item->{itype} eq 'EK' || $item->{itype} eq 'EÄ') {
         return (0);
     }
     return 0 if ($item->{location} eq 'OHE'); # Oheislukemistot eivät ole varattavissa
