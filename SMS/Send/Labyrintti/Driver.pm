@@ -30,6 +30,7 @@ use C4::Context;
 use Encode;
 use Koha::Exception::ConnectionFailed;
 use Koha::Exception::SMSDeliveryFailure;
+use Koha::Hdiacritic;
 
 use vars qw{$VERSION @ISA};
 BEGIN {
@@ -115,8 +116,6 @@ sub send_sms {
         'user'      => $self->{_login},
         'password'  => $self->{_password},
         'dests'     => $recipientNumber,
-        'text'      => uri_escape_utf8($message),
-        'unicode'   => 'yes',
     };
 
     # check if we need to use unicode
@@ -126,11 +125,13 @@ sub send_sms {
 
     if ($message ne $gsm0388 and C4::Context->config('smsProviders')->{'labyrintti'}->{'Unicode'} eq "yes"){
         $parameters->{'unicode'} = 'yes';
+        $parameters->{'text'} = uri_escape_utf8($message);
         C4::Letters::UpdateQueuedMessage({
                message_id => $params->{_message_id},
                metadata   => 'UTF-16',
         });
     } else {
+        $parameters->{'text'} = uri_escape(hdiacritic($message));
         $parameters->{'unicode'} = 'no';
     }
 
