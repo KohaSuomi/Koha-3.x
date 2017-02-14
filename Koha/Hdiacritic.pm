@@ -1,6 +1,6 @@
 use utf8;
 use strict;
-use Text::Undiacritic qw(undiacritic);
+use Text::Unaccent 'unac_string';
 
 sub hdiacritic {
   my $char;
@@ -19,7 +19,7 @@ sub hdiacritic {
       $char='Ð'  if $char eq 'Đ'; # This is not the same as above, so don't remove either one!
       $char='\'' if $char eq 'ʻ';
 
-      $char=undiacritic($char) if "$oldchar" eq "$char";
+      $char=unac_string('utf-8', $char) if "$oldchar" eq "$char";
     }
     $retstring=$retstring . $char;
   }
