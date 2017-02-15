@@ -323,12 +323,13 @@ sub createBiblioItem{
         $data->{'place'} = $copyDetail->getPlace();
         $data->{'url'} = '';
         
-        my @paramsToValidate = ('biblio', 'productform', 'publishername', 'timestamp', 'marcxml', 'notes');
+        my @paramsToValidate = ('biblio', 'productform', 'timestamp', 'marcxml', 'notes');
         my @isbn = ('isbn');
         my @ean = ('ean');
         my @identifierParams = ('publishercode', 'editionresponsibility'); 
-        if($self->validate({'params', \@paramsToValidate , 'data', $data }) && 
-          ($self->validate({'params', \@isbn , 'data', $data }) || $self->validate({'params', \@ean , 'data', $data }) || $self->validate({'params', \@identifierParams , 'data', $data }) ) ){
+        if($self->validate({'params', \@paramsToValidate , 'data', $data }) 
+            #&& ($self->validate({'params', \@isbn , 'data', $data }) || $self->validate({'params', \@ean , 'data', $data }) || $self->validate({'params', \@identifierParams , 'data', $data }) ) 
+        ){
           
             my $biblioItem  = new Koha::BiblioItem;
             $biblioItem->set({'biblionumber', $data->{'biblio'}});

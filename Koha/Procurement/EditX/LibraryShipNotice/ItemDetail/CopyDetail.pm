@@ -86,23 +86,27 @@ sub getMarcData{
     my ($marcXml, $marcXmlLiteral, $marcXmlString, $record, $parser);
     if(!$self->getMarcRecord()){
         my $query = $self->getMarcXmlQuery();
-        $marcXml = $documentXmlObject->findnodes($query, $self->getMessages()->get_node(1));
-        $marcXml = $marcXml->get_node(1);
-        if($marcXml->hasChildNodes){
-           $marcXml = $marcXml->firstChild;
-        }
-        $marcXmlLiteral = $marcXml->to_literal;
-        $parser = eval { XML::LibXML->load_xml('string' => $marcXmlLiteral) };
-        if($parser){
-            $marcXmlString = $parser->toString;
-        }   
-        else{
-            $marcXmlString = $marcXml->toString;
-        }   
-        my $xmlString = $self->getMarcHelper->normalizeXmlNamespace($marcXml, $marcXmlString);
-        $record = $self->getMarcHelper()->createRecord($xmlString);
-        if($record){
-            $self->setMarcRecord($record);
+        if($self->getMessages() && $self->getMessages()->get_node(1)){
+            $marcXml = $documentXmlObject->findnodes($query, $self->getMessages()->get_node(1));
+            $marcXml = $marcXml->get_node(1);
+            if($marcXml->hasChildNodes){
+                $marcXml = $marcXml->firstChild;
+            }   
+            $marcXmlLiteral = $marcXml->to_literal;
+            $parser = eval { XML::LibXML->load_xml('string' => $marcXmlLiteral) };
+            if($parser){
+                $marcXmlString = $parser->toString;
+            }   
+            else{
+                $marcXmlString = $marcXml->toString;
+            }   
+            # Dump marcxml on screen:
+            # print Dumper $marcXmlString;   
+            my $xmlString = $self->getMarcHelper->normalizeXmlNamespace($marcXml, $marcXmlString);
+            $record = $self->getMarcHelper()->createRecord($xmlString);
+            if($record){
+                $self->setMarcRecord($record);
+            }   
         }
     }
     return $self->getMarcRecord();
@@ -148,9 +152,13 @@ sub getPublisherName {
     my $marcRecord = $self->getMarcData();
     my $publisherName;
 
-    if($marcRecord){
+    my $item = $self->getItemDetail();
+    my $xmlData = $item->getXmlData();
+    $publisherName = $xmlData->find('ItemDescription/PublisherName')->string_value; 
+    if($marcRecord && ($publisherName || $publisherName eq '')){
         $publisherName = $marcRecord->subfield('260','b');
     }
+
     if(!$publisherName){
        $publisherName = '';
     }
@@ -169,7 +177,6 @@ sub getMessages{
     my $self = shift;
     my $xmlObject = $self->getXmlData();
     my $parser = $self->getParser();
-
     my $messages = $xmlObject->findnodes('Message',$parser);
     return $messages;
 }
