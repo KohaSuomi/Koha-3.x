@@ -743,7 +743,7 @@ $template->param(
   modify          => $modify,
   nok     => $nok,#flag to konw if an error 
   NoUpdateLogin =>  $NoUpdateLogin,
-  ssn_url => C4::Context->config("ssnProvider")->{ssn_url} #Feature #1132, config for ssn url
+  ssn_url => C4::Context->config("ssnProvider")->{url} . '/ssn/addssn?ajax=1' #Feature #1132, config for ssn url + KD#1844, changes in koha-conf.xml
   );
 
 if(defined($data{'flags'})){
