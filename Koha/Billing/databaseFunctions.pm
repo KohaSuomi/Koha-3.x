@@ -37,7 +37,7 @@ sub getbillableitems {
   
   my $sth_issues=$dbh->prepare("SELECT itemnumber
                                 FROM issues
-                                WHERE date_due<?
+                                WHERE date_due<=?
 
                                 AND itemnumber NOT IN (  
                                   SELECT itemnumber

@@ -50,23 +50,23 @@ sub ProE {
     my $ssn=getssn($borrowernumber);
   
     # ProE Header data
-    my $padded_borrowernumber=sprintf ('%011d', $borrowernumber);
-    my $blank_line=$padded_borrowernumber . "3\r\n";
-    my $header=$padded_borrowernumber;
+    my $proe_identifier=sprintf ('%011s', substr($cardnumber, 0, 11));
+    my $blank_line=$proe_identifier . "3\r\n";
+    my $header=$proe_identifier;
        $header.=sprintf ('%-63s', 'L10' . $surname . ' ' . $firstname);
        $header.=sprintf ('%-30s', $address);
        $header.=sprintf ('%-232s', $zipcode . $city);
-       $header.=sprintf ('%-171s', $padded_borrowernumber);
+       $header.=sprintf ('%-171s', $proe_identifier);
        $header.=$ssn . "\r\n";
   
     push @writefile, $header;
     
     # Insert bill receiver
-    push @writefile, $padded_borrowernumber . '3Laskun saaja: ' . $cardnumber . "\r\n";
+    push @writefile, $proe_identifier . '3Laskun saaja: ' . $cardnumber . "\r\n";
     push @writefile, $blank_line;
   
     # Starting texts
-    push @writefile, $padded_borrowernumber . "3PALAUTTAMATON AINEISTO:\r\n";
+    push @writefile, $proe_identifier . "3PALAUTTAMATON AINEISTO:\r\n";
     push @writefile, $blank_line;
     
     # Insert billable items
@@ -93,7 +93,7 @@ sub ProE {
       my $itemline=$barcode . ': ' . $itemtype . ', ' . $due . ', ' . $branch . ', ' . $author . $title;
       
       # First line of text 
-      my $mainitemline=sprintf('%-86s', $padded_borrowernumber . '200' . substr($itemline, 0, 62));
+      my $mainitemline=sprintf('%-86s', $proe_identifier . '200' . substr($itemline, 0, 62));
       
       # Format price for proe
       $price=~s/\.//;
@@ -103,14 +103,14 @@ sub ProE {
   
       # Second line of text if the itemline was over 62 character (additional lines after the second one
       # will just be skipped, two lines is enough ;P)
-      push @writefile, $padded_borrowernumber . '3' . substr($itemline, 62, 124) . "\r\n" if length($itemline) > 62; 
+      push @writefile, $proe_identifier . '3' . substr($itemline, 62, 124) . "\r\n" if length($itemline) > 62; 
   
       # Add guarantee if not the same as borrower + block patron
       my (@guaranteedata, $guaranteeline);
       if (defined $guarantee{$itemnumber}) {
         @guaranteedata=getborrowerdata('borrowernumber', $guarantee{$itemnumber});
         $guaranteeline=$guaranteedata[6] . ' ' . $guaranteedata[5] . ' (' . $guaranteedata[4] . ')';
-        push @writefile, $padded_borrowernumber . '3LAINAAJA: ' . substr($guaranteeline, 0, 62) . "\r\n";
+        push @writefile, $proe_identifier . '3LAINAAJA: ' . substr($guaranteeline, 0, 62) . "\r\n";
         debar $branchcategory, $guarantee{$itemnumber}, 'LASKUNUMERO?', $isodate;
       } else {
         debar $branchcategory, $borrowernumber, 'LASKUNUMERO?', $isodate;
@@ -122,8 +122,8 @@ sub ProE {
       updatenotforloan($itemnumber);
     }
     # Finally...
-    push @writefile, $padded_borrowernumber . "3LASKUA EI TARVITSE MAKSAA, JOS AINEISTO PALAUTETAAN.\r\n";
-    push @writefile, $padded_borrowernumber . "3Veroton vahingonkorvaus.\r\n"
+    push @writefile, $proe_identifier . "3LASKUA EI TARVITSE MAKSAA, JOS AINEISTO PALAUTETAAN.\r\n";
+    push @writefile, $proe_identifier . "3Veroton vahingonkorvaus.\r\n"
   }
 
   writefile(@writefile);
