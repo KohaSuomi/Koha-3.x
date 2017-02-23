@@ -122,7 +122,7 @@ if ($split) {
     foreach my $branchcode ( keys %messages_by_branch ) {
         my @messages = @{ $messages_by_branch{$branchcode} };
         my $output_file = File::Spec->catdir( $output_directory,
-            "holdnotices-" . $today->output('iso') . "-$branchcode.html" );
+            "notices-" . $today->output('iso') . "-$branchcode.html" );
         open $OUTPUT, '>', $output_file
             or die "Could not open $output_file: $!";
 
@@ -153,12 +153,12 @@ else {
             $code = substr($branch, 0, 3);
         }
         my $output_file = File::Spec->catdir( $output_directory,
-            "holdnotices-" . $today->output('iso') . "-$code.html" );
+            "notices-" . $today->output('iso') . "-$code.html" );
         open $OUTPUT, '>', $output_file
             or die "Could not open $output_file: $!";
     } else {
         my $output_file = File::Spec->catdir( $output_directory,
-            "holdnotices-" . $today->output('iso') . ".html" );
+            "notices-" . $today->output('iso') . ".html" );
         open $OUTPUT, '>', $output_file
             or die "Could not open $output_file: $!";
     }
