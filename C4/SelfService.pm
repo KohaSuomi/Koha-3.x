@@ -27,6 +27,7 @@ use Carp;
 use C4::Context;
 use C4::Log;
 use C4::Members::Attributes;
+use C4::Branch;
 
 use Koha::Exception::FeatureUnavailable;
 use Koha::Exception::SelfService;
@@ -34,6 +35,7 @@ use Koha::Exception::SelfService::Underage;
 use Koha::Exception::SelfService::TACNotAccepted;
 use Koha::Exception::SelfService::BlockedBorrowerCategory;
 use Koha::Exception::SelfService::PermissionRevoked;
+use Koha::Exception::SelfService::OpeningHours;
 
 =head2 CheckSelfServicePermission
 
@@ -41,7 +43,7 @@ use Koha::Exception::SelfService::PermissionRevoked;
 
 sub CheckSelfServicePermission {
     my ($ilsPatron, $requestingBranchcode, $action) = @_;
-    $requestingBranchcode = '' unless $requestingBranchcode;
+    $requestingBranchcode = C4::Context->userenv->{branch} unless $requestingBranchcode;
     $action = 'accessMainDoor' unless $action;
 
     try {
@@ -64,6 +66,10 @@ sub CheckSelfServicePermission {
         }
         elsif ($_->isa('Koha::Exception::SelfService::PermissionRevoked')) {
             _WriteAccessLog($action, $ilsPatron->{borrowernumber}, 'revoked');
+            $_->rethrow();
+        }
+        elsif ($_->isa('Koha::Exception::SelfService::OpeningHours')) {
+            _WriteAccessLog($action, $ilsPatron->{borrowernumber}, 'closed');
             $_->rethrow();
         }
         elsif ($_->isa('Koha::Exception::SelfService')) {
@@ -90,6 +96,7 @@ sub _HasSelfServicePermission {
     _CheckBorrowerCategory($ilsPatron, $whitelistedBorrowerCategories);
     _CheckMinimumAge($ilsPatron, $minimumAge);
     _CheckLimitation($ilsPatron);
+    _CheckOpeningHours($ilsPatron, $requestingBranchcode);
 
     return 1;
 }
@@ -142,6 +149,20 @@ sub _CheckBorrowerCategory {
 
     unless ($ilsPatron->{ptype} && $whitelistedBorrowerCategories =~ /$ilsPatron->{ptype}/) {
         Koha::Exception::SelfService::BlockedBorrowerCategory->throw(error => "Borrower category '".$ilsPatron->{ptype}."' is not allowed");
+    }
+    return 1;
+}
+
+sub _CheckOpeningHours {
+    my ($ilsPatron, $branchcode) = @_;
+
+    unless (C4::Branch::isOpen($branchcode)) {
+        my $openingHours = C4::Branch::getOpeningHours($branchcode);
+        Koha::Exception::SelfService::OpeningHours->throw(
+            error => "Self-service resource closed at this time. Try again later.",
+            startTime => $openingHours->[0],
+            endTime => $openingHours->[1],
+        );
     }
     return 1;
 }

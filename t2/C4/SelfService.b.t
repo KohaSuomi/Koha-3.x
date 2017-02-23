@@ -17,6 +17,7 @@ use lib File::Basename::dirname($INC{"C4/SelfService.pm"})."/../C4/SIP"; #Find w
 use ILS::Patron;
 
 use t2::C4::SelfService_context;
+use t::db_dependent::opening_hours_context;
 use t::lib::TestContext;
 use t::lib::TestObjects::ObjectFactory;
 use t::lib::TestObjects::BorrowerFactory;
@@ -39,6 +40,9 @@ subtest("Scenario: User with all possible blocks and bans tries to access a Self
     my $f; #Fines of the scenario borrower
 
     eval {
+    subtest("Set opening hours", sub {
+        ok(t::db_dependent::opening_hours_context::createContext($scenarioContext));
+    });
     subtest("Clear system preference 'SSRules'", sub {
         t::lib::TestObjects::SystemPreferenceFactory->createTestGroup({
             preference => 'SSRules',
@@ -143,10 +147,18 @@ subtest("Scenario: User with all possible blocks and bans tries to access a Self
             ok(blessed($_) && $_->isa('Koha::Exception::SelfService') , "User has no permission");
         };
     });
-    subtest("Borrower is cleaned from his sins and is allowed access", sub {
+    subtest("Borrower is cleaned from his sins, but still the library is closed", sub {
         t::lib::TestObjects::ObjectFactory->tearDownTestContext($finesContext);
         $ilsPatron = ILS::Patron->new($b->cardnumber);
 
+        try {
+            C4::SelfService::CheckSelfServicePermission($ilsPatron, 'UPL', 'accessMainDoor');
+            ok(0 , "EXPECTED EXCEPTION");
+        } catch {
+            ok(blessed($_) && $_->isa('Koha::Exception::SelfService::OpeningHours') , "Library is closed");
+        };
+    });
+    subtest("Borrower tries another library and is allowed access", sub {
         ok(C4::SelfService::CheckSelfServicePermission($ilsPatron, 'CPL', 'accessMainDoor'),
            "Finely behaving user accesses a self-service resource.");
     });
@@ -159,7 +171,8 @@ subtest("Scenario: User with all possible blocks and bans tries to access a Self
         t2::C4::SelfService_context::testLogs($logs, 4, $b->borrowernumber, 'accessMainDoor', $todayYmd, 'underage',      $SSAPIAuthorizerUser);
         t2::C4::SelfService_context::testLogs($logs, 5, $b->borrowernumber, 'accessMainDoor', $todayYmd, 'denied',        $SSAPIAuthorizerUser);
         t2::C4::SelfService_context::testLogs($logs, 6, $b->borrowernumber, 'accessMainDoor', $todayYmd, 'denied',        $SSAPIAuthorizerUser);
-        t2::C4::SelfService_context::testLogs($logs, 7, $b->borrowernumber, 'accessMainDoor', $todayYmd, 'granted',       $SSAPIAuthorizerUser);
+        t2::C4::SelfService_context::testLogs($logs, 7, $b->borrowernumber, 'accessMainDoor', $todayYmd, 'closed',        $SSAPIAuthorizerUser);
+        t2::C4::SelfService_context::testLogs($logs, 8, $b->borrowernumber, 'accessMainDoor', $todayYmd, 'granted',       $SSAPIAuthorizerUser);
     });
     };
     if ($@) {

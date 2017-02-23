@@ -309,6 +309,7 @@ INSERT INTO systempreferences ( `variable`, `value`, `options`, `explanation`, `
 ('OPACViewOthersSuggestions','0',NULL,'If ON, allows all suggestions to be displayed in the OPAC','YesNo'),
 ('OPACXSLTDetailsDisplay','default','','Enable XSL stylesheet control over details page display on OPAC','Free'),
 ('OPACXSLTResultsDisplay','default','','Enable XSL stylesheet control over results page display on OPAC','Free'),
+('OpeningHours','','70|10','Define opening hours YAML','Textarea'),
 ('OpenLibraryCovers','0',NULL,'If ON Openlibrary book covers will be show','YesNo'),
 ('OrderPdfFormat','pdfformat::layout3pages','Controls what script is used for printing (basketgroups)','','free'),
 ('OverDriveClientKey','','Client key for OverDrive integration','30','Free'),

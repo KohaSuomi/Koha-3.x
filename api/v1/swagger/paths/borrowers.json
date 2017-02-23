@@ -39,10 +39,9 @@
       "operationId": "getSelfServiceStatus",
       "tags": ["borrowers"],
       "summary": "Check if a borrower is allowed to access self-service resources",
-      "description": "This endpoint is intended to be used by barcode readers to quickly check for permissions!<p>Access is denied if the patron has lost his card, account has expired, a debarrment is placed, or excessive fines are encumbered.</p>",
+      "description": "This endpoint is intended to be used by barcode readers to quickly check for self-service permissions and availability. The self-service device is expected to authenticate using it's own credentials and itäs own default library location. <p>See the description of response with status '200 OK' for expected access restrictions.</p>",
       "produces": [
-        "application/json",
-        "application/xml"
+        "application/json"
       ],
       "parameters": [
         {

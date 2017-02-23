@@ -119,6 +119,15 @@ sub get_self_service_status {
             $payload = {error => 'No such cardnumber'};
             $httpCode = 404;
         }
+        elsif ($_->isa('Koha::Exception::SelfService::OpeningHours')) {
+            $payload = {
+                permission => Mojo::JSON->false,
+                error => $_->error,
+                startTime => $_->startTime,
+                endTime => $_->endTime,
+            };
+            $httpCode = 200;
+        }
         elsif ($_->isa('Koha::Exception::SelfService')) {
             $payload = {
                 permission => Mojo::JSON->false,

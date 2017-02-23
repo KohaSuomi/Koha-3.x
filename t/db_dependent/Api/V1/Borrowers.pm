@@ -28,6 +28,7 @@ use t::lib::TestObjects::ObjectFactory;
 use t::lib::TestObjects::BiblioFactory;
 use t::lib::TestObjects::ItemFactory;
 use t::lib::TestObjects::SystemPreferenceFactory;
+use t::db_dependent::opening_hours_context;
 
 #GET /borrowers/{borrowernumber}, with response 200
 
@@ -369,6 +370,8 @@ sub getssstatus200 {
                     {   cardnumber => '11A01',
                         password => '1234'
                     }, undef, $testContext, undef, undef);
+
+    t::db_dependent::opening_hours_context::createContext($testContext);
 
     $path = $restTest->get_routePath();
 
