@@ -157,6 +157,14 @@ Searching:
               class: integer
             - results per page in the staff client.
         -
+            - pref: showBranchListOnSearchResults
+              type: boolean
+              default: yes
+              choices:
+                  yes: Show
+                   no: Don't show
+            - list of holding branches on search results display
+        -
             - By default, sort search results in the OPAC by
             - pref: OPACdefaultSortField
               default: relevance
