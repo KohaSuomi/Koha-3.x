@@ -437,6 +437,125 @@
 [% END %]
 [% END %]
 
+[%IF(step_3)%]
+<fieldset class="rows" id="memberentry_library_management">
+    <legend id="library_management_lgd">Library management</legend><ol>
+      [% UNLESS nocardnumber %]
+        <li>
+          [% IF ( mandatorycardnumber ) %]
+            <label for="cardnumber" class="required">
+          [% ELSE %]
+            <label for="cardnumber" class="validated">
+          [% END %]
+          Card number: </label>
+          [% IF minlength_cardnumber == maxlength_cardnumber %]
+              <input type="text" id="cardnumber" name="cardnumber" size="20" value="[% cardnumber %]" minlength="[% minlength_cardnumber %]" maxlength="[% maxlength_cardnumber %]" title="exactly [% minlength_cardnumber %] characters" />
+          [% ELSIF minlength_cardnumber && maxlength_cardnumber %]
+              <input type="text" id="cardnumber" name="cardnumber" size="20" value="[% cardnumber %]" minlength="[% minlength_cardnumber %]" maxlength="[% maxlength_cardnumber %]" title="between [% minlength_cardnumber %] and [% maxlength_cardnumber %] characters" />
+          [% ELSIF maxlength_cardnumber %]
+              <input type="text" id="cardnumber" name="cardnumber" size="20" value="[% cardnumber %]" maxlength="[% maxlength_cardnumber %]" title="up to [% maxlength_cardnumber %] characters" />
+          [% ELSE %]
+               <input type="text" id="cardnumber" name="cardnumber" size="20" value="[% cardnumber %]" />
+          [% END %]
+          [% IF ( mandatorycardnumber ) %]<span class="required">Required</span>[% END %]
+        </li>
+      [% END %]
+	  
+	  [% UNLESS nouserid %]
+		<li>
+			[% IF ( mandatoryuserid ) %]
+			<label for="userid" class="required">
+			[% ELSE %]
+			<label for="userid">
+			[% END %]
+			Username: </label>
+
+[% IF ( NoUpdateLogin ) %]
+	[% IF ( opduplicate ) %]
+		<input type="text" id="userid" name="userid" size="20" disabled="disabled" />
+	[% ELSE %]
+		<input type="text" id="userid" name="userid" size="20" disabled="disabled" value="[% userid %]" />
+	[% END %]
+[% ELSE %]
+	[% IF ( opduplicate ) %]
+		<input type="text" id="userid" name="userid" size="20" value="" />
+	[% ELSE %]
+		<input type="text" id="userid" name="userid" size="20" value="[% userid %]" />
+	[% END %]
+[% END %]
+
+	  [% IF ( mandatoryuserid ) %]<span class="required">Required</span>[% END %]
+		</li>
+        [%END%]	  
+      [% UNLESS nobranchcode %]
+	    	  
+    <li>
+        <label for="libraries" class="required">Library:</label>
+        <select name="branchcode" size="1" id="libraries">
+        [%- FOREACH branchloo IN branchloop %]
+          [% IF ( branchloo.selected ) -%]
+            <option value="[% branchloo.branchcode %]" selected="selected">[% branchloo.branchname %]</option>
+          [%- ELSE -%]
+            <option value="[% branchloo.branchcode %]">[% branchloo.branchname %]</option>
+          [%- END -%]
+        [%- END %]
+      </select>
+      <span class="required">Required</span>
+    </li>
+        [% END %]
+    <li>
+        <label for="categorycode" class="required">Category: </label>
+        <select id="categorycode" name="categorycode" onchange="update_category_code(this);">
+        [% FOREACH typeloo IN typeloop %]
+            [% FOREACH categoryloo IN typeloo.categoryloop %]
+                [% IF ( loop.first ) %]
+                    [% IF ( typeloo.typename_C ) %]<optgroup label="Child">[% END %]
+                    [% IF ( typeloo.typename_A ) %]<optgroup label="Adult">[% END %]
+                    [% IF ( typeloo.typename_S ) %]<optgroup label="Staff">[% END %]
+                    [% IF ( typeloo.typename_I ) %]<optgroup label="Organization">[% END %]
+                    [% IF ( typeloo.typename_P ) %]<optgroup label="Professional">[% END %]
+                    [% IF ( typeloo.typename_X ) %]<optgroup label="Statistical">[% END %]
+                [% END %]
+                [% IF ( categoryloo.categorycodeselected ) %]
+                    <option value="[% categoryloo.categorycode %]" selected="selected" data-typename="[% typeloo.typename %]">[% categoryloo.categoryname %]</option>
+                [% ELSE %]
+                    <option value="[% categoryloo.categorycode %]" data-typename="[% typeloo.typename %]">[% categoryloo.categoryname %]</option>
+                [% END %]
+                [% IF ( loop.last ) %]
+                    </optgroup>
+                [% END %]
+            [% END %]
+       [% END %]
+       </select>
+       <span class="required">Required</span>
+    </li>
+        [% UNLESS nosort1 %]
+    <li>
+      [% IF ( mandatorysort1 ) %]
+        <label for="sort1" class="required">
+      [% ELSE %]
+        <label for="sort1">
+      [% END %]
+      Sort 1: </label>
+      [% PROCESS 'av-build-dropbox.inc' name="sort1", category="Bsort1", default=sort1, class=focusAction, size = 20 %]
+      [% IF ( mandatorysort1 ) %]<span class="required">Required</span>[% END %]
+    </li>
+        [% END %]
+        [% UNLESS nosort2 %]
+    <li>
+    [% IF ( mandatorysort2 ) %]
+    <label for="sort2" class="required">
+    [% ELSE %]
+    <label for="sort2">
+    [% END %]
+    Sort 2: </label>
+    [% PROCESS 'av-build-dropbox.inc' name="sort2", category="Bsort2", default=sort2, class=focusAction, size = 20 %]
+    [% IF ( mandatorysort2 ) %]<span class="required">Required</span>[% END %]
+    </li>
+        [% END %]
+	</ol>
+  </fieldset>
+[%END%]
     <fieldset class="rows" id="ssn_fieldset">
         <legend id="ssn_legend">Tarkista sotun olemassaolo</legend>
 
@@ -1110,95 +1229,7 @@
 [% END %]
 [% IF ( step_3 ) %]
 
-  <fieldset class="rows" id="memberentry_library_management">
-    <legend id="library_management_lgd">Library management</legend><ol>
-      [% UNLESS nocardnumber %]
-        <li>
-          [% IF ( mandatorycardnumber ) %]
-            <label for="cardnumber" class="required">
-          [% ELSE %]
-            <label for="cardnumber" class="validated">
-          [% END %]
-          Card number: </label>
-          [% IF minlength_cardnumber == maxlength_cardnumber %]
-              <input type="text" id="cardnumber" name="cardnumber" size="20" value="[% cardnumber %]" minlength="[% minlength_cardnumber %]" maxlength="[% maxlength_cardnumber %]" title="exactly [% minlength_cardnumber %] characters" />
-          [% ELSIF minlength_cardnumber && maxlength_cardnumber %]
-              <input type="text" id="cardnumber" name="cardnumber" size="20" value="[% cardnumber %]" minlength="[% minlength_cardnumber %]" maxlength="[% maxlength_cardnumber %]" title="between [% minlength_cardnumber %] and [% maxlength_cardnumber %] characters" />
-          [% ELSIF maxlength_cardnumber %]
-              <input type="text" id="cardnumber" name="cardnumber" size="20" value="[% cardnumber %]" maxlength="[% maxlength_cardnumber %]" title="up to [% maxlength_cardnumber %] characters" />
-          [% ELSE %]
-               <input type="text" id="cardnumber" name="cardnumber" size="20" value="[% cardnumber %]" />
-          [% END %]
-          [% IF ( mandatorycardnumber ) %]<span class="required">Required</span>[% END %]
-        </li>
-      [% END %]
-      [% UNLESS nobranchcode %]
-    <li>
-        <label for="libraries" class="required">Library:</label>
-        <select name="branchcode" size="1" id="libraries">
-        [%- FOREACH branchloo IN branchloop %]
-          [% IF ( branchloo.selected ) -%]
-            <option value="[% branchloo.branchcode %]" selected="selected">[% branchloo.branchname %]</option>
-          [%- ELSE -%]
-            <option value="[% branchloo.branchcode %]">[% branchloo.branchname %]</option>
-          [%- END -%]
-        [%- END %]
-      </select>
-      <span class="required">Required</span>
-    </li>
-        [% END %]
-    <li>
-        <label for="categorycode" class="required">Category: </label>
-        <select id="categorycode" name="categorycode" onchange="update_category_code(this);">
-        [% FOREACH typeloo IN typeloop %]
-            [% FOREACH categoryloo IN typeloo.categoryloop %]
-                [% IF ( loop.first ) %]
-                    [% IF ( typeloo.typename_C ) %]<optgroup label="Child">[% END %]
-                    [% IF ( typeloo.typename_A ) %]<optgroup label="Adult">[% END %]
-                    [% IF ( typeloo.typename_S ) %]<optgroup label="Staff">[% END %]
-                    [% IF ( typeloo.typename_I ) %]<optgroup label="Organization">[% END %]
-                    [% IF ( typeloo.typename_P ) %]<optgroup label="Professional">[% END %]
-                    [% IF ( typeloo.typename_X ) %]<optgroup label="Statistical">[% END %]
-                [% END %]
-                [% IF ( categoryloo.categorycodeselected ) %]
-                    <option value="[% categoryloo.categorycode %]" selected="selected" data-typename="[% typeloo.typename %]">[% categoryloo.categoryname %]</option>
-                [% ELSE %]
-                    <option value="[% categoryloo.categorycode %]" data-typename="[% typeloo.typename %]">[% categoryloo.categoryname %]</option>
-                [% END %]
-                [% IF ( loop.last ) %]
-                    </optgroup>
-                [% END %]
-            [% END %]
-       [% END %]
-       </select>
-       <span class="required">Required</span>
-    </li>
-        [% UNLESS nosort1 %]
-    <li>
-      [% IF ( mandatorysort1 ) %]
-        <label for="sort1" class="required">
-      [% ELSE %]
-        <label for="sort1">
-      [% END %]
-      Sort 1: </label>
-      [% PROCESS 'av-build-dropbox.inc' name="sort1", category="Bsort1", default=sort1, class=focusAction, size = 20 %]
-      [% IF ( mandatorysort1 ) %]<span class="required">Required</span>[% END %]
-    </li>
-        [% END %]
-        [% UNLESS nosort2 %]
-    <li>
-    [% IF ( mandatorysort2 ) %]
-    <label for="sort2" class="required">
-    [% ELSE %]
-    <label for="sort2">
-    [% END %]
-    Sort 2: </label>
-    [% PROCESS 'av-build-dropbox.inc' name="sort2", category="Bsort2", default=sort2, class=focusAction, size = 20 %]
-    [% IF ( mandatorysort2 ) %]<span class="required">Required</span>[% END %]
-    </li>
-        [% END %]
-	</ol>
-  </fieldset>
+  
     [% UNLESS nodateenrolled &&  noopacnote && noborrowernotes %]
 	<fieldset class="rows" id="memberentry_subscription">
 	<legend id="library_setup_lgd">Library set-up</legend><ol>
