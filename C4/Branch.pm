@@ -25,6 +25,7 @@ use vars qw($VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);
 
 use YAML::XS;
 use DateTime;
+use Data::Dumper;
 
 BEGIN {
 	# set the version for version checking
@@ -58,6 +59,10 @@ BEGIN {
 use Koha::Exception::BadSystemPreference;
 use Koha::Exception::NoSystemPreference;
 use Koha::Exception::FeatureUnavailable;
+
+use Koha::Logger;
+my $logger = Koha::Logger->new({category => __PACKAGE__});
+
 
 =head1 NAME
 
@@ -236,6 +241,7 @@ sub _getOpeningHoursFromSyspref {
     };
     Koha::Exception::BadSystemPreference->throw(error => 'System preference "OpeningHours" is not valid YAML. Validate it using yamllint! or '.$@)
         if $@;
+    $logger->debug("'OpeningHours'-syspref: ".Data::Dumper::Dumper($sp)) if $logger->is_debug;
     return $sp;
 }
 

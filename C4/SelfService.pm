@@ -37,18 +37,25 @@ use Koha::Exception::SelfService::BlockedBorrowerCategory;
 use Koha::Exception::SelfService::PermissionRevoked;
 use Koha::Exception::SelfService::OpeningHours;
 
+
+use Koha::Logger;
+my $logger = Koha::Logger->new({category => __PACKAGE__});
+
+
 =head2 CheckSelfServicePermission
 
 =cut
 
 sub CheckSelfServicePermission {
     my ($ilsPatron, $requestingBranchcode, $action) = @_;
+    $logger->debug("Entering with params: '@_'") if $logger->is_debug;
     $requestingBranchcode = C4::Context->userenv->{branch} unless $requestingBranchcode;
     $action = 'accessMainDoor' unless $action;
 
     try {
         _HasSelfServicePermission($ilsPatron, $requestingBranchcode, $action);
     } catch {
+        $logger->debug("Caught error. Type:'".ref($_)."', stringified: '$_'") if $logger->is_debug;
         unless (blessed($_) && $_->can('rethrow')) {
             confess $_;
         }

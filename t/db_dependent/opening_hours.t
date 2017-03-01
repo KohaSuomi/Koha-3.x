@@ -3,6 +3,8 @@ use Test::More;
 use DateTime;
 use Try::Tiny;
 use Scalar::Util qw(blessed);
+use Koha::Logger;
+Koha::Logger->setConsoleVerbosity(4);
 
 use t::lib::TestObjects::SystemPreferenceFactory;
 use t::lib::TestObjects::ObjectFactory;
