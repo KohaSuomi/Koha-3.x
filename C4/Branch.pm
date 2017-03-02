@@ -27,6 +27,8 @@ use YAML::XS;
 use DateTime;
 use Data::Dumper;
 
+use Koha::Logger;
+
 BEGIN {
 	# set the version for version checking
     $VERSION = 3.07.00.049;
@@ -59,9 +61,6 @@ BEGIN {
 use Koha::Exception::BadSystemPreference;
 use Koha::Exception::NoSystemPreference;
 use Koha::Exception::FeatureUnavailable;
-
-use Koha::Logger;
-my $logger = Koha::Logger->new({category => __PACKAGE__});
 
 
 =head1 NAME
@@ -233,6 +232,7 @@ sub getOpeningHours {
 =cut
 
 sub _getOpeningHoursFromSyspref {
+    my $logger = Koha::Logger->get({category => __PACKAGE__}); #For some reason defining a package-level logger causes dependency loading issues. Heja Perl!
     my $sp = C4::Context->preference('OpeningHours');
     Koha::Exception::NoSystemPreference->throw(error => 'System preference "OpeningHours" not set. Cannot get opening hours!')
         unless $sp;
