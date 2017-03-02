@@ -36,6 +36,7 @@ use Modern::Perl;
 use Log::Log4perl;
 use Carp;
 use Scalar::Util qw(blessed);
+use Data::Dumper;
 
 use C4::Context;
 
@@ -106,6 +107,27 @@ Log SQL-statements using a unified interface.
 sub sql {
     my ($self, $level, $sql, $params) = @_;
     return $self->$level("$sql -- @$params");
+}
+
+=head2 flatten
+
+    my $string = $logger->flatten(@_);
+
+Given a bunch of $@%, the subroutine flattens those objects to a single human-readable string.
+
+@PARAMS Anything, concatenates parameters to one flat string
+
+=cut
+
+sub flatten {
+    my $self = shift;
+    die __PACKAGE__."->flatten() invoked improperly. Invoke it with \$logger->flatten(\@params)" unless ((blessed($self) && $self->isa(__PACKAGE__)) || ($self eq __PACKAGE__));
+    $Data::Dumper::Indent = 0;
+    $Data::Dumper::Terse = 1;
+    $Data::Dumper::Quotekeys = 0;
+    $Data::Dumper::Maxdepth = 2;
+    $Data::Dumper::Sortkeys = 1;
+    return Data::Dumper::Dumper(\@_);
 }
 
 =head1 INTERNALS
