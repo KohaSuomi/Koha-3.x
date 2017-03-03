@@ -111,11 +111,15 @@ sub get_self_service_status {
         $httpCode = 200;
 
     } catch {
-        unless (blessed($_) && $_->can('rethrow')) {
-            $payload = longmess("$_");
+        if (not(blessed($_) && $_->can('rethrow'))) {
+            $payload = {error => longmess("$_")};
             $httpCode = 500;
         }
-        if ($_->isa('Koha::Exception::UnknownObject')) {
+        elsif ($_->isa('Mojo::Exception')) {
+            $payload = {error => $_->verbose(1)->to_string};
+            $httpCode = 500;
+        }
+        elsif ($_->isa('Koha::Exception::UnknownObject')) {
             $payload = {error => 'No such cardnumber'};
             $httpCode = 404;
         }
@@ -140,7 +144,7 @@ sub get_self_service_status {
             $httpCode = 501;
         }
         else {
-            $payload = $_->trace->as_string;
+            $payload = {error => $_->trace->as_string};
             $httpCode = 500;
         }
     };
