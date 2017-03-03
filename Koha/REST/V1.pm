@@ -58,6 +58,7 @@ MOJO_LOGFILES-environment variable to undef.
 sub startup {
     my $self = shift;
 
+    C4::Context->interface('rest');
     my $config = $self->loadConfigs();
     $self->setKohaParamLogging($config);
     $self->minifySwagger($config);
