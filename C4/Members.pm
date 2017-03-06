@@ -2723,7 +2723,11 @@ sub GenMemberPasswordSuggestion {
     }
 
     my $pass;
-    my $length = int(rand(3)) + $minpasslength;
+
+    # KD#1454 - Changed in order to generate exactly $minpasslength long passwords
+    # longer ones would cause problems with self-service library use
+    my $length = $minpasslength;
+
     if ($policycode) {
         # Generates complex passwords with numbers and uppercase, lowercase and special characters
         if ($policycode eq "complex") {
