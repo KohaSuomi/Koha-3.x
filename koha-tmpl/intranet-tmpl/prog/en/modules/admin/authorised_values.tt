@@ -23,6 +23,12 @@
         $("#branches option:first").attr("selected", "selected");
     }
     $('#icons').tabs();
+    $('#no_renewable').click(function() {
+      $('#no_reservation').attr('checked', false);
+    });
+    $('#no_reservation').click(function() {
+      $('#no_renewable').attr('checked', false);
+    });
 });
 //]]>
 </script>
@@ -102,6 +108,10 @@ $(document).ready(function() {
         <li>
             <label for="no_reservation">No reservation: </label>
             <input type="checkbox" name="no_reservation" id="no_reservation" [% IF ( no_reservation == 1 ) %]checked="checked" [% END %]/>
+        </li>
+        <li>
+            <label for="no_renewable">No reservation and renew: </label>
+            <input type="checkbox" name="no_renewable" id="no_renewable" [% IF ( no_reservation == 2 ) %]checked="checked" [% END %]/>
         </li>
         <li>
             <label for="no_checkout">No checkout: </label>
@@ -254,6 +264,7 @@ $(document).ready(function() {
 	<th>Description</th>
 	<th>Description (OPAC)</th>
   <th>No reservation</th>
+  <th>No reservation and renew</th>
   <th>No checkout</th>
   <th>Overdue fine</th>
 	<th>Icon</th>
@@ -272,6 +283,7 @@ $(document).ready(function() {
 	<td>[% loo.lib %]</td>
 	<td>[% loo.lib_opac %]</td>
   <td>[% IF ( loo.no_reservation == 1 ) %] True [% END %]</td>
+  <td>[% IF ( loo.no_reservation == 2 ) %] True [% END %]</td>
   <td>[% IF ( loo.no_checkout == 1 ) %] True [% END %]</td>
   <td>[% loo.overdue_fine %]</td>
 	<td>[% IF ( loo.imageurl ) %]<img src="[% loo.imageurl %]" alt=""/>[% ELSE %]&nbsp;[% END %]</td>

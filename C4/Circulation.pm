@@ -2710,9 +2710,9 @@ sub CanBookBeRenewed {
     my $item      = GetItem($itemnumber)      or return ( 0, 'no_item' );
     my $itemissue = GetItemIssue($itemnumber) or return ( 0, 'no_checkout' );
 
-    #KD1134, Improve authorised values wit allow and deny option
+    #KD1134, Improve authorised values wit allow and deny option, Bug1888 allow renew if
     my $non_renewable = IsNoReservationOrCheckout($itemnumber, 'no_reservation');
-    if ($non_renewable) {
+    if ($non_renewable == 2) {
         return (0, 'non_renewable');
     }
 
@@ -2908,7 +2908,7 @@ sub GetRenewCount {
     my $item     = GetItem($itemno);
     #KD#1134, Improve authorised values wit allow and deny option
     my $non_renewable = IsNoReservationOrCheckout($itemno, 'no_reservation');
-    if ($item && $non_renewable) {
+    if ($item && $non_renewable == 2 ) {
         return (0, 0, 0); #returns ( $renewcount, $renewsallowed, $renewsleft );
     }
 
@@ -3992,6 +3992,8 @@ sub IsNoReservationOrCheckout {
         my $auth_value = $sth2->fetchrow;
         if ($auth_value == 1) {
             return 1;
+        } elsif ($auth_value == 2) {
+            return 2;
         }
     
     }

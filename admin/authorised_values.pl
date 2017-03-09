@@ -110,6 +110,7 @@ if ($op eq 'add_form') {
                          lib              => $data->{'lib'},
                          lib_opac         => $data->{'lib_opac'},
                          no_reservation   => $data->{'no_reservation'},
+                         no_renewable     => $data->{'no_renewable'},
                          no_checkout      => $data->{'no_checkout'},
                          overdue_fine     => $data->{'overdue_fine'},
                          id               => $data->{'id'},
@@ -153,7 +154,14 @@ if ($op eq 'add_form') {
             my $lib_opac = $input->param('lib_opac');
             undef $lib if ($lib eq ""); # to insert NULL instead of a blank string
             undef $lib_opac if ($lib_opac eq ""); # to insert NULL instead of a blank string
-            my $no_reservation = $input->param('no_reservation') ? 1 : 0;
+            my $no_reservation;
+            if ($input->param('no_renewable')) {
+                $no_reservation = 2;
+            } elsif ($input->param('no_reservation')) {
+                $no_reservation = 1;
+            } else {
+                $no_reservation = 0;
+            }
             my $no_checkout = $input->param('no_checkout') ? 1 : 0;
             my $overdue_fine = $input->param('overdue_fine') eq "" ? undef : $input->param('overdue_fine');
             $sth->execute($new_category, $new_authorised_value, $lib, $lib_opac, $imageurl, $no_reservation, $no_checkout, $overdue_fine, $id);
@@ -186,7 +194,14 @@ if ($op eq 'add_form') {
                                     values (?, ?, ?, ?, ?, ?, ?, ?)' );
     	    my $lib = $input->param('lib');
     	    my $lib_opac = $input->param('lib_opac');
-            my $no_reservation = $input->param('no_reservation') ? 1 : 0;
+            my $no_reservation;
+            if ($input->param('no_renewable')) {
+                $no_reservation = 2;
+            } elsif ($input->param('no_reservation')) {
+                $no_reservation = 1;
+            } else {
+                $no_reservation = 0;
+            }
             my $no_checkout = $input->param('no_checkout') ? 1 : 0;
             my $overdue_fine = $input->param('overdue_fine') eq "" ? undef : $input->param('overdue_fine');
     	    undef $lib if ($lib eq ""); # to insert NULL instead of a blank string
