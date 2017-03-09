@@ -2296,7 +2296,7 @@ sub MoveItemFromBiblio {
             # Replacing the biblionumber within the order if necessary
             $order->{'biblionumber'} = $tobiblio;
             C4::Acquisition::ModOrder($order);
-        } elsif ($order && $order->{biblionumber} ne $frombiblio) {
+        } elsif ($order && $order->{biblionumber} ne $frombiblio && $order->{biblionumber} ne $tobiblio) {
             # Replacing only ordernumber of an item
             my @orders = C4::Acquisition::GetOrdersByBiblionumber($frombiblio);
             foreach my $ord (@orders){
