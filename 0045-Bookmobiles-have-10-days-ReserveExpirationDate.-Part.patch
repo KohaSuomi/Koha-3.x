@@ -1,0 +1,28 @@
+From 108fb2a5a4bee2d7d064c9251d5521f69ff44b15 Mon Sep 17 00:00:00 2001
+From: Olli-Antti Kivilahti <olli-antti.kivilahti@jns.fi>
+Date: Wed, 1 Feb 2017 12:36:02 +0200
+Subject: [PATCH 45/58] Bookmobiles have 10 days ReserveExpirationDate. Part2
+
+---
+ C4/Reserves.pm | 5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
+
+diff --git a/C4/Reserves.pm b/C4/Reserves.pm
+index b7e289e..2012a57 100644
+--- a/C4/Reserves.pm
++++ b/C4/Reserves.pm
+@@ -2163,9 +2163,8 @@ sub _reserve_last_pickup_date {
+     my $calendar = Koha::Calendar->new( branchcode => $reserve->{branchcode} );
+     my $expiration;
+ 
+-    if ($reserve->{branchcode} eq 'JOE_LIPAU' ||
+-        $reserve->{branchcode} eq 'JOE_KONAU' ||
+-        $reserve->{branchcode} eq 'JOE_JOEAU' ) {
++    #Special expiration date for bookmobiles
++    if ($reserve->{branchcode} =~ /_\w\w\wAU$/) { #JOE_JOEAU, ILO_ILOAU, ... NOT TOH_KAU
+         $expiration = $calendar->days_forward( $startdate, 10 );
+     }
+     else {
+-- 
+1.9.1
+
