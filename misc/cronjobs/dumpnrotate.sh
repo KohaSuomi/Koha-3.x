@@ -1,11 +1,21 @@
 #!/bin/sh
-# Dumpnrotate V161023 - Simple rotating database dumping using mysqldump
+# Dumprotate V170324 - Simple rotating database dumping using mysqldump
 # Written by Pasi Korkalo / OUTI Libraries
 
 # GPL3 on later applies.
 
 # Get configuration, you can place your configs in a directory of your choice.
 # /etc/dumpdatabases/ would be a reasonable candidate
+
+expiredumps() {
+  IFS='
+  '
+  for file in $(ls -rt ${1}*.sql* 2> /dev/null); do
+    test $(ls ${1}*.sql* | wc -l) -le $2 && echo "$(date) Preserving $2 $1 files, no more files to remove." && break
+    echo "$(date) $(rm -v $file)"
+  done
+  unset IFS
+}
 
 # For examples see hourlydump.conf and dailydump.conf.
 if test -e "$1"; then
@@ -21,33 +31,35 @@ if test -z "$databasename" || test -z "$dumpdir" || test -z "$databaseuser" || t
   exit 1
 fi
 
-# With -1 keep the dumps for 100 years, preserving 100000 dumps (in practice never remove anything not specifically defined to be removed).
-test $keepdays -ge 0 2> /dev/null || keepdays="36525"
+# Keep 100000 dumps if nothing defined
 test $keepnumber -ge 0 2> /dev/null || keepnumber="100000"
-
-echo "$(date) Keep dumps for $keepdays days or at least $keepnumber dumps."
 
 # Ensure that we have the target directory for the dump + restrict permissions for the dir and dumps.
 umask 077; mkdir -p $dumpdir
 
-# Remove expired dumps.
-IFS='
-'
-for file in $(ls -rt $dumpdir/${databasename}_*.sql* 2> /dev/null); do
-  test $(ls $dumpdir/${databasename}_*.sql* | wc -l) -le $keepnumber && echo "$(date) Preserving at least $keepnumber files, no more files to remove." && break
-  test $(date +%s -r $file) -gt $(date +%s --date="$keepdays days ago") && echo "$(date) Skipping the removal of files newer than $keepdays days." && break 
-  echo "$(date) $(rm -v $file)"
-done
-unset IFS
-
-# Make a new dump
 timestamp="$(date +%y%m%d%H%M)"
-echo -n "$(date) Creating new dump as $dumpdir/${databasename}_${timestamp}.sql"
-if test $compressdumps = "yes"; then
-  echo ".gz"
-  mysqldump -u$databaseuser -p$databasepasswd --skip-lock-tables --single-transaction $databasename | gzip > $dumpdir/${databasename}_${timestamp}.sql.gz
-else
-  echo
-  mysqldump -u$databaseuser -p$databasepasswd --skip-lock-tables --single-transaction $databasename > $dumpdir/${databasename}_${timestamp}.sql
+
+# Handle dumps.
+if test "$getschema" = "1"; then
+  expiredumps $dumpdir/${databasename}_schema_ $keepnumber
+  echo -n "$(date) Dumping $databasename schema to $dumpdir/${databasename}_schema_${timestamp}.sql"
+  mysqldump -u$databaseuser -p$databasepasswd --no-data --skip-lock-tables --single-transaction $databasename | gzip > $dumpdir/${databasename}_schema_${timestamp}.sql.gz
 fi
+
+if test "$getdata" = "1"; then
+  expiredumps $dumpdir/${databasename}_data_ $keepnumber
+  echo -n "$(date) Dumping $databasename data to $dumpdir/${databasename}_data_${timestamp}.sql"
+  mysqldump -u$databaseuser -p$databasepasswd --no-create-info --skip-lock-tables --ignore-table=${databasename}.statistics --ignore-table=${databasename}.zebraqueue --ignore-table=${databasename}.action_logs --single-transaction $databasename | gzip > $dumpdir/${databasename}_data_${timestamp}.sql.gz
+fi
+
+if test "$getextra" = "1"; then
+  expiredumps $dumpdir/${databasename}_extra_ $keepnumber
+  echo -n "$(date) Dumping $databasename extra data to $dumpdir/${databasename}_extra_${timestamp}.sql"
+  mysqldump -u$databaseuser -p$databasepasswd --no-create-info --skip-lock-tables --single-transaction $databasename statistics zebraqueue action_logs | gzip > $dumpdir/${databasename}_extra_${timestamp}.sql.gz
+fi
+
+# All done
 echo "$(date) Dumped."
+
+exit 0
+
