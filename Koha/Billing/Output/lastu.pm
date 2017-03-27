@@ -81,7 +81,7 @@ sub lastu {
       # Resolve real itemtype and branch
       my $itemtype=resolveitemtype($itype);
       my $branch=resolvebranchcode($holdingbranch);
-      chomp $itemtype, $branch;
+      chomp ($itemtype, $branch);
 
       # When was the item due
       my ($year, $month, $day)=getdue($itemnumber);

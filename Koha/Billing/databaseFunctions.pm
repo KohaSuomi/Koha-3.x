@@ -108,13 +108,13 @@ sub getssnkey {
 
 sub getitemdata {
   # Get and return item information with itemnumber
-  my $sth_item=$dbh->prepare("SELECT biblionumber, barcode, price, itype, holdingbranch, enumchron
+  my $sth_item=$dbh->prepare("SELECT biblionumber, barcode, replacementprice, itype, holdingbranch, enumchron
                               FROM items
                               WHERE itemnumber=?;");
 
   $sth_item->execute(shift);
-  my ($biblionumber, $barcode, $price, $itype, $holdingbranch, $enumchron)=$sth_item->fetchrow_array();
-  $price="0.00" unless defined $price;
+  my ($biblionumber, $barcode, $replacementprice, $itype, $holdingbranch, $enumchron)=$sth_item->fetchrow_array();
+  $replacementprice="0.00" unless defined $replacementprice;
 
   my $sth_biblio=$dbh->prepare("SELECT author,title
                                 FROM biblio
@@ -125,7 +125,7 @@ sub getitemdata {
   $author='' unless defined $author;
   $title=$title . ' (' . $enumchron . ')' if defined $enumchron; # Append serial number information to title
 
-  return ($barcode, $price, $itype, $holdingbranch, $author, $title); 
+  return ($barcode, $replacementprice, $itype, $holdingbranch, $author, $title); 
 }
 
 sub resolveitemtype {
@@ -226,7 +226,7 @@ sub debar {
 
   # Debar only if there was no prior debarment
   my @debarred=$sth_debar->fetchrow_array();
-  if (! defined @debarred or @debarred == 0) {
+  if (! @debarred or @debarred == 0) {
      $sth_debar=$dbh->do("UPDATE borrowers
                           SET debarred='9999-12-31'
                           WHERE borrowernumber='" . $borrowernumber . "';");
