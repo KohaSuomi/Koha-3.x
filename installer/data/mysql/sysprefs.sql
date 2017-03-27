@@ -364,7 +364,7 @@ INSERT INTO systempreferences ( `variable`, `value`, `options`, `explanation`, `
 ('SelfCheckHelpMessage','','70|10','Enter HTML to include under the basic Web-based Self Checkout instructions on the Help page','Textarea'),
 ('SelfCheckReceiptPrompt','1','NULL','If ON, print receipt dialog pops up when self checkout is finished','YesNo'),
 ('SelfCheckTimeout','120','','Define the number of seconds before the Web-based Self Checkout times out a patron','Integer'),
-('SSRules','0:PT S ST',NULL,\"Self-service access rules, age limit + whitelisted borrower categories, eg. '15:ST S PT'\",'text')
+('SSRules','0:PT S ST',NULL,"Self-service access rules, age limit + whitelisted borrower categories, eg. '15:ST S PT'",'text'),
 ('SeparateHoldings','0',NULL,'Separate current branch holdings from other holdings','YesNo'),
 ('SeparateHoldingsBranch','homebranch','homebranch|holdingbranch','Branch used to separate holdings','Choice'),
 ('SessionStorage','mysql','mysql|Pg|tmp','Use database or a temporary file for storing session data','Choice'),
