@@ -83,7 +83,7 @@ sub createContext {
 "  -",
 "    - ".$now->clone->subtract(hours => 2),
 "    - ".$now->clone->add(     hours => 0),
-"MPL:",
+"MPL:", #MPL is always closed
 "  -",
 "    - ".$now->clone->add(     hours => 3),
 "    - ".$now->clone->add(     hours => 8),

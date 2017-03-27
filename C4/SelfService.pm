@@ -48,6 +48,7 @@ my $logger = Koha::Logger->new({category => __PACKAGE__});
 
 sub CheckSelfServicePermission {
     my ($ilsPatron, $requestingBranchcode, $action) = @_;
+
     $requestingBranchcode = C4::Context->userenv->{branch} unless $requestingBranchcode;
     $action = 'accessMainDoor' unless $action;
 

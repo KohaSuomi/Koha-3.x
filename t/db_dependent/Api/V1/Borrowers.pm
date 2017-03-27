@@ -397,6 +397,20 @@ sub getssstatus200 {
         is($json->{permission}, '1', "Permission granted!");
     };
     subtest "Succeed because terms and conditions were accepted", $getssstatus200_tac_accepted;
+
+    my $getssstatus200_library_closed = sub {
+        $tx = t::lib::Mojo::getWithFormData($driver, $restTest->get_routePath(), {cardnumber => "11A01", branchcode => 'MPL'});
+        $restTest->catchSwagger2Errors($tx);
+        $json = $tx->res->json;
+        is($tx->res->code, 200, "Good barcode given");
+        is(ref($json), 'HASH', "Got a json-object");
+        is($json->{permission}, '0', "Permission denied!");
+        is($json->{error},     'Koha::Exception::SelfService::OpeningHours', "Exception class correct!");
+        like($json->{startTime}, qr/\d\d:\d\d/, "startTime of correct format");
+        like($json->{endTime},   qr/\d\d:\d\d/, "endTime of correct format");
+    };
+    subtest "Fail because library MPL is closed", $getssstatus200_library_closed;
+
 }
 
 sub getssstatus500 {

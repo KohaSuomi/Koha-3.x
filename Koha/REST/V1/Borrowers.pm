@@ -126,7 +126,7 @@ sub get_self_service_status {
         elsif ($_->isa('Koha::Exception::SelfService::OpeningHours')) {
             $payload = {
                 permission => Mojo::JSON->false,
-                error => $_->error,
+                error => ref($_),
                 startTime => $_->startTime,
                 endTime => $_->endTime,
             };

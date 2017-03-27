@@ -50,6 +50,13 @@
           "in": "formData",
           "required": true,
           "type": "string"
+        },
+        {
+          "name": "branchcode",
+          "description": "The branchcode of the library to check for permissions",
+          "in": "formData",
+          "required": false,
+          "type": "string"
         }
       ],
       "responses": {
