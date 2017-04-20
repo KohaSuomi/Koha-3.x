@@ -27,15 +27,16 @@ sub getEditionStatement {
     return $editionStatement;
 }
 
-sub getDeliverToLocation {
-    my $self = shift;
-    return $self->getFundNumber();
-}
-
-sub getDestinationLocation {
-    my $self = shift;
-    return $self->getFundNumber();
-}
+# These are not needed for BTJ, so commented out (KD#1918)
+# sub getDeliverToLocation {
+#     my $self = shift;
+#     return $self->getFundNumber();
+# }
+#
+# sub getDestinationLocation {
+#     my $self = shift;
+#     return $self->getFundNumber();
+# }
 
 sub getFundMonetaryAmount {
     my $self = shift;
