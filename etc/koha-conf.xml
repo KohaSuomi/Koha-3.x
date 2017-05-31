@@ -249,7 +249,7 @@ __PAZPAR2_TOGGLE_XML_POST__
     <port></port>
     <user></user>
     <password></password>
-    <ssn_url></ssn_url>
+    <url></url>
  </ssnProvider>
 
  <!-- Opuscapita iPost configuration -->
