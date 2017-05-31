@@ -541,7 +541,9 @@ CREATE TABLE collections_tracking (
   collections_tracking_id integer(11) NOT NULL auto_increment,
   colId integer(11) NOT NULL DEFAULT 0 comment 'collections.colId',
   itemnumber integer(11) NOT NULL DEFAULT 0 comment 'items.itemnumber',
-  PRIMARY KEY (collections_tracking_id)
+  PRIMARY KEY (collections_tracking_id),
+  CONSTRAINT `coltra-fk-items` FOREIGN KEY (`itemnumber`) REFERENCES `items` (`itemnumber`)
+    ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8;
 
 --
