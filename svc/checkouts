@@ -118,7 +118,7 @@ while ( my $c = $sth->fetchrow_hashref() ) {
     my ( $can_renew, $can_renew_error ) =
       CanBookBeRenewed( $c->{borrowernumber}, $c->{itemnumber} );
     my $can_renew_date =
-      $can_renew_error eq 'too_soon'
+      ($can_renew_error && $can_renew_error eq 'too_soon')
       ? output_pref(
         {
             dt => GetSoonestRenewDate( $c->{borrowernumber}, $c->{itemnumber} ),
