@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # koha-sip-watchdog V160504 - Written by Pasi Korkalo/OUTI-Libraries
 # (C) OUTI-libraries, Koha-Suomi Oy
 # License: GPL-3 or newer
