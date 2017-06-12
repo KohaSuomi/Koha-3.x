@@ -75,6 +75,7 @@ overdue_notices.pl
                                   Ex. "13" Generates the first and third overdue letters.
                                   Ex. "2" Generates only the second overdue letter.
    -p, -preferemail               Generates message for one message type. Email, SMS or print, prefers email.
+   -s, -singlefine                Add only one overdue fee per messagetype per patron
 
 =head1 OPTIONS
 
@@ -298,6 +299,8 @@ my @myborcatout;
 my $date;
 my $letternumbers = 123; #overdue notifications letter1, letter2, letter3 to generate.
 my $preferemail = 0; # Prevents generating email, sms and print letter. Generates only one if patron data is right, prefers email.
+my $singlefine;
+my %fine;
 
 GetOptions(
     'help|?'         => \$help,
@@ -318,6 +321,7 @@ GetOptions(
     'email=s'        => \@emails,
     'letternumbers=s'  => \$letternumbers,
     'p|preferemail'  => \$preferemail,
+    's|singlefine'   => \$singlefine,
 ) or pod2usage(2);
 pod2usage(1) if $help;
 pod2usage( -verbose => 2 ) if $man;
@@ -628,7 +632,13 @@ END_SQL
                     if (@misses) {
                         $verbose and warn "The following terms were not matched and replaced: \n\t" . join "\n\t", @misses;
                     }
-                    set_overdue_price($borrowernumber, $i, $overdue_rules->{categorycode}, $overdue_rules->{"letter$i"}, $branchcode); #HACKMAN HERE, Bug #1050
+                    
+                    # Add single fine per lettercode or add fines for all the generated letters/Koha-Suomi Oy/PK KD1978
+                    if (! $singlefine || ! defined $fine{$i}{$borrowernumber}) {
+                      $fine{$i}{$borrowernumber} = 1;
+                      set_overdue_price($borrowernumber, $i, $overdue_rules->{categorycode}, $overdue_rules->{"letter$i"}, $branchcode);
+                    }
+      
                     if ($nomail) {
                         push @output_chunks,
                           prepare_letter_for_printing(
@@ -890,14 +900,13 @@ sub set_overdue_price {
     $sth2->execute($categorycode);
     $price = $sth2->fetchrow_array
   }
-  
+ 
   # Set overdue price to patron.
   if ($letter_code =~ /1/) {
     C4::Accounts::manualinvoice( $borrowernumber, undef, '1. huomautus', 'ODUE', $price, undef );
   } elsif ($letter_code =~ /2/) {
     C4::Accounts::manualinvoice( $borrowernumber, undef, '2. huomautus', 'ODUE', $price, undef );
   } elsif ($letter_code =~ /CLAIM/) {
-    C4::Accounts::manualinvoice( $borrowernumber, undef, 'Perintä', 'ODUE', $price, undef );
+    C4::Accounts::manualinvoice( $borrowernumber, undef, 'Lasku', 'ODUE', $price, undef );
   }
 }
-
