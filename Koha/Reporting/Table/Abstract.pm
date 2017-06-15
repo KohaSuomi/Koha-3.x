@@ -149,6 +149,13 @@ has 'row_count' => (
     writer => 'setRowCount'
 );
 
+has 'extra_joins' => (
+    is => 'rw',
+    isa => 'ArrayRef',
+    default => sub { [] },
+    reader => 'getExtraJoins',
+    writer => 'setExtraJoins'
+);
 
 sub BUILD {
    my $self = shift;
@@ -164,7 +171,7 @@ sub addFilter{
     if(defined $filter && defined $options){
         $conditionString = $filter->getConditionString($self, $options);
         if(defined $conditionString && $conditionString ne ''){
-            push $self->{filters}, {'logic' => $filter->getLogic(), 'condition' => $conditionString}; 
+            push $self->{filters}, {'logic' => $filter->getLogic(), 'condition' => $conditionString, 'type' => $filter->getFilterType()}; 
             $self->setIsNeeded(1);
         }        
     }   
@@ -176,6 +183,7 @@ sub addFieldToSelect{
     my $alias = $_[1];
     my $noFullField = $_[2];
     my $selectNulls = $_[3];
+    my $skipNullIF = $_[4];
     my $selectField;
 
     if( defined $noFullField){
@@ -188,7 +196,7 @@ sub addFieldToSelect{
     if(defined $selectNulls){
         $selectField = $self->getIfNullColumn($selectField);
     }
-    else{
+    elsif(!$skipNullIF){
         if(!defined $alias){
             $alias = $selectField;
         }
@@ -271,6 +279,14 @@ sub limit {
 
 }
 
+sub addExtraJoin{
+    my $self = shift;
+    my $join = $_[0];
+    if(defined $join){
+        push $self->{extra_joins}, $join;
+    }
+}
+
 sub getFullColumn{
     my $self = shift;
     my $columnName = $_[0];
@@ -315,19 +331,44 @@ sub getFilterFragment{
     if($self->getFilters()){
         my $filters = $self->getFilters();
         foreach my $filter (@$filters){
-            if($where eq ''){
-                $where = '';
+            if($filter->{type} eq 'filter'){
+                if($where eq ''){
+                    $where = '';
+                }
+                elsif($filter->{logic} eq 'AND'){
+                    $where .= 'AND '
+                }
+                elsif($filter->{logic} eq 'OR'){
+                    $where = '('. $where .') OR '
+                }
+                $where .= $filter->{condition} . ' ';
             }
-            elsif($filter->{logic} eq 'AND'){
-                $where .= 'AND '
-            }
-            elsif($filter->{logic} eq 'OR'){
-                $where = '('. $where .') OR '
-            }
-            $where .= $filter->{condition} . ' ';
         }
     }
     return $where;
+}
+
+sub getHavingFragment{
+    my $self = shift;
+    my $having = $_[0];
+    if($self->getFilters()){
+        my $filters = $self->getFilters();
+        foreach my $filter (@$filters){
+            if($filter->{type} eq 'having'){
+                if($having eq ''){
+                    $having = '';
+                }
+                elsif($filter->{logic} eq 'AND'){
+                    $having .= 'AND '
+                }
+                elsif($filter->{logic} eq 'OR'){
+                    $having = '('. $having .') OR '
+                }
+                $having .= $filter->{condition} . ' ';
+            }
+        }
+    }
+    return $having;
 }
 
 sub getOrderByFragment{

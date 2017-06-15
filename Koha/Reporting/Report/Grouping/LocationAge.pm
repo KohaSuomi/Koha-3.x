@@ -12,6 +12,7 @@ sub BUILD {
     my $self = shift;
     $self->setName('location_age');
     $self->setDescription('Adult / Child');
+    $self->setAlias('Adult / Child');
     $self->setDimension('location');
     $self->setField('location_age');
 }

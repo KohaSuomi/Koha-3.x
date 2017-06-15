@@ -23,13 +23,10 @@ sub BUILD {
     $self->addGrouping('Koha::Reporting::Report::Grouping::CnClass');
     $self->addGrouping('Koha::Reporting::Report::Grouping::LocationType');
     $self->addGrouping('Koha::Reporting::Report::Grouping::LocationAge');
- 
-   $self->addGrouping('Koha::Reporting::Report::Grouping::BiblioItem');
+    $self->addGrouping('Koha::Reporting::Report::Grouping::BiblioItem');
 
-
-#$self->{groupingsHash};
-    $self->addFilter('branch', 'Koha::Reporting::Report::Filter::Branch');
     $self->addFilter('branch_category', 'Koha::Reporting::Report::Filter::BranchGroup');
+    $self->addFilter('branch', 'Koha::Reporting::Report::Filter::Branch');
     $self->addFilter('location', 'Koha::Reporting::Report::Filter::Location');
     $self->addFilter('language', 'Koha::Reporting::Report::Filter::Language');
     $self->addFilter('location_type', 'Koha::Reporting::Report::Filter::Location::Type');

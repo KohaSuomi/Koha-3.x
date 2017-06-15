@@ -47,26 +47,36 @@ sub BUILD {
     my $self = shift;
     my $objectfactory = new Koha::Reporting::Table::ObjectFactory();
     $self->setObjectFactory($objectfactory);
-
-    $self->addReportToList('loans_by_item', 'Koha::Reporting::Report::Loans::LoansByItem');
-    $self->addReportToList('loans_by_borrower_type', 'Koha::Reporting::Report::Loans::LoansByBorrowerType');
-    $self->addReportToList('borrowers', 'Koha::Reporting::Report::Borrowers');
-    $self->addReportToList('acquisition', 'Koha::Reporting::Report::Acquisitions');
-    $self->addReportToList('acquisition_qty', 'Koha::Reporting::Report::AcquisitionsQty');
-    $self->addReportToList('items', 'Koha::Reporting::Report::Items');
-#    $self->addReportToList('collection_biblioitem', 'Koha::Reporting::Report::CollectionByBiblioItem');
-    $self->addReportToList('deleteditems', 'Koha::Reporting::Report::DeletedItems');
-
 #OMA
     $self->addReportToList('loans_by_item_oma', 'Koha::Reporting::Report::Oma::Loans::LoansByItem');
     $self->addReportToList('loans_by_borrower_type_oma', 'Koha::Reporting::Report::Oma::Loans::LoansByBorrowerType');
+    $self->addReportToList('loans_by_biblioitem_oma', 'Koha::Reporting::Report::Oma::Loans::LoansByBiblioItem');
+    $self->addReportToList('loans_by_item_oma_barcode', 'Koha::Reporting::Report::Loans::LoansByItemBarcode');
+    $self->addReportToList('returns_oma', 'Koha::Reporting::Report::Oma::Returns');
     $self->addReportToList('borrowers_oma', 'Koha::Reporting::Report::Oma::Borrowers');
     $self->addReportToList('acquisition_oma', 'Koha::Reporting::Report::Oma::Acquisitions');
     $self->addReportToList('acquisition_oma_qty', 'Koha::Reporting::Report::Oma::AcquisitionsQty');
     $self->addReportToList('items_oma', 'Koha::Reporting::Report::Oma::Items');
+    $self->addReportToList('items_status_oma', 'Koha::Reporting::Report::Oma::ItemsStatus');
+    $self->addReportToList('collection_biblioitem_oma', 'Koha::Reporting::Report::CollectionByBiblioItem');
+    $self->addReportToList('optimal_collection_oma', 'Koha::Reporting::Report::Oma::OptimalCollection');
     $self->addReportToList('deleteditems_oma', 'Koha::Reporting::Report::Oma::DeletedItems');
+    $self->addReportToList('reserves_oma', 'Koha::Reporting::Report::Oma::Reserves');
+    $self->addReportToList('reserves_biblioitem_oma', 'Koha::Reporting::Report::Oma::ReservesBiblioItem');
     $self->addReportToList('fines_overdue', 'Koha::Reporting::Report::Oma::Fines::Overdue');
+    $self->addReportToList('fines_paid', 'Koha::Reporting::Report::Oma::Fines::Paid');
     $self->addReportToList('fines_overdue_customers', 'Koha::Reporting::Report::Oma::Fines::OverdueCustomers');
+    $self->addReportToList('messages_oma', 'Koha::Reporting::Report::Oma::Messages');
+
+#OKM
+    $self->addReportToList('loans_by_item', 'Koha::Reporting::Report::Loans::LoansByItem');
+    $self->addReportToList('loans_by_borrower_type', 'Koha::Reporting::Report::Loans::LoansByBorrowerType');
+    $self->addReportToList('returns', 'Koha::Reporting::Report::Returns');
+    $self->addReportToList('borrowers', 'Koha::Reporting::Report::Borrowers');
+    $self->addReportToList('acquisition', 'Koha::Reporting::Report::Acquisitions');
+    $self->addReportToList('acquisition_qty', 'Koha::Reporting::Report::AcquisitionsQty');
+    $self->addReportToList('items', 'Koha::Reporting::Report::Items');
+    $self->addReportToList('deleteditems', 'Koha::Reporting::Report::DeletedItems');
 
 }
 

@@ -12,6 +12,7 @@ sub BUILD {
     my $self = shift;
     $self->setName('location_type');
     $self->setDescription('Fiction / Non-fiction');
+    $self->setAlias('Fiction / Non-fiction');
     $self->setDimension('location');
     $self->setField('location_type');
 }

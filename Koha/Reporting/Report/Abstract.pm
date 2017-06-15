@@ -129,6 +129,32 @@ has 'renderer' => (
     writer => 'setRenderer'
 );
 
+has 'renderer_class' => (
+    is => 'rw',
+    default => 'Koha::Reporting::Report::Renderer::Csv',
+    reader => 'getRendererClass',
+    writer => 'setRendererClass'
+);
+
+has 'default_ordering' => (
+    is => 'rw',
+    reader => 'getDefaultOrdering',
+    writer => 'setDefaultOrdering'
+);
+
+has 'has_top_limit' => (
+    is => 'rw',
+    default => 0,
+    reader => 'getHasTopLimit',
+    writer => 'setHasTopLimit'
+);
+
+has 'default_limit' => (
+    is => 'rw',
+    reader => 'getDefaultLimit',
+    writer => 'setDefaultLimit'
+);
+
 sub BUILD {
     my $self = shift;
     my $factTableFactory = new Koha::Reporting::Table::Fact::Factory;
@@ -139,7 +165,6 @@ sub BUILD {
     if($objectFactory){
         $self->setObjectFactory($objectFactory);
     }
-
 }
 
 sub initFactTable{
@@ -151,6 +176,15 @@ sub initFactTable{
             $factTable->setUseSum($self->getUseSum());
             $self->setFactTable($factTable);
         }
+    }
+}
+
+sub initRenderer{
+    my $self = shift;
+    my $rendererClass = $self->getRendererClass();
+    my $renderer = $self->getObjectFactory()->createObject($rendererClass);
+    if(defined $renderer){
+        $self->setRenderer($renderer);
     }
 }
 
@@ -196,7 +230,10 @@ sub initFromRequest{
                 my $addNullFilter = 0;
                 if(defined $requestFilter->{name} && defined $requestFilter->{selectedValue1}){
                     my $filter = $self->getFilterByName($requestFilter->{name});
-                    if($filter->getDimension() && $filter->getField() && $filter->getRule()){
+                    if($filter->getUseCustomLogic()){
+                       $filter->customLogic($self, $requestFilter);
+                    }
+                    elsif($filter->getDimension() && $filter->getField() && $filter->getRule()){
                         my $rule;
                         my $options;
                         if(defined $requestFilter->{selectedValue1} && $requestFilter->{selectedValue1} ne ''){
@@ -251,14 +288,38 @@ sub initFromRequest{
             }
         }
     }
+    elsif(defined $self->{default_ordering}){
+        my $defaultOrdering = $self->{default_ordering};
+        if(defined $defaultOrdering){
+            my $ordering = $self->getOrderingByName($defaultOrdering);
+            if($ordering->{dimension} && $ordering->{field}){
+                my $direction = 'asc';
+                if(defined $ordering->{default_ordering}){
+                    $direction = $ordering->{default_ordering};
+                }
+                my $noFullSelectColumnOrder;
+                if(defined $ordering->{no_full_select_column}){
+                    $noFullSelectColumnOrder = $ordering->{no_full_select_column};
+                }
+                my $selectAliasOrder;
+                if(defined $ordering->{alias}){
+                    $selectAliasOrder = $ordering->{alias};
+                }
+                $self->orderBy($ordering->{dimension}, $ordering->{field}, $direction, $noFullSelectColumnOrder, $selectAliasOrder);
+            }
+        }
+    }
+
     if(defined $request->{limit} && $request->{limit} ne ''){
         $self->limit($request->{limit});
     }
+
+    $self->initSelectFieldsBefore();
     if( @{$self->getHardCodedGroupings()} ){
         foreach my $hcGroup (@{$self->getHardCodedGroupings()}){
             my $group = $self->getGroupingByName($hcGroup);
             if($group->{dimension} && $group->{field}){
-                $self->groupBy($group->{dimension}, $group->{field});
+                $self->groupBy($group->{dimension}, $group->{field}, $group->{alias});
             }
         }
     }
@@ -466,27 +527,53 @@ sub limit{
 
 sub addFieldToSelect{
     my $self = shift;
-    my ($dimensionName, $fieldName) = @_;
-    my $dimension;
+    my ($dimensionName, $fieldName, $alias) = @_;
+    my ($dimension, $field);
     if($dimensionName && $fieldName){
         if($dimensionName eq 'fact'){
-            $self->getFactTable()->addFieldToSelect($fieldName);
-            $self->getRenderer()->addColumn($self->getFactTable()->getFullColumn($fieldName));
+            $self->getFactTable()->addFieldToSelect($fieldName, $alias);
+            if(defined $alias){
+                $field = $alias;
+            }
+            else{
+                $field = $self->getFactTable()->getFullColumn($fieldName);
+            }
+            $self->getRenderer()->addColumn($field);
         }
         else{
             $dimension = $self->getFactTable()->getDimensionByName($dimensionName);
             if($dimension){
-                $dimension->addFieldToSelect($fieldName);
-                $self->getRenderer()->addColumn($dimension->getFullColumn($fieldName));
+                if(defined $alias){
+                    $field = $alias;
+                }
+                else{
+                    $field = $dimension->getFullColumn($fieldName);
+                }
+                $dimension->addFieldToSelect($fieldName, $alias);
+                $self->getRenderer()->addColumn($field);
             }
         }
     }
 }
 
+sub initSelectFieldsBefore{}
+
 sub getReportFileName{
     my $self = shift;
     my $time = Time::Piece->new;    
     my $filename = $self->getName(). '-'. $time->datetime . '.csv';
+}
+
+sub formatSumValue{
+    my $self = shift;
+    my $value = $_[0];
+    return $value;
+}
+
+sub modifyDataRows{
+    my $self = shift;
+    my $dataRows = $_[0];
+    return $dataRows;
 }
 
 1;

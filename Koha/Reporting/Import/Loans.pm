@@ -10,29 +10,19 @@ use utf8;
 
 extends 'Koha::Reporting::Import::Abstract';
 
+has 'limit' => (
+    is => 'rw',
+    writer => 'setLimit'
+);
+
 sub BUILD {
     my $self = shift;
     $self->initFactTable('reporting_loans');
     $self->setName('loans_fact');
 
-#    $self->{column_filters}->{item}->{is_yle} = 1;
-#    $self->{column_filters}->{item}->{published_year} = 1;
-#    $self->{column_filters}->{item}->{collection_code} = 1;
-#    $self->{column_filters}->{item}->{language} = 1;
-#    $self->{column_filters}->{item}->{acquired_year} = 1;
-#    $self->{column_filters}->{item}->{itemtype_okm} = 1;
-#    $self->{column_filters}->{item}->{itemtype} = 1;
-
-#    $self->{column_filters}->{item}->{cn_class} = 1;
-#    $self->{column_filters}->{item}->{cn_class_primary} = 1;
-#    $self->{column_filters}->{item}->{cn_class_1_dec} = 1;
-#    $self->{column_filters}->{item}->{cn_class_2_dec} = 1;
-#    $self->{column_filters}->{item}->{cn_class_3_dec} = 1;
-
     $self->{column_transform_method}->{fact}->{loan_type} = \&factLoanType;
     $self->{column_transform_method}->{fact}->{loaned_amount} = \&factLoanedAmount;
-
-  #  $self->setInsertOnDuplicateFact(1);
+    #$self->setInsertOnDuplicateFact(1);
 }
 
 sub loadDatas{
@@ -40,86 +30,32 @@ sub loadDatas{
     my $dbh = C4::Context->dbh;
     my $statistics;
     my @parameters;
-    my $query = 'select reporting_statistics_tmp.primary_id, reporting_statistics_tmp.datetime, reporting_statistics_tmp.branch, reporting_statistics_tmp.type as loan_type, ';
-    $query .= 'reporting_statistics_tmp.usercode, reporting_statistics_tmp.itemtype, ';
+    my $query = 'select reporting_statistics_tmp.datetime, reporting_statistics_tmp.branch, reporting_statistics_tmp.type as loan_type, ';
+    $query .= 'reporting_statistics_tmp.usercode, ';
     $query .= 'reporting_statistics_tmp.borrowernumber, reporting_statistics_tmp.ccode as collection_code, reporting_statistics_tmp.itemnumber, ';
+    $query .= 'COALESCE(items.itype, deleteditems.itype) as itemtype, ';
     $query .= 'COALESCE(items.location, deleteditems.location) as location, COALESCE(items.dateaccessioned, deleteditems.dateaccessioned) as acquired_year, ';
-    $query .= 'COALESCE(items.biblioitemnumber, deleteditems.biblioitemnumber) as biblioitemnumber, COALESCE(items.cn_sort, deleteditems.cn_sort) as cn_sort, COALESCE(biblioitems.marcxml, deletedbiblioitems.marcxml) as marcxml, ';
-    $query .= 'biblioitems.publicationyear as published_year, ';
+    $query .= 'COALESCE(items.biblioitemnumber, deleteditems.biblioitemnumber) as biblioitemnumber, COALESCE(items.cn_sort, deleteditems.cn_sort) as cn_sort, ';
+    $query .= 'COALESCE(biblioitems.marcxml, deletedbiblioitems.marcxml, dbiblioitems.marcxml, ddeletedbiblioitems.marcxml) as marcxml, COALESCE(items.barcode, deleteditems.barcode) as barcode, ';
+    $query .= 'COALESCE(biblioitems.publicationyear, deletedbiblioitems.publicationyear, dbiblioitems.publicationyear, ddeletedbiblioitems.publicationyear) as published_year, ';
     $query .= 'borrowers.categorycode, borrowers.zipcode as postcode, borrowers.dateofbirth, borrowers.cardnumber ';
-    $query .= 'from reporting_statistics_tmp as reporting_statistics_tmp ';
+    $query .= 'from statistics as reporting_statistics_tmp ';
     $query .= 'left join items on reporting_statistics_tmp.itemnumber=items.itemnumber ';
     $query .= 'left join deleteditems on reporting_statistics_tmp.itemnumber=deleteditems.itemnumber ';
+
     $query .= 'left join biblioitems on items.biblioitemnumber=biblioitems.biblioitemnumber ';
-    $query .= 'left join deletedbiblioitems on deleteditems.biblioitemnumber=deletedbiblioitems.biblioitemnumber ';
+    $query .= 'left join deletedbiblioitems on items.biblioitemnumber=deletedbiblioitems.biblioitemnumber ';
+
+    $query .= 'left join biblioitems as dbiblioitems on deleteditems.biblioitemnumber=dbiblioitems.biblioitemnumber ';
+    $query .= 'left join deletedbiblioitems as ddeletedbiblioitems on deleteditems.biblioitemnumber=ddeletedbiblioitems.biblioitemnumber ';
+
     $query .= 'left join borrowers on reporting_statistics_tmp.borrowernumber = borrowers.borrowernumber ';
-    $query .= "where reporting_statistics_tmp.usercode in ('HENKILO', 'MUUHUOL', 'KOTIPALVEL', 'LAPSI', 'YHTEISO') and other != 'KONVERSIO' and type in ('issue', 'renew') ";
+    $query .= "where reporting_statistics_tmp.usercode in ('HENKILO', 'MUUHUOL', 'KOTIPALVEL', 'LAPSI', 'YHTEISO', 'KAUKOLAINA') and other != 'KONVERSIO' and type in ('issue', 'renew') ";
     my ($where, $parameters) = $self->getWhere();
     push @parameters, @$parameters;
 
-#    my $query = 'select reporting_statistics_tmp.primary_id, reporting_statistics_tmp.datetime, reporting_statistics_tmp.branch, reporting_statistics_tmp.type as loan_type, ';
-#    $query .= 'reporting_statistics_tmp.usercode, ';
-#    $query .= 'reporting_statistics_tmp.borrowernumber, reporting_statistics_tmp.ccode as collection_code, reporting_statistics_tmp.itemnumber, ';
-#    $query .= 'items.location, items.dateaccessioned as acquired_year, items.itype as itemtype, ';
-#    $query .= 'items.biblioitemnumber, items.cn_sort, biblioitems.marcxml, ';
-#    $query .= 'biblioitems.publicationyear as published_year, ';
-#    $query .= 'borrowers.categorycode, borrowers.zipcode as postcode, borrowers.dateofbirth, borrowers.cardnumber ';
-#    $query .= 'from reporting_statistics_tmp as reporting_statistics_tmp ';
-#    $query .= 'inner join items on reporting_statistics_tmp.itemnumber=items.itemnumber ';
-#    $query .= 'inner join biblioitems on items.biblioitemnumber=biblioitems.biblioitemnumber ';
-#    $query .= 'left join borrowers on reporting_statistics_tmp.borrowernumber = borrowers.borrowernumber ';
-#    $query .= "where reporting_statistics_tmp.usercode in ('HENKILO', 'MUUHUOL', 'KOTIPALVEL', 'LAPSI', 'YHTEISO') and other != 'KONVERSIO' and type in ('issue', 'renew') ";    
-#    my ($where, $parameters) = $self->getWhere();
-#    push @parameters, @$parameters;
-
-#    my $query2 = 'UNION ALL select reporting_statistics_tmp.primary_id, reporting_statistics_tmp.datetime, reporting_statistics_tmp.branch, reporting_statistics_tmp.type as loan_type, ';
-#    $query2 .= 'reporting_statistics_tmp.usercode, ';
-#    $query2 .= 'reporting_statistics_tmp.borrowernumber, reporting_statistics_tmp.ccode as collection_code, reporting_statistics_tmp.itemnumber, ';
-#    $query2 .= 'items.location, items.dateaccessioned as acquired_year, items.itype as itemtype, ';
-#    $query2 .= 'items.biblioitemnumber, items.cn_sort, biblioitems.marcxml, ';
-#    $query2 .= 'biblioitems.publicationyear as published_year, ';
-#    $query2 .= 'borrowers.categorycode, borrowers.zipcode as postcode, borrowers.dateofbirth, borrowers.cardnumber ';
-#    $query2 .= 'from reporting_statistics_tmp as reporting_statistics_tmp ';
-#    $query2 .= 'inner join items as items on reporting_statistics_tmp.itemnumber=items.itemnumber ';
-#    $query2 .= 'inner join deletedbiblioitems as biblioitems on items.biblioitemnumber=biblioitems.biblioitemnumber ';
-#    $query2 .= 'left join borrowers on reporting_statistics_tmp.borrowernumber = borrowers.borrowernumber ';
-#    $query2 .= "where reporting_statistics_tmp.usercode in ('HENKILO', 'MUUHUOL', 'KOTIPALVEL', 'LAPSI', 'YHTEISO') and other != 'KONVERSIO' and type in ('issue', 'renew') ";
-#    my ($where2, $parameters2) = $self->getWhere();
-#    push @parameters, @$parameters2;
-
-#    my $query3 = 'UNION ALL select reporting_statistics_tmp.primary_id, reporting_statistics_tmp.datetime, reporting_statistics_tmp.branch, reporting_statistics_tmp.type as loan_type, ';
-#    $query3 .= 'reporting_statistics_tmp.usercode, ';
-#    $query3 .= 'reporting_statistics_tmp.borrowernumber, reporting_statistics_tmp.ccode as collection_code, reporting_statistics_tmp.itemnumber, ';
-#    $query3 .= 'items.location, items.dateaccessioned as acquired_year, items.itype as itemtype, ';
-#    $query3 .= 'items.biblioitemnumber, items.cn_sort, biblioitems.marcxml, ';
-#    $query3 .= 'biblioitems.publicationyear as published_year, ';
-#    $query3 .= 'borrowers.categorycode, borrowers.zipcode as postcode, borrowers.dateofbirth, borrowers.cardnumber ';
-#    $query3 .= 'from reporting_statistics_tmp as reporting_statistics_tmp ';
-#    $query3 .= 'inner join deleteditems as items on reporting_statistics_tmp.itemnumber=items.itemnumber ';
-#    $query3 .= 'inner join biblioitems on items.biblioitemnumber=biblioitems.biblioitemnumber ';
-#    $query3 .= 'left join borrowers on reporting_statistics_tmp.borrowernumber = borrowers.borrowernumber ';
-#    $query3 .= "where reporting_statistics_tmp.usercode in ('HENKILO', 'MUUHUOL', 'KOTIPALVEL', 'LAPSI', 'YHTEISO') and other != 'KONVERSIO' and type in ('issue', 'renew') ";
-#    my ($where3, $parameters3) = $self->getWhere();
-#    push @parameters, @$parameters3;
-
-#    my $query4 = 'UNION ALL select reporting_statistics_tmp.primary_id, reporting_statistics_tmp.datetime, reporting_statistics_tmp.branch, reporting_statistics_tmp.type as loan_type, ';
-#    $query4 .= 'reporting_statistics_tmp.usercode, ';
-#    $query4 .= 'reporting_statistics_tmp.borrowernumber, reporting_statistics_tmp.ccode as collection_code, reporting_statistics_tmp.itemnumber, ';
-#    $query4 .= 'items.location, items.dateaccessioned as acquired_year, items.itype as itemtype, ';
-#    $query4 .= 'items.biblioitemnumber, items.cn_sort, biblioitems.marcxml, ';
-#    $query4 .= 'biblioitems.publicationyear as published_year, ';
-#    $query4 .= 'borrowers.categorycode, borrowers.zipcode as postcode, borrowers.dateofbirth, borrowers.cardnumber ';
-#    $query4 .= 'from reporting_statistics_tmp as reporting_statistics_tmp ';
-#    $query4 .= 'inner join deleteditems as items on reporting_statistics_tmp.itemnumber=items.itemnumber ';
-#    $query4 .= 'inner join deletedbiblioitems as biblioitems on items.biblioitemnumber=biblioitems.biblioitemnumber ';
-#    $query4 .= 'left join borrowers on reporting_statistics_tmp.borrowernumber = borrowers.borrowernumber ';
-#    $query4 .= "where reporting_statistics_tmp.usercode in ('HENKILO', 'MUUHUOL', 'KOTIPALVEL', 'LAPSI', 'YHTEISO') and other != 'KONVERSIO' and type in ('issue', 'renew') ";
-#    my ($where4, $parameters4) = $self->getWhere();
-#    push @parameters, @$parameters4;
-
     $query .= $where;
-    #$query = $query . $where . $query2 . $where2 . $query3 . $where3 . $query4 . $where4;
-    $query .= 'order by primary_id ';
+    $query .= 'order by datetime ';
 
     if($self->getLimit()){
         $query .= 'limit ?';
@@ -137,10 +73,16 @@ sub loadDatas{
     if ($stmnt->rows >= 1){
         $statistics = $stmnt->fetchall_arrayref({});
         if(defined @$statistics[-1]){
+            my $firstRow = @$statistics[0];
             my $lastRow =  @$statistics[-1];
-            if(defined $lastRow->{primary_id}){
-                $self->updateLastSelected($lastRow->{primary_id});
+            if(defined $lastRow->{datetime}){
+                $self->updateLastSelected($lastRow->{datetime});
             }
+
+            print Dumper 'first date:';
+            print Dumper $firstRow->{datetime};
+            print Dumper 'last date:';
+            print Dumper $lastRow->{datetime};
         }
     }
     return $statistics;
@@ -149,7 +91,7 @@ sub loadDatas{
 sub loadLastAllowedId{
     my $self = shift;
     my $dbh = C4::Context->dbh;
-    my $query = "select MAX(primary_id) from reporting_statistics_tmp where usercode in ('HENKILO', 'MUUHUOL', 'KOTIPALVEL', 'LAPSI', 'YHTEISO') and other != 'KONVERSIO' and type in ('issue', 'renew') order by datetime";
+    my $query = "select MAX(datetime) from statistics where usercode in ('HENKILO', 'MUUHUOL', 'KOTIPALVEL', 'LAPSI', 'YHTEISO', 'KAUKOLAINA') and other != 'KONVERSIO' and type in ('issue', 'renew') order by datetime";
     my $stmnt = $dbh->prepare($query);
     $stmnt->execute() or die($DBI::errstr);
 
@@ -166,11 +108,11 @@ sub getWhere{
 
     my $where = '';
     if($self->getLastSelectedId()){
-        $where .= "and reporting_statistics_tmp.primary_id > ? ";
+        $where .= "and reporting_statistics_tmp.datetime > ? ";
         push @parameters, $self->getLastSelectedId();
     }
     if($self->getLastAllowedId()){
-        $where .= "and reporting_statistics_tmp.primary_id <= ? ";
+        $where .= "and reporting_statistics_tmp.datetime <= ? ";
         push @parameters, $self->getLastAllowedId();
     }
     return ($where, \@parameters );
@@ -245,5 +187,94 @@ sub updateItems{
 #    $self->getTableAbstract()->setRetryCount(0);
 #    $self->getTableAbstract()->execute($query, \@parameters, 'reporting_update_items');
 }
+
+sub getLimit{
+    my $self = shift;
+    my $lastSelectedId = $self->getLastSelectedId();
+    my $defaultLimit = $self->{limit};
+    my $limitOffset = 0;
+    my $idAtLimit = $self->getRowIdAtLimit($defaultLimit);
+    if(defined $idAtLimit){
+        my $limitRowCount = $self->getLimitRowCount($idAtLimit);
+        $limitOffset = $self->getLimitOffset($defaultLimit, $limitRowCount, $idAtLimit);
+    }
+    return $defaultLimit + $limitOffset;    
+}
+
+sub getRowIdAtLimit{
+    my $self = shift;
+    my $defaultLimit = $_[0];
+    my @parameters;
+    my $dbh = C4::Context->dbh;
+    my $lastId;
+    my $lastSelectedId = $self->getLastSelectedId();
+    my $limitStart = $defaultLimit -1;
+    my $query = "select datetime from statistics ";
+    $query .= "where  usercode in ('HENKILO', 'MUUHUOL', 'KOTIPALVEL', 'LAPSI', 'YHTEISO', 'KAUKOLAINA') and other != 'KONVERSIO' and type in ('issue', 'renew') ";
+    if(defined $lastSelectedId){
+        push @parameters, $lastSelectedId;
+        $query .= "and datetime > ? ";
+    }
+    $query .= "order by datetime LIMIT 1 OFFSET $limitStart";
+    my $stmnt = $dbh->prepare($query);
+    if(@parameters){
+       $stmnt->execute(@parameters) or die($DBI::errstr);
+    }
+    else{
+        $stmnt->execute() or die($DBI::errstr);
+    }
+    $stmnt->execute(@parameters) or die($DBI::errstr);
+    if($stmnt->rows == 1){
+        $lastId = $stmnt->fetch()->[0];
+    }
+    return $lastId;
+}
+
+sub getLimitRowCount{
+    my $self = shift;
+    my $idAtLimit = $_[0];
+    my @parameters;
+    my $rowCount = 0;
+    my $dbh = C4::Context->dbh;
+    my $query = "select count(1) as row_count from statistics where datetime = '$idAtLimit' and usercode in ('HENKILO', 'MUUHUOL', 'KOTIPALVEL', 'LAPSI', 'YHTEISO', 'KAUKOLAINA') and other != 'KONVERSIO' and type in ('issue', 'renew')";
+    my $stmnt = $dbh->prepare($query);
+    $stmnt->execute(@parameters) or die($DBI::errstr);
+    if($stmnt->rows == 1){ 
+        $rowCount = $stmnt->fetch()->[0];
+    }
+    return $rowCount;
+}
+
+sub getLimitOffset{
+    my $self = shift;
+    my $defaultLimit = $_[0];
+    my $idRowCount = $_[1];
+    my $idAtLimit = $_[2];
+    my @parameters;
+    my $dbh = C4::Context->dbh;
+    my $idRows;
+    my $offset = 0;
+    my $lastSelectedId = $self->getLastSelectedId();
+    my $limitStart = $defaultLimit -1; 
+    push @parameters, $lastSelectedId;
+
+    my $query = "select datetime from statistics where datetime > ? and usercode in ('HENKILO', 'MUUHUOL', 'KOTIPALVEL', 'LAPSI', 'YHTEISO', 'KAUKOLAINA') and other != 'KONVERSIO' and type in ('issue', 'renew')";
+    $query .= "order by datetime LIMIT $idRowCount OFFSET $limitStart";
+    my $stmnt = $dbh->prepare($query);
+    $stmnt->execute(@parameters) or die($DBI::errstr);
+    if($stmnt->rows > 0){
+        $idRows = $stmnt->fetchall_arrayref({});
+        foreach my $idRow (@$idRows){
+            if(defined $idRow->{datetime} && $idRow->{datetime} eq $idAtLimit){
+                $offset++;
+            }
+        }
+    }
+    if($offset > 0){
+       $offset--;
+    }
+    return $offset;
+}
+
 
 1;

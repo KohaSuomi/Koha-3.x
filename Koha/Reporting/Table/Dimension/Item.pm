@@ -21,6 +21,9 @@ sub BUILD {
     $self->{column_value_validate_method}->{acquired_year} = \&validateAllowAll;
     $self->{column_value_validate_method}->{itemtype_okm} = \&validateAllowAll;
     $self->{column_value_validate_method}->{itemtype} = \&validateAllowAll;
+    $self->{column_value_validate_method}->{barcode} = \&validateAllowAll;
+    $self->{column_value_validate_method}->{title} = \&validateAllowAll;
+    $self->{column_value_validate_method}->{language_all} = \&validateAllowAll;
 
     $self->{column_value_validate_method}->{cn_class} = \&validateAllowAll;
     $self->{column_value_validate_method}->{cn_class_primary} = \&validateAllowAll;

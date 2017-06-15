@@ -13,10 +13,8 @@ use C4::Members;
 use JSON;
 use Data::Dumper;
 use Koha::Reporting::Report::Factory;
-use Koha::Reporting::Report::Renderer::Csv;
 
 my $query = new CGI;
-
 my $requestJson = $query->param('request_json');
 my $message;
 
@@ -26,18 +24,15 @@ if($requestJson){
         my $rows;
         my $headerRows;
         my @dataRows;
-        my $renderer = new Koha::Reporting::Report::Renderer::Csv;
         my $reportFactory = new Koha::Reporting::Report::Factory();
         my $report = $reportFactory->getReportByName($reportRequest->{name});
-
         if($report){
-           $report->setRenderer($renderer);
+           $report->initRenderer();
            $report->initFromRequest($reportRequest);
            @dataRows = $report->load();
-#die Dumper @dataRows;
            if(@dataRows){
-               $renderer->addColumn($report->getFactTable()->getDataColumn());
-               ($headerRows, $rows) = $renderer->generateRows(\@dataRows, $report->getFactTable()->getDataColumn());
+               $report->getRenderer()->addColumn($report->getFactTable()->getDataColumn());
+               ($headerRows, $rows) = $report->getRenderer()->generateRows(\@dataRows, $report);
 
                if(@$rows){
                    if(defined $reportRequest->{selectedReportType} && $reportRequest->{selectedReportType} eq 'html'){
@@ -54,11 +49,7 @@ if($requestJson){
                    }
                    else{
                        my $fileName = $report->getReportFileName();
-                       #print "Content-Type:application/x-download\n";
-                       #print "Content-Disposition:attachment;filename=$fileName\n\n";
-
                        print $query->header(
-                          # -type => 'application/octet-stream',
                             -type => 'application/download',
                             -'Content-Transfer-Encoding' => 'binary',
                             -attachment=>"$fileName",
@@ -71,7 +62,7 @@ if($requestJson){
                             pre-check=0
                        )),
                        );
-                       print $renderer->generateCsv($headerRows, $rows);
+                       print $report->getRenderer()->generateCsv($headerRows, $rows);
                    }
                }
                else{
@@ -92,7 +83,4 @@ if($requestJson){
         
     }
 }
-
-#$message = Dumper $message;
-#die($message);
 

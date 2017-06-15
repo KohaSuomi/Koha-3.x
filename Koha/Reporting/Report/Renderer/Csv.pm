@@ -5,6 +5,7 @@ use Modern::Perl;
 use Moose;
 use Data::Dumper;
 use Text::CSV;
+use utf8;
 
 has 'name' => (
     is => 'rw',
@@ -81,10 +82,23 @@ has 'current_column' => (
     writer => 'setCurrentColumn'
 );
 
+has 'fact_table' => (
+    is => 'rw',
+    reader => 'getFactTable',
+    writer => 'setFactTable'
+);
+
+has 'report' => (
+    is => 'rw',
+    reader => 'getReport',
+    writer => 'setReport'
+);
+
 sub render {
     my $self = shift;
     my $dataRows = $_[0];
     my $fact = $_[1];
+    $self->setFactTable($fact);
     my ($headerRows, $rows) = $self->generateRows($dataRows, $fact->getDataColumn());
     print Dumper $headerRows;
 }
@@ -92,17 +106,20 @@ sub render {
 sub generateRows {
     my $self = shift;
     my $dataRows = $_[0];
-    my $dataColumn = $_[1];
+    my $report = $_[1];
     my $groups = $self->getGroups();
     my $datas = {};
     my $groupValues = {};
     my $rowDatas = [];
     my $headerRows = [];
-    
+    $self->setReport($report);
+    $self->setFactTable($report->getFactTable());
+    my $dataColumn = $self->getFactTable()->getDataColumn();
+    $dataRows = $self->getReport()->modifyDataRows($dataRows);
     foreach my $group (@$groups){
         $groupValues->{$group} = [];
     }
-#die Dumper @$dataRows;
+#die Dumper $dataRows;
     if(@$dataRows){
         my $lastGroup = @{$groups}[-1];
         foreach my $row (@$dataRows) {
@@ -163,12 +180,14 @@ sub generateRows {
                     $dataRow = $self->getDataRow(\@allGroups, $dataRow, $tmpDataHash, $self->{current_column});
                     my $currentRow = $self->getCurrentRow();
                     if(defined $self->{row_counters}->{$currentRow}){
-                        push $dataRow, $self->{row_counters}->{$currentRow};
+                        my $rowCounterValue = $self->getReport()->formatSumValue($self->{row_counters}->{$currentRow});
+                        push $dataRow, $rowCounterValue;
                     }
                 }
                 elsif(ref $tmpDataHash ne 'HASH'){
                     $self->setCurrentRow($value);
                     $self->addToRowCounter($tmpDataHash);
+                    $tmpDataHash = $self->getReport()->formatSumValue($tmpDataHash);
                     push $dataRow, $tmpDataHash;                  
                 }
                 
@@ -184,17 +203,20 @@ sub generateRows {
                 my $rowData = [];
                 foreach my $column (@$columns){
                     if(defined $row->{$column}){
-                        push $rowData, $row->{$column};
+                        my $colValue = $row->{$column};
+                        if($column eq $dataColumn){
+                            $colValue = $self->getReport()->formatSumValue($colValue);
+                        }
+                        push $rowData, $colValue;
                     }
                 }   
                 push $rowDatas, $rowData;
             }
-           
         }
     }
     if(@{$self->{column_counters}}){
         my $sumRow = ['sum'];
-        push $sumRow, @{$self->{column_counters}};
+        push $sumRow, $self->getColumnCounterSumValues();
         if(%{$self->{row_counters}}){
             push $sumRow, $self->getRowCounterSum();
             if(@$headerRows){
@@ -334,6 +356,7 @@ sub getDataRow{
              }
              $self->addToColumnCounter(\@currentColumn, $value, $val);
              $self->addToRowCounter($val);
+             $val = $self->getReport()->formatSumValue($val);
              push $row, $val;
          }
          else{
@@ -391,7 +414,17 @@ sub getRowCounterSum{
         my $value = $counters->{$counter};
         $sum += $value;
     }
+    $sum = $self->getReport()->formatSumValue($sum);
     return $sum;
+}
+
+sub getColumnCounterSumValues{
+    my $self = shift;
+    my $counterValues = [];
+    foreach my $counterValue (@{$self->{column_counters}}){
+        push $counterValues, $self->getReport()->formatSumValue($counterValue); 
+    }
+    return @$counterValues;
 }
 
 sub generateCsv{

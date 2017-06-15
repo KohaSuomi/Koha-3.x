@@ -15,14 +15,14 @@ sub BUILD {
     $self->setDimension('item');
     $self->setField('is_yle');
     $self->setRule('in');
+    $self->setAddNotSetOption(0);
 }
 
 sub loadOptions{
     my $self = shift;
     my $dbh = C4::Context->dbh; 
     my $options = [
-        {'name' => '1', 'description' => 'Is Yle'},
-        {'name' => '0', 'description' => 'Not Yle'}
+        {'name' => '1', 'description' => 'Is Yle'}
     ];
     
     return $options;

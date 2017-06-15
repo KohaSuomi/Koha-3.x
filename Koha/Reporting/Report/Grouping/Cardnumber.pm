@@ -12,6 +12,7 @@ sub BUILD {
     my $self = shift;
     $self->setName('cardnumber');
     $self->setDescription('Cardnumber');
+    $self->setAlias('Cardnumber');
     $self->setDimension('borrower');
     $self->setField('cardnumber');
 

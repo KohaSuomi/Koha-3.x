@@ -115,8 +115,11 @@ sub BUILD {
 
     $self->{column_transform_method}->{item}->{is_yle} = \&itemIsYle;
     $self->{column_transform_method}->{item}->{language} = \&itemLanguage;
+    $self->{column_transform_method}->{item}->{language_all} = \&itemLanguageAll;
+
     $self->{column_transform_method}->{item}->{published_year} = \&itemPublishedYear;
     $self->{column_transform_method}->{item}->{itemtype_okm} = \&itemItemTypeOkm;
+    $self->{column_transform_method}->{item}->{title} = \&itemTitle;
 
     $self->{column_transform_method}->{item}->{cn_class} = \&itemCnClass;
     $self->{column_transform_method}->{item}->{cn_class_primary} = \&itemCnClassPrimary;
@@ -219,12 +222,15 @@ sub loadLastAllowedId{}
 sub massImport{
     my $self = shift;
     my $continue = 1;
+    $self->beforeMassImport();
     if($self->initImportSettings()){
         while($continue){
             $continue = $self->importDatas();
         }
     }
 }
+
+sub beforeMassImport{}
 
 sub importDatas{
     my $self = shift;
@@ -239,7 +245,7 @@ sub importDatas{
         $fact->initDefaultImportColumns();
         my $dimensions = $fact->getDimensions();
         $dimensions = $self->applyColumnFilters($dimensions);
-
+        $self->applyColumnFilters({'fact' => $fact});
 print Dumper 'datas';
 
         foreach my $data (@$datas){
@@ -410,7 +416,6 @@ print Dumper 'fact';
 print Dumper 'fact insert';
 
     if($self->getInsertOnDuplicateFact()){
-        print Dumper "asd";
         $insert = $fact->createImportInsert(1);
     }
     else{
@@ -693,7 +698,7 @@ if(defined $age){
         $ageGroup = '0-6';
     }
     elsif($age >= 7 && $age <= 12){
-        $ageGroup = '7-12';
+        $ageGroup = '07-12';
     }
     elsif($age >= 13 && $age <= 15){
         $ageGroup = '13-15';
@@ -798,21 +803,60 @@ sub itemLanguage{
     my $dimension = $_[1];
     my $result;
 
-    if($dimension){
-        my $marc = $self->initMarc($data, $dimension);
-        if($marc){
-            my $value = $marc->subfield('041','a');
-            if($value && ($value ne 'fin' && $value ne 'swe')){
-                $result = 'other';
-            }
-            elsif($value){
-                $result = $value;
-            }
-        }
+    if(!defined $data->{language}){
+        $self->initLanguageData($data);
     }
+    if(defined $data->{language}){
+        $result =  $data->{language};
+    }
+    return $result;
+
+
     return $result;
 }
 
+sub itemLanguageAll{
+    my $self = shift;
+    my $data = $_[0];
+    my $dimension = $_[1];
+    my $result;
+
+    if(!defined $data->{language_al}){
+        $self->initLanguageData($data);
+    }
+    if(defined $data->{language_all}){
+        $result =  $data->{language_all};
+    }
+    return $result;
+
+
+    return $result;
+}
+
+sub initLanguageData{
+    my $self = shift;
+    my $data = $_[0];
+    my $dimension = $_[1];
+    my $language;
+
+    my $marc = $self->initMarc($data, $dimension);
+    if($marc){
+        my $value = $marc->subfield('041','a');
+        if($value && ($value ne 'fin' && $value ne 'swe')){
+            $language = 'other';
+        }
+        elsif($value){
+            $language = $value;
+        }
+
+        if(defined $language){
+            $data->{'language'} = $language;
+        }
+        if(defined $value){
+            $data->{'language_all'} = $value;
+        }
+    }
+}
 
 sub itemPublishedYear{
     my $self = shift;
@@ -837,6 +881,38 @@ sub itemPublishedYear{
                         $result = $year;
                     }
                 }
+            }
+        }
+    }
+    return $result;
+}
+
+sub itemTitle{
+    my $self = shift;
+    my $data = $_[0];
+    my $dimension = $_[1];
+    my ($result, $mainTitle, $additionalTitle, $respTitle);
+
+    if($data && defined $data->{title} ){
+        $result = $data->{title};
+    }
+    if(!$result || $result ne ''){
+        if($dimension){
+            my $marc = $self->initMarc($data, $dimension);
+            if($marc){
+                $mainTitle = $marc->subfield('245','a');
+                $additionalTitle = $marc->subfield('245','b');
+                $respTitle = $marc->subfield('245','c');
+                if($mainTitle){
+                    $result = $mainTitle;
+                    if($additionalTitle){
+                        $result .= $additionalTitle;
+                    }
+                    if($respTitle){
+                        $result .= $respTitle;
+                    }
+                }
+
             }
         }
     }
@@ -944,6 +1020,62 @@ sub initCnClassData{
     my $result;
     my $cnSort;
     my $cnClass;
+
+    if($dimension){
+        my $marc = $self->initMarc($data, $dimension);
+        if($marc){
+            $cnSort = $marc->subfield('084','a');
+            $_ = $cnSort;
+            if(defined $cnSort && /([0-9]*[.][0-9]*)/){
+                $cnClass =  $1;
+                if($cnClass){
+                    $self->setCnData($data, $cnClass);
+                    $result = 1;
+                }
+            }
+            elsif(defined $cnSort && /([0-9]*)/){
+                $cnClass =  $1;
+                if($cnClass){
+                    $self->setCnData($data, $cnClass);
+                    $result = 1;
+                }
+            }
+        }
+    }
+
+    if(!defined $result){
+        undef $cnSort;
+        if(defined $data->{cn_sort}){
+            $cnSort = $data->{cn_sort};
+        }
+
+        if(defined $cnSort){
+            $_ = $cnSort;
+            if(/([0-9]*[.][0-9]*)/){
+                $cnClass =  $1;
+                if($cnClass){
+                     $self->setCnData($data, $cnClass);
+                     $result = 1;
+                }
+            }
+            elsif(/([0-9]*)/){
+                $cnClass =  $1;
+                if($cnClass){
+                    $self->setCnData($data, $cnClass);
+                    $result = 1;
+                }
+            }
+        }
+    }
+}
+
+sub initCnClassDataOld{
+    my $self = shift;
+    my $data = $_[0];
+    my $dimension = $_[1];
+    my $result;
+    my $cnSort;
+    my $cnClass;
     if(defined $data->{cn_sort}){
         $cnSort = $data->{cn_sort};
     }
@@ -965,6 +1097,7 @@ sub initCnClassData{
             }
         }
     }
+
     if(!defined $result){
         if($dimension){
             my $marc = $self->initMarc($data, $dimension);
@@ -972,11 +1105,11 @@ sub initCnClassData{
                 $cnSort = $marc->subfield('084','a');
                 $_ = $cnSort;
                 if(defined $cnSort && /([0-9]*[.][0-9]*)/){
-                    $cnClass =  $1; 
+                    $cnClass =  $1;
                     if($cnClass){
                         $self->setCnData($data, $cnClass);
                         $result = 1;
-                    }   
+                    }
                 }
                 elsif(defined $cnSort && /([0-9]*)/){
                     $cnClass =  $1;
@@ -986,9 +1119,10 @@ sub initCnClassData{
                     }
                 }
             }
-        }        
+        }
     }
 }
+
 
 sub setCnData{
     my $self = shift;
@@ -998,7 +1132,7 @@ sub setCnData{
 
     if(defined $cnClass){
         my ($cnPrimary, $cnDecimal) = split /\./, $cnClass;
-        
+
         if(defined $cnDecimal){
             ($cnFirstDec, $cnSecondDec, $cnThirdDec) = split //, $cnDecimal;
         }

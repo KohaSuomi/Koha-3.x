@@ -11,15 +11,18 @@ CREATE TABLE reporting_import_settings (
     UNIQUE(name)
 );
 
-insert into reporting_import_settings (name, primary_column, batch_limit) values ('loans_fact', 'primary_id', '30000');
-insert into reporting_import_settings (name, primary_column, batch_limit) values ('fines_overdue_fact', 'datetime', '30000');
+insert into reporting_import_settings (name, primary_column, batch_limit) values ('loans_fact', 'datetime', '30000');
+insert into reporting_import_settings (name, primary_column, batch_limit) values ('fines_overdue_fact', 'accountlines_id', '30000');
+insert into reporting_import_settings (name, primary_column, batch_limit) values ('fines_paid_fact', 'accountlines_id', '20000');
 insert into reporting_import_settings (name, primary_column, batch_limit) values ('borrowers_new_fact', 'borrowernumber', '30000');
 insert into reporting_import_settings (name, primary_column, batch_limit) values ('borrowers_deleted_fact', 'borrowernumber', '30000');
 insert into reporting_import_settings (name, primary_column, batch_limit) values ('acquisitions_fact', 'itemnumber', '30000');
 insert into reporting_import_settings (name, primary_column, batch_limit) values ('items_fact', 'itemnumber', '30000');
 insert into reporting_import_settings (name, primary_column, batch_limit) values ('deleteditems_fact', 'itemnumber', '30000');
-
+insert into reporting_import_settings (name, primary_column, batch_limit) values ('returns_fact', 'datetime', '30000');
+insert into reporting_import_settings (name, primary_column, batch_limit) values ('reserves_fact', 'reserve_id', '30000');
 insert into reporting_import_settings (name, primary_column, batch_limit) values ('items_update', 'itemnumber', '30000');
+insert into reporting_import_settings (name, primary_column, batch_limit) values ('messages_fact', 'message_id', '30000');
 
 
 DROP TABLE IF EXISTS `reporting_item_dim`;
@@ -27,10 +30,11 @@ CREATE TABLE reporting_item_dim (
     item_id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     itemnumber INT(11) UNSIGNED NOT NULL,
     biblioitemnumber INT(11) UNSIGNED NOT NULL,
+    title VARCHAR(255),
     acquired_year INT(4),
     published_year INT(4),
     cn_class VARCHAR(30),
-    cn_class_primary INT(4),
+    cn_class_primary VARCHAR(30),
     cn_class_1_dec INT(4),
     cn_class_2_dec INT(4),
     cn_class_3_dec INT(4),
@@ -38,19 +42,22 @@ CREATE TABLE reporting_item_dim (
     itemtype_okm VARCHAR(30),
     is_yle INT(11) NOT NULL default 0,
     language VARCHAR(30),
+    language_all VARCHAR(30),
     collection_code VARCHAR(30),
+    barcode varchar(20),
     UNIQUE(itemnumber)
-);
+) ENGINE=InnoDB CHARACTER SET=utf8;
 CREATE INDEX itemnumber_idx ON reporting_item_dim (itemnumber);
 CREATE INDEX published_year_idx ON reporting_item_dim (published_year);
 CREATE INDEX acquired_year_idx ON reporting_item_dim (acquired_year);
 CREATE INDEX collection_code_idx ON reporting_item_dim (collection_code);
 CREATE INDEX language_idx ON reporting_item_dim (language);
-
+CREATE INDEX barcode_idx ON reporting_item_dim (barcode);
+CREATE INDEX biblioitemnumber_idx ON reporting_item_dim (biblioitemnumber);
 
 DROP TABLE IF EXISTS `reporting_date_dim`;
 CREATE TABLE reporting_date_dim (
-    date_id INT(10) UNSIGNED PRIMARY KEY,
+    date_id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     year INT(4) NOT NULL,
     month INT(2) NOT NULL,
     day INT(2) NOT NULL,
@@ -92,7 +99,6 @@ CREATE TABLE reporting_loans_fact (
     borrower_id BIGINT UNSIGNED NOT NULL,
     loan_type VARCHAR(30) NOT NULL,
     loaned_amount INT(11) UNSIGNED NOT NULL
---    UNIQUE(date_id, item_id, location_id, borrower_id, loan_type)
 );
 
 CREATE INDEX date_id_idx ON reporting_loans_fact (date_id);
@@ -100,6 +106,7 @@ CREATE INDEX item_id_idx ON reporting_loans_fact (item_id);
 CREATE INDEX location_id_idx ON reporting_loans_fact (location_id);
 CREATE INDEX borrower_id_idx ON reporting_loans_fact (borrower_id);
 CREATE INDEX loan_type_idx ON reporting_loans_fact (loan_type);
+CREATE INDEX loaned_amount_idx ON reporting_loans_fact (loaned_amount);
 
 DROP TABLE IF EXISTS `reporting_fines_overdue_fact`;
 CREATE TABLE reporting_fines_overdue_fact (
@@ -183,6 +190,83 @@ CREATE TABLE reporting_update_items (
 );
 
 CREATE INDEX item_number_idx ON reporting_update_items (itemnumber);
+
+DROP TABLE IF EXISTS `reporting_returns_fact`;
+CREATE TABLE reporting_returns_fact (
+    primary_key BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    date_id BIGINT UNSIGNED NOT NULL,
+    item_id BIGINT UNSIGNED NOT NULL,
+    location_id BIGINT UNSIGNED NOT NULL,
+    borrower_id BIGINT UNSIGNED NOT NULL,
+    loan_type VARCHAR(30) NOT NULL,
+    amount INT(11) UNSIGNED NOT NULL
+);
+
+CREATE INDEX date_id_idx ON reporting_returns_fact (date_id);
+CREATE INDEX item_id_idx ON reporting_returns_fact (item_id);
+CREATE INDEX location_id_idx ON reporting_returns_fact (location_id);
+CREATE INDEX borrower_id_idx ON reporting_returns_fact (borrower_id);
+CREATE INDEX loan_type_idx ON reporting_returns_fact (loan_type);
+
+
+DROP TABLE IF EXISTS `reporting_reserves_fact`;
+CREATE TABLE reporting_reserves_fact (
+    primary_key BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    date_id BIGINT UNSIGNED NOT NULL,
+    item_id BIGINT UNSIGNED NOT NULL,
+    location_id BIGINT UNSIGNED NOT NULL,
+    borrower_id BIGINT UNSIGNED NOT NULL,
+    reserve_status VARCHAR(30) NOT NULL,
+    amount INT(11) UNSIGNED NOT NULL
+);
+
+CREATE INDEX date_id_idx ON reporting_reserves_fact (date_id);
+CREATE INDEX item_id_idx ON reporting_reserves_fact (item_id);
+CREATE INDEX location_id_idx ON reporting_reserves_fact (location_id);
+CREATE INDEX borrower_id_idx ON reporting_reserves_fact (borrower_id);
+CREATE INDEX reserve_status_idx ON reporting_reserves_fact (reserve_status);
+
+
+DROP TABLE IF EXISTS `reporting_fines_paid_fact`;
+CREATE TABLE reporting_fines_paid_fact (
+    primary_key BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    date_id BIGINT UNSIGNED NOT NULL,
+    location_id BIGINT UNSIGNED NOT NULL,
+    borrower_id BIGINT UNSIGNED NOT NULL,
+    amount decimal(28,6) UNSIGNED NOT NULL
+);
+
+CREATE INDEX date_id_idx ON reporting_fines_paid_fact (date_id);
+CREATE INDEX location_id_idx ON reporting_fines_paid_fact (location_id);
+CREATE INDEX borrower_id_idx ON reporting_fines_paid_fact (borrower_id);
+
+
+DROP TABLE IF EXISTS `reporting_messages_fact`;
+CREATE TABLE reporting_messages_fact (
+    primary_key BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    location_id BIGINT UNSIGNED NOT NULL,
+    date_id BIGINT UNSIGNED NOT NULL,
+    borrower_id BIGINT UNSIGNED NOT NULL,
+    transport_type VARCHAR(30) NOT NULL,
+    message_type VARCHAR(30) NOT NULL,
+    amount INT(11) UNSIGNED NOT NULL
+);
+
+CREATE INDEX date_id_idx ON reporting_messages_fact (date_id);
+CREATE INDEX location_id_idx ON reporting_messages_fact (location_id);
+CREATE INDEX borrower_id_idx ON reporting_messages_fact (borrower_id);
+CREATE INDEX transport_type_idx ON reporting_messages_fact (transport_type);
+CREATE INDEX message_type_idx ON reporting_messages_fact (message_type);
+
+
+DROP TABLE IF EXISTS `reporting_acquisitions_isfirst`;
+CREATE TABLE reporting_acquisitions_isfirst (
+    item_id BIGINT UNSIGNED NOT NULL,
+    branch_group VARCHAR(30) NOT NULL
+);
+
+CREATE INDEX item_id_idx ON reporting_acquisitions_isfirst (item_id);
+CREATE INDEX branch_group_idx ON reporting_acquisitions_isfirst (branch_group);
 
 
 

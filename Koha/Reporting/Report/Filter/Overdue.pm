@@ -15,6 +15,7 @@ sub BUILD {
     $self->setDimension('fact');
     $self->setField('is_overdue');
     $self->setRule('in');
+    $self->setAddNotSetOption(0);
 }
 
 sub loadOptions{

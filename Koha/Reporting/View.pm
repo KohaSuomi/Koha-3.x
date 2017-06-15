@@ -53,6 +53,13 @@ sub createReportsViewJson{
                 push $jsonData->{'filters'}, $filterHash;
             }
         }
+        my $hasTopLimit = $report->getHasTopLimit();
+        if(defined $hasTopLimit){
+            $jsonData->{'has_top_limit'} = $hasTopLimit;
+            if($report->getDefaultLimit()){
+                $jsonData->{'default_limit'} = $report->getDefaultLimit();
+            }
+        }
 
         push $jsonDatas, $jsonData;
     }

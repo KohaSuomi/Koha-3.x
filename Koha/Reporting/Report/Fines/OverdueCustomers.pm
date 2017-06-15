@@ -15,8 +15,8 @@ sub BUILD {
 #    $self->setUseDateFrom(0);
     $self->addGrouping('Koha::Reporting::Report::Grouping::Cardnumber');
 
-    $self->addFilter('branch', 'Koha::Reporting::Report::Filter::Branch');
     $self->addFilter('branch_category', 'Koha::Reporting::Report::Filter::BranchGroup');
+    $self->addFilter('branch', 'Koha::Reporting::Report::Filter::Branch');
     $self->addFilter('is_overdue', 'Koha::Reporting::Report::Filter::Overdue');
 }
 

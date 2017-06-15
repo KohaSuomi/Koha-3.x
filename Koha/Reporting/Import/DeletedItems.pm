@@ -25,7 +25,7 @@ sub loadDatas{
 
     print Dumper "SELECTING";
 
-    my $query = "select deleteditems.itemnumber, deleteditems.location, deleteditems.homebranch as branch, deleteditems.dateaccessioned as acquired_year, deleteditems.itype as itemtype, COALESCE(deleteditems.timestamp) as datetime, deleteditems.biblioitemnumber, deleteditems.cn_sort, ";
+    my $query = "select deleteditems.itemnumber, deleteditems.location, deleteditems.barcode, deleteditems.homebranch as branch, deleteditems.dateaccessioned as acquired_year, deleteditems.itype as itemtype, COALESCE(deleteditems.timestamp) as datetime, deleteditems.biblioitemnumber, deleteditems.cn_sort, ";
     $query .= 'COALESCE(biblioitems.marcxml, deletedbiblioitems.marcxml) as marcxml, COALESCE(biblioitems.publicationyear, deletedbiblioitems.publicationyear) as published_year ';
     $query .= 'from deleteditems ';
     $query .= 'left join biblioitems on deleteditems.biblioitemnumber = biblioitems.biblioitemnumber ';

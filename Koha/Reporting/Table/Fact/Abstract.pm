@@ -13,6 +13,13 @@ has 'data_column' => (
     writer => 'setDataColumn'
 );
 
+has 'data_column_table' => (
+    is => 'rw',
+    default => 'fact',
+    reader => 'getDataColumnTable',
+    writer => 'setDataColumnTable'
+);
+
 has 'count_column' => (
     is => 'rw',
     reader => 'getCountColumn',
@@ -45,6 +52,20 @@ has 'use_distinct' => (
     default => 0,
     reader => 'getUseDistinct',
     writer => 'setUseDistinct'
+);
+
+has 'use_decimal_truncate' => (
+    is => 'rw',
+    default => 0,
+    reader => 'getUseDecimalTruncate',
+    writer => 'setUseDecimalTruncate'
+);
+
+has 'use_replace_comma' => (
+    is => 'rw',
+    default => 0,
+    reader => 'getUseReplaceComma',
+    writer => 'setUseReplaceComma'
 );
 
 has 'dimensions' => (
@@ -157,25 +178,42 @@ sub load{
 
 sub buildSelect{
     my $self = shift;
-    my ($select, $from, $where, $groupBy, $orderBy, $limit) = ('', '', '', '', '', '');
+    my ($select, $from, $where, $groupBy, $having, $orderBy, $limit) = ('', '', '', '', '', '', '');
     my @bind;
     my $dimensions = $self->getDimensions();
     my ($dimension, $filters, $groups, $selectColumns);
     if($self->getTableName()){
         $select .= 'SELECT ';
         $from .= 'FROM ' . $self->getTableName() . ' ';
+
+        my $factExtraJoins = $self->getExtraJoins();
+        if(@$factExtraJoins){
+            foreach my $factExtraJoin (@$factExtraJoins){
+                 $from .= $factExtraJoin;
+            }
+        }
+
         foreach my $dimensionName (sort keys %$dimensions) {
             $dimension = $dimensions->{$dimensionName};
             if($dimension && $dimension->getIsNeeded() && $dimension->getTableName() && $dimension->getPrimaryId()){
                 $from .= 'INNER JOIN ' . $dimension->getTableName() . ' ON ' . $self->getFullColumn($dimension->getPrimaryId()) . ' = ' . $dimension->getFullColumn($dimension->getPrimaryId()) . ' ';
+                my $extraJoins = $dimension->getExtraJoins();
+                if(@$extraJoins){
+                    foreach my $extraJoin (@$extraJoins){
+                        $from .= $extraJoin;
+                    }
+                }
                 $where = $dimension->getFilterFragment($where);
                 $groupBy = $dimension->getGroupByFragment($groupBy);
+                $having = $dimension->getHavingFragment($having);
                 $orderBy = $dimension->getOrderByFragment($orderBy);
                 $select = $dimension->getSelectFragment($select); 
             }
         }
+
         $where = $self->getFilterFragment($where);
         $groupBy = $self->getGroupByFragment($groupBy). ' ';
+        $having = $self->getHavingFragment($having);
         $orderBy = $self->getOrderByFragment($orderBy). ' ';
         if($groupBy ne '' && $self->getUseRollup() != 0){
             $groupBy .= ' WITH ROLLUP ';
@@ -199,27 +237,60 @@ sub buildSelect{
     if($where ne ''){
         $where = 'WHERE ' . $where;
     }
+    if($having ne ''){
+        $having = ' HAVING ' . $having;
+    }
 
-    $select = $select . $from . $where .$groupBy. $orderBy . $limit;
-#die Dumper $select;
+    $select = $select . $from . $where .$groupBy. $having .$orderBy . $limit;
     return ($select, \@bind);
 }
 
 sub getSumSelectFragment{
     my $self = shift;
     my $select =  '*';
-    my $sumColumn = $self->getFullColumn($self->getDataColumn());
-    if($sumColumn){
-        $select = 'SUM(' . $sumColumn . ') AS ' . $self->getDataColumn()
-    } 
+    my $column;
+
+    if($self->getDataColumn()){
+        $column = $self->getFullColumn($self->getDataColumn());
+    }
+    
+    if($column){
+        $select = 'SUM(' . $column . ') ';
+        if($self->getUseDecimalTruncate()){
+            $select = 'TRUNCATE(' . $select .',2)';
+        }
+        $select .= 'AS ' . $self->getDataColumn();
+    }
+
     return $select;
+}
+
+sub getSumColumn{
+    my $self = shift;
+    my $column;
+    if($self->getUseDecimalTruncate()){
+        $column = 'TRUNCATE(' . $self->getFullColumn($self->getDataColumn()) .',2)';
+    }
+    else{
+        $column = $self->getFullColumn($self->getDataColumn());
+    }
+    return $column;
 }
 
 sub getCountSelectFragment{
     my $self = shift;
     my $distinct = $_[0];
     my $select = '';
-    my $countColumn = $self->getFullColumn($self->getCountColumn());
+    my $countColumn;
+    my $dimensions = $self->getDimensions();
+    if($self->getDataColumnTable() eq 'fact'){
+        $countColumn = $self->getFullColumn($self->getCountColumn());
+    }
+    elsif(defined $dimensions->{$self->getDataColumnTable()}){
+       my $dimension = $dimensions->{$self->getDataColumnTable()};
+       $countColumn = $dimension->getFullColumn($self->getCountColumn());
+    }
+
     if($countColumn){
         $select .= 'COUNT( ';
         if($distinct == 1){

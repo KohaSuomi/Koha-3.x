@@ -17,22 +17,21 @@ sub BUILD {
     $self->getFactTable()->setUseDistinct(1);
 
     $self->setUseDateFrom(0);
-#    $self->setUseDateTo(0);
-
     $self->setDescription('Items');
     $self->setGroup('okm');
 
+    $self->addGrouping('Koha::Reporting::Report::Grouping::CnClass');
+    $self->addGrouping('Koha::Reporting::Report::Grouping::Language');
     $self->addGrouping('Koha::Reporting::Report::Grouping::Branch');
+    $self->addGrouping('Koha::Reporting::Report::Grouping::ItemTypeOkm');
     $self->addGrouping('Koha::Reporting::Report::Grouping::Location');
+    $self->addGrouping('Koha::Reporting::Report::Grouping::Collection');
     $self->addGrouping('Koha::Reporting::Report::Grouping::LocationType');
     $self->addGrouping('Koha::Reporting::Report::Grouping::LocationAge');
-    $self->addGrouping('Koha::Reporting::Report::Grouping::Language');
-    $self->addGrouping('Koha::Reporting::Report::Grouping::ItemTypeOkm');
-    $self->addGrouping('Koha::Reporting::Report::Grouping::CnClass');
 
 
-    $self->addFilter('branch', 'Koha::Reporting::Report::Filter::Branch');
     $self->addFilter('branch_category', 'Koha::Reporting::Report::Filter::BranchGroup');
+    $self->addFilter('branch', 'Koha::Reporting::Report::Filter::Branch');
     $self->addFilter('location', 'Koha::Reporting::Report::Filter::Location');
     $self->addFilter('cn_class', 'Koha::Reporting::Report::Filter::CnClass::Primary');
 #    $self->addFilter('itemtype', 'Koha::Reporting::Report::Filter::Itemtype');

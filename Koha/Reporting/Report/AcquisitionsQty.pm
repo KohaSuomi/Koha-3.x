@@ -13,16 +13,19 @@ sub BUILD {
     $self->setGroup('okm');
     $self->initFactTable('reporting_acquisition');
 
+    $self->addGrouping('Koha::Reporting::Report::Grouping::CnClass');
+    $self->addGrouping('Koha::Reporting::Report::Grouping::Language');
     $self->addGrouping('Koha::Reporting::Report::Grouping::Branch');
+    $self->addGrouping('Koha::Reporting::Report::Grouping::ItemTypeOkm');
     $self->addGrouping('Koha::Reporting::Report::Grouping::Location');
+    $self->addGrouping('Koha::Reporting::Report::Grouping::Collection');
     $self->addGrouping('Koha::Reporting::Report::Grouping::LocationType');
     $self->addGrouping('Koha::Reporting::Report::Grouping::LocationAge');
-    $self->addGrouping('Koha::Reporting::Report::Grouping::Language');
-    $self->addGrouping('Koha::Reporting::Report::Grouping::ItemTypeOkm');
-    $self->addGrouping('Koha::Reporting::Report::Grouping::CnClass');
 
-    $self->addFilter('branch', 'Koha::Reporting::Report::Filter::Branch');
+
     $self->addFilter('branch_category', 'Koha::Reporting::Report::Filter::BranchGroup');
+    $self->addFilter('branch_category_forced', 'Koha::Reporting::Report::Filter::BranchGroupForced');
+    $self->addFilter('branch', 'Koha::Reporting::Report::Filter::Branch');
     $self->addFilter('location', 'Koha::Reporting::Report::Filter::Location');
     $self->addFilter('cn_class', 'Koha::Reporting::Report::Filter::CnClass::Primary');
     $self->addFilter('itemtype_okm', 'Koha::Reporting::Report::Filter::ItemtypeOkm');
@@ -33,6 +36,7 @@ sub BUILD {
     $self->addFilter('collection_code', 'Koha::Reporting::Report::Filter::CollectionCode');
     $self->addFilter('location_type', 'Koha::Reporting::Report::Filter::Location::Type');
     $self->addFilter('location_age', 'Koha::Reporting::Report::Filter::Location::Age');
+    $self->addFilter('is_first', 'Koha::Reporting::Report::Filter::AcquisitionIsFirst');
 }
 
 sub initFactTable{

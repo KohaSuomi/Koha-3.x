@@ -19,18 +19,18 @@ sub BUILD {
     $self->setDescription('Deleted Items');
     $self->setGroup('okm');
 
-
+    $self->addGrouping('Koha::Reporting::Report::Grouping::CnClass');
+    $self->addGrouping('Koha::Reporting::Report::Grouping::Language');
     $self->addGrouping('Koha::Reporting::Report::Grouping::Branch');
+    $self->addGrouping('Koha::Reporting::Report::Grouping::ItemTypeOkm');
     $self->addGrouping('Koha::Reporting::Report::Grouping::Location');
+    $self->addGrouping('Koha::Reporting::Report::Grouping::Collection');
     $self->addGrouping('Koha::Reporting::Report::Grouping::LocationType');
     $self->addGrouping('Koha::Reporting::Report::Grouping::LocationAge');
-    $self->addGrouping('Koha::Reporting::Report::Grouping::Language');
-    $self->addGrouping('Koha::Reporting::Report::Grouping::ItemTypeOkm');
-    $self->addGrouping('Koha::Reporting::Report::Grouping::CnClass');
 
 
-    $self->addFilter('branch', 'Koha::Reporting::Report::Filter::Branch');
     $self->addFilter('branch_category', 'Koha::Reporting::Report::Filter::BranchGroup');
+    $self->addFilter('branch', 'Koha::Reporting::Report::Filter::Branch');
     $self->addFilter('location', 'Koha::Reporting::Report::Filter::Location');
     $self->addFilter('cn_class', 'Koha::Reporting::Report::Filter::CnClass::Primary');
 #    $self->addFilter('itemtype', 'Koha::Reporting::Report::Filter::Itemtype');

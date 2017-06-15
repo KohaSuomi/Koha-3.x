@@ -6,6 +6,7 @@ use Moose;
 use Data::Dumper;
 use POSIX qw(strftime floor);
 use Time::Piece;
+use Date::Parse;
 use utf8;
 
 extends 'Koha::Reporting::Import::Abstract';
@@ -15,6 +16,7 @@ sub BUILD {
     $self->initFactTable('reporting_acquisition');
     $self->setName('acquisitions_fact');
 
+    $self->{column_filters}->{fact}->{is_first} = 1;
     $self->{column_transform_method}->{fact}->{quantity} = \&factQuantity;
 }
 
@@ -23,16 +25,6 @@ sub loadDatas{
     my $dbh = C4::Context->dbh;
     my $statistics;
     my @parameters;
- #   my $query = 'select aqorders.entrydate as datetime, aqorders.unitprice as amount, aqorders_items.itemnumber, ';
- #   $query .= 'COALESCE(items.homebranch, deleteditems.homebranch) as branch, COALESCE(items.location, deleteditems.location) as location, '
- #   $query .= 'COALESCE(items.dateaccessioned, deleteditems.dateaccessioned) as acquired_year, ';
- #   $query .= 'COALESCE(items.biblioitemnumber, deleteditems.biblioitemnumber) as biblioitemnumber ,COALESCE(items.itype, deleteditems.itype) as itemtype, '
- #   $query .= 'biblioitems.marcxml, biblioitems.publicationyear as published_year ';
- #   $query .= 'from aqorders ';
- #   $query .= 'inner join aqorders_items on aqorders.ordernumber = aqorders_items.ordernumber ';
- #   $query .= 'left join items on aqorders_items.itemnumber=items.itemnumber ';
- #   $query .= 'left join deleteditems on aqorders_items.itemnumber=deleteditems.itemnumber ';
- #   $query .= 'left join biblioitems on items.biblioitemnumber=biblioitems.biblioitemnumber ';
 
     my $query = 'select aqorders.entrydate as datetime, aqorders.unitprice as amount, aqorders_items.itemnumber, ';
     $query .= 'allitems.homebranch as branch, allitems.location, ';
@@ -82,21 +74,8 @@ sub loadDatas{
     my ($where4, $parameters4) = $self->getWhere();
     push @parameters, @$parameters4;
 
-
-#    my $where = "where aqorders.orderstatus != 'cancelled' and aqorders_items.itemnumber is not null ";
-#    if($self->getLastSelectedId()){
-#        $where .= $self->getWhereLogic($where);
-#        $where .= " aqorders_items.itemnumber > ? ";      
-#        push @parameters, $self->getLastSelectedId();
-#    }
-#    if($self->getLastAllowedId()){
-#        $where .= $self->getWhereLogic($where);
-#        $where .= " aqorders_items.itemnumber <= ? ";
-#        push @parameters, $self->getLastAllowedId();
-#    }
     $query = $query . $where . $query2 . $where2 . $query3 . $where3 . $query4 . $where4; 
     $query .= 'order by itemnumber ';
-
     if($self->getLimit()){
         $query .= 'limit ?';
         push @parameters, $self->getLimit();

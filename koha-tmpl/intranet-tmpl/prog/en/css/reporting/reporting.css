@@ -22,7 +22,7 @@
 }
 
 .report-selector{
-    width:33%;
+    width:40%;
 }
 
 .report-selector-heading{
@@ -87,7 +87,7 @@
 .reporting-time-selector{
     margin-top:27px;
     min-height:86px;
-    width:58%;
+    width:51%;
 }
 
 .reporting-time-selector-selector{
@@ -117,12 +117,28 @@
 
 .dropdown-toggle{
     overflow:hidden;
+    background-image: linear-gradient(to bottom, #ffffff, #b9d8d8);
+}
+
+.bs-placeholder{
+    background-image: linear-gradient(to bottom, #ffffff, #e6e6e6);
+}
+
+.isselect .dropdown-toggle{
+    overflow:hidden;
+    background-image: linear-gradient(to bottom, #ffffff, #b9d8d8);
+}
+
+.btn:hover {
+    background: #e6e6e6;
 }
 
 .dropdown-toggle .filter-option{
     max-width:232px;
     word-wrap:break-word;
-    white-space:normal;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
 }
 
 .grouping-selector-groups input{
@@ -169,4 +185,18 @@
 .filter-selector-filter input{
     max-width:135px;
 }
+
+.dropup .dropdown-menu{
+    bottom: initial;
+}
+
+.grouping-selector-options{
+    font-size:12px;
+}
+
+.grouping-selector-group-container{
+    max-height:15px;
+}
+
+
 

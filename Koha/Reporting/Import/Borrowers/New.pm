@@ -24,7 +24,8 @@ sub loadDatas{
     my $dbh = C4::Context->dbh;
     my $statistics;
     my @parameters;
-    my $query = 'select borrowers.borrowernumber, borrowers.categorycode, borrowers.zipcode as postcode, borrowers.dateofbirth, borrowers.cardnumber , borrowers.dateenrolled as datetime, borrowers.branchcode as branch ';
+    my $query = 'select borrowers.borrowernumber, borrowers.categorycode, borrowers.zipcode as postcode, borrowers.dateofbirth, ';
+    $query .= 'borrowers.cardnumber , borrowers.dateenrolled as datetime, borrowers.branchcode as branch ';
     $query .= "from borrowers where dateenrolled IS NOT NULL and borrowers.categorycode in ('HENKILO', 'MUUHUOL', 'KOTIPALVEL', 'LAPSI', 'YHTEISO') ";
 
     if($self->getLastSelectedId()){

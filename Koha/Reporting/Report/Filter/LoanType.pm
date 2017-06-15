@@ -15,6 +15,7 @@ sub BUILD {
     $self->setDimension('fact');
     $self->setField('loan_type');
     $self->setRule('in');
+    $self->setAddNotSetOption(0);
 }
 
 sub loadOptions{

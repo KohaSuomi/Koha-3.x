@@ -18,6 +18,39 @@ has 'description' => (
     writer => 'setDescription'
 );
 
+has 'name2' => (
+    is => 'rw',
+    reader => 'getName2',
+    writer => 'setName2'
+);
+
+has 'description2' => (
+    is => 'rw',
+    reader => 'getDescription2',
+    writer => 'setDescription2'
+);
+
+has 'filter_type' => (
+    is => 'rw',
+    default => 'filter',
+    reader => 'getFilterType',
+    writer => 'setFilterType'
+);
+
+has 'use_custom_logic' => (
+    is => 'rw',
+    default => 0,
+    reader => 'getUseCustomLogic',
+    writer => 'setUseCustomLogic'
+);
+
+has 'use_full_column' => (
+    is => 'rw',
+    default => 1,
+    reader => 'getUseFullColumn',
+    writer => 'setUseFullColumn'
+);
+
 has 'type' => (
     is => 'rw',
     reader => 'getType',
@@ -74,6 +107,20 @@ has 'to_date' => (
     is => 'rw',
     reader => 'getToDate',
     writer => 'setToDate'
+);
+
+has 'add_not_set_option' => (
+    is => 'rw',
+    default => 1,
+    reader => 'getAddNotSetOption',
+    writer => 'setAddNotSetOption'
+);
+
+has 'add_select_all_option' => (
+    is => 'rw',
+    default => 1,
+    reader => 'getAddSelectAllOption',
+    writer => 'setAddSelectAllOption'
 );
 
 sub BUILD {
@@ -137,7 +184,12 @@ sub getConditionString{
     my $dbh = C4::Context->dbh;
     my ($value, $addNullOr);
     my $tmpOptions = [];
-    my $field = $table->getTableName() . '.' . $self->getField();
+
+    my $field = $self->getField();
+    if($self->getUseFullColumn()){
+        $field = $table->getTableName() . '.' . $field;
+    }
+
     if(ref($options) eq 'ARRAY'){
         if(@$options){
             foreach my $option (@$options){
@@ -182,7 +234,13 @@ sub getOptions{
     my $options = $self->{options};
     if(@$options <= 0){
         $options = $self->loadOptions();
-        push $options, {'name' => 'null', 'description' => 'Not set'};
+        if($self->getAddSelectAllOption()){
+            unshift $options, {'name' => 'select_all', 'description' => 'Select All'};
+        }
+        if($self->getAddNotSetOption()){
+            push $options, {'name' => 'null', 'description' => 'Not set'};
+        }
+        $self->{options} = $options;
     }
     return $options;
 }
@@ -201,6 +259,13 @@ sub toHash{
         $hash->{description} = $self->getDescription();
         $hash->{type} = $self->getType();
 
+        if($self->getName2()){
+            $hash->{name2} = $self->getName2();
+        }
+        if($self->getDescription2()){
+            $hash->{description2} = $self->getDescription2();
+        }
+
         if($self->getOptions()){
             $hash->{options} = $self->getOptions();
         }
@@ -213,6 +278,8 @@ sub modifyOptions{
     my $options = $_[0];
     return $options;
 }
+
+sub customLogic{}
 
 
 1;

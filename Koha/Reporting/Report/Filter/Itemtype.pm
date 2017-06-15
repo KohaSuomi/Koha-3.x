@@ -22,14 +22,15 @@ sub loadOptions{
     my $dbh = C4::Context->dbh; 
     my $branches = [];
     
-    my $stmnt = $dbh->prepare("select itemtype, description from itemtypes");
+    my $stmnt = $dbh->prepare("select itemtype, description from itemtypes order by FIELD(description,'Kirja') DESC, Description ASC");
     $stmnt->execute();
     if ($stmnt->rows >= 1){
         while ( my $row = $stmnt->fetchrow_hashref ) {
             my $option = {'name' => $row->{'itemtype'}, 'description' => $row->{'description'}};
             push $branches, $option;
         }
-    } 
+    }
+
     return $branches;
 }
 

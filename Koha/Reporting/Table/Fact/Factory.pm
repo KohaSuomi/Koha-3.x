@@ -20,10 +20,15 @@ sub BUILD {
     my $self = shift;
     $self->addFactTable('reporting_loans' => 'Koha::Reporting::Table::Fact::Loans');
     $self->addFactTable('reporting_fines_overdue' => 'Koha::Reporting::Table::Fact::Fines::Overdue');
+    $self->addFactTable('reporting_fines_paid' => 'Koha::Reporting::Table::Fact::Fines::Paid');
     $self->addFactTable('reporting_borrowers' => 'Koha::Reporting::Table::Fact::Borrowers');
     $self->addFactTable('reporting_acquisition' => 'Koha::Reporting::Table::Fact::Acquisitions');
     $self->addFactTable('reporting_items' => 'Koha::Reporting::Table::Fact::Items');
+    $self->addFactTable('reporting_items_status' => 'Koha::Reporting::Table::Fact::ItemsStatus');
     $self->addFactTable('reporting_deleteditems' => 'Koha::Reporting::Table::Fact::DeletedItems');
+    $self->addFactTable('reporting_returns' => 'Koha::Reporting::Table::Fact::Returns');
+    $self->addFactTable('reporting_reserves' => 'Koha::Reporting::Table::Fact::Reserves');
+    $self->addFactTable('reporting_messages' => 'Koha::Reporting::Table::Fact::Messages');
 
     $self->addFactTable('dummy' => 'Koha::Reporting::Table::Fact::Dummy');
 
