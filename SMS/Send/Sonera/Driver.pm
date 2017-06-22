@@ -108,18 +108,18 @@ sub send_sms {
 
     my $base_url = C4::Context->config('smsProviders')->{'sonera'}->{'url'};
     my $parameters = {
-        'U'         => $self->{_login},
-        'P'         => $self->{_password},
-        'T'         => $recipientNumber,
-        'M'         => Encode::encode( "iso-8859-1", $message),
+        'username'   => $self->{_login},
+        'password'   => $self->{_password},
+        'to'         => $recipientNumber,
+        'message'    => Encode::encode( "utf8", $message),
     };
 
     if ($clientid) {
-        $parameters->{'C'} = $clientid;
+        $parameters->{'costcenter'} = $clientid;
     }
 
     if (C4::Context->config('smsProviders')->{'sonera'}->{'sourceName'}) {
-        $parameters->{'F'} = C4::Context->config('smsProviders')->{'sonera'}->{'sourceName'};
+        $parameters->{'from'} = C4::Context->config('smsProviders')->{'sonera'}->{'sourceName'};
     }
 
     my $lwpcurl = LWP::Curl->new();
