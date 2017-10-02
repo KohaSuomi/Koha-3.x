@@ -143,6 +143,7 @@ sub printReport {
             $b->comPartLinkKey().','.
             ($b->unlinked() ? 'unlinked' : 'linked').', '.
             (@missingFields ? "@missingFields" : '').', '.
+            ($b->badBibLevel() ? 1 : "").', '.
             "\n";
     }
     else { #is host record
@@ -150,6 +151,7 @@ sub printReport {
             'host'.','.
             'host'.','.
             "@missingFields".', '.
+            ($b->badBibLevel() ? 1 : "").', '.
             "\n"
       if @missingFields;
     }
