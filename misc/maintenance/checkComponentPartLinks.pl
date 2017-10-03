@@ -126,7 +126,7 @@ sub printReport {
   my $bibs = shift;
 
   print "+Record analytics+\n";
-  print "bibnum, linkKey, linked?, missing\n";
+  print "bibnum, linkKey, linked?, missing, badBibLevel\n";
 
   foreach my $b (@$bibs) {
     my @missingFields;
