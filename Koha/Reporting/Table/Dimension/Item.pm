@@ -26,10 +26,14 @@ sub BUILD {
     $self->{column_value_validate_method}->{language_all} = \&validateAllowAll;
 
     $self->{column_value_validate_method}->{cn_class} = \&validateAllowAll;
+    $self->{column_value_validate_method}->{cn_class_fict} = \&validateAllowAll;
     $self->{column_value_validate_method}->{cn_class_primary} = \&validateAllowAll;
     $self->{column_value_validate_method}->{cn_class_1_dec} = \&validateAllowAll;
     $self->{column_value_validate_method}->{cn_class_2_dec} = \&validateAllowAll;
     $self->{column_value_validate_method}->{cn_class_3_dec} = \&validateAllowAll;
+    $self->{column_value_validate_method}->{cn_class_signum} = \&validateAllowAll;
+
+    $self->{column_value_validate_method}->{datelastborrowed} = \&validateAllowAll;
 
 }
 

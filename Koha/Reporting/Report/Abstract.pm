@@ -206,6 +206,7 @@ sub initFromRequest{
             $endId = $self->getDateId($dateFilter->{to}, '23');
             if(defined $startId && $dateFilter->{useFrom} eq '1'){
                 my $fromFilter = new Koha::Reporting::Report::Filter::Abstract;
+                $fromFilter->setName('date_from');
                 $fromFilter->setDimension('date');
                 $fromFilter->setField('date_id');
                 $fromFilter->setRule('gte');
@@ -213,6 +214,7 @@ sub initFromRequest{
             }
             if(defined $endId && $dateFilter->{useTo} eq '1'){
                 my $toFilter = new Koha::Reporting::Report::Filter::Abstract;
+                $toFilter->setName('date_to');
                 $toFilter->setDimension('date');
                 $toFilter->setField('date_id');
                 $toFilter->setRule('lte');
@@ -323,6 +325,8 @@ sub initFromRequest{
             }
         }
     }
+
+    $self->addHardcodedFilters();
 
     if(defined $request->{groupings}){
         my $requestGroups = $request->{groupings};
@@ -575,6 +579,9 @@ sub modifyDataRows{
     my $dataRows = $_[0];
     return $dataRows;
 }
+
+sub addHardcodedFilters{}
+
 
 1;
 

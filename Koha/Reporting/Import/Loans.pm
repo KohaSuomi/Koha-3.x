@@ -22,6 +22,7 @@ sub BUILD {
 
     $self->{column_transform_method}->{fact}->{loan_type} = \&factLoanType;
     $self->{column_transform_method}->{fact}->{loaned_amount} = \&factLoanedAmount;
+    $self->{column_transform_method}->{item}->{datelastborrowed} = \&itemDatelastborrowed;
     #$self->setInsertOnDuplicateFact(1);
 }
 
@@ -141,6 +142,16 @@ sub factLoanedAmount{
     my $fact = $_[1];
     my $type;
     return 1;
+}
+
+sub itemDatelastborrowed{
+    my $self = shift;
+    my $data = $_[0];
+    my $result;
+    if(defined $data->{datetime}){
+        $result = $data->{datetime};
+    }
+    return $result;
 }
 
 sub extraInserts{

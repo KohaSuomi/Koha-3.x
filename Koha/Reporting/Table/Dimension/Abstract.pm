@@ -180,5 +180,11 @@ sub initMarcXml{
     return $record;
 }
 
+sub skipFilter{
+    my $self = shift;
+    my $filter = $_[0];
+    return 0;
+}
+
 
 1;

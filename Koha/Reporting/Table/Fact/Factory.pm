@@ -19,6 +19,7 @@ has 'factTables' => (
 sub BUILD {
     my $self = shift;
     $self->addFactTable('reporting_loans' => 'Koha::Reporting::Table::Fact::Loans');
+    $self->addFactTable('reporting_loans_zero' => 'Koha::Reporting::Table::Fact::LoansZero');
     $self->addFactTable('reporting_fines_overdue' => 'Koha::Reporting::Table::Fact::Fines::Overdue');
     $self->addFactTable('reporting_fines_paid' => 'Koha::Reporting::Table::Fact::Fines::Paid');
     $self->addFactTable('reporting_borrowers' => 'Koha::Reporting::Table::Fact::Borrowers');

@@ -31,9 +31,9 @@ sub BUILD {
     $self->addFilter('itemtype_okm', 'Koha::Reporting::Report::Filter::ItemtypeOkm');
     $self->addFilter('language', 'Koha::Reporting::Report::Filter::Language');
     $self->addFilter('is_yle', 'Koha::Reporting::Report::Filter::IsYle');
+    $self->addFilter('collection_code', 'Koha::Reporting::Report::Filter::CollectionCode');
     $self->addFilter('published_start', 'Koha::Reporting::Report::Filter::PublishedStart');
     $self->addFilter('published_end', 'Koha::Reporting::Report::Filter::PublishedEnd');
-    $self->addFilter('collection_code', 'Koha::Reporting::Report::Filter::CollectionCode');
     $self->addFilter('location_type', 'Koha::Reporting::Report::Filter::Location::Type');
     $self->addFilter('location_age', 'Koha::Reporting::Report::Filter::Location::Age');
     $self->addFilter('is_first', 'Koha::Reporting::Report::Filter::AcquisitionIsFirst');

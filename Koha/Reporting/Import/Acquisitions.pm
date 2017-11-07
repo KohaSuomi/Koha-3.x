@@ -17,6 +17,7 @@ sub BUILD {
     $self->setName('acquisitions_fact');
 
     $self->{column_filters}->{fact}->{is_first} = 1;
+    $self->{column_filters}->{item}->{datelastborrowed} = 1;
     $self->{column_transform_method}->{fact}->{quantity} = \&factQuantity;
 }
 

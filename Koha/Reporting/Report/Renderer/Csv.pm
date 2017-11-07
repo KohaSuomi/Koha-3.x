@@ -119,7 +119,7 @@ sub generateRows {
     foreach my $group (@$groups){
         $groupValues->{$group} = [];
     }
-#die Dumper $dataRows;
+    #die Dumper $groups;
     if(@$dataRows){
         my $lastGroup = @{$groups}[-1];
         foreach my $row (@$dataRows) {

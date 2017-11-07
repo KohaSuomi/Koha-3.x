@@ -16,6 +16,7 @@ sub BUILD {
     $self->setName('reserves_fact');
 
     $self->{column_transform_method}->{fact}->{reserve_status} = \&factReserveStatus;
+    $self->{column_filters}->{item}->{datelastborrowed} = 1;
 }
 
 sub loadDatas{

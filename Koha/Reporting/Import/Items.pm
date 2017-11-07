@@ -29,7 +29,7 @@ sub BUILD {
 #    $self->{column_filters}->{item}->{cn_class_1_dec} = 1;
 #    $self->{column_filters}->{item}->{cn_class_2_dec} = 1;
 #    $self->{column_filters}->{item}->{cn_class_3_dec} = 1;
-
+    $self->{column_filters}->{item}->{datelastborrowed} = 1;
     $self->{column_transform_method}->{fact}->{amount} = \&factAmount;
 }
 

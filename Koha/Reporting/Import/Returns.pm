@@ -22,6 +22,7 @@ sub BUILD {
 
     $self->{column_transform_method}->{fact}->{loan_type} = \&factLoanType;
     $self->{column_transform_method}->{fact}->{amount} = \&factAmount;
+    $self->{column_filters}->{item}->{datelastborrowed} = 1;
 
   #  $self->setInsertOnDuplicateFact(1);
 }

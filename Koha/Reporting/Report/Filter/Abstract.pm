@@ -133,7 +133,8 @@ sub BUILD {
        'gt' => '{{field}} > %s',
        'lte' => '{{field}} <= %s',
        'gte' => '{{field}} >= %s',
-       'null' => "( {{field}} is null OR {{field}} = 'null' )"
+       'null' => "( {{field}} is null OR {{field}} = 'null' )",
+       'like%' => '{{field}} like %s'
     };
     $self->setConditions($conditions);
 }
@@ -207,6 +208,9 @@ sub getConditionString{
         }
     }
     else{
+        if($self->getRule() eq 'like%'){
+            $options .= '%';
+        }
         $value = $dbh->quote($options);
     }
 

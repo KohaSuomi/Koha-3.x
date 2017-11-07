@@ -21,7 +21,7 @@ sub BUILD {
 sub loadOptions{
    my $self = shift;
    my $options = [
-       {'name' =>'Issue', 'description' => 'Issue'},
+       {'name' =>'Issue', 'description' => 'First Issue'},
        {'name' =>'Renew', 'description' => 'Renew'}
    ];
    return $options;

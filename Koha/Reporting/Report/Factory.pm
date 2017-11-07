@@ -52,10 +52,12 @@ sub BUILD {
     $self->addReportToList('loans_by_borrower_type_oma', 'Koha::Reporting::Report::Oma::Loans::LoansByBorrowerType');
     $self->addReportToList('loans_by_biblioitem_oma', 'Koha::Reporting::Report::Oma::Loans::LoansByBiblioItem');
     $self->addReportToList('loans_by_item_oma_barcode', 'Koha::Reporting::Report::Loans::LoansByItemBarcode');
+    $self->addReportToList('loans_by_item_oma_barcode_zero', 'Koha::Reporting::Report::Loans::LoansByItemBarcodeZero');
     $self->addReportToList('returns_oma', 'Koha::Reporting::Report::Oma::Returns');
     $self->addReportToList('borrowers_oma', 'Koha::Reporting::Report::Oma::Borrowers');
     $self->addReportToList('acquisition_oma', 'Koha::Reporting::Report::Oma::Acquisitions');
     $self->addReportToList('acquisition_oma_qty', 'Koha::Reporting::Report::Oma::AcquisitionsQty');
+    $self->addReportToList('acquisition_oma_list', 'Koha::Reporting::Report::AcquisitionsByItemBarcode');
     $self->addReportToList('items_oma', 'Koha::Reporting::Report::Oma::Items');
     $self->addReportToList('items_status_oma', 'Koha::Reporting::Report::Oma::ItemsStatus');
     $self->addReportToList('collection_biblioitem_oma', 'Koha::Reporting::Report::CollectionByBiblioItem');

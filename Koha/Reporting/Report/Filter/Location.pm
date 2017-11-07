@@ -10,7 +10,7 @@ extends 'Koha::Reporting::Report::Filter::Abstract';
 sub BUILD {
     my $self = shift;
     $self->setName('location');
-    $self->setDescription(' Location');
+    $self->setDescription('Location');
     $self->setType('multiselect');
     $self->setDimension('location');
     $self->setField('location');

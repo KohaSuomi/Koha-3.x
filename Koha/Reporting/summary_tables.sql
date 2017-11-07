@@ -34,10 +34,12 @@ CREATE TABLE reporting_item_dim (
     acquired_year INT(4),
     published_year INT(4),
     cn_class VARCHAR(30),
+    cn_class_fict VARCHAR(30),
     cn_class_primary VARCHAR(30),
     cn_class_1_dec INT(4),
     cn_class_2_dec INT(4),
     cn_class_3_dec INT(4),
+    cn_class_signum VARCHAR(30),
     itemtype VARCHAR(30),
     itemtype_okm VARCHAR(30),
     is_yle INT(11) NOT NULL default 0,
@@ -45,6 +47,7 @@ CREATE TABLE reporting_item_dim (
     language_all VARCHAR(30),
     collection_code VARCHAR(30),
     barcode varchar(20),
+    datelastborrowed DATE NULL,
     UNIQUE(itemnumber)
 ) ENGINE=InnoDB CHARACTER SET=utf8;
 CREATE INDEX itemnumber_idx ON reporting_item_dim (itemnumber);

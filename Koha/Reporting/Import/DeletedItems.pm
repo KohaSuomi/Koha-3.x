@@ -15,6 +15,7 @@ sub BUILD {
     $self->initFactTable('reporting_deleteditems');
     $self->setName('deleteditems_fact');
     $self->{column_transform_method}->{fact}->{amount} = \&factAmount;
+    $self->{column_filters}->{item}->{datelastborrowed} = 1;
 }
 
 sub loadDatas{

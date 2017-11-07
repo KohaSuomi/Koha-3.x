@@ -12,7 +12,7 @@ sub BUILD {
     my $self = shift;
     $self->setName('location');
     $self->setDescription('Location');
-    $self->setAlias(' Location');
+    $self->setAlias('Location');
     $self->setDimension('location');
     $self->setField('location');
 }

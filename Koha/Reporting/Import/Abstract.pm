@@ -10,6 +10,7 @@ use Koha::Reporting::Table::Fact::Factory;
 use Koha::Reporting::Table::Abstract;
 use POSIX qw(strftime floor);
 use Time::Piece;
+use Encode;
 use utf8;
 
 
@@ -122,10 +123,12 @@ sub BUILD {
     $self->{column_transform_method}->{item}->{title} = \&itemTitle;
 
     $self->{column_transform_method}->{item}->{cn_class} = \&itemCnClass;
+    $self->{column_transform_method}->{item}->{cn_class_fict} = \&itemCnClassFict;
     $self->{column_transform_method}->{item}->{cn_class_primary} = \&itemCnClassPrimary;
     $self->{column_transform_method}->{item}->{cn_class_1_dec} = \&itemCnClass1Dec;
     $self->{column_transform_method}->{item}->{cn_class_2_dec} = \&itemCnClass2Dec;
     $self->{column_transform_method}->{item}->{cn_class_3_dec} = \&itemCnClass3Dec;
+    $self->{column_transform_method}->{item}->{cn_class_signum} = \&itemCnClassSignum;
 
     $self->{column_transform_method}->{borrower}->{age_group} = \&borrowerAgeGroup;
 
@@ -842,6 +845,14 @@ sub initLanguageData{
     my $marc = $self->initMarc($data, $dimension);
     if($marc){
         my $value = $marc->subfield('041','a');
+        if(defined $value){
+            $value =~ s/^\s+|\s+$//g
+        }
+
+        if(!defined $value || $value eq ''){
+            $value = $marc->subfield('041','d');
+        }
+
         if($value && ($value ne 'fin' && $value ne 'swe')){
             $language = 'other';
         }
@@ -938,6 +949,30 @@ sub initMarc{
     return $marc;
 }
 
+sub itemCnClassFict{
+    my $self = shift;
+    my $data = $_[0];
+    my $dimension = $_[1];
+    my $result;
+    if($dimension){
+        my $marc = $self->initMarc($data, $dimension);
+        if($marc){
+            my @fields = $marc->field('084');
+            foreach my $field (@fields){
+                if($field->subfield('a') && $field->indicator(1) eq '9'){
+                     my $tmpResult = $field->subfield('a');
+                     $_ = $tmpResult;
+                     if(/([[:alpha:]]+)/){
+                         $result = $tmpResult;
+                     }
+                }
+            }
+        }
+    }
+    return $result;
+}
+
+
 sub itemCnClass{
     my $self = shift;
     my $data = $_[0];
@@ -1013,6 +1048,21 @@ sub itemCnClass3Dec{
     return $result;
 }
 
+sub itemCnClassSignum{
+    my $self = shift;
+    my $data = $_[0];
+    my $dimension = $_[1];
+    my $result;
+
+    if(!defined $data->{cn_class_signum}){
+        $self->initCnClassData($data, $dimension);
+    }
+    if(defined $data->{cn_class_signum}){
+        $result =  $data->{cn_class_signum};
+    }
+    return $result;
+}
+
 sub initCnClassData{
     my $self = shift;
     my $data = $_[0];
@@ -1020,6 +1070,18 @@ sub initCnClassData{
     my $result;
     my $cnSort;
     my $cnClass;
+    my $signum;
+
+    if(defined $data->{cn_sort}){
+        $_ = $data->{cn_sort};
+        if(/.([[:alpha:]]+)/){
+            $signum = $1;
+            if(defined $signum && $signum ne ''){
+                $signum = encode('UTF-8', $signum, Encode::FB_CROAK);
+                $data->{'cn_class_signum'} = $signum;
+            }
+        }
+    }
 
     if($dimension){
         my $marc = $self->initMarc($data, $dimension);

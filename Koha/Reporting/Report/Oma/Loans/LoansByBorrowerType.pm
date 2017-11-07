@@ -32,11 +32,14 @@ sub BUILD {
     $self->addFilter('branch', 'Koha::Reporting::Report::Filter::Branch');
     $self->addFilter('location', 'Koha::Reporting::Report::Filter::Location');
     $self->addFilter('cn_class', 'Koha::Reporting::Report::Filter::CnClass::Primary');
+    $self->addFilter('cn_class_fict', 'Koha::Reporting::Report::Filter::CnClass::Fictive');
     $self->addFilter('itemtype', 'Koha::Reporting::Report::Filter::Itemtype');
     $self->addFilter('language', 'Koha::Reporting::Report::Filter::LanguageAll');
     $self->addFilter('location_type', 'Koha::Reporting::Report::Filter::Location::Type');
     $self->addFilter('location_age', 'Koha::Reporting::Report::Filter::Location::Age');
     $self->addFilter('borrower_category', 'Koha::Reporting::Report::Filter::BorrowerCategory');
+    $self->addFilter('postcode_from', 'Koha::Reporting::Report::Filter::PostcodeStart');
+    $self->addFilter('postcode_to', 'Koha::Reporting::Report::Filter::PostcodeEnd');
     $self->addFilter('borrower_agegroup', 'Koha::Reporting::Report::Filter::Borrower::AgeGroup');
     $self->addFilter('loan_type', 'Koha::Reporting::Report::Filter::LoanType');
     $self->addFilter('time_month', 'Koha::Reporting::Report::Filter::Time::Month');

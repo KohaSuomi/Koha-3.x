@@ -28,12 +28,13 @@ sub BUILD {
     $self->addFilter('branch', 'Koha::Reporting::Report::Filter::Branch');
     $self->addFilter('location', 'Koha::Reporting::Report::Filter::Location');
     $self->addFilter('cn_class', 'Koha::Reporting::Report::Filter::CnClass::Primary');
+    $self->addFilter('cn_class_fict', 'Koha::Reporting::Report::Filter::CnClass::Fictive');
     $self->addFilter('itemtype_okm', 'Koha::Reporting::Report::Filter::Itemtype');
     $self->addFilter('language', 'Koha::Reporting::Report::Filter::LanguageAll');
     $self->addFilter('is_yle', 'Koha::Reporting::Report::Filter::IsYle');
+    $self->addFilter('collection_code', 'Koha::Reporting::Report::Filter::CollectionCode');
     $self->addFilter('published_start', 'Koha::Reporting::Report::Filter::PublishedStart');
     $self->addFilter('published_end', 'Koha::Reporting::Report::Filter::PublishedEnd');
-    $self->addFilter('collection_code', 'Koha::Reporting::Report::Filter::CollectionCode');
     $self->addFilter('location_type', 'Koha::Reporting::Report::Filter::Location::Type');
     $self->addFilter('location_age', 'Koha::Reporting::Report::Filter::Location::Age');
     $self->addFilter('is_first', 'Koha::Reporting::Report::Filter::AcquisitionIsFirst');

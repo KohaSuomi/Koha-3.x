@@ -242,6 +242,7 @@ sub buildSelect{
     }
 
     $select = $select . $from . $where .$groupBy. $having .$orderBy . $limit;
+    #die Dumper $select;
     return ($select, \@bind);
 }
 

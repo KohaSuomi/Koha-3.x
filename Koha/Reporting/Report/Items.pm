@@ -21,6 +21,7 @@ sub BUILD {
     $self->setGroup('okm');
 
     $self->addGrouping('Koha::Reporting::Report::Grouping::CnClass');
+    $self->addGrouping('Koha::Reporting::Report::Grouping::Signum');
     $self->addGrouping('Koha::Reporting::Report::Grouping::Language');
     $self->addGrouping('Koha::Reporting::Report::Grouping::Branch');
     $self->addGrouping('Koha::Reporting::Report::Grouping::ItemTypeOkm');
@@ -29,11 +30,11 @@ sub BUILD {
     $self->addGrouping('Koha::Reporting::Report::Grouping::LocationType');
     $self->addGrouping('Koha::Reporting::Report::Grouping::LocationAge');
 
-
     $self->addFilter('branch_category', 'Koha::Reporting::Report::Filter::BranchGroup');
     $self->addFilter('branch', 'Koha::Reporting::Report::Filter::Branch');
     $self->addFilter('location', 'Koha::Reporting::Report::Filter::Location');
     $self->addFilter('cn_class', 'Koha::Reporting::Report::Filter::CnClass::Primary');
+    $self->addFilter('cn_class_signum', 'Koha::Reporting::Report::Filter::Signum');
 #    $self->addFilter('itemtype', 'Koha::Reporting::Report::Filter::Itemtype');
     $self->addFilter('itemtype_okm', 'Koha::Reporting::Report::Filter::ItemtypeOkm');
     $self->addFilter('language', 'Koha::Reporting::Report::Filter::Language');

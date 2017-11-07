@@ -171,7 +171,7 @@ sub addFilter{
     if(defined $filter && defined $options){
         $conditionString = $filter->getConditionString($self, $options);
         if(defined $conditionString && $conditionString ne ''){
-            push $self->{filters}, {'logic' => $filter->getLogic(), 'condition' => $conditionString, 'type' => $filter->getFilterType()}; 
+            push $self->{filters}, {'logic' => $filter->getLogic(), 'condition' => $conditionString, 'type' => $filter->getFilterType(), 'name' => $filter->getName()}; 
             $self->setIsNeeded(1);
         }        
     }   

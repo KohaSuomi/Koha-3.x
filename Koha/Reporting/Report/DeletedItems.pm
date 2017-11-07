@@ -33,6 +33,7 @@ sub BUILD {
     $self->addFilter('branch', 'Koha::Reporting::Report::Filter::Branch');
     $self->addFilter('location', 'Koha::Reporting::Report::Filter::Location');
     $self->addFilter('cn_class', 'Koha::Reporting::Report::Filter::CnClass::Primary');
+    $self->addFilter('cn_class_fict', 'Koha::Reporting::Report::Filter::CnClass::Fictive');
 #    $self->addFilter('itemtype', 'Koha::Reporting::Report::Filter::Itemtype');
     $self->addFilter('itemtype_okm', 'Koha::Reporting::Report::Filter::ItemtypeOkm');
     $self->addFilter('language', 'Koha::Reporting::Report::Filter::Language');

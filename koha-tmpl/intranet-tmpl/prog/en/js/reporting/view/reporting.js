@@ -28,6 +28,33 @@ function Report(){
         table.innerHTML = self.renderedReport;
     }
 
+    self.resetSelections = function(){
+            var filters = self.filters();
+            var filtersLength = filters.length;
+            for (var i = 0; i < filtersLength; i++) {
+                var filter = filters[i];
+                filter.resetSelections();
+            }
+
+            var groupings = self.groupings();
+            var groupingsLength = groupings.length;
+            for (var j = 0; j < groupingsLength; j++) {
+                var grouping = groupings[j];
+                grouping.resetSelections();
+            }
+
+            var orderings = self.orderings();
+            var orderingsLength = orderings.length;
+            for (var k = 0; k < orderingsLength; k++) {
+                var ordering = orderings[k];
+                ordering.resetSelections();
+            }
+
+            self.resetDateFilter();
+            self.selectedOrdering('');
+            self.visibleOrderings([]);
+    };
+
     self.toJSON = function() {
         var report = ko.toJS(self);
         if(report.hasOwnProperty('filters') && report.filters.length > 0){
@@ -81,16 +108,24 @@ function Report(){
         return { text: self.description(), value: self.name(), original: self };
     };
 
+    self.resetDateFilter = function(){
+        var dateFilter = self.dateFilter();
+        if(dateFilter){
+            dateFilter.from(self.formatDate(self.startDate));
+            dateFilter.to(self.formatDate(self.endDate));
+        }
+    };
+
     var date = new Date();
-    var startDate = new Date(date.getFullYear(), date.getMonth(), 1);
-    var endDate = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+    self.startDate = new Date(date.getFullYear(), date.getMonth(), 1);
+    self.endDate = new Date(date.getFullYear(), date.getMonth() + 1, 0);
 
     self.dateFilter = ko.observable({
         'useTo': ko.observable(1) ,
         'useFrom': ko.observable(1),
         'showPrecision': ko.observable(0),
-        'from': ko.observable(self.formatDate(startDate)),
-        'to': ko.observable(self.formatDate(endDate)),
+        'from': ko.observable(self.formatDate(self.startDate)),
+        'to': ko.observable(self.formatDate(self.endDate)),
         'precision': ko.observable('month')
     });
 };
@@ -122,6 +157,18 @@ function Filter(){
         }
         this.options.valueHasMutated();
         return 1;
+    };
+
+    self.resetSelections = function(){
+        self.selectedOptions([]);
+        self.allSelected(0);
+        self.resetAll(0);
+        if(self.hasOwnProperty('selectAllOption') && self.selectAllOption.hasOwnProperty('description')){
+            self.selectAllOption.description(self.translator.translate('Select All'));
+        }
+        self.resetOptions();
+        self.selectedValue1('');
+        self.selectedValue2('');
     };
 
     self.selectorVisible = function(){
@@ -316,12 +363,22 @@ function Grouping(){
     self.selectedValue = ko.observable(false);
     self.selectedOptions = ko.observable('');
     self.showOptions = ko.observable(0);
+
+    self.resetSelections = function(){
+        self.selectedValue(false);
+        self.selectedOptions('');
+    };
 }
 
 function Ordering(){
     var self = this;
     self.name = ko.observable();
     self.selected = ko.observable();
+
+    self.resetSelections = function(){
+        self.selected(false);
+    };
+
 }
 
 function ReportingView() {
@@ -368,6 +425,20 @@ function ReportingView() {
     self.reportSubmitCsv = function(){
         self.selectedReport().selectedReportType('csv');
         self.reportSubmit();
+    };
+
+    self.reportEmptySelections = function(){
+            var reportGroups = self.reportGroups();
+            var reportGroupsLength = reportGroups.length;
+            for (var i = 0; i < reportGroupsLength; i++) {
+                var group = reportGroups[i];
+                var reports = group.reports();
+                var reportsLength = reports.length;
+                for (var j = 0; j < reportsLength; j++) {
+                    var report = reports[j];
+                    report.resetSelections();
+                }
+            }
     };
 
     self.renderReport = function(){
@@ -902,7 +973,7 @@ function ReportFactory(){
                  } else {
                      // call the default Knockout value binding
                  //    ko.bindingHandlers.value.update(element, valueAccessor);
-                                         ko.bindingHandlers.selectedOptions.update(element, valueAccessor);
+                       ko.bindingHandlers.selectedOptions.update(element, valueAccessor);
                  }
              }
 
