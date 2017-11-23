@@ -427,6 +427,11 @@ our $PERL_DEPS = {
         'required' => '1',
         'min_ver'  => '3.07'
     },
+    'IO::Pty' => {
+        'usage'    => 'Core',
+        'required' => '1',
+        'min_ver'  => '1.12'
+    },
     'IPC::Cmd' => {
         'usage'    => 'Core',
         'required' => '1',
@@ -591,6 +596,11 @@ our $PERL_DEPS = {
         'usage'    => 'SipServer',
         'required' => '0',
         'min_ver'  => '0.13',
+    },
+    'Net::SFTP::Foreign' => {
+        'usage'    => 'PrintProvider',
+        'required' => '1',
+        'min_ver'  => '1.87',
     },
     'Net::Server' => {
         'usage'    => 'SipServer',
