@@ -111,12 +111,14 @@ sub _swaggerizeSessionFromBorrowerAndCookie {
     my ($borrower, $cookie) = @_;
     $borrower = Koha::Borrowers->cast($borrower);
 
-    return {
+    my $ret = {
         firstname => $borrower->firstname,
         lastname  => $borrower->surname,
         email     => $borrower->email,
         sessionid => $cookie->value(),
     };
+    delete $ret->{email} unless $ret->{email};
+    return $ret;
 }
 =head _swaggerizeSession
 

@@ -15,5 +15,5 @@
       "$ref": "../definitions.json#/sessionid"
     }
   },
-  "required": ["email", "lastname", "firstname"]
+  "required": ["lastname", "firstname"]
 }
